@@ -136,7 +136,7 @@
   },
   "src/features/modern/bohr-theory/components/BohrOrbits.tsx": {
     "no-restricted-syntax": {
-      "count": 15
+      "count": 14
     }
   },
   "src/features/modern/bohr-theory/components/drawExcitation.ts": {

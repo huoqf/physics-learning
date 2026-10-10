@@ -2,51 +2,27 @@ import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
 
 export const modernPhysicsAnimations = defineAnimations({
-  'anim-bohr-theory': {
-    title: '原子结构与玻尔理论',
-    knowledgeId: 'modern-1-4',
-    Component: lazy(() => import('@/features/modern/bohr-theory/BohrTheoryAnimation')),
-    controlsMode: (params) => params.mode === 2 ? 'loop' : 'timed',
+  'anim-alpha-scatter': {
+    title: 'α 粒子散射实验与核式结构',
+    knowledgeId: 'modern-1-3',
+    Component: lazy(() => import('@/features/modern/alpha-scatter/AlphaScatterAnimation')),
+    controlsMode: 'timed' as const,
     defaultParams: {
-      mode: 0,                   // 学习阶段: 0-科学探索历程, 1-玻尔原子模型, 2-跃迁与激发机制, 3-高考综合应用
-      modelType: 1,              // 阶段一: 0-汤姆孙枣糕模型, 1-卢瑟福核式结构
-      impactParameter: 15,       // 阶段一: 碰撞参数 b (px)
-      targetLevel: 2,            // 阶段二: 目标能级 n (1-4)
-      atomQuantity: 0,           // 阶段三: 0-一群氢原子, 1-单个氢原子
-      excitationType: 0,         // 阶段三: 0-光子照射, 1-实物电子碰撞
-      incidentEnergy: 10.2,      // 阶段三: 入射粒子能量 (eV)
-      radiationPhotonIndex: 1,   // 阶段四: 跃迁光子索引 (0:4->3, 1:4->2, 2:4->1, 3:3->2, 4:3->1, 5:2->1)
-      workFunction: 2.29,        // 阶段四: 金属逸出功 (eV)，默认钠 2.29 eV
-      stoppingVoltage: 0.0,      // 阶段四: 遏止电压 (V)
-      launchTrigger: 0,          // 触发粒子发射
-      clearTrigger: 0,           // 触发清空
+      modelType: 1,              // 0: 汤姆孙枣糕模型, 1: 卢瑟福核式模型
+      impactParameter: 15,       // 碰撞参数 b (px)
       autoEmit: 1,               // 持续自动发射
-      keepTrails: 0,             // 保留历史轨迹
-      realScale: 0,              // 轨道半径物理比例
+      keepTrails: 0,             // 保留历史径迹
+      launchTrigger: 0,
+      clearTrigger: 0,
     } as const,
     controlMeta: [
       {
         type: 'segmented',
-        key: 'mode',
-        group: '模型选择',
-        options: [
-          { value: 0, label: '① 科学史' },
-          { value: 1, label: '② 玻尔模型' },
-          { value: 2, label: '③ 激发机制' },
-          { value: 3, label: '④ 高考综合' },
-        ],
-      },
-      // 阶段一控制
-      {
-        type: 'segmented',
         key: 'modelType',
-        label: '原子模型',
-        group: '子模式',
-        showIf: 'mode',
-        showIfValue: 0,
+        group: '原子模型假设',
         options: [
-          { value: 0, label: '汤姆孙枣糕模型' },
-          { value: 1, label: '卢瑟福核式结构' },
+          { value: 0, label: '汤姆孙“枣糕模型”' },
+          { value: 1, label: '卢瑟福“核式结构模型”' },
         ],
       },
       {
@@ -54,103 +30,148 @@ export const modernPhysicsAnimations = defineAnimations({
         label: '发射 α 粒子',
         action: 'launch',
         group: '操作',
-        showIf: 'mode',
-        showIfValue: 0,
         setParams: { launchTrigger: 1 },
       },
       {
         type: 'action',
-        label: '清空粒子轨迹',
+        label: '清空粒子径迹',
         action: 'reset',
         group: '操作',
-        showIf: 'mode',
-        showIfValue: 0,
         setParams: { clearTrigger: 1 },
       },
       {
         type: 'toggle',
         key: 'autoEmit',
         label: '持续自动发射',
-        group: '操作',
-        showIf: 'mode',
-        showIfValue: 0,
+        group: '参数设置',
         trueValue: 1,
         falseValue: 0,
       },
       {
         type: 'toggle',
         key: 'keepTrails',
-        label: '保留历史轨迹',
-        group: '操作',
-        showIf: 'mode',
-        showIfValue: 0,
+        label: '保留历史径迹',
+        group: '参数设置',
         trueValue: 1,
         falseValue: 0,
       },
-      // 阶段二控制
+      {
+        type: 'tip',
+        content: '实验证实：绝大多数粒子沿原方向直线穿过，少数偏转大角度，极少数反弹。',
+        group: '物理规律',
+      },
+    ],
+    paramMeta: [
+      {
+        key: 'impactParameter',
+        label: '碰撞参数 b',
+        min: 0,
+        max: 40,
+        step: 1,
+        unit: 'px',
+        group: '碰撞几何',
+        marks: [
+          { value: 0, label: '正对对心 (反弹)', variant: 'critical' },
+          { value: 10, label: '近距偏转', variant: 'recommended' },
+          { value: 30, label: '远距直穿', variant: 'zero' },
+        ],
+      },
+    ],
+  },
+
+  'anim-bohr-theory': {
+    title: '玻尔原子理论与氢光谱能级跃迁',
+    knowledgeId: 'modern-1-4',
+    Component: lazy(() => import('@/features/modern/bohr-theory/BohrTheoryAnimation')),
+    controlsMode: 'param' as const,
+    defaultParams: {
+      mode: 0,                   // 0: 玻尔原子轨道与定态跃迁, 1: 跃迁与激发机制对比, 2: 高考综合应用(辐射光电效应)
+      targetLevel: 2,            // 目标能级 n (1-4)
+      realScale: 0,              // 轨道半径物理比例 (0: 示意比例, 1: n² 真实比例)
+      atomQuantity: 0,           // 0: 一群氢原子, 1: 单个氢原子
+      excitationType: 0,         // 0: 光子照射(严苛共振), 1: 电子碰撞(传递能量)
+      incidentEnergy: 10.2,      // 入射粒子能量 (eV)
+      radiationPhotonIndex: 1,   // 跃迁光子索引 (0:4->3, 1:4->2, 2:4->1, 3:3->2, 4:3->1, 5:2->1)
+      workFunction: 2.29,        // 金属逸出功 (eV)，默认钠 2.29 eV
+      stoppingVoltage: 0.0,      // 反向遏止电压 (V)
+      launchTrigger: 0,
+      clearTrigger: 0,
+    } as const,
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'mode',
+        group: '学习模式',
+        options: [
+          { value: 0, label: '① 玻尔定态能级' },
+          { value: 1, label: '② 跃迁与激发机制' },
+          { value: 2, label: '③ 高考综合应用' },
+        ],
+      },
+      // 模式 0 控制
       {
         type: 'segmented',
         key: 'realScale',
         label: '轨道半径比例',
-        group: '操作',
+        group: '轨道设置',
         showIf: 'mode',
-        showIfValue: 1,
+        showIfValue: 0,
         options: [
-          { value: 0, label: '视觉美化比例' },
+          { value: 0, label: '视觉示意比例' },
           { value: 1, label: '真实物理比例 (n²)' },
         ],
       },
-      // 阶段三控制
+      // 模式 1 控制
       {
         type: 'segmented',
         key: 'atomQuantity',
-        label: '原子数量',
-        group: '子模式',
+        label: '原子样本数量',
+        group: '激发设置',
         showIf: 'mode',
-        showIfValue: 2,
+        showIfValue: 1,
         options: [
-          { value: 0, label: '一群氢原子' },
-          { value: 1, label: '单个氢原子' },
+          { value: 0, label: '一群氢原子 C(n,2)' },
+          { value: 1, label: '单个氢原子 (n-1)' },
         ],
       },
       {
         type: 'segmented',
         key: 'excitationType',
         label: '激发方式',
-        group: '子模式',
+        group: '激发设置',
         showIf: 'mode',
-        showIfValue: 2,
+        showIfValue: 1,
         options: [
-          { value: 0, label: '光子照射 (严格能级差)' },
-          { value: 1, label: '电子碰撞 (量力而行)' },
+          { value: 0, label: '光子照射 (严格共振)' },
+          { value: 1, label: '实物电子碰撞 (超差即可)' },
         ],
       },
       {
         type: 'action',
-        label: '发射粒子',
+        label: '发射激发粒子',
         action: 'launch',
-        group: '操作',
+        group: '激发操作',
         showIf: 'mode',
-        showIfValue: 2,
+        showIfValue: 1,
         setParams: { launchTrigger: 1 },
       },
       {
         type: 'action',
         label: '重置退激光谱',
         action: 'reset',
-        group: '操作',
+        group: '激发操作',
         showIf: 'mode',
-        showIfValue: 2,
+        showIfValue: 1,
         setParams: { clearTrigger: 1 },
       },
-      // 阶段四控制
+      // 模式 2 控制
       {
         type: 'segmented',
         key: 'radiationPhotonIndex',
-        label: '选择照射光子',
-        group: '子模式',
+        label: '选择跃迁辐射光子',
+        group: '光照设置',
         showIf: 'mode',
-        showIfValue: 3,
+        showIfValue: 2,
         options: [
           { value: 2, label: '4→1 (12.75 eV)' },
           { value: 4, label: '3→1 (12.09 eV)' },
@@ -162,10 +183,10 @@ export const modernPhysicsAnimations = defineAnimations({
       },
       {
         type: 'preset',
-        label: '一键调至遏止电压',
-        group: '操作',
+        label: '一键调至理论遏止电压',
+        group: '电路调节',
         showIf: 'mode',
-        showIfValue: 3,
+        showIfValue: 2,
         params: (p) => {
           const photonEnergies = [0.66, 2.55, 12.75, 1.89, 12.09, 10.20]
           const idx = p.radiationPhotonIndex ?? 1
@@ -178,59 +199,62 @@ export const modernPhysicsAnimations = defineAnimations({
       },
     ],
     paramMeta: [
-      // 阶段一参数
-      {
-        key: 'impactParameter',
-        label: '入射偏导 b',
-        min: 1,
-        max: 50,
-        step: 1,
-        unit: 'px',
-        showIf: 'mode',
-        showIfValue: 0,
-      },
-      // 阶段二参数
+      // 模式 0 参数
       {
         key: 'targetLevel',
-        label: '目标能级 n',
+        label: '目标轨道能级 n',
         min: 1,
         max: 4,
         step: 1,
         unit: '',
+        group: '定态参数',
         showIf: 'mode',
-        showIfValue: 1,
+        showIfValue: 0,
       },
-      // 阶段三参数
+      // 模式 1 参数
       {
         key: 'incidentEnergy',
-        label: '入射能量 E_in',
+        label: '入射粒子能量 E_in',
         min: 8.0,
         max: 15.0,
         step: 0.1,
         unit: 'eV',
+        group: '激发能量',
         showIf: 'mode',
-        showIfValue: 2,
+        showIfValue: 1,
+        marks: [
+          { value: 10.2, label: 'n=1→2 临界', variant: 'recommended' },
+          { value: 12.09, label: 'n=1→3 临界', variant: 'recommended' },
+          { value: 13.6, label: '电离极限', variant: 'critical' },
+        ],
       },
-      // 阶段四参数
+      // 模式 2 参数
       {
         key: 'workFunction',
-        label: '逸出功 W_0',
+        label: '阴极金属逸出功 W₀',
         min: 1.5,
         max: 4.5,
         step: 0.05,
         unit: 'eV',
+        group: '金属材料',
         showIf: 'mode',
-        showIfValue: 3,
+        showIfValue: 2,
+        marks: [
+          { value: 1.9, label: '铯 (1.90 eV)', variant: 'recommended' },
+          { value: 2.29, label: '钠 (2.29 eV)', variant: 'recommended' },
+          { value: 4.5, label: '钨 (4.50 eV)', variant: 'zero' },
+        ],
       },
       {
         key: 'stoppingVoltage',
-        label: '反向电压 U',
+        label: '反向极板偏压 U',
         min: 0.0,
         max: 12.0,
         step: 0.1,
         unit: 'V',
+        group: '偏压调节',
         showIf: 'mode',
-        showIfValue: 3,
+        showIfValue: 2,
       },
     ],
   },
@@ -325,6 +349,21 @@ export const modernPhysicsAnimations = defineAnimations({
         step: 1,
         unit: '%',
         group: '光源参数',
+      },
+      {
+        key: 'workFunction',
+        label: '阴极逸出功 W₀',
+        min: 1.5,
+        max: 4.5,
+        step: 0.05,
+        unit: 'eV',
+        group: '金属材料',
+        marks: [
+          { value: 1.9, label: '铯 (1.90 eV)', variant: 'recommended' },
+          { value: 2.14, label: '铯默认 (2.14 eV)', variant: 'zero' },
+          { value: 2.29, label: '钠 (2.29 eV)', variant: 'recommended' },
+          { value: 3.3, label: '锌 (3.30 eV)', variant: 'critical' },
+        ],
       },
       {
         key: 'voltage',

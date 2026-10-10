@@ -3,7 +3,7 @@ import { useSimulationFrame } from '@/utils/animation'
 import { useAnimationViewport, useCanvasViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { RelationChart } from '@/components/Chart'
-import { MODERN_COLORS, CANVAS_COLORS } from '@/theme/physics/colors'
+import { MODERN_COLORS, CANVAS_COLORS } from '@/theme/physics'
 
 interface PhotoElectron {
   id: number

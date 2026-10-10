@@ -793,4 +793,73 @@ export const masterModelProblems: Problem[] = [
       },
     ],
   },
+
+  // 19. 玻尔原子理论与氢光谱能级跃迁
+  {
+    id: 'prob-2024-quanguo-bohr-transition',
+    year: 2024, province: '全国新课标卷', source: '2024年高考全国新课标卷物理选择题',
+    title: '玻尔原子能级跃迁与自发辐射光子种数分析',
+    content:
+      '氢原子的能级公式为 $E_n = \\frac{E_1}{n^2}$，其中基态能量 $E_1 = -13.6\\,\\text{eV}$。现有大量处于 $n = 4$ 激发态的氢原子向低能级跃迁。\n试分析：\n(1) 这些氢原子跃迁时最多可辐射出几种不同频率的光子？\n(2) 辐射出的光子中，能量最大和波长最长的光子分别对应哪两个能级之间的跃迁？其能量分别为多少 $\\text{eV}$？\n(3) 若用这群氢原子跃迁发出的光照射逸出功 $W_0 = 2.29\\,\\text{eV}$ 的金属钠板，能产生光电子的光子有几种？',
+    difficulty: 2,
+    knowledgeIds: ['modern-1-4', 'modern-1-2'],
+    masterModelId: 'model-bohr-transition',
+    tags: ['高考真题', '玻尔理论', '能级跃迁', '光子种数', '光电效应综合'],
+    targetAnimation: { animId: 'anim-bohr-theory', presetParams: { mode: 1, targetLevel: 4 }, presetDescription: '载入 n=4 能级自发辐射与光子跃迁参数' },
+    steps: [
+      {
+        id: 'step-1', description: '一群氢原子跃迁最多发射光子种数公式 N = C_n^2', scorePoints: 3,
+        keyCondition: 'N = n(n - 1) / 2',
+        formula: '$$N = C_4^2 = \\frac{4 \\times 3}{2} = 6\\,\\text{种}$$',
+        explanation: '处于 n=4 激发态的大量氢原子，跃迁路径有 4→3, 4→2, 4→1, 3→2, 3→1, 2→1，共 6 种频率的光子。',
+      },
+      {
+        id: 'step-2', description: '能量最大与波长最长光子对应能级差分析', scorePoints: 4,
+        keyCondition: '能级差最大对应能量最大(波长最短)；能级差最小对应能量最小(波长最长)',
+        formula: '$$E_{\\max} = E_4 - E_1 = -0.85 - (-13.6) = 12.75\\,\\text{eV} \\quad (4 \\to 1)$$\n$$E_{\\min} = E_4 - E_3 = -0.85 - (-1.51) = 0.66\\,\\text{eV} \\quad (4 \\to 3)$$',
+        explanation: '4→1 能级差最大为 12.75 eV；4→3 能级差最小为 0.66 eV，波长最长。',
+      },
+      {
+        id: 'step-3', description: '光电效应发生条件判定 hν ≥ W0', scorePoints: 3,
+        keyCondition: '跃迁光子能量 hν ≥ 2.29 eV',
+        formula: '$$\\text{满足条件的光子：} 4\\to 1\\,(12.75), 3\\to 1\\,(12.09), 2\\to 1\\,(10.20), 4\\to 2\\,(2.55)\\,\\text{共 4 种}$$',
+        explanation: '其中 3→2 (1.89 eV) 与 4→3 (0.66 eV) 光子能量小于 2.29 eV，不能发生光电效应，故有 4 种。',
+      },
+    ],
+  },
+
+  // 20. 卢瑟福 α 粒子散射实验与核式结构
+  {
+    id: 'prob-2023-quanguo-alpha-scatter',
+    year: 2023, province: '全国甲卷', source: '2023年高考全国甲卷物理选择题',
+    title: 'α 粒子金箔散射实验规律与库仑散射势能',
+    content:
+      '在卢瑟福 α 粒子散射实验中，α 粒子（电荷量 $+2e$）从很远处以初速度 $v_0$ 射向静止的金原子核（电荷量 $+79e$）。\n试判断下列物理过程：\n(1) α 粒子在向金核运动直至最近距离的过程中，其加速度、电势能、动能如何变化？\n(2) 若某一 α 粒子对心正对金核入射，已知初动能为 $E_{k0}$，静电力常量为 $k$，试求该 α 粒子能接近金核的最小距离 $r_{\\min}$。\n(3) 简述卢瑟福提出原子核式结构模型的核心实验证据。',
+    difficulty: 2,
+    knowledgeIds: ['modern-1-3'],
+    masterModelId: 'model-alpha-scatter',
+    tags: ['高考真题', 'α粒子散射', '库仑定律', '能量守恒', '核式结构'],
+    targetAnimation: { animId: 'anim-alpha-scatter', presetParams: { modelType: 1, impactParameter: 0 }, presetDescription: '载入对心碰撞反弹与库仑散射参数' },
+    steps: [
+      {
+        id: 'step-1', description: '库仑斥力做负功与动能、电势能转化', scorePoints: 3,
+        keyCondition: '接近过程中库仑斥力增大，做负功',
+        formula: '$$F = k \\frac{(2e)(79e)}{r^2} \\implies a = \\frac{F}{m} \\uparrow, \\quad E_k \\downarrow, \\quad E_p \\uparrow$$',
+        explanation: '粒子向核接近时距离减小，斥力增大导致加速度增大；动能转化为电势能，动能减小，电势能增大。',
+      },
+      {
+        id: 'step-2', description: '对心碰撞能量守恒求最小接近距离', scorePoints: 4,
+        keyCondition: '速度减为零时，初动能全部转化为库仑电势能',
+        formula: '$$E_{k0} = k \\frac{2 \\times 79 e^2}{r_{\\min}} \\implies r_{\\min} = \\frac{158 k e^2}{E_{k0}}$$',
+        explanation: '在最近距离处 α 粒子速度为零，由能量守恒定律求得最小接近距离。',
+      },
+      {
+        id: 'step-3', description: '核式结构模型的实验证据归纳', scorePoints: 3,
+        keyCondition: '绝大多数直穿、少数大角偏转、极少数反弹',
+        formula: '$$\\theta > 90^\\circ \\text{（甚至接近 } 180^\\circ\\text{ 反弹）证据彻底推翻汤姆孙枣糕模型}$$',
+        explanation: '极少数 α 粒子的大角度散射表明原子中心存在体积极小、带正电且集中绝大部分质量的原子核。',
+      },
+    ],
+  },
 ]
+

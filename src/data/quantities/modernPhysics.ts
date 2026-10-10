@@ -10,68 +10,7 @@ export function buildModernPhysicsQuantities(
   const mode = params.mode ?? 0
 
   if (mode === 0) {
-    // 阶段一：科学探索历程
-    const modelType = params.modelType ?? 1
-    const impactParameter = params.impactParameter ?? 15
-
-    let scatterResult = ''
-    if (modelType === 0) {
-      scatterResult = '几乎全部直穿（无明显偏转）'
-    } else {
-      if (impactParameter < 6) {
-        scatterResult = '极少数粒子大角度反弹 (θ > 90°)'
-      } else if (impactParameter < 15) {
-        scatterResult = '少数粒子发生明显大角度偏转'
-      } else {
-        scatterResult = '绝大多数粒子沿原方向或极小角度穿过'
-      }
-    }
-
-    const quantities: PhysicsPanelData['quantities'] = [
-      {
-        label: '原子模型',
-        value: modelType === 0 ? '汤姆孙“枣糕模型”' : '卢瑟福“核式结构模型”',
-        unit: '',
-      },
-      {
-        label: '碰撞参数 b',
-        value: impactParameter.toString(),
-        unit: 'px',
-        highlight: impactParameter < 10 ? 'extreme' as const : undefined,
-      },
-      {
-        label: '散射行为预测',
-        value: scatterResult,
-        unit: '',
-        highlight: modelType === 1 && impactParameter < 6 ? 'negative' as const : undefined,
-      },
-    ]
-
-    const formulas: PhysicsPanelData['formulas'] = [
-      {
-        name: '库仑定律',
-        latex: 'F = k \\frac{q_1 q_2}{r^2}',
-        level: 'core',
-      },
-    ]
-
-    const gaokaoPoints: PhysicsPanelData['gaokaoPoints'] = [
-      { text: '卢瑟福金箔散射实验证实了原子核式结构的存在。', importance: 'gaokao' },
-      { text: '现象：绝大多数无偏转，少数发生较大偏转，极少数被反弹。', importance: 'gaokao' },
-      { text: '经典电磁学困难：原子的稳定性问题与分立的线状光谱。', importance: 'core' },
-    ]
-
-    return {
-      quantities,
-      formulas,
-      gaokaoPoints,
-      warnings: [],
-      mnemonic: '汤姆孙寻得电子，枣糕模型初立；卢瑟福金箔散射，核式结构惊天。',
-    }
-  }
-
-  if (mode === 1) {
-    // 阶段二：玻尔原子模型
+    // 阶段一：玻尔原子模型与定态跃迁
     const targetLevel = params.targetLevel ?? 2
     const E1 = -13.6
     const r1 = 0.53 // 0.53 Å (10^-10 m)
@@ -81,18 +20,21 @@ export function buildModernPhysicsQuantities(
 
     const quantities: PhysicsPanelData['quantities'] = [
       {
-        label: '当前能级 n',
+        label: '当前定态能级',
+        symbol: 'n',
         value: targetLevel.toString(),
         unit: '',
       },
       {
-        label: '能级能量 En',
+        label: '能级能量',
+        symbol: 'E_n',
         value: En.toFixed(2),
         unit: 'eV',
-        highlight: targetLevel === 1 ? 'negative' as const : 'positive' as const,
+        highlight: targetLevel === 1 ? 'negative' : 'positive',
       },
       {
-        label: '轨道半径 rn',
+        label: '轨道半径',
+        symbol: 'r_n',
         value: rn.toFixed(2),
         unit: '×10⁻¹⁰ m',
       },
@@ -100,26 +42,26 @@ export function buildModernPhysicsQuantities(
 
     const formulas: PhysicsPanelData['formulas'] = [
       {
-        name: '能级公式',
+        name: '氢原子能级公式',
         latex: 'E_n = \\frac{E_1}{n^2} = -\\frac{13.6}{n^2} \\text{ eV}',
         level: 'core',
       },
       {
         name: '轨道半径公式',
-        latex: 'r_n = n^2 r_1 = n^2 \\cdot 0.53 \\cdot 10^{-10} \\text{ m}',
+        latex: 'r_n = n^2 r_1 = n^2 \\cdot 0.53 \\times 10^{-10} \\text{ m}',
         level: 'core',
       },
       {
-        name: '玻尔跃迁假设',
+        name: '玻尔跃迁辐射条件',
         latex: 'h\\nu = |E_m - E_n|',
         level: 'core',
       },
     ]
 
     const gaokaoPoints: PhysicsPanelData['gaokaoPoints'] = [
-      { text: '定态假设：在定态中，电子虽有加速度但并不辐射电磁波。', importance: 'core' },
-      { text: '激发态（n > 1）不稳定，会自发向低能级跃迁并辐射光子。', importance: 'gaokao' },
-      { text: '当原子吸收特定光子或与粒子碰撞时，会从低能级跃迁到高能级。', importance: 'gaokao' },
+      { text: '定态假设：电子在定态轨道上绕核运动时不向外辐射电磁波。', importance: 'core' },
+      { text: '跃迁规律：电子从高能级向低能级跃迁辐射特定频率光子，反之吸收光子。', importance: 'gaokao' },
+      { text: '氢原子电离：处于 n 能级的氢原子吸收能量大于等于 |En| 的光子即发生电离。', importance: 'gaokao' },
     ]
 
     return {
@@ -131,13 +73,12 @@ export function buildModernPhysicsQuantities(
     }
   }
 
-  if (mode === 2) {
-    // 阶段三：跃迁与激发机制
+  if (mode === 1) {
+    // 阶段二：跃迁与激发机制（光子严苛共振 vs 电子碰撞）
     const atomQuantity = params.atomQuantity ?? 0
     const excitationType = params.excitationType ?? 0
     const incidentEnergy = params.incidentEnergy ?? 10.2
 
-    // 跃迁所需要的能量差
     const levelDiffs = {
       n2: 10.20,
       n3: 12.09,
@@ -151,15 +92,14 @@ export function buildModernPhysicsQuantities(
     let totalPhotons = 0
 
     if (excitationType === 0) {
-      // 光子照射
+      // 光子照射：必须严格等于能级差
       if (incidentEnergy >= levelDiffs.ionization) {
         isExcited = true
-        finalLevel = 5 // 5 表示电离
+        finalLevel = 5
         const extraEnergy = incidentEnergy - levelDiffs.ionization
-        resultMessage = `彻底电离！光子被完全吸收，电子初动能为 ${extraEnergy.toFixed(2)} eV`
+        resultMessage = `彻底电离！光子完全被吸收，光电子初动能 ${extraEnergy.toFixed(2)} eV`
       } else {
-        // 必须严格等于能级差
-        const matchThreshold = 0.05 // 允许微小数值误差
+        const matchThreshold = 0.05
         if (Math.abs(incidentEnergy - levelDiffs.n4) < matchThreshold) {
           isExcited = true
           finalLevel = 4
@@ -175,45 +115,42 @@ export function buildModernPhysicsQuantities(
         } else {
           isExcited = false
           finalLevel = 1
-          resultMessage = '激发失败：光子能量不满足任何能级差，未被吸收 (直穿)'
+          resultMessage = '激发失败：光子能量不满足能级差，未被吸收 (直穿)'
         }
       }
     } else {
-      // 电子碰撞
+      // 电子碰撞：只需能量大于等于能级差
       if (incidentEnergy >= levelDiffs.ionization) {
         isExcited = true
         finalLevel = 5
         const extraEnergy = incidentEnergy - levelDiffs.ionization
-        resultMessage = `彻底电离！实物碰撞，出射电子保留能量 ${extraEnergy.toFixed(2)} eV`
+        resultMessage = `彻底电离！碰撞后出射电子保留能量 ${extraEnergy.toFixed(2)} eV`
       } else if (incidentEnergy >= levelDiffs.n4) {
         isExcited = true
         finalLevel = 4
         const remain = incidentEnergy - levelDiffs.n4
-        resultMessage = `激发成功：跃迁至 n=4，碰撞后出射电子携带 ${remain.toFixed(2)} eV`
+        resultMessage = `激发成功：跃迁至 n=4，碰后出射电子剩余 ${remain.toFixed(2)} eV`
       } else if (incidentEnergy >= levelDiffs.n3) {
         isExcited = true
         finalLevel = 3
         const remain = incidentEnergy - levelDiffs.n3
-        resultMessage = `激发成功：跃迁至 n=3，碰撞后出射电子携带 ${remain.toFixed(2)} eV`
+        resultMessage = `激发成功：跃迁至 n=3，碰后出射电子剩余 ${remain.toFixed(2)} eV`
       } else if (incidentEnergy >= levelDiffs.n2) {
         isExcited = true
         finalLevel = 2
         const remain = incidentEnergy - levelDiffs.n2
-        resultMessage = `激发成功：跃迁至 n=2，碰撞后出射电子携带 ${remain.toFixed(2)} eV`
+        resultMessage = `激发成功：跃迁至 n=2，碰后出射电子剩余 ${remain.toFixed(2)} eV`
       } else {
         isExcited = false
         finalLevel = 1
-        resultMessage = '激发失败：入射电子能量低于 10.2 eV，未能激发氢原子'
+        resultMessage = '激发失败：入射电子动能低于 10.2 eV，未能激发氢原子'
       }
     }
 
-    // 计算产生的最多光子种类数
     if (isExcited && finalLevel < 5) {
       if (atomQuantity === 0) {
-        // 一群氢原子: C_n^2
         totalPhotons = (finalLevel * (finalLevel - 1)) / 2
       } else {
-        // 单个氢原子: n-1
         totalPhotons = finalLevel - 1
       }
     }
@@ -221,63 +158,67 @@ export function buildModernPhysicsQuantities(
     const quantities: PhysicsPanelData['quantities'] = [
       {
         label: '激发媒介',
-        value: excitationType === 0 ? '光子 (Photon)' : '电子 (Electron)',
+        value: excitationType === 0 ? '光子 (严格共振)' : '实物电子 (碰撞传递)',
         unit: '',
       },
       {
         label: '入射能量',
+        symbol: 'E_in',
         value: incidentEnergy.toFixed(1),
         unit: 'eV',
       },
       {
-        label: '激发状态',
+        label: '激发判定状态',
         value: resultMessage,
         unit: '',
-        highlight: isExcited ? ('positive' as const) : ('negative' as const),
+        highlight: isExcited ? 'positive' : 'negative',
       },
     ]
 
     if (isExcited && finalLevel < 5) {
       quantities.push({
-        label: '辐射光子最大种类数',
+        label: atomQuantity === 0 ? '光子最多发射种数 (一群)' : '光子最多发射种数 (单个)',
+        symbol: 'N',
         value: totalPhotons.toString(),
         unit: '种',
-        highlight: 'extreme' as const,
+        highlight: 'extreme',
       })
     }
 
     const formulas: PhysicsPanelData['formulas'] = [
       {
-        name: '光子吸收条件',
-        latex: 'h\\nu = E_m - E_n \\quad (\\text{或 } h\\nu \\ge |E_1| \\text{ 电离})',
+        name: '光子吸收激发条件',
+        latex: 'h\\nu = E_m - E_n \\quad (\\text{或 } h\\nu \\ge |E_n| \\text{ 电离})',
+        condition: '光子能量必须恰好等于两能级差',
         level: 'core',
       },
       {
-        name: '电子碰撞条件',
-        latex: 'E_{\\text{k}} \\ge E_m - E_n',
+        name: '实物粒子碰撞条件',
+        latex: 'E_k \\ge E_m - E_n',
+        condition: '碰撞粒子动能大于等于能级差即可传递能量',
         level: 'core',
       },
       {
-        name: '光谱线种数 (一群)',
+        name: '一群原子谱线种数',
         latex: 'N = C_n^2 = \\frac{n(n-1)}{2}',
         level: 'important',
       },
       {
-        name: '光谱线种数 (一个)',
-        latex: 'N_{\\text{max}} = n - 1',
+        name: '单个原子谱线种数',
+        latex: 'N_{\\max} = n - 1',
         level: 'important',
       },
     ]
 
     const gaokaoPoints: PhysicsPanelData['gaokaoPoints'] = [
-      { text: '光子激发：入射光子的能量必须“严丝合缝”地等于两个能级的差值。', importance: 'gaokao' },
-      { text: '电子激发：入射电子能量只需“大于或等于”能级差，通过非弹性碰撞传递部分能量。', importance: 'gaokao' },
-      { text: '注意题目主体：“一个”氢原子向低能级跃迁最多只能发射 (n-1) 种频率的光子。', importance: 'gaokao' },
+      { text: '光子激发：光子能量必须“严丝合缝”等于能级差；若不相等则完全不吸收。', importance: 'gaokao' },
+      { text: '电子碰撞：实物粒子动能只需“大于或等于”能级差，通过非弹性碰撞带走余能。', importance: 'gaokao' },
+      { text: '考题陷阱：审题注意“一群处于激发态”与“单个处于激发态”的谱线种数区别。', importance: 'gaokao' },
     ]
 
     const warnings = []
     if (excitationType === 0 && !isExcited) {
-      warnings.push({ text: '光子能量不满足两能级之差，无法激发原子！', level: 'warning' as const })
+      warnings.push({ text: '光子能量不满足能级差，未被吸收！', level: 'warning' as const })
     }
 
     return {
@@ -289,29 +230,27 @@ export function buildModernPhysicsQuantities(
     }
   }
 
-  if (mode === 3) {
-    // 阶段四：高考综合应用
+  if (mode === 2) {
+    // 阶段三：高考综合应用（跃迁辐射光子激发光电效应）
     const radiationPhotonIndex = params.radiationPhotonIndex ?? 1
     const workFunction = params.workFunction ?? 2.29
     const stoppingVoltage = params.stoppingVoltage ?? 0
 
-    // 光子能量定义
-    // (0:4->3, 1:4->2, 2:4->1, 3:3->2, 4:3->1, 5:2->1)
     const photonEnergies = [0.66, 2.55, 12.75, 1.89, 12.09, 10.20]
-    const photonLabels = ['4→3 跃迁', '4→2 跃迁', '4→1 跃迁', '3→2 跃迁', '3→1 跃迁', '2→1 跃迁']
+    const photonLabels = ['4→3 跃迁 (0.66 eV)', '4→2 跃迁 (2.55 eV)', '4→1 跃迁 (12.75 eV)', '3→2 跃迁 (1.89 eV)', '3→1 跃迁 (12.09 eV)', '2→1 跃迁 (10.20 eV)']
 
     const hv = photonEnergies[radiationPhotonIndex]
     const isPhotoelectric = hv >= workFunction
     const Ekm = isPhotoelectric ? hv - workFunction : 0
-    const Uc = Ekm // 遏止电压 (V)
+    const Uc = Ekm
 
     let currentStatus = ''
     if (!isPhotoelectric) {
-      currentStatus = '未发生光电效应（光子能量小于逸出功）'
+      currentStatus = '未发生光电效应 (光子能量 hν < 逸出功 W₀)'
     } else if (stoppingVoltage >= Uc) {
-      currentStatus = '发生光电效应，但光电流已截止（反向电压 ≥ 遏止电压）'
+      currentStatus = '发生光电效应，光电流已被反向遏止电压拦截'
     } else {
-      currentStatus = '发生光电效应，且形成稳定的光电流'
+      currentStatus = '发生光电效应，形成稳定光电流'
     }
 
     const quantities: PhysicsPanelData['quantities'] = [
@@ -321,53 +260,57 @@ export function buildModernPhysicsQuantities(
         unit: '',
       },
       {
-        label: '光子能量 hν',
+        label: '光子能量',
+        symbol: 'hν',
         value: hv.toFixed(2),
         unit: 'eV',
       },
       {
-        label: '金属逸出功 W₀',
+        label: '金属逸出功',
+        symbol: 'W_0',
         value: workFunction.toFixed(2),
         unit: 'eV',
       },
       {
-        label: '光电子最大初动能 Ekm',
+        label: '光电子最大初动能',
+        symbol: 'E_km',
         value: isPhotoelectric ? Ekm.toFixed(2) : '—',
         unit: 'eV',
-        highlight: isPhotoelectric ? 'positive' as const : undefined,
+        highlight: isPhotoelectric ? 'positive' : undefined,
       },
       {
-        label: '理论遏止电压 Uc',
+        label: '理论遏止电压',
+        symbol: 'U_c',
         value: isPhotoelectric ? Uc.toFixed(2) : '—',
         unit: 'V',
-        highlight: isPhotoelectric ? 'extreme' as const : undefined,
+        highlight: isPhotoelectric ? 'extreme' : undefined,
       },
       {
-        label: '光电管状态',
+        label: '回路工作状态',
         value: currentStatus,
         unit: '',
-        highlight: isPhotoelectric && stoppingVoltage < Uc ? 'positive' as const : 'negative' as const,
+        highlight: isPhotoelectric && stoppingVoltage < Uc ? 'positive' : 'negative',
       },
     ]
 
     const formulas: PhysicsPanelData['formulas'] = [
       {
-        name: '能级跃迁公式',
+        name: '能级跃迁辐射方程',
         latex: 'h\\nu = E_m - E_n',
         level: 'core',
       },
       {
-        name: '光电效应方程',
+        name: '爱因斯坦光电效应方程',
         latex: 'E_{\\text{km}} = h\\nu - W_0',
         level: 'core',
       },
       {
-        name: '遏止电压关系',
+        name: '遏止电压关系式',
         latex: 'eU_c = E_{\\text{km}}',
         level: 'core',
       },
       {
-        name: '综合计算方程',
+        name: '高考综合联立方程',
         latex: 'eU_c = (E_m - E_n) - W_0',
         level: 'important',
       },
@@ -375,8 +318,8 @@ export function buildModernPhysicsQuantities(
 
     const gaokaoPoints: PhysicsPanelData['gaokaoPoints'] = [
       { text: '光电效应发生条件：入射光子能量 hν ≥ 逸出功 W₀。', importance: 'gaokao' },
-      { text: '遏止电压与入射光频率成线性正比，与光强无关。', importance: 'gaokao' },
-      { text: '在反向电压电路中，当加反向电压 U ≥ Uc 时，光电流恰好减小到零。', importance: 'core' },
+      { text: '能级跃迁产生的光子照射金属板时，跃迁能级差越大，发射光电子初动能越大，遏止电压越高。', importance: 'gaokao' },
+      { text: '遏止电压判定：加反向电压 U 时，当 U ≥ Uc，最大初动能的光电子也无法到达阳极，电流为零。', importance: 'core' },
     ]
 
     const warnings = []

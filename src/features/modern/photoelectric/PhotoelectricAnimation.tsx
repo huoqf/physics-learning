@@ -1,12 +1,15 @@
+import { useState } from 'react'
 import { useAnimationStore } from '@/stores'
 import { usePhotoelectricSimulation } from './hooks/usePhotoelectricSimulation'
 import { computePhotoelectricDerived } from './model/photoelectricViewModel'
 import PhototubeCanvas from './components/PhototubeCanvas'
 import IUCurveChart from './components/IUCurveChart'
+import EkNuCurveChart from './components/EkNuCurveChart'
 import { ComptonScatteringScene } from './components/ComptonScatteringScene'
 
 export default function PhotoelectricAnimation() {
   const params = useAnimationStore((s) => s.params)
+  const [activeChartTab, setActiveChartTab] = useState<'iu' | 'eknu'>('iu')
 
   const frequency = params.frequency ?? 6.0
   const intensity = params.intensity ?? 50
@@ -14,6 +17,7 @@ export default function PhotoelectricAnimation() {
   const mode = params.mode ?? 0
   const showPhotonModel = params.showPhotonModel ?? 0
   const theta = params.theta ?? 60
+  const workFunction = params.workFunction ?? 2.14
 
   const derived = computePhotoelectricDerived({
     frequency,
@@ -22,6 +26,7 @@ export default function PhotoelectricAnimation() {
     mode,
     showPhotonModel,
     theta,
+    workFunction,
   })
 
   // Canvas 尺寸 (使用 full preset，中屏独占)
@@ -59,15 +64,51 @@ export default function PhotoelectricAnimation() {
         />
       </div>
 
-      {/* I-U 伏安特性曲线（通关模式显示） */}
+      {/* 高考双图像体系（通关模式显示） */}
       {mode === 1 && (
-        <div className="flex-[1.2] min-h-0 w-full bg-white rounded-lg border border-neutral-100 p-2 overflow-hidden shrink-0">
-          <IUCurveChart
-            Uc={derived.Uc}
-            Imax={derived.Imax}
-            currentVoltage={voltage}
-            isPE={derived.isPE}
-          />
+        <div className="flex-[1.4] min-h-0 w-full bg-white rounded-lg border border-neutral-100 p-2 overflow-hidden shrink-0 flex flex-col">
+          <div className="flex items-center gap-2 mb-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => setActiveChartTab('iu')}
+              className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
+                activeChartTab === 'iu'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+              }`}
+            >
+              I-U 伏安特性曲线 (饱和电流与遏止电压)
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveChartTab('eknu')}
+              className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
+                activeChartTab === 'eknu'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+              }`}
+            >
+              Ekm-ν 关系直线 (普朗克斜率 h 与截止频率)
+            </button>
+          </div>
+          <div className="flex-1 min-h-0 w-full">
+            {activeChartTab === 'iu' ? (
+              <IUCurveChart
+                Uc={derived.Uc}
+                Imax={derived.Imax}
+                currentVoltage={voltage}
+                isPE={derived.isPE}
+              />
+            ) : (
+              <EkNuCurveChart
+                cutoffFreq={derived.cutoffFreq}
+                currentFreq={frequency}
+                currentEkm={derived.Ekm}
+                W0={derived.W0}
+                isPE={derived.isPE}
+              />
+            )}
+          </div>
         </div>
       )}
     </div>

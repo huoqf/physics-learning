@@ -32,6 +32,7 @@ type BuilderName =
   | 'buildTotalReflectionQuantities'
   | 'buildThinLensQuantities'
   | 'buildModernPhysicsQuantities'
+  | 'buildAlphaScatterQuantities'
   | 'buildPhotoelectricQuantities'
   | 'buildNuclearDecayQuantities'
   | 'buildNuclearHalfLifeQuantities'
@@ -198,6 +199,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-total-reflection':    { loader: () => import('./quantities/totalReflection'), builderName: 'buildTotalReflectionQuantities' },
   'anim-thin-lens':           { loader: () => import('./quantities/thinLens'), builderName: 'buildThinLensQuantities' },
   'anim-bohr-theory':         { loader: () => import('./quantities/modernPhysics'), builderName: 'buildModernPhysicsQuantities' },
+  'anim-alpha-scatter':       { loader: () => import('./quantities/alphaScatter'), builderName: 'buildAlphaScatterQuantities' },
   'anim-photoelectric':       { loader: () => import('./quantities/photoelectric'), builderName: 'buildPhotoelectricQuantities' },
   'anim-nuclear-decay':       { loader: () => import('./quantities/nuclearDecay'),     builderName: 'buildNuclearDecayQuantities' },
   'anim-nuclear-half-life':   { loader: () => import('./quantities/nuclearHalfLife'),  builderName: 'buildNuclearHalfLifeQuantities' },

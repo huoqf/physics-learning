@@ -2,8 +2,7 @@ import { useEffect } from 'react'
 import { useAnimationViewport } from '@/hooks'
 import { useCanvasViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { MODERN_COLORS, EM_COLORS, KINEMATICS_COLORS } from '@/theme/physics'
-import { withAlpha } from '@/theme/physics/colors'
+import { MODERN_COLORS, EM_COLORS, KINEMATICS_COLORS, withAlpha } from '@/theme/physics'
 import type { Photoelectron, PhotonParticle } from '../hooks/usePhotoelectricSimulation'
 
 interface PhototubeCanvasProps {
