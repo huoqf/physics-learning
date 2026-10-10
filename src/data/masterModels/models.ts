@@ -88,7 +88,7 @@ export const masterModels: MasterModel[] = [
     summary: '物块下落碰撞竖直弹簧的非匀变速运动。包含“刚接触”、“受力平衡(速度最大)”、“压缩至最低点(加速度最大)”等经典临界点。',
     knowledgeId: 'mechanics-6-3',
     animId: 'anim-vertical-spring',
-    presetParams: { mass: 1.0, k: 50, h: 2.0 },
+    presetParams: { m: 0.8, k: 50, h: 1.0 },
     quickFormula: {
       title: '最大速度临界位置',
       latex: 'k x_0 = m g \\implies x_0 = \\frac{m g}{k}',
@@ -107,7 +107,7 @@ export const masterModels: MasterModel[] = [
     summary: '小球从光滑弧形槽下滑，弧形槽可自由移动。水平方向不受外力，水平动量守恒；机械能守恒。',
     knowledgeId: 'mechanics-7-4',
     animId: 'anim-curved-slot',
-    presetParams: { ballMass: 0.5, slotMass: 1.5, radius: 2.0 },
+    presetParams: { m_block: 0.5, M_slot: 1.5, R_slot: 2.0 },
     quickFormula: {
       title: '分离速度方程组',
       latex: 'm v_1 - M v_2 = 0, \\quad m g R = \\frac{1}{2} m v_1^2 + \\frac{1}{2} M v_2^2',
@@ -168,7 +168,7 @@ export const masterModels: MasterModel[] = [
     summary: '轻绳/轻杆/绳套在竖直平面内的圆周运动。绳模型最高点绳拉力 T≥0 对应临界速度；杆模型最高点杆支持力/拉力均可。',
     knowledgeId: 'mechanics-5-4',
     animId: 'anim-vertical-circular',
-    presetParams: { R: 1.5, v0: 5.0, modelType: 0 },
+    presetParams: { r: 3, v0: 5.0, trackType: 0 },
     quickFormula: {
       title: '绳/拱桥模型最高点临界速度',
       latex: 'v_{\\text{临界}} = \\sqrt{g R}, \\quad F_n = m \\frac{v^2}{R}',
@@ -207,7 +207,7 @@ export const masterModels: MasterModel[] = [
     knowledgeId: 'mechanics-7-2',
     animId: 'anim-collision',
     secondaryAnimId: 'anim-bullet-block',
-    presetParams: { m1: 1.0, m2: 2.0, v1: 6.0, v2: 0, e: 1.0 },
+    presetParams: { m1: 1.0, m2: 2.0, v1: 6.0, v2: 0, isElastic: 1 },
     secondaryPresetParams: { v0: 400, m: 0.01, M: 1.0, f: 500 },
     quickFormula: {
       title: '完全弹性碰撞末速度公式',
@@ -267,7 +267,7 @@ export const masterModels: MasterModel[] = [
     summary: '正弦交变电流生成、理想变压器变压变流及远距离高压输电损耗分析。',
     knowledgeId: 'electricity-5-2',
     animId: 'anim-transformer',
-    presetParams: { n1: 2, n2: 1, Vin: 220 },
+    presetParams: { n1: 50, n2: 500, U1: 250 },
     quickFormula: {
       title: '理想变压器与输电线功率损耗',
       latex: '\\frac{U_1}{U_2} = \\frac{n_1}{n_2}, \\quad P_{\\text{损}} = I_{\\text{线}}^2 R_{\\text{线}} = \\left(\\frac{P}{U}\\right)^2 R_{\\text{线}}',
@@ -287,8 +287,8 @@ export const masterModels: MasterModel[] = [
     knowledgeId: 'wave-1-3',
     animId: 'anim-wave-interference',
     secondaryAnimId: 'anim-mechanical-wave',
-    presetParams: { lambda: 2, T: 1 },
-    secondaryPresetParams: { A: 2, lambda: 4, T: 2 },
+    presetParams: { lambda: 2 },
+    secondaryPresetParams: { A: 2, f: 0.5, v: 2 },
     quickFormula: {
       title: '波速公式与干涉加强减弱条件',
       latex: 'v = \\frac{\\lambda}{T} = \\lambda f, \\quad \\Delta r = k \\lambda \\implies \\text{加强点}',
@@ -307,7 +307,7 @@ export const masterModels: MasterModel[] = [
     summary: '光在介质界面的折射、全反射及全反射临界角。几何光学核心：画准光路图，找全反射临界点。',
     knowledgeId: 'optics-1-2',
     animId: 'anim-total-reflection',
-    presetParams: { n: 1.5, angle: 30 },
+    presetParams: { n: 1.5, theta1: 30 },
     quickFormula: {
       title: '折射定律与全反射临界角',
       latex: 'n = \\frac{\\sin i}{\\sin r} = \\frac{c}{v}, \\quad \\sin C = \\frac{1}{n}',
@@ -326,7 +326,7 @@ export const masterModels: MasterModel[] = [
     summary: '气体的等温、等容、等压状态变化（玻意耳、查理、盖-吕萨克定律）与热力学第一定律 ΔU = W + Q。',
     knowledgeId: 'thermodynamics-2-1',
     animId: 'anim-gas-laws',
-    presetParams: { P1: 1, V1: 2, T1: 300 },
+    presetParams: { mode: 0, T: 300, V: 2e-3 },
     quickFormula: {
       title: '理想气体状态方程与内能公式',
       latex: '\\frac{P_1 V_1}{T_1} = \\frac{P_2 V_2}{T_2}, \\quad \\Delta U = W + Q',
@@ -338,7 +338,7 @@ export const masterModels: MasterModel[] = [
     relatedProblemIds: ['prob-2023-shandong-13', 'prob-thermo-cylinder-piston'],
   },
   {
-    id: 'model-photoelectric-decay',
+    id: 'model-photoelectric',
     title: '18. 光电效应与双图像分析模型',
     category: 'modern',
     frequencyBadge: '高考5年10考 / 近代物理',
@@ -347,7 +347,7 @@ export const masterModels: MasterModel[] = [
     animId: 'anim-photoelectric',
     secondaryAnimId: 'anim-nuclear-decay',
     presetParams: { mode: 1, frequency: 6.5, voltage: 0 },
-    secondaryPresetParams: { decayType: 0, halfLife: 5 },
+    secondaryPresetParams: { mode: 2, decayType: 0, bField: 1.5 },
     quickFormula: {
       title: '光电效应方程与双图像规律',
       latex: 'E_{km} = h \\nu - W_0 = e U_c, \\quad \\nu_0 = \\frac{W_0}{h}',
@@ -379,6 +379,29 @@ export const masterModels: MasterModel[] = [
       '光子激发：光子能量必须“严丝合缝”等于两能级之差；实物电子碰撞：只需动能大于等于能级差即可。',
       '审题区分：“一群处于激发态 n 的氢原子”最多辐射 C(n,2) 种光子；“单个处于激发态 n 的氢原子”最多辐射 (n-1) 种光子。',
     ],
-    relatedProblemIds: ['prob-2024-quanguo-bohr-transition', 'prob-2023-quanguo-alpha-scatter'],
+    relatedProblemIds: ['prob-2024-quanguo-bohr-transition'],
+  },
+  {
+    id: 'model-alpha-scatter',
+    title: '20. α 粒子散射与原子核式结构模型',
+    category: 'modern',
+    frequencyBadge: '高考5年6考 / 库仑散射与核式结构',
+    summary: '卢瑟福 α 粒子金箔散射实验现象、库仑斥力作用下的双曲线偏转轨迹，以及由能量守恒求最近接近距离 r_min 的方法。',
+    knowledgeId: 'modern-1-3',
+    animId: 'anim-alpha-scatter',
+    secondaryAnimId: 'anim-bohr-theory',
+    presetParams: { modelType: 1, impactParameter: 0 },
+    secondaryPresetParams: { mode: 0, targetLevel: 2 },
+    quickFormula: {
+      title: '库仑斥力与最近接近距离',
+      latex: 'F = k\\frac{(2e)(79e)}{r^2}, \\quad E_{k0} = k\\frac{2\\times 79 e^2}{r_{\\min}} \\Rightarrow r_{\\min} = \\frac{158 k e^2}{E_{k0}}',
+      explanation: '对心入射时初动能全部转化为库仑电势能，可求 α 粒子能接近金核的最小距离；碰撞参数 b 越小，库仑斥力越大，偏转角越大。',
+    },
+    examTips: [
+      '现象记忆：绝大多数沿原方向直穿；少数发生较大偏转；极少数（约 1/8000）偏角大于 90° 甚至反弹。',
+      '接近过程中库仑斥力增大 → 加速度增大、动能减小、电势能增大；最近距离处沿径向速度减为零。',
+      '核式结构结论：原子核体积极小，集中了原子的几乎全部质量与全部正电荷，从而否定了汤姆孙枣糕模型。',
+    ],
+    relatedProblemIds: ['prob-2023-quanguo-alpha-scatter'],
   },
 ]

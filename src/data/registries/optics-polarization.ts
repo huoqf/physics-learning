@@ -6,7 +6,10 @@ export const opticsPolarizationAnimations = defineAnimations({
     title: '光的偏振',
     knowledgeId: 'wave-optics-1-3',
     Component: lazy(() => import('@/features/optics/polarization/PolarizationAnimation')),
-    controlsMode: 'param' as const,
+    // 偏振页面用 usePolarizationPhysics 的相位项 (k·x − ωt) 呈现光波振动
+    // 的连续流动（3D 投影正弦波），故用 loop：永续循环、无倒计时。
+    // 若改成 param，time 恒为 0，光波振动会被定格在初始相位。
+    controlsMode: 'loop' as const,
     defaultParams: {
       mode: 0,
       polarizerAngle: 45,

@@ -59,7 +59,7 @@
 | **阴极板 (K)** | `MODERN_COLORS.cathodePlate` (`#52525B`) | 深灰金属质感极板，受光照释放光电子 |
 | **阳极板 (A)** | `MODERN_COLORS.anodePlate` (`#A1A1AA`) | 浅灰金属质感极板，收集光电子 |
 | **金原子核 (Au)** | `CANVAS_COLORS.referencePoint` (`#F59E0B`) | 亮金黄高密度微核，带正电辐射辉光 |
-| **α 粒子 (He²⁺)** | `PHYSICS_COLORS.photonInfrared` (`#F97316`) | 双质子双中子紧密微核团，带双正电 |
+| **α 粒子 (He²⁺)** | `PHYSICS_COLORS.photonInfrared` (`#B91C1C`) | 双质子双中子紧密微核团，带双正电 |
 
 > ❌ **严禁违规导入**：禁止 `import { withAlpha } from '@/theme/physics/colors'`，必须统一从 `@/theme/physics` 导入。
 

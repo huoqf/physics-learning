@@ -1,4 +1,5 @@
 import type { PhysicsPanelData } from './types'
+import { SODIUM_WORK_FUNCTION } from '@/physics/photoelectric'
 
 export function buildModernPhysicsQuantities(
   animId: string,
@@ -233,7 +234,7 @@ export function buildModernPhysicsQuantities(
   if (mode === 2) {
     // 阶段三：高考综合应用（跃迁辐射光子激发光电效应）
     const radiationPhotonIndex = params.radiationPhotonIndex ?? 1
-    const workFunction = params.workFunction ?? 2.29
+    const workFunction = params.workFunction ?? SODIUM_WORK_FUNCTION
     const stoppingVoltage = params.stoppingVoltage ?? 0
 
     const photonEnergies = [0.66, 2.55, 12.75, 1.89, 12.09, 10.20]

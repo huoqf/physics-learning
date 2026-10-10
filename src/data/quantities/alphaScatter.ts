@@ -1,4 +1,17 @@
 import type { PhysicsPanelData } from './types'
+import {
+  SCATTER_SCALE_PX,
+  classifyScatterAngle,
+  scatterAngleDeg,
+  closestApproachPx,
+} from '@/physics/alphaScatter'
+
+/** 散射行为描述文本（与 {@link classifyScatterAngle} 的分类一一对应） */
+const SCATTER_TEXT: Record<string, string> = {
+  straight: '沿原方向几乎直穿（偏转角极小）',
+  deflected: '发生明显偏转（未反弹）',
+  rebound: '大角度反弹（θ ≥ 90°，极少数）',
+}
 
 export function buildAlphaScatterQuantities(
   animId: string,
@@ -10,28 +23,21 @@ export function buildAlphaScatterQuantities(
   const modelType = params.modelType ?? 1
   const impactParameter = params.impactParameter ?? 15
 
-  let scatterResult = ''
-  let expectedAngle = '≈ 0°'
-  if (modelType === 0) {
-    scatterResult = '几乎全部直穿（无明显偏转）'
-    expectedAngle = '< 1°'
-  } else {
-    if (impactParameter < 6) {
-      scatterResult = '极少数粒子大角度反弹 (θ ≥ 90°)'
-      expectedAngle = '120° ~ 180°'
-    } else if (impactParameter < 15) {
-      scatterResult = '少数粒子发生明显大角度偏转'
-      expectedAngle = '15° ~ 60°'
-    } else {
-      scatterResult = '绝大多数粒子沿原方向或微小偏角穿过'
-      expectedAngle = '< 5°'
-    }
-  }
+  // 散射角与最近接近距离统一取自物理层解析解，
+  // 与中屏动画的数值积分结果一一对应（误差 < 1°），两屏不会互相矛盾。
+  const isRutherford = modelType !== 0
+  const angleDeg = isRutherford ? scatterAngleDeg(impactParameter) : 0
+  const rMinPx = closestApproachPx(impactParameter)
+  const scatterClass = classifyScatterAngle(angleDeg)
+
+  const scatterResult = isRutherford
+    ? SCATTER_TEXT[scatterClass]
+    : '几乎全部直穿（枣糕模型正电荷弥散，斥力可忽略）'
 
   const quantities: PhysicsPanelData['quantities'] = [
     {
       label: '原子模型假设',
-      value: modelType === 0 ? '汤姆孙“枣糕模型”' : '卢瑟福“核式结构模型”',
+      value: isRutherford ? '卢瑟福“核式结构模型”' : '汤姆孙“枣糕模型”',
       unit: '',
     },
     {
@@ -39,19 +45,25 @@ export function buildAlphaScatterQuantities(
       symbol: 'b',
       value: impactParameter.toString(),
       unit: 'px',
-      highlight: impactParameter < 6 ? 'extreme' : undefined,
+      highlight: isRutherford && impactParameter < SCATTER_SCALE_PX ? 'extreme' : undefined,
     },
     {
       label: '预计偏转角',
       symbol: 'θ',
-      value: expectedAngle,
-      unit: '',
-      highlight: modelType === 1 && impactParameter < 6 ? 'negative' : 'positive',
+      value: isRutherford ? angleDeg.toFixed(1) : '0.0',
+      unit: '°',
+      highlight: isRutherford ? (scatterClass === 'straight' ? 'positive' : 'negative') : 'positive',
     },
     {
-      label: '散射行为特征',
+      label: '散射行为',
       value: scatterResult,
       unit: '',
+    },
+    {
+      label: '最近接近距离',
+      symbol: 'r_min',
+      value: rMinPx.toFixed(1),
+      unit: 'px',
     },
   ]
 
@@ -73,6 +85,7 @@ export function buildAlphaScatterQuantities(
   const gaokaoPoints: PhysicsPanelData['gaokaoPoints'] = [
     { text: '卢瑟福 α 粒子散射实验彻底否定了汤姆孙枣糕模型，证实了原子核式结构。', importance: 'gaokao' },
     { text: '实验现象：绝大多数方向几乎不变；少数发生较大偏转；极少数（约1/8000）偏角大于 90° 甚至反弹。', importance: 'gaokao' },
+    { text: '碰撞参数 b 越小，α 粒子越接近金核，受到的库仑斥力越大，偏转角也越大。', importance: 'core' },
     { text: '核式模型结论：原子中心有体积极小、集中几乎全部质量和全部正电荷的原子核，核外电子绕核高速旋转。', importance: 'core' },
     { text: '经典物理困难：绕核加速运动电子辐射电磁波导致轨道塌缩，且无法解释分立线状光谱（引出玻尔理论）。', importance: 'core' },
   ]

@@ -65,6 +65,25 @@ export interface NuclearDecayPhysicsResult {
   decayData?: MagneticDecayModeData
 }
 
+/**
+ * 两种典型衰变的粒子电荷量绝对值（单位 e）—— 静止母核磁场衰变模型的唯一真源。
+ *
+ * 动量守恒使两种产物动量大小相同（p₁ = p₂），故由 R = p/(|q|B) 得
+ * R ∝ 1/|q|，半径比恰为电荷量之反比。中屏 R—|q| 关系图与右屏半径比文案
+ * 均由此常量派生，避免两处数值各自漂移。
+ */
+export const DECAY_CHARGES = {
+  /** α 衰变：⁴₂He 与 ²³⁴₉₀Th */
+  alpha: { particle: 2, daughter: 90 },
+  /** β 衰变：⁰₋₁e 与 ¹⁴₇N */
+  beta: { particle: 1, daughter: 7 },
+} as const
+
+/** 生成右屏半径比文案：R_微粒 : R_新核 = |q_新核| : |q_微粒| = k : 1 */
+function formatRadiusRatio(c: { particle: number; daughter: number }): string {
+  return `${c.daughter} : ${c.particle} = ${c.daughter / c.particle} : 1`
+}
+
 // 同位素物理参数
 const NUCLIDES_DATA = [
   { Z: 1, N: 0, A: 1 }, // H-1
@@ -381,7 +400,7 @@ export function useNuclearDecayPhysics(params: UseNuclearDecayPhysicsParams): Nu
         particleName: 'α 粒子 (⁴₂He)',
         parentName: '铀核 (²³⁸₉₂U)',
         reactionLatex: '{}^{238}_{92}\\text{U} \\rightarrow {}^{234}_{90}\\text{Th} + {}^4_2\\text{He}',
-        radiusRatio: 'R_α : R_Th = q_Th : q_α = 90 : 2 = 45 : 1',
+        radiusRatio: `R_α : R_Th = q_Th : q_α = ${formatRadiusRatio(DECAY_CHARGES.alpha)}`,
         energyRatio: 'E_kα : E_kTh = m_Th : m_α = 234 : 4 = 58.5 : 1',
         isTangentialOuter: true,
         hasDecayed,
@@ -434,7 +453,7 @@ export function useNuclearDecayPhysics(params: UseNuclearDecayPhysicsParams): Nu
         particleName: 'β 粒子 (⁰₋₁e)',
         parentName: '碳核 (¹⁴₆C)',
         reactionLatex: '{}^{14}_6\\text{C} \\rightarrow {}^{14}_7\\text{N} + {}^0_{-1}\\text{e}',
-        radiusRatio: 'R_β : R_N = q_N : |q_β| = 7 : 1',
+        radiusRatio: `R_β : R_N = q_N : |q_β| = ${DECAY_CHARGES.beta.daughter / DECAY_CHARGES.beta.particle} : 1`,
         energyRatio: 'E_kβ : E_kN = m_N : m_e \\approx 25000 : 1',
         isTangentialOuter: false,
         hasDecayed,

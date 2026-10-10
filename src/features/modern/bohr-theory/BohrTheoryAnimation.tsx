@@ -1,4 +1,5 @@
 import { useAnimationStore } from '@/stores'
+import { SODIUM_WORK_FUNCTION } from '@/physics/photoelectric'
 import BohrOrbits from './components/BohrOrbits'
 import ExcitationSim from './components/ExcitationSim'
 import PhotoelectricSim from './components/PhotoelectricSim'
@@ -39,7 +40,7 @@ export default function BohrTheoryAnimation() {
           isPlaying={isPlaying}
           time={time}
           radiationPhotonIndex={params.radiationPhotonIndex ?? 1}
-          workFunction={params.workFunction ?? 2.29}
+          workFunction={params.workFunction ?? SODIUM_WORK_FUNCTION}
           stoppingVoltage={params.stoppingVoltage ?? 0.0}
         />
       )

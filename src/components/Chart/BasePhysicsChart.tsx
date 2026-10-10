@@ -205,17 +205,65 @@ export function BasePhysicsChart({
   // ── 动态 margin：确保窄屏下标签不重叠、不截断 ──
   const axisFontSize = font(isMini ? FONT.small : FONT.axis);
   const rawLeft = px(isMini ? CHART_LAYOUT.miniMarginLeft : CHART_LAYOUT.marginLeft);
+  const rawRight = px(isMini ? CHART_LAYOUT.miniMarginRight : CHART_LAYOUT.marginRight);
   const rawBottom = px(marginBottomVal);
-  // 左侧：Y 轴刻度文字(textAnchor="end") + Y 轴旋转标签所需空间
-  const autoLeft = Math.max(rawLeft, axisFontSize * 3.2 + px(5) + 4 + font(isMini ? 12 : 18));
+
+  const xRange = Math.max(Number.EPSILON, xDomain[1] - xDomain[0]);
+  const yRange = Math.max(Number.EPSILON, yDomain[1] - yDomain[0]);
+
+  /** 刻度文字右端相对轴线的内缩量（与绘制刻度文字时的偏移保持一致） */
+  const tickLabelInset = px(isMini ? 4 : 5);
+  /** 刻度文字与旋转轴标签之间的最小间隙 */
+  const axisLabelGap = 8;
+  /** 旋转 90° 后的轴标签横向占位（≈ 文字行高，放大 1.4 倍留安全余量） */
+  const axisLabelThickness = axisFontSize * 1.4;
+
+  /**
+   * 估算一串刻度文字的最大像素宽度（沿用 effectiveGrid 中 X 轴的 0.6em/字符 估算）。
+   *
+   * 【为什么必须实测刻度文字宽度】
+   * Y 轴刻度文字是 `textAnchor="end"`、自轴线向左延伸的，而旋转的 Y 轴标签
+   * 原先被固定在 `margin.left - font(18)`，正好落在刻度文字所占的横向区间内。
+   * 由于 4 段分格必然在绘图区竖直正中产生一条刻度，**任何**图表的中部刻度
+   * 都会与该标签重叠。原先 autoLeft 只按「3.2 字符」预留宽度，只要刻度文字
+   * 超过 4 字符（如 "-0.500"、"15.0"）就会被压字。
+   *
+   * 估算取「基础分格数」（最密的一档）：分格越密、小数位越多、文字越长，
+   * 因此它是安全上界——effectiveGrid 只会把分格调稀，文字不会更长。
+   */
+  const measureTickLabels = (
+    domain: [number, number],
+    fmt: (v: number) => string,
+    divisions: number,
+  ): number => {
+    let maxChars = 0;
+    for (let i = 0; i <= divisions; i++) {
+      const val = domain[0] + ((domain[1] - domain[0]) * i) / divisions;
+      maxChars = Math.max(maxChars, fmt(val).length);
+    }
+    return maxChars * axisFontSize * 0.6;
+  };
+
+  const baseGridY = gridCount?.y ?? (isMini ? CHART_LAYOUT.miniGridCountY : CHART_LAYOUT.gridCountY);
+  const maxYLabelW = measureTickLabels(yDomain, formatY ?? smartFormat, baseGridY);
+  const maxY2LabelW = yDomain2 ? measureTickLabels(yDomain2, formatY2 ?? smartFormat, baseGridY) : 0;
+
+  // 左侧：刻度线 + 最宽 Y 刻度文字 + 间隙 + 旋转 Y 轴标签
+  const autoLeft = Math.max(rawLeft, tickLabelInset + maxYLabelW + axisLabelGap + axisLabelThickness);
+  // 右侧：无第二 Y 轴时用默认值；有第二 Y 轴时还需容纳右轴刻度文字（及右轴标签）
+  const autoRight = yDomain2
+    ? Math.max(
+        rawRight,
+        autoLeft, // 保留原有对称留白行为
+        tickLabelInset + maxY2LabelW + (yLabel2 ? axisLabelGap + axisLabelThickness : 0),
+      )
+    : rawRight;
   // 底部：X 轴刻度文字高度 + 间距 + X 轴标签高度 + 底部留白（防止刻度与标签重叠）
   const autoBottom = Math.max(rawBottom, 2 * axisFontSize + px(8));
 
   const margin = {
     left: autoLeft,
-    right: yDomain2
-      ? Math.max(autoLeft, px(isMini ? CHART_LAYOUT.miniMarginLeft : CHART_LAYOUT.marginLeft))
-      : px(isMini ? CHART_LAYOUT.miniMarginRight : CHART_LAYOUT.marginRight),
+    right: autoRight,
     top: px(marginTopVal),
     bottom: autoBottom,
   };
@@ -223,11 +271,17 @@ export function BasePhysicsChart({
   const plotW = Math.max(10, width - margin.left - margin.right);
   const plotH = Math.max(10, height - margin.top - margin.bottom);
 
-  const xRange = Math.max(Number.EPSILON, xDomain[1] - xDomain[0]);
-  const yRange = Math.max(Number.EPSILON, yDomain[1] - yDomain[0]);
-
   const xScale = plotW / xRange;
   const yScale = plotH / yRange;
+
+  /** 旋转 Y 轴标签中心横坐标：始终贴在刻度文字外侧，保证永不压字 */
+  const yLabelX = Math.max(
+    axisLabelThickness / 2,
+    margin.left - tickLabelInset - maxYLabelW - axisLabelGap - axisLabelThickness / 2,
+  );
+  /** 第二（右侧）Y 轴标签中心横坐标，同理贴在右轴刻度文字外侧 */
+  const yLabel2X =
+    margin.left + plotW + tickLabelInset + maxY2LabelW + axisLabelGap + axisLabelThickness / 2;
 
   const toSvgX = useCallback(
     (physX: number) => margin.left + (physX - xDomain[0]) * xScale,
@@ -450,15 +504,15 @@ export function BasePhysicsChart({
         {xLabel}
       </text>
 
-      {/* Y 轴标签 */}
+      {/* Y 轴标签（贴在最宽刻度文字外侧，避免压字） */}
       <text
-        x={margin.left - font(isMini ? 12 : 18)}
+        x={yLabelX}
         y={margin.top + plotH / 2}
         fontSize={font(isMini ? FONT.small : FONT.axis)}
         fill={CHART_COLORS.labelText}
         textAnchor='middle'
         fontWeight='bold'
-        transform={`rotate(-90, ${margin.left - font(isMini ? 12 : 18)}, ${margin.top + plotH / 2})`}
+        transform={`rotate(-90, ${yLabelX}, ${margin.top + plotH / 2})`}
       >
         {yLabel}
       </text>
@@ -507,13 +561,13 @@ export function BasePhysicsChart({
       {/* 第二 Y 轴标签 */}
       {yDomain2 && yLabel2 && (
         <text
-          x={margin.left + plotW + font(isMini ? 12 : 18)}
+          x={yLabel2X}
           y={margin.top + plotH / 2}
           fontSize={font(isMini ? FONT.small : FONT.axis)}
           fill={CHART_COLORS.labelText}
           textAnchor='middle'
           fontWeight='bold'
-          transform={`rotate(90, ${margin.left + plotW + font(isMini ? 12 : 18)}, ${margin.top + plotH / 2})`}
+          transform={`rotate(90, ${yLabel2X}, ${margin.top + plotH / 2})`}
         >
           {yLabel2}
         </text>

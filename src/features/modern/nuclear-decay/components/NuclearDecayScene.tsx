@@ -526,6 +526,21 @@ export const NuclearDecayScene: React.FC<NuclearDecaySceneProps> = ({
           匀强磁场 B (垂直纸面向里)
         </text>
 
+        {/*
+          比例口径声明：出于可辨识性，画面上两圆半径做了示意放大处理
+          （α: ×0.35、β: ×0.4），并非真实 R_微粒 : R_新核 = 45 : 1 / 7 : 1。
+          若不声明，学生会从画面反推出错误比例；真实定量关系在上方 R—|q| 曲线图中给出。
+          位置放在磁场标注下方（左上角），α/β 两分支该处均为空白，且远离圆轨迹。
+        */}
+        <text
+          x={origin.px - 375}
+          y={origin.py - 132}
+          fill={CANVAS_COLORS.textMuted}
+          fontSize={font(10)}
+        >
+          注：圆半径为示意放大，真实 R ∝ 1/|q| 详见上方曲线图
+        </text>
+
         {/* 水平公切线 */}
         <line
           x1={origin.px - 260}

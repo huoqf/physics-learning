@@ -10,8 +10,28 @@ import { SPEED_OF_LIGHT } from './constants'
 /** 普朗克常数 h (eV·s) */
 export const PLANCK_CONSTANT_EV = 4.135667696e-15
 
-/** 铯 (Cs) 逸出功 W₀ (eV) — 默认阴极板材料 */
-export const CESIUM_WORK_FUNCTION = 2.14
+/**
+ * 光电效应常用金属逸出功表 (eV)。
+ *
+ * 这是「左屏金属预设 marks / 右屏物理量 / 中屏 Ekm-ν 多金属对比图」三者共用的
+ * 唯一真源——任何一处需要金属逸出功都必须从此表派生，禁止再各自写死数值。
+ * 取值与《MODERN_RULES》§五.1 规定的高考常用金属一致。
+ */
+export const PHOTOELECTRIC_METALS = [
+  { name: '铯', symbol: 'Cs', workFunction: 1.9 },
+  { name: '钠', symbol: 'Na', workFunction: 2.29 },
+  { name: '锌', symbol: 'Zn', workFunction: 3.3 },
+  { name: '钨', symbol: 'W', workFunction: 4.5 },
+] as const
+
+/** 铯 (Cs) 逸出功 W₀ (eV) */
+export const CESIUM_WORK_FUNCTION = PHOTOELECTRIC_METALS[0].workFunction
+
+/** 钠 (Na) 逸出功 W₀ (eV) */
+export const SODIUM_WORK_FUNCTION = PHOTOELECTRIC_METALS[1].workFunction
+
+/** 默认阴极板材料（铯）逸出功 W₀ (eV) */
+export const DEFAULT_WORK_FUNCTION = CESIUM_WORK_FUNCTION
 
 /**
  * 计算截止频率 ν₀
@@ -146,6 +166,51 @@ export function frequencyToWavelength(nu: number): number | null {
   const lambdaNm = (SPEED_OF_LIGHT / nuHz) * 1e9
   if (lambdaNm < 380 || lambdaNm > 760) return null
   return lambdaNm
+}
+
+/**
+ * 生成 Ekm-ν 图线（爱因斯坦光电效应方程的图像化）。
+ *
+ * 物理分界：ν < ν₀ 时根本不产生光电子，Ekm 无定义；教科书中该段画成
+ * 「延长线」虚线，其与纵轴的交点即反向截距 −W₀。因此本函数把图线拆成
+ * 两段返回，供图表分别以实线 / 虚线绘制——严禁把 ν < ν₀ 段压成 Ekm = 0
+ * 的水平线（那会误导为"有光电子但动能为零"）。
+ *
+ * 两段共用同一条直线 Ekm = hν − W₀，故所有金属的图线斜率恒为 h、彼此平行，
+ * 只是沿 ν 轴平移。
+ *
+ * @param W0 逸出功 (eV)
+ * @param nuMax 频率上限 (×10¹⁴ Hz)
+ * @param steps 采样段数
+ * @param nuMin 频率下限 (×10¹⁴ Hz)，默认 0（即从纵轴出发，便于读出 −W₀）
+ * @returns solid: ν ≥ ν₀ 的实线段；dashed: ν < ν₀ 的延长虚线段（含精确交点 (ν₀, 0)）
+ */
+export function generateEkmNuCurve(
+  W0: number,
+  nuMax: number,
+  steps = 144,
+  nuMin = 0,
+): { solid: { x: number; y: number }[]; dashed: { x: number; y: number }[] } {
+  const nu0 = calculateCutoffFrequency(W0)
+  const step = (nuMax - nuMin) / steps
+  const solid: { x: number; y: number }[] = []
+  const dashed: { x: number; y: number }[] = []
+
+  for (let i = 0; i <= steps; i++) {
+    const nu = nuMin + i * step
+    const ek = frequencyToPhotonEnergy(nu) - W0
+    if (nu > nu0 + 1e-9) solid.push({ x: nu, y: ek })
+    else dashed.push({ x: nu, y: ek })
+  }
+
+  // 补上精确交点 (ν₀, 0)：否则采样步长会把横轴交点切掉一个碎片，
+  // 导致实线起点悬空、虚线延长线够不到横轴。
+  if (nu0 <= nuMax) {
+    dashed.push({ x: nu0, y: 0 })
+    solid.unshift({ x: nu0, y: 0 })
+  }
+
+  return { solid, dashed }
 }
 
 /**

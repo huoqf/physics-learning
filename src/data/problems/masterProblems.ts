@@ -164,7 +164,7 @@ export const masterModelProblems: Problem[] = [
     tags: ['高考真题', '竖直弹簧', '速度最大临界', '机械能守恒'],
     targetAnimation: {
       animId: 'anim-vertical-spring',
-      presetParams: { mass: 1.0, k: 50, h: 2.0 },
+      presetParams: { m: 0.8, k: 50, h: 1.0 },
       presetDescription: '载入 2022 湖南高考竖直弹簧真题参数',
     },
     steps: [
@@ -210,7 +210,7 @@ export const masterModelProblems: Problem[] = [
     tags: ['高考真题', '弧形槽', '水平动量守恒', '人船模型位移'],
     targetAnimation: {
       animId: 'anim-curved-slot',
-      presetParams: { ballMass: 0.5, slotMass: 1.5, radius: 2.0 },
+      presetParams: { m_block: 0.5, M_slot: 1.5, R_slot: 2.0 },
       presetDescription: '载入 2024 广东高考弧形槽真题参数',
     },
     steps: [
@@ -348,7 +348,7 @@ export const masterModelProblems: Problem[] = [
     tags: ['高考真题', '竖直圆周', '绳模型临界', '向心力'],
     targetAnimation: {
       animId: 'anim-vertical-circular',
-      presetParams: { R: 0.5, v0: 5.0, modelType: 0 },
+      presetParams: { r: 3, v0: 5.0, trackType: 0 },
       presetDescription: '载入 2023 浙江高考竖直圆周真题参数',
     },
     steps: [
@@ -440,7 +440,7 @@ export const masterModelProblems: Problem[] = [
     tags: ['高考真题', '弹性碰撞', '动量守恒', '能量损失'],
     targetAnimation: {
       animId: 'anim-collision',
-      presetParams: { m1: 1.0, m2: 2.0, v1: 6.0, v2: 0, e: 1.0 },
+      presetParams: { m1: 1.0, m2: 2.0, v1: 6.0, v2: 0, isElastic: 1 },
       presetDescription: '载入 2022 全国甲卷小球弹性碰撞真题参数',
     },
     steps: [
@@ -578,7 +578,7 @@ export const masterModelProblems: Problem[] = [
     tags: ['高考真题', '理想变压器', '远距离输电', '功率损耗'],
     targetAnimation: {
       animId: 'anim-transformer',
-      presetParams: { n1: 2, n2: 1, Vin: 220 },
+      presetParams: { n1: 50, n2: 500, U1: 250 },
       presetDescription: '载入 2024 广东高考变压器远距离输电真题参数',
     },
     steps: [
@@ -624,7 +624,7 @@ export const masterModelProblems: Problem[] = [
     tags: ['高考真题', '波的干涉', '路程差', '加强点减弱点'],
     targetAnimation: {
       animId: 'anim-wave-interference',
-      presetParams: { lambda: 2, T: 1 },
+      presetParams: { lambda: 2 },
       presetDescription: '载入 2023 湖南高考波干涉真题参数',
     },
     steps: [
@@ -665,7 +665,7 @@ export const masterModelProblems: Problem[] = [
     difficulty: 3, masterModelId: 'model-optics-refraction',
     knowledgeIds: ['optics-1-2', 'optics-1-1'],
     tags: ['高考真题', '全反射', '临界角', '折射率'],
-    targetAnimation: { animId: 'anim-total-reflection', presetParams: { n: 1.414, angle: 30 }, presetDescription: '载入 2024 湖北高考全反射真题参数' },
+    targetAnimation: { animId: 'anim-total-reflection', presetParams: { n: 1.414, theta1: 30 }, presetDescription: '载入 2024 湖北高考全反射真题参数' },
     steps: [
       {
         id: 'step-1',
@@ -769,9 +769,9 @@ export const masterModelProblems: Problem[] = [
       '在光电效应实验中，用频率为 $\\nu_1 = 8.0 \\times 10^{14}\\,\\text{Hz}$ 的单色光照射某种金属表面，测得遏止电压为 $U_{c1} = 1.1\\,\\text{V}$。已知普朗克常量 $h = 6.63 \\times 10^{-34}\\,\\text{J}\\cdot\\text{s}$，电子电荷量 $e = 1.6 \\times 10^{-19}\\,\\text{C}$。\n试求：\n(1) 金属逸出的光电子最大初动能 $E_{km1}$（以 $\\text{eV}$ 和 $\\text{J}$ 为单位）；\n(2) 该金属的逸出功 $W_0$；\n(3) 该金属发生光电效应的极限频率 $\\nu_0$。',
     difficulty: 2,
     knowledgeIds: ['modern-1-1', 'modern-1-2'],
-    masterModelId: 'model-photoelectric-decay',
+    masterModelId: 'model-photoelectric',
     tags: ['高考真题', '光电效应', '最大初动能', '逸出功', '遏止电压'],
-    targetAnimation: { animId: 'anim-photoelectric', presetParams: { W0: 2.2, nu: 3.5 }, presetDescription: '载入 2024 浙江高考光电效应真题参数' },
+    targetAnimation: { animId: 'anim-photoelectric', presetParams: { mode: 1, frequency: 8.0, workFunction: 2.2, voltage: -1.1 }, presetDescription: '载入 2024 浙江高考光电效应真题参数（ν=8.0×10¹⁴ Hz、U_c=1.1 V）' },
     steps: [
       {
         id: 'step-1', description: '遏止电压与最大初动能关系 Ekm = e * Uc', scorePoints: 3,
@@ -798,6 +798,8 @@ export const masterModelProblems: Problem[] = [
   {
     id: 'prob-2024-quanguo-bohr-transition',
     year: 2024, province: '全国新课标卷', source: '2024年高考全国新课标卷物理选择题',
+    questionType: 'calculation',
+    verified: false,
     title: '玻尔原子能级跃迁与自发辐射光子种数分析',
     content:
       '氢原子的能级公式为 $E_n = \\frac{E_1}{n^2}$，其中基态能量 $E_1 = -13.6\\,\\text{eV}$。现有大量处于 $n = 4$ 激发态的氢原子向低能级跃迁。\n试分析：\n(1) 这些氢原子跃迁时最多可辐射出几种不同频率的光子？\n(2) 辐射出的光子中，能量最大和波长最长的光子分别对应哪两个能级之间的跃迁？其能量分别为多少 $\\text{eV}$？\n(3) 若用这群氢原子跃迁发出的光照射逸出功 $W_0 = 2.29\\,\\text{eV}$ 的金属钠板，能产生光电子的光子有几种？',
@@ -832,6 +834,8 @@ export const masterModelProblems: Problem[] = [
   {
     id: 'prob-2023-quanguo-alpha-scatter',
     year: 2023, province: '全国甲卷', source: '2023年高考全国甲卷物理选择题',
+    questionType: 'calculation',
+    verified: false,
     title: 'α 粒子金箔散射实验规律与库仑散射势能',
     content:
       '在卢瑟福 α 粒子散射实验中，α 粒子（电荷量 $+2e$）从很远处以初速度 $v_0$ 射向静止的金原子核（电荷量 $+79e$）。\n试判断下列物理过程：\n(1) α 粒子在向金核运动直至最近距离的过程中，其加速度、电势能、动能如何变化？\n(2) 若某一 α 粒子对心正对金核入射，已知初动能为 $E_{k0}$，静电力常量为 $k$，试求该 α 粒子能接近金核的最小距离 $r_{\\min}$。\n(3) 简述卢瑟福提出原子核式结构模型的核心实验证据。',

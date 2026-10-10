@@ -5,6 +5,7 @@ import {
   calculateMaxKineticEnergy,
   calculateStoppingVoltage,
   intensityToSaturationCurrent,
+  DEFAULT_WORK_FUNCTION,
 } from '@/physics/photoelectric'
 
 export interface Photoelectron {
@@ -31,16 +32,13 @@ interface SimulationParams {
   voltage: number       // V (负值 = 反向)
   mode: number          // 0=初学, 1=通关
   showPhotonModel: number
-  workFunction?: number // eV (default 2.14 Cs)
+  workFunction?: number // eV (缺省取 DEFAULT_WORK_FUNCTION，铯)
 }
 
 interface SimulationState {
   photoelectrons: Photoelectron[]
   photonParticles: PhotonParticle[]
 }
-
-/** 铯逸出功 (eV) */
-const DEFAULT_W0 = 2.14
 
 /** 极板区域像素范围（相对于画布中心） */
 const PLATE_GAP = 100    // K-A 极板间距 (px)
@@ -57,7 +55,7 @@ export function usePhotoelectricSimulation(
   canvasWidth: number,
   canvasHeight: number,
 ) {
-  const W0 = params.workFunction ?? DEFAULT_W0
+  const W0 = params.workFunction ?? DEFAULT_WORK_FUNCTION
 
   // 派生物理量
   const hv = frequencyToPhotonEnergy(params.frequency)

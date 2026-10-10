@@ -18,21 +18,39 @@ describe('Bohr Theory and Modern Physics Quantities Builder', () => {
       const res = buildAlphaScatterQuantities(scatterId, params, 0)
       expect(res).not.toBeNull()
       expect(res?.quantities[0].value).toContain('汤姆孙')
+      // 枣糕模型正电荷弥散，不产生偏转
+      expect(res?.quantities[2].value).toBe('0.0')
       expect(res?.quantities[3].value).toContain('几乎全部直穿')
     })
 
-    it('should show Rutherford model scattering behavior correctly based on b', () => {
-      // 靠近金核的散射 (b 极小)
-      const resClose = buildAlphaScatterQuantities(scatterId, { modelType: 1, impactParameter: 4 }, 0)
-      expect(resClose?.quantities[3].value).toContain('极少数粒子大角度反弹')
+    it('should derive scattering angle from the same analytic law as the animation', () => {
+      const row = (b: number) =>
+        buildAlphaScatterQuantities(scatterId, { modelType: 1, impactParameter: b }, 0)!
 
-      // 中等距离散射
-      const resMid = buildAlphaScatterQuantities(scatterId, { modelType: 1, impactParameter: 12 }, 0)
-      expect(resMid?.quantities[3].value).toContain('少数粒子')
+      // b = 库仑作用尺度 a = 4px 时，散射角恰为 90°（双曲线几何分界）
+      expect(parseFloat(row(4).quantities[2].value)).toBeCloseTo(90, 1)
 
-      // 遥远距离直穿
-      const resFar = buildAlphaScatterQuantities(scatterId, { modelType: 1, impactParameter: 30 }, 0)
-      expect(resFar?.quantities[3].value).toContain('绝大多数粒子')
+      // 散射角随碰撞参数单调递减
+      const angle = (b: number) => parseFloat(row(b).quantities[2].value)
+      expect(angle(1)).toBeGreaterThan(angle(8))
+      expect(angle(8)).toBeGreaterThan(angle(20))
+
+      // 最近接近距离满足 r_min = a + √(a² + b²)
+      expect(parseFloat(row(0).quantities[4].value)).toBeCloseTo(8, 1)
+    })
+
+    it('should classify scattering behavior consistently with the animation', () => {
+      // 近距 → 大角度反弹
+      const close = buildAlphaScatterQuantities(scatterId, { modelType: 1, impactParameter: 1 }, 0)
+      expect(close?.quantities[3].value).toContain('大角度反弹')
+
+      // 中距 → 明显偏转
+      const mid = buildAlphaScatterQuantities(scatterId, { modelType: 1, impactParameter: 12 }, 0)
+      expect(mid?.quantities[3].value).toContain('明显偏转')
+
+      // 远距 → 几乎直穿
+      const far = buildAlphaScatterQuantities(scatterId, { modelType: 1, impactParameter: 120 }, 0)
+      expect(far?.quantities[3].value).toContain('几乎直穿')
     })
   })
 

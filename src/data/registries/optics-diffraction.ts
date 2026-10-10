@@ -6,7 +6,11 @@ export const opticsDiffractionAnimations = defineAnimations({
     title: '光的衍射与泊松亮斑',
     knowledgeId: 'wave-optics-1-2',
     Component: lazy(() => import('@/features/optics/diffraction/DiffractionAnimation')),
-    controlsMode: 'param' as const,
+    // 衍射页面同时呈现「波前持续向外扩散」的 Huygens 子波动画
+    //（useDiffractionPhysics 中 waveOffset 随 time 推进），故用 loop：
+    // 永续循环、无倒计时。若改成 param，AnimationControls 返回 null 且
+    // isPlaying 初始为 false → time 恒为 0，波前会被定格成静态快照。
+    controlsMode: 'loop' as const,
     defaultParams: {
       mode: 0,
       wavelength: 650,

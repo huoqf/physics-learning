@@ -47,7 +47,7 @@
 ## ⚡ 三、色彩语义与光谱映射铁律
 
 1. **光线颜色与物理波长强绑定**：
-   - 严禁使用力学颜色（如 `PHYSICS_COLORS.velocity` 绿色、`force` 红色）代表光线；
+   - 严禁使用力学颜色（如 `PHYSICS_COLORS.velocity` 蓝色 `#2563EB`、`PHYSICS_COLORS.forceNet` 橙色 `#EA580C`）代表光线；
    - 单色光光线、波前和光屏条纹颜色必须由真实波长计算获得：
      ```ts
      import { wavelengthToHex } from '@/physics/optics'

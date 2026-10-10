@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAnimationStore } from '@/stores'
+import { DEFAULT_WORK_FUNCTION } from '@/physics/photoelectric'
 import { usePhotoelectricSimulation } from './hooks/usePhotoelectricSimulation'
 import { computePhotoelectricDerived } from './model/photoelectricViewModel'
 import PhototubeCanvas from './components/PhototubeCanvas'
@@ -17,7 +18,7 @@ export default function PhotoelectricAnimation() {
   const mode = params.mode ?? 0
   const showPhotonModel = params.showPhotonModel ?? 0
   const theta = params.theta ?? 60
-  const workFunction = params.workFunction ?? 2.14
+  const workFunction = params.workFunction ?? DEFAULT_WORK_FUNCTION
 
   const derived = computePhotoelectricDerived({
     frequency,
@@ -33,8 +34,10 @@ export default function PhotoelectricAnimation() {
   const canvasWidth = 700
   const canvasHeight = 650
 
+  // workFunction 必须一并传给仿真：否则中屏光电子的初动能会按默认逸出功计算，
+  // 与右屏物理量、Ekm-ν 图表所用金属脱节（换金属时画面不变）。
   const sim = usePhotoelectricSimulation(
-    { frequency, intensity, voltage, mode, showPhotonModel },
+    { frequency, intensity, voltage, mode, showPhotonModel, workFunction },
     canvasWidth,
     canvasHeight,
   )

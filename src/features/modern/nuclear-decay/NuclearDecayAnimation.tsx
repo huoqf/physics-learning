@@ -6,7 +6,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { RelationChart } from '@/components/Chart'
 import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
-import { useNuclearDecayPhysics } from './hooks/useNuclearDecayPhysics'
+import { useNuclearDecayPhysics, DECAY_CHARGES } from './hooks/useNuclearDecayPhysics'
 import { NuclearDecayScene } from './components/NuclearDecayScene'
 
 // 模式1专属：三种放射线穿透与电离本领的对比柱状图组件
@@ -165,30 +165,50 @@ export default function NuclearDecayAnimation() {
     return pts
   }, [])
 
-  // 模式2专属：轨道半径与核电荷反比关系曲线 R = p / (|q|B) ∝ 1/|q|
-  const radiusCurvePoints = useMemo(() => {
-    const pts = []
-    for (let q = 0.8; q <= 10.0; q += 0.2) {
-      pts.push({ x: q, y: 10.0 / q })
-    }
-    return pts
-  }, [])
+  // 模式2专属：轨迹半径与核电荷反比关系曲线 R = p/(|q|B) ∝ 1/|q|
+  //
+  // 横坐标取真实电荷量绝对值 |q|（单位 e）；纵轴以「新核半径 = 1」归一化，
+  // 于是微粒散点的 y 值恰等于半径比本身（α → 45，β → 7），
+  // 图上两点的高度比与右屏文案 R_微粒 : R_新核 数值完全一致，不再出现
+  // 「图里 4.5 : 1、文案 45 : 1」这类两处各自写死导致的漂移。
+  // 电荷量一律取自 DECAY_CHARGES 唯一真源。
+  const decayCharges = decayType === 0 ? DECAY_CHARGES.alpha : DECAY_CHARGES.beta
+  const radiusChart = useMemo(() => {
+    const { particle, daughter } = decayCharges
+    const ratio = daughter / particle
+    const isAlpha = decayType === 0
 
-  const radiusMarkers = useMemo(() => {
-    if (decayType === 0) {
-      // α 衰变: α 粒子 (|q|=2), 新核 Th (|q|=90 示意投影为大电荷端)
-      return [
-        { axis: 'point' as const, x: 2.0, y: 5.0, label: 'α 粒子 (|q|=2, 半径大 R_α=45 R_Th)', color: PHYSICS_COLORS.photonInfrared },
-        { axis: 'point' as const, x: 9.0, y: 1.11, label: '反冲钍核 (|q|=90, 半径极小 R_Th)', color: PHYSICS_COLORS.velocity },
-      ]
-    } else {
-      // β 衰变: β 粒子 (|q|=1), 新核 N (|q|=7)
-      return [
-        { axis: 'point' as const, x: 1.0, y: 10.0, label: 'β 粒子 (|q|=1, 外侧大圆 R_β=7 R_N)', color: PHYSICS_COLORS.velocity },
-        { axis: 'point' as const, x: 7.0, y: 1.43, label: '反冲氮核 (|q|=7, 内侧小圆 R_N)', color: PHYSICS_COLORS.photonInfrared },
-      ]
+    // R(|q|) = daughter / |q|：从微粒电荷量（半径最大）采样到新核电荷量（半径最小）
+    const curve: { x: number; y: number }[] = []
+    const step = Math.max(0.05, (daughter - particle) / 240)
+    for (let q = particle; q <= daughter + 1e-9; q += step) {
+      curve.push({ x: q, y: daughter / q })
     }
-  }, [decayType])
+
+    return {
+      ratio,
+      curve,
+      // x 轴右侧留 50% 余量：既避免反冲核标签被 SVG 视口裁掉，也让新核散点不贴边框
+      xDomain: [0, daughter * 1.5] as [number, number],
+      yDomain: [0, ratio * 1.15] as [number, number],
+      markers: [
+        {
+          axis: 'point' as const,
+          x: particle,
+          y: ratio,
+          label: `${isAlpha ? 'α 粒子' : 'β 粒子'} |q|=${particle}e`,
+          color: isAlpha ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge,
+        },
+        {
+          axis: 'point' as const,
+          x: daughter,
+          y: 1,
+          label: `${isAlpha ? '反冲钍核' : '反冲氮核'} |q|=${daughter}e`,
+          color: PHYSICS_COLORS.appliedForce,
+        },
+      ],
+    }
+  }, [decayCharges, decayType])
 
   // ── 7. 渲染 ──
   return (
@@ -217,16 +237,15 @@ export default function NuclearDecayAnimation() {
           <IonizationPenetrationChart font={canvasSize.font} />
         ) : (
           <RelationChart
-            points={radiusCurvePoints}
+            points={radiusChart.curve}
             xLabel="核电荷量绝对值 |q| (e)"
-            yLabel="轨迹半径 R (相对值)"
-            title={`匀强磁场衰变轨迹半径与电荷反比曲线 (R ∝ 1/|q|) — 当前：${decayType === 0 ? 'α 衰变 (外切圆)' : 'β 衰变 (内切圆)'}`}
-            xDomain={[0.5, 10.5]}
-            yDomain={[0, 12.0]}
+            yLabel="轨迹半径 R (以新核为 1)"
+            title={`匀强磁场衰变径迹半径与电荷反比曲线 R ∝ 1/|q| — ${decayType === 0 ? 'α 衰变 (外切圆)' : 'β 衰变 (内切圆)'}`}
+            xDomain={radiusChart.xDomain}
+            yDomain={radiusChart.yDomain}
             showGrid={true}
-            markers={radiusMarkers}
+            markers={radiusChart.markers}
             series="primary"
-            mainLabel="反比理论线 R = p/(|q|B)"
           />
         )}
       </div>

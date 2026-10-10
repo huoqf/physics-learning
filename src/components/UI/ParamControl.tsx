@@ -173,7 +173,19 @@ export const ParamControl: React.FC<ParamControlProps> = ({
     }
   }
 
-  const renderParam = (param: ParamConfig) => {
+  /**
+   * index 参与 React key 与 DOM id。
+   *
+   * 【为什么不能只用 param.key】
+   * 同一动画允许多条 paramMeta 共用同一个 key——典型是「按模式给同一个物理量
+   * 配不同量程」：`anim-nuclear-decay` 的 `bField` 就有两条（模式 2 用 0.5~3 T，
+   * 放射线偏转用 -3~3 T）。此时若 key / htmlFor / id 都取自 key，就会同时产生
+   *   - React「two children with the same key」报错（列表 diff 失稳）；
+   *   - 两个重复的 DOM id（label 点击无法确定绑定哪一个输入框）。
+   * 与 `ControlPanel` 既有的 `${type}-${key}-${index}` 约定保持一致即可根除。
+   */
+  const renderParam = (param: ParamConfig, index: number) => {
+    const domId = `param-${param.key}-${index}`
     const step = param.step ?? 0.1
     const parsedValue = Number.parseFloat(localValues[param.key])
     const safeValue = Number.isFinite(parsedValue) ? clamp(parsedValue, param.min, param.max) : param.value
@@ -186,9 +198,9 @@ export const ParamControl: React.FC<ParamControlProps> = ({
     const fillWidth = hasZeroMark ? Math.abs(percentage - zeroPercentage) : percentage
 
     return (
-      <div key={param.key} className="space-y-2.5 pb-4 border-b border-neutral-100 last:border-0 last:pb-0">
+      <div key={domId} className="space-y-2.5 pb-4 border-b border-neutral-100 last:border-0 last:pb-0">
         <div className="flex items-start justify-between gap-2">
-          <label className="min-w-0 text-xs font-semibold text-neutral-700 leading-6" htmlFor={`param-${param.key}`}>
+          <label className="min-w-0 text-xs font-semibold text-neutral-700 leading-6" htmlFor={domId}>
             <span className="inline-flex items-center gap-1.5">
               <span>{param.label}{param.unit ? ` (${param.unit})` : ''}</span>
             </span>
@@ -200,7 +212,7 @@ export const ParamControl: React.FC<ParamControlProps> = ({
           </label>
           <div className="flex items-center gap-1.5 shrink-0">
             <input
-              id={`param-${param.key}`}
+              id={domId}
               type="number"
               value={localValues[param.key] ?? ''}
               onFocus={() => setEditingKey(param.key)}

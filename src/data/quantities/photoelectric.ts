@@ -2,6 +2,8 @@ import type { PhysicsPanelData } from './types'
 import type { ParamDefs } from './types'
 import { normalizeParams } from './types'
 import {
+  calculateCutoffFrequency,
+  DEFAULT_WORK_FUNCTION,
   frequencyToPhotonEnergy,
   calculateMaxKineticEnergy,
   calculateStoppingVoltage,
@@ -15,9 +17,8 @@ interface PhotoelectricParams {
   voltage: number
   mode: number
   showPhotonModel: number
+  workFunction: number
 }
-
-const DEFAULT_W0 = 2.14
 
 const PHOTOELECTRIC_DEFAULTS: ParamDefs<PhotoelectricParams> = {
   frequency: { default: 6.0 },
@@ -25,6 +26,7 @@ const PHOTOELECTRIC_DEFAULTS: ParamDefs<PhotoelectricParams> = {
   voltage: { default: 0 },
   mode: { default: 0 },
   showPhotonModel: { default: 0 },
+  workFunction: { default: DEFAULT_WORK_FUNCTION },
 }
 
 export function buildPhotoelectricQuantities(
@@ -35,7 +37,7 @@ export function buildPhotoelectricQuantities(
   if (animId !== 'anim-photoelectric') return null
 
   const p = normalizeParams(params, PHOTOELECTRIC_DEFAULTS)
-  const W0 = params.workFunction ?? DEFAULT_W0
+  const W0 = p.workFunction
 
   const hv = frequencyToPhotonEnergy(p.frequency)
   const isPE = isPhotoelectricEffect(p.frequency, W0)
@@ -110,7 +112,7 @@ export function buildPhotoelectricQuantities(
   const warnings: PhysicsPanelData['warnings'] = []
   if (!isPE) {
     warnings.push({
-      text: `当前频率 ν = ${p.frequency.toFixed(1)}×10¹⁴ Hz < 截止频率 ν₀ ≈ ${(W0 / (4.135667696e-15 * 1e14)).toFixed(1)}×10¹⁴ Hz，无法产生光电子！`,
+      text: `当前频率 ν = ${p.frequency.toFixed(1)}×10¹⁴ Hz < 截止频率 ν₀ ≈ ${calculateCutoffFrequency(W0).toFixed(1)}×10¹⁴ Hz，无法产生光电子！`,
       level: 'warning',
     })
   }

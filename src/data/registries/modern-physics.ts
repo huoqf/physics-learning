@@ -1,5 +1,26 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
+import {
+  CESIUM_WORK_FUNCTION,
+  SODIUM_WORK_FUNCTION,
+  DEFAULT_WORK_FUNCTION,
+  PHOTOELECTRIC_METALS,
+  calculateCutoffFrequency,
+} from '@/physics/photoelectric'
 import { defineAnimations } from '../defineAnimations'
+
+/**
+ * 由 PHOTOELECTRIC_METALS 唯一真源派生左屏金属 preset marks，
+ * 保证预设列表与物理层逸出功表（以及中屏多金属对比图）永不漂移。
+ */
+const METAL_MARK_VARIANTS = ['recommended', 'recommended', 'critical', 'zero'] as const
+const PHOTOELECTRIC_METAL_MARKS = PHOTOELECTRIC_METALS.map((m, i) => ({
+  value: m.workFunction,
+  label: `${m.name} ${m.symbol} (${m.workFunction.toFixed(2)} eV)`,
+  variant: METAL_MARK_VARIANTS[i] ?? 'recommended',
+}))
+
+/** 铯的截止频率 (×10¹⁴ Hz)，用于频率轴上的关键刻度 */
+const CESIUM_CUTOFF_FREQ = Number(calculateCutoffFrequency(CESIUM_WORK_FUNCTION).toFixed(2))
 
 export const modernPhysicsAnimations = defineAnimations({
   'anim-alpha-scatter': {
@@ -57,7 +78,12 @@ export const modernPhysicsAnimations = defineAnimations({
       },
       {
         type: 'tip',
-        content: '实验证实：绝大多数粒子沿原方向直线穿过，少数偏转大角度，极少数反弹。',
+        content: '自动发射的粒子在入射高度上均匀取样，故统计上绝大多数直穿、少数偏转、极少数反弹。',
+        group: '物理规律',
+      },
+      {
+        type: 'tip',
+        content: '碰撞参数 b 越小，粒子越靠近金核，库仑斥力越大，偏转角越大。',
         group: '物理规律',
       },
     ],
@@ -66,14 +92,15 @@ export const modernPhysicsAnimations = defineAnimations({
         key: 'impactParameter',
         label: '碰撞参数 b',
         min: 0,
-        max: 40,
+        max: 100,
         step: 1,
         unit: 'px',
         group: '碰撞几何',
         marks: [
-          { value: 0, label: '正对对心 (反弹)', variant: 'critical' },
-          { value: 10, label: '近距偏转', variant: 'recommended' },
-          { value: 30, label: '远距直穿', variant: 'zero' },
+          { value: 0, label: '正对对心 (180°)', variant: 'critical' },
+          { value: 4, label: '恰好偏转 90°', variant: 'recommended' },
+          { value: 20, label: '明显偏转', variant: 'recommended' },
+          { value: 100, label: '接近直穿', variant: 'zero' },
         ],
       },
     ],
@@ -92,7 +119,7 @@ export const modernPhysicsAnimations = defineAnimations({
       excitationType: 0,         // 0: 光子照射(严苛共振), 1: 电子碰撞(传递能量)
       incidentEnergy: 10.2,      // 入射粒子能量 (eV)
       radiationPhotonIndex: 1,   // 跃迁光子索引 (0:4->3, 1:4->2, 2:4->1, 3:3->2, 4:3->1, 5:2->1)
-      workFunction: 2.29,        // 金属逸出功 (eV)，默认钠 2.29 eV
+      workFunction: SODIUM_WORK_FUNCTION, // 金属逸出功 (eV)，默认钠
       stoppingVoltage: 0.0,      // 反向遏止电压 (V)
       launchTrigger: 0,
       clearTrigger: 0,
@@ -190,7 +217,7 @@ export const modernPhysicsAnimations = defineAnimations({
         params: (p) => {
           const photonEnergies = [0.66, 2.55, 12.75, 1.89, 12.09, 10.20]
           const idx = p.radiationPhotonIndex ?? 1
-          const W0 = p.workFunction ?? 2.29
+          const W0 = p.workFunction ?? SODIUM_WORK_FUNCTION
           const hv = photonEnergies[idx]
           const Uc = hv >= W0 ? hv - W0 : 0
           return { stoppingVoltage: parseFloat(Uc.toFixed(2)) }
@@ -239,11 +266,8 @@ export const modernPhysicsAnimations = defineAnimations({
         group: '金属材料',
         showIf: 'mode',
         showIfValue: 2,
-        marks: [
-          { value: 1.9, label: '铯 (1.90 eV)', variant: 'recommended' },
-          { value: 2.29, label: '钠 (2.29 eV)', variant: 'recommended' },
-          { value: 4.5, label: '钨 (4.50 eV)', variant: 'zero' },
-        ],
+        // 与 anim-photoelectric 共用同一份金属预设（PHOTOELECTRIC_METALS 唯一真源）
+        marks: PHOTOELECTRIC_METAL_MARKS,
       },
       {
         key: 'stoppingVoltage',
@@ -271,6 +295,7 @@ export const modernPhysicsAnimations = defineAnimations({
       mode: 0,               // 0=初学, 1=通关, 2=康普顿散射
       showPhotonModel: 0,    // 0=光束模式, 1=光子微粒模式
       theta: 60,             // 康普顿散射角 (度)
+      workFunction: DEFAULT_WORK_FUNCTION, // 阴极金属逸出功 (eV)，默认铯
     } as const,
     controlMeta: [
       {
@@ -336,9 +361,9 @@ export const modernPhysicsAnimations = defineAnimations({
         unit: '×10¹⁴ Hz',
         group: '光源参数',
         marks: [
-          { value: 5.6, label: '铯截止', variant: 'critical' },
-          { value: 4.0, label: '红光', variant: 'zero' },
-          { value: 7.5, label: '紫外', variant: 'recommended' },
+          { value: 4.0, label: '红光 (750 nm)', variant: 'zero' },
+          { value: CESIUM_CUTOFF_FREQ, label: '铯截止 ν₀', variant: 'critical' },
+          { value: 7.5, label: '紫外 (400 nm)', variant: 'recommended' },
         ],
       },
       {
@@ -358,12 +383,8 @@ export const modernPhysicsAnimations = defineAnimations({
         step: 0.05,
         unit: 'eV',
         group: '金属材料',
-        marks: [
-          { value: 1.9, label: '铯 (1.90 eV)', variant: 'recommended' },
-          { value: 2.14, label: '铯默认 (2.14 eV)', variant: 'zero' },
-          { value: 2.29, label: '钠 (2.29 eV)', variant: 'recommended' },
-          { value: 3.3, label: '锌 (3.30 eV)', variant: 'critical' },
-        ],
+        // 预设来自 @/physics/photoelectric 的 PHOTOELECTRIC_METALS 唯一真源
+        marks: PHOTOELECTRIC_METAL_MARKS,
       },
       {
         key: 'voltage',
@@ -625,7 +646,7 @@ export const modernPhysicsAnimations = defineAnimations({
 
   'anim-nuclear-reaction': {
     title: '核反应、结合能与质量亏损',
-    knowledgeId: 'nuclear-1-3',
+    knowledgeId: 'nuclear-1-4',
     Component: lazy(() => import('@/features/modern/nuclear-reaction/NuclearReactionAnimation')),
     controlsMode: 'timed' as const,
     defaultParams: {

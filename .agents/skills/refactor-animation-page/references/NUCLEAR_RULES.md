@@ -51,12 +51,12 @@
 
 | 粒子 / 元素 | 语义色彩 Token | 视觉规范 |
 |------------|---------------|---------|
-| **质子 (p, $^1_1\text{H}$)** | `PHYSICS_COLORS.forceArrowRed` (`#EF4444`) | 正电红球，带白色“+”标识 |
-| **中子 (n, $^1_0\text{n}$)** | `PHYSICS_COLORS.appliedForce` / `MODERN_COLORS.neutron` | 中性灰蓝球，无符号，比质子略重 |
-| **电子 / $\beta$ 粒子 ($^0_{-1}\text{e}$)** | `PHYSICS_COLORS.velocity` (`#3B82F6`) | 极小高速青蓝光点，带“-”标识，带发光尾迹 |
-| **$\alpha$ 粒子 ($^4_2\text{He}$)** | `PHYSICS_COLORS.photonInfrared` (`#F97316`) | 双质子+双中子紧密结合的紧凑四核团 |
-| **$\gamma$ 光子 / 高能辐射** | `PHYSICS_COLORS.wavelength` (`#EAB308`) | 金黄色正弦波动光束或高能脉冲光斑 |
-| **母核 / 反冲新核** | `PHYSICS_COLORS.potentialEnergy` (`#8B5CF6`) | 大质量深紫/深色复合核球团 |
+| **质子 (p, $^1_1\text{H}$)** | `PHYSICS_COLORS.forceArrowRed` (`#B91C1C`) | 正电红球，带白色“+”标识 |
+| **中子 (n, $^1_0\text{n}$)** | `PHYSICS_COLORS.appliedForce` (`#1E3A8A`) | 中性蓝球，无符号，比质子略重 |
+| **电子 / $\beta$ 粒子 ($^0_{-1}\text{e}$)** | `PHYSICS_COLORS.velocity` (`#2563EB`) | 极小高速青蓝光点，带“-”标识，带发光尾迹 |
+| **$\alpha$ 粒子 ($^4_2\text{He}$)** | `PHYSICS_COLORS.photonInfrared` (`#B91C1C`) | 双质子+双中子紧密结合的紧凑四核团 |
+| **$\gamma$ 光子 / 高能辐射** | `PHYSICS_COLORS.wavelength` (`#D97706`) | 金黄色正弦波动光束或高能脉冲光斑 |
+| **母核 / 反冲新核** | `PHYSICS_COLORS.potentialEnergy` (`#7C3AED`) | 大质量深紫/深色复合核球团 |
 | **核力短程引力连线** | `CANVAS_COLORS.referencePoint` (金黄半透明) | 仅在 $r < 1.1\text{ fm}$ 时显现金光键连 |
 
 ---

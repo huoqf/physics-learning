@@ -6,7 +6,12 @@ export const opticsLaserAnimations = defineAnimations({
     title: '激光的特性与应用',
     knowledgeId: 'wave-optics-1-4',
     Component: lazy(() => import('@/features/optics/laser/LaserAnimation')),
-    controlsMode: 'timed' as const,
+    // 模式 0（平行性）/ 1（相干性）是纯定态对比：光路与干涉条纹静态呈现，
+    // 不消费 time，用 param 即可（禁止无物理意义的 10 秒倒计时）。
+    // 模式 2（高能量应用）是真实的时间过程：焦点温度 T(t) 随 time 上升、
+    // 直至熔化/沸腾（useLaserPhysics 的 runSimTo(time) + 温度曲线游标），
+    // 必须保留 timed 才能播放切割过程。
+    controlsMode: (params) => (params.mode === 2 ? 'timed' as const : 'param' as const),
     defaultParams: {
       mode: 0,
       propagationDistance: 50,

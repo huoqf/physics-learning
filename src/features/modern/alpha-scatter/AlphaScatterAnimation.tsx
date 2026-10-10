@@ -4,18 +4,26 @@ import { useSimulationFrame } from '@/utils/animation'
 import { useAnimationViewport, useCanvasViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { MODERN_COLORS, EM_COLORS, PHYSICS_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
+import {
+  ALPHA_SPEED_PX_PER_FRAME,
+  classifyScatterAngle,
+  velocityDeflectionDeg,
+  integrateAlphaScatterFrame,
+  type ScatterParticleState,
+} from '@/physics/alphaScatter'
 
-interface Particle {
+interface Particle extends ScatterParticleState {
   id: number
-  x: number
-  y: number
-  vx: number
-  vy: number
   trail: { x: number; y: number }[]
-  color: string
   active: boolean
   isCounted?: boolean
 }
+
+/** 自动发射间隔（ms）：使统计面板能在数秒内积累出可信的角分布 */
+const AUTO_EMIT_INTERVAL_MS = 260
+
+/** 单条径迹保留的最大采样点数 */
+const MAX_TRAIL_POINTS = 55
 
 export default function AlphaScatterAnimation() {
   const isPlaying = useAnimationStore((s) => s.isPlaying)
@@ -39,7 +47,7 @@ export default function AlphaScatterAnimation() {
   const autoEmitRef = useRef(autoEmit)
   const keepTrailsRef = useRef(keepTrails)
   const particlesRef = useRef<Particle[]>([])
-  const statsRef = useRef({ straight: 0, deflected: 0, rebounded: 0 })
+  const statsRef = useRef({ straight: 0, deflected: 0, rebound: 0 })
   const nextIdRef = useRef(0)
   const lastEmitTimeRef = useRef(0)
 
@@ -48,22 +56,23 @@ export default function AlphaScatterAnimation() {
   useEffect(() => { autoEmitRef.current = autoEmit }, [autoEmit])
   useEffect(() => { keepTrailsRef.current = keepTrails }, [keepTrails])
 
-  // 发射粒子
-  const emitParticle = useCallback((offsetY?: number) => {
+  /**
+   * 发射一个 α 粒子。
+   * @param targetY 入射高度（px，设计坐标）；不传则取左屏“碰撞参数 b”对应的入射线
+   */
+  const emitParticle = useCallback((targetY?: number) => {
     const canvas = canvasRef.current
     if (!canvas) return
     const cy = canvasSize.height / 2
-    const targetY = offsetY !== undefined ? cy - offsetY : cy - bRef.current
     particlesRef.current = [
       ...particlesRef.current,
       {
         id: nextIdRef.current++,
         x: 30,
-        y: targetY,
-        vx: 4.5,
+        y: targetY !== undefined ? targetY : cy - bRef.current,
+        vx: ALPHA_SPEED_PX_PER_FRAME,
         vy: 0,
         trail: [],
-        color: MODERN_COLORS.photonInfrared,
         active: true,
       },
     ]
@@ -71,7 +80,7 @@ export default function AlphaScatterAnimation() {
 
   const handleClear = useCallback(() => {
     particlesRef.current = []
-    statsRef.current = { straight: 0, deflected: 0, rebounded: 0 }
+    statsRef.current = { straight: 0, deflected: 0, rebound: 0 }
   }, [])
 
   useEffect(() => {
@@ -107,10 +116,12 @@ export default function AlphaScatterAnimation() {
     const b = bRef.current
     const curModel = modelTypeRef.current
 
+    // 束流在入射高度上均匀取样：绝大多数粒子的碰撞参数远大于库仑作用尺度 a，
+    // 于是“绝大多数直穿、少数偏转、极少数反弹”由统计自然涌现，而非人为指定 b
     if (isPlaying && autoEmitRef.current) {
       const now = Date.now()
-      if (now - lastEmitTimeRef.current > 700) {
-        emitParticle(b + (Math.random() * 16 - 8))
+      if (now - lastEmitTimeRef.current > AUTO_EMIT_INTERVAL_MS) {
+        emitParticle(Math.random() * H)
         lastEmitTimeRef.current = now
       }
     }
@@ -120,41 +131,24 @@ export default function AlphaScatterAnimation() {
         .map((p) => {
           if (!p.active) return p
           const nextTrail = [...p.trail, { x: p.x, y: p.y }]
-          if (nextTrail.length > 55 && !keepTrailsRef.current) nextTrail.shift()
+          if (nextTrail.length > MAX_TRAIL_POINTS && !keepTrailsRef.current) nextTrail.shift()
 
-          let nextX = p.x, nextY = p.y, nextVx = p.vx, nextVy = p.vy
+          // 汤姆孙“枣糕模型”：正电荷弥散，α 粒子几乎不受力而直穿
+          // 卢瑟福“核式结构模型”：受金核库仑斥力，沿双曲线偏转
+          const next = curModel === 0
+            ? { x: p.x + p.vx, y: p.y + p.vy, vx: p.vx, vy: p.vy }
+            : integrateAlphaScatterFrame(p, cx, cy)
 
-          if (curModel === 0) {
-            nextX += p.vx
-            nextY += p.vy
-          } else {
-            const dx = p.x - cx
-            const dy = p.y - cy
-            const r2 = dx * dx + dy * dy
-            const r = Math.sqrt(r2)
-            const COULOMB_K = 12000
-            const rMin2 = 80
-            const force = COULOMB_K / Math.max(r2, rMin2)
-            nextVx += force * (dx / r) * 0.12
-            nextVy += force * (dy / r) * 0.12
-            nextX += nextVx
-            nextY += nextVy
-          }
-
-          const isOut = nextX < 0 || nextX > W || nextY < 0 || nextY > H
+          const isOut = next.x < 0 || next.x > W || next.y < 0 || next.y > H
           let isCounted = p.isCounted
           if (isOut && !isCounted) {
             isCounted = true
-            const speed = Math.sqrt(nextVx * nextVx + nextVy * nextVy)
-            const cosTheta = speed > 0 ? nextVx / speed : 1
-            const angleDeg = Math.acos(Math.max(-1, Math.min(1, cosTheta))) * (180 / Math.PI)
+            const scatterClass = classifyScatterAngle(velocityDeflectionDeg(next.vx, next.vy))
             const s = statsRef.current
-            if (angleDeg < 5) statsRef.current = { ...s, straight: s.straight + 1 }
-            else if (angleDeg < 90) statsRef.current = { ...s, deflected: s.deflected + 1 }
-            else statsRef.current = { ...s, rebounded: s.rebounded + 1 }
+            statsRef.current = { ...s, [scatterClass]: s[scatterClass] + 1 }
           }
 
-          return { ...p, x: nextX, y: nextY, vx: nextVx, vy: nextVy, trail: nextTrail, active: !isOut, isCounted }
+          return { ...p, ...next, trail: nextTrail, active: !isOut, isCounted }
         })
         .filter((p) => keepTrailsRef.current ? true : p.active || p.trail.length > 0)
     }
@@ -286,7 +280,7 @@ export default function AlphaScatterAnimation() {
 
 function drawStatsPanel(
   ctx: CanvasRenderingContext2D,
-  s: { straight: number; deflected: number; rebounded: number },
+  s: { straight: number; deflected: number; rebound: number },
   w: number,
   h: number,
   font: (v: number) => number,
@@ -305,7 +299,7 @@ function drawStatsPanel(
   ctx.font = `bold ${font(11)}px sans-serif`
   ctx.fillText('α 粒子散射角度统计', px + 10, py + 16)
 
-  const total = s.straight + s.deflected + s.rebounded
+  const total = s.straight + s.deflected + s.rebound
   const pct = (v: number) => total > 0 ? `${((v / total) * 100).toFixed(1)}%` : '0%'
   ctx.font = `${font(10)}px monospace`
   ctx.fillStyle = CANVAS_COLORS.white
@@ -313,7 +307,7 @@ function drawStatsPanel(
   ctx.fillStyle = MODERN_COLORS.photon
   ctx.fillText(`大角偏转(5-90°): ${s.deflected} (${pct(s.deflected)})`, px + 10, py + 50)
   ctx.fillStyle = PHYSICS_COLORS.forceArrowRed
-  ctx.fillText(`反弹 (≥90°):   ${s.rebounded} (${pct(s.rebounded)})`, px + 10, py + 66)
+  ctx.fillText(`反弹 (≥90°):   ${s.rebound} (${pct(s.rebound)})`, px + 10, py + 66)
   ctx.fillStyle = CANVAS_COLORS.labelTextLight
   ctx.font = `${font(9)}px sans-serif`
   ctx.fillText(`总射入样本数: ${total}`, px + 10, py + 78)

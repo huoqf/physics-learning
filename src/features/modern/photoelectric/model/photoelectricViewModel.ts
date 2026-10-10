@@ -1,4 +1,6 @@
 import {
+  calculateCutoffFrequency,
+  DEFAULT_WORK_FUNCTION,
   frequencyToPhotonEnergy,
   calculateMaxKineticEnergy,
   calculateStoppingVoltage,
@@ -8,9 +10,6 @@ import {
   frequencyToColor,
   calculateComptonWavelengthShift,
 } from '@/physics/photoelectric'
-
-/** 铯逸出功 (eV) */
-const DEFAULT_W0 = 2.14
 
 export interface PhotoelectricState {
   frequency: number
@@ -55,7 +54,7 @@ export interface PhotoelectricDerived {
 export function computePhotoelectricDerived(
   params: PhotoelectricState,
 ): PhotoelectricDerived {
-  const W0 = params.workFunction ?? DEFAULT_W0
+  const W0 = params.workFunction ?? DEFAULT_WORK_FUNCTION
   const hv = frequencyToPhotonEnergy(params.frequency)
   const isPE = isPhotoelectricEffect(params.frequency, W0)
   const Ekm = calculateMaxKineticEnergy(hv, W0)
@@ -64,7 +63,7 @@ export function computePhotoelectricDerived(
   const effectiveU = params.mode === 1 ? params.voltage : 0
   const I = isPE ? calculatePhotocurrent(effectiveU, Uc, Imax) : 0
   const beamColor = frequencyToColor(params.frequency)
-  const cutoffFreq = W0 / (4.135667696e-15 * 1e14) // ×10¹⁴ Hz
+  const cutoffFreq = calculateCutoffFrequency(W0) // ×10¹⁴ Hz
 
   const thetaDeg = params.theta ?? 60
   const deltaLambdaNm = calculateComptonWavelengthShift(thetaDeg)

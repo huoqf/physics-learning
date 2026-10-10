@@ -31,7 +31,8 @@
 | anim-double-slit-interference | 光的双缝干涉 | DoubleSlitInterferenceAnimation | DoubleSlitInterferenceScene | optics | — |
 | anim-thin-film-interference | 薄膜干涉与增透膜 | ThinFilmInterferenceAnimation | ThinFilmInterferenceScene | optics | — |
 | anim-diffraction | 光的衍射与泊松亮斑 | DiffractionAnimation | DiffractionScene | optics | — |
-| anim-bohr-theory | 原子结构与玻尔理论 | BohrTheoryAnimation | — | — | — |
+| anim-alpha-scatter | α 粒子散射实验与核式结构 | AlphaScatterAnimation | — | alphaScatter | — |
+| anim-bohr-theory | 玻尔原子理论与氢光谱能级跃迁 | BohrTheoryAnimation | — | photoelectric | — |
 | anim-photoelectric | 光电效应与光的波粒二象性 | PhotoelectricAnimation | — | photoelectric | — |
 | anim-nuclear-decay | 原子核的组成与天然放射 | NuclearDecayAnimation | NuclearDecayScene | — | — |
 | anim-nuclear-half-life | 原子核衰变与半衰期 | NuclearHalfLifeAnimation | NuclearHalfLifeScene | — | — |
@@ -126,4 +127,4 @@
 | anim-power-transmission | 远距离输电 | PowerTransmission | — | physics | — |
 | anim-ac-lc-impedance | 电感与电容对交变电流的作用 | ac-impedance | — | — | — |
 
-共 121 个动画条目。
+共 122 个动画条目。
