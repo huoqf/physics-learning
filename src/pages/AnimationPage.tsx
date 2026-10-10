@@ -383,14 +383,22 @@ export default function AnimationPage() {
       // showIf：正向条件
       if (p.showIf) {
         if (p.showIfValue != null) {
-          if (params[p.showIf] !== p.showIfValue) return false
+          if (Array.isArray(p.showIfValue)) {
+            if (params[p.showIf] == null || !(p.showIfValue as readonly number[]).includes(params[p.showIf])) return false
+          } else if (params[p.showIf] !== p.showIfValue) {
+            return false
+          }
         } else if (!params[p.showIf]) {
           return false
         }
       }
       // hideIf：反向条件
       if (p.hideIf && p.hideIfValue != null) {
-        if (params[p.hideIf] === p.hideIfValue) return false
+        if (Array.isArray(p.hideIfValue)) {
+          if (params[p.hideIf] != null && (p.hideIfValue as readonly number[]).includes(params[p.hideIf])) return false
+        } else if (params[p.hideIf] === p.hideIfValue) {
+          return false
+        }
       }
       return true
     })

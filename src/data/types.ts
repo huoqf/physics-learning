@@ -38,12 +38,12 @@ export interface ControlCondition {
   group?: string
   /** 仅当 params[showIf] 为真值时显示此控件 */
   showIf?: string
-  /** 仅当 params[showIf] 等于此值时显示此控件 */
-  showIfValue?: number
+  /** 仅当 params[showIf] 等于此值（或包含于此数组）时显示此控件 */
+  showIfValue?: number | readonly number[]
   /** 当 params[hideIf] 等于此值时隐藏此控件 */
   hideIf?: string
-  /** 与 hideIf 配合：当 params[hideIf] 等于此值时隐藏 */
-  hideIfValue?: number
+  /** 与 hideIf 配合：当 params[hideIf] 等于此值（或包含于此数组）时隐藏 */
+  hideIfValue?: number | readonly number[]
   /** 控件值变化后联动：重置指定参数为默认值，或设置指定参数为固定值 */
   onChangeSideEffect?: {
     /** 重置为 defaultParams 中的值 */
@@ -147,12 +147,12 @@ export interface ParamMeta {
   resetOnChange?: boolean
   /** 仅当 params[showIf] 为真值时显示此参数 */
   showIf?: string
-  /** 仅当 params[showIf] 等于此值时显示此参数 */
-  showIfValue?: number
+  /** 仅当 params[showIf] 等于此值（或包含于此数组）时显示此参数 */
+  showIfValue?: number | readonly number[]
   /** 当 params[hideIf] 等于此值时隐藏此参数（反向条件） */
   hideIf?: string
-  /** 与 hideIf 配合：当 params[hideIf] 等于此值时隐藏 */
-  hideIfValue?: number
+  /** 与 hideIf 配合：当 params[hideIf] 等于此值（或包含于此数组）时隐藏 */
+  hideIfValue?: number | readonly number[]
 }
 
 /** 动画控制动作（语义化封装） */

@@ -370,7 +370,7 @@ export const electricityKnowledge: KnowledgeNode[] = [
     module: 'electricity',
     importance: 'gaokao',
     animationIds: ['anim-sensors'],
-    problemIds: [],
+    problemIds: ['prob-sensor-hall-model'],
     prerequisites: ['electricity-2-1', 'electricity-3-2'],
   },
   {
@@ -380,7 +380,7 @@ export const electricityKnowledge: KnowledgeNode[] = [
     module: 'electricity',
     importance: 'gaokao',
     animationIds: ['anim-sensors'],
-    problemIds: [],
+    problemIds: ['prob-sensor-light-relay-model'],
     prerequisites: ['electricity-7-1'],
   },
 ]

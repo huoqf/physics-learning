@@ -24,16 +24,23 @@ interface ControlPanelProps {
   disabled?: boolean
 }
 
+function matchesConditionValue(actual: number | undefined, expected: number | readonly number[]): boolean {
+  if (Array.isArray(expected)) {
+    return actual != null && (expected as readonly number[]).includes(actual)
+  }
+  return actual === expected
+}
+
 function isControlVisible(control: ControlMeta, params: Record<string, number>) {
   if (control.showIf) {
     if (control.showIfValue != null) {
-      if (params[control.showIf] !== control.showIfValue) return false
+      if (!matchesConditionValue(params[control.showIf], control.showIfValue)) return false
     } else if (!params[control.showIf]) {
       return false
     }
   }
   if (control.hideIf && control.hideIfValue != null) {
-    if (params[control.hideIf] === control.hideIfValue) return false
+    if (matchesConditionValue(params[control.hideIf], control.hideIfValue)) return false
   }
   return true
 }

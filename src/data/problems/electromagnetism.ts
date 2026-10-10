@@ -186,4 +186,118 @@ export const electromagnetismGaokaoProblems: Problem[] = [
       },
     ],
   },
+  {
+    id: 'prob-sensor-hall-model',
+    year: 2023,
+    province: '全国卷模型',
+    source: '经典高考演练题（改编自全国高考霍尔元件微观平衡考法）',
+    questionType: 'choice',
+    verified: false,
+    title: '霍尔元件微观平衡与半导体电势极性判定',
+    content:
+      '如图所示，厚度为 d、宽度为 b 的半导体薄片置于垂直向里的匀强磁场 B 中，通入水平向右的恒定电流 I。薄片上下表面间产生稳定的霍尔电压 UH。下列说法正确的是（　　）\n\nA. 若载流子为自由电子（N型半导体），则上表面电势高于下表面\nB. 若载流子为正空穴（P型半导体），则上表面电势高于下表面\nC. 霍尔电压 UH 与薄片厚度 d 成正比\nD. 霍尔电压 UH 与磁感应强度 B 成反比',
+    difficulty: 3,
+    knowledgeIds: ['electricity-7-1'],
+    tags: ['高考模型', '传感器', '霍尔效应', '洛伦兹力', '极性判定'],
+    targetAnimation: {
+      animId: 'anim-sensors',
+      presetParams: { sensorType: 2, magneticB: 1.2, currentI: 1.0, carrierType: 1 },
+      presetDescription: '载入霍尔元件微观平衡与正空穴载流子洛伦兹力偏转仿真',
+    },
+    optionExplanations: {
+      A: {
+        label: 'A',
+        isCorrect: false,
+        explanation: '错误。电流向右，自由电子向左运动。由左手定则（或洛伦兹力公式），电子受向上的洛伦兹力偏转积聚在上表面，上表面带负电，电势低于下表面。',
+      },
+      B: {
+        label: 'B',
+        isCorrect: true,
+        explanation: '正确。正空穴向右运动，由左手定则，正电荷受向上的洛伦兹力偏转积聚在上表面，上表面带正电，电势高于下表面。',
+      },
+      C: {
+        label: 'C',
+        isCorrect: false,
+        explanation: '错误。由微观平衡 qvB = q(UH/b) 与 I = nqv(bd) 可推导得 UH = (1/nq)(IB/d)，霍尔电压 UH 与厚度 d 成反比。',
+      },
+      D: {
+        label: 'D',
+        isCorrect: false,
+        explanation: '错误。由 UH = (1/nq)(IB/d) 可知，霍尔电压与磁感应强度 B 成正比。',
+      },
+    },
+    steps: [
+      {
+        id: 'step-1',
+        description: '应用左手定则判断载流子偏转方向',
+        keyCondition: '电流向右，磁场向里，洛伦兹力垂直向上',
+        scorePoints: 2,
+        explanation: '无论是电子向左还是正电荷向右，所受洛伦兹力均向上偏转，决定了积聚在上表面的电荷电性。',
+      },
+      {
+        id: 'step-2',
+        description: '联立微观平衡与电流微观表达式求霍尔电压',
+        keyCondition: 'qvB = q(UH/b), I = nqvb d => UH = IB/(nqd)',
+        scorePoints: 3,
+        explanation: '霍尔电压与 B、I 成正比，与薄片厚度 d、载流子体密度 n 成反比。',
+      },
+    ],
+  },
+  {
+    id: 'prob-sensor-light-relay-model',
+    year: 2024,
+    province: '新课标卷模型',
+    source: '经典高考演练题（改编自新高考光敏电阻控制路灯实验考法）',
+    questionType: 'choice',
+    verified: false,
+    title: '光敏电阻与电磁继电器自动控制路灯电路分析',
+    content:
+      '某自动光控路灯控制电路由控制回路与受控高压工作回路组成。控制回路中直流电源电动势为 E、内阻不计，滑动变阻器 R₀ 与光敏电阻 RG 串联接入电磁继电器线圈。路灯接入继电器的常闭触点。关于该控制装置，下列说法正确的是（　　）\n\nA. 白天光照充足时，光敏电阻阻值增大，衔铁被吸下\nB. 天黑时光敏电阻阻值增大，回路电流减小，弹簧拉回衔铁闭合常闭触点使路灯点亮\nC. 为了使路灯在天更暗时才点亮，应将滑动变阻器 R₀ 的阻值调大\nD. 若改接在继电器的常开触点上，路灯也能在夜晚正常点亮',
+    difficulty: 3,
+    knowledgeIds: ['electricity-7-2'],
+    tags: ['高考模型', '传感器', '光敏电阻', '电磁继电器', '常闭触点'],
+    targetAnimation: {
+      animId: 'anim-sensors',
+      presetParams: { sensorType: 0, illuminance: 30, rFixed: 5000 },
+      presetDescription: '载入光敏电阻常闭触点电磁继电器自动路灯仿真',
+    },
+    optionExplanations: {
+      A: {
+        label: 'A',
+        isCorrect: false,
+        explanation: '错误。白天光照充足时，光敏电阻受光激发，光生载流子激增，阻值急剧减小而非增大。',
+      },
+      B: {
+        label: 'B',
+        isCorrect: true,
+        explanation: '正确。天黑光照减弱，RG 增大，控制回路总电阻增大，电流减小。电磁铁磁力不足以克服弹簧拉力，弹簧拉回衔铁使常闭触点闭合，工作回路接通点亮路灯。',
+      },
+      C: {
+        label: 'C',
+        isCorrect: false,
+        explanation: '错误。继电器释放电流阈值固定，对应临界总电阻 R₀ + RG + r 为定值。若要天更暗（RG 阻值更大）时才触发释放点亮，应减小 R₀；若调大 R₀，在天较亮时即提前点亮。',
+      },
+      D: {
+        label: 'D',
+        isCorrect: false,
+        explanation: '错误。常开触点在电磁铁吸合时才导通。若改接常开触点，白天电流大吸合工作，路灯会在白天亮、夜晚熄灭，不符合自动路灯设计要求。',
+      },
+    },
+    steps: [
+      {
+        id: 'step-1',
+        description: '分析光敏电阻的光电特性与闭合电路欧姆定律',
+        keyCondition: '天黑 -> 光强减小 -> RG增大 -> 回路电流I减小',
+        scorePoints: 2,
+        explanation: '控制回路电流随光照变弱而减小。',
+      },
+      {
+        id: 'step-2',
+        description: '判断电磁继电器衔铁动作与触点通断',
+        keyCondition: '电流小于吸合电流 -> 磁力不足 -> 弹簧复位 -> 常闭触点接通',
+        scorePoints: 3,
+        explanation: '常闭触点在电磁铁未吸合时导通，因此夜晚回路接通点亮路灯。',
+      },
+    ],
+  },
 ]

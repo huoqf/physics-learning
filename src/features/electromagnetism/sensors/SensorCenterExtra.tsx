@@ -15,8 +15,8 @@ export default function SensorCenterExtra() {
   const magneticB = params.magneticB ?? 1.0
   const currentI = params.currentI ?? 0.8
   const carrierType = params.carrierType ?? 0
+  const capacitorGap = params.capacitorGap ?? 3.0
   const rFixed = params.rFixed ?? 5000
-  const vThreshold = params.vThreshold ?? 2.5
 
   const physics = useSensorPhysics({
     sensorType,
@@ -25,8 +25,8 @@ export default function SensorCenterExtra() {
     magneticB,
     currentI,
     carrierType,
+    capacitorGap,
     rFixed,
-    vThreshold,
   })
 
   return (

@@ -16,27 +16,33 @@ export const electromagnetismSensorsAnimations = defineAnimations({
       magneticB: 1.0,
       currentI: 0.8,
       carrierType: 0,
+      capacitorGap: 3.0,
       rFixed: 5000,
-      vThreshold: 2.5,
     } as const,
     controlMeta: [
       {
         type: 'preset',
-        label: '📋 高考真题：光敏电阻光控路灯',
-        description: '暗环境阻值大，分压输出升高触发继电器开启路灯',
-        params: { sensorType: 0, illuminance: 30, rFixed: 5000, vThreshold: 2.5 },
+        label: '📋 光敏电阻：常闭继电器光控路灯',
+        description: '天黑阻值大、回路电流小，弹簧拉回衔铁闭合常闭触点点亮路灯',
+        params: { sensorType: 0, illuminance: 30, rFixed: 5000 },
       },
       {
         type: 'preset',
-        label: '📋 高考真题：NTC火警报警电路',
-        description: '常温10kΩ，超温(>60℃)阻值降至门限以下触发电铃',
-        params: { sensorType: 1, temperature: 70, rFixed: 3000, vThreshold: 2.5 },
+        label: '📋 NTC热敏电阻：常开触点超温报警',
+        description: '超温(>60℃)阻值剧降电流增大，电磁铁吸合常开触点接通电铃',
+        params: { sensorType: 1, temperature: 75, rFixed: 3000 },
       },
       {
         type: 'preset',
-        label: '📋 高考压轴：霍尔元件极性判定',
+        label: '📋 霍尔元件：微观平衡与极性判定',
         description: 'N型电子导电上表面为负极；P型空穴导电上表面为正极',
         params: { sensorType: 2, magneticB: 1.2, currentI: 1.0, carrierType: 0 },
+      },
+      {
+        type: 'preset',
+        label: '📋 电容式传感器：微位移与压力监测',
+        description: '极板受压间距 d 减小，电容 C 反比增大，用于测微位移与加速度',
+        params: { sensorType: 3, capacitorGap: 1.4 },
       },
       {
         type: 'segmented',
@@ -48,6 +54,7 @@ export const electromagnetismSensorsAnimations = defineAnimations({
           { value: 0, label: '光敏电阻 (光控路灯)' },
           { value: 1, label: 'NTC热敏电阻 (火警报警)' },
           { value: 2, label: '霍尔元件 (磁电转换)' },
+          { value: 3, label: '电容式传感器 (微位移/压力)' },
         ],
       },
       {
@@ -68,12 +75,15 @@ export const electromagnetismSensorsAnimations = defineAnimations({
         variant: 'info',
         content: (p) => {
           if (p.sensorType === 0) {
-            return '【光敏电阻规律】：光照越强，光生载流子越多，电阻越小。调节滑动变阻器可改变路灯在黄昏或深夜动作的灵敏度。'
+            return '【光敏电阻观察重点】：光照增强阻值急剧减小。路灯接在常闭触点上，白天强光吸合拉开触点灭灯，夜晚弱光弹簧拉回复位亮灯。'
           }
           if (p.sensorType === 1) {
-            return '【NTC热敏规律】：温度升高电阻急剧减小（指数关系）。注意区分PTC（正温度系数）与NTC（负温度系数）。'
+            return '【NTC热敏观察重点】：温度升高电阻急剧降低。电铃接在常开触点上，常温断开，超温火警时电流剧增吸合报警。'
           }
-          return '【霍尔效应关键考点】：自由电子与正空穴均受向上的洛伦兹力偏转，但电子积聚使上表面电势低，空穴积聚使上表面电势高！'
+          if (p.sensorType === 2) {
+            return '【霍尔效应易错点】：自由电子(N型)与正空穴(P型)均受向上洛伦兹力偏转，但电子积聚使上表面电势低，空穴积聚使上表面电势高！'
+          }
+          return '【电容传感器观察重点】：由 C = εrS/(4πkd) 可知，极板受压间距 d 减小，电容 C 反比增大。当间距达到极限危险阈值时触发报警。'
         },
       },
     ],
@@ -82,7 +92,8 @@ export const electromagnetismSensorsAnimations = defineAnimations({
       { key: 'temperature', label: '环境温度 T', min: 0, max: 90, step: 2, unit: '℃', showIf: 'sensorType', showIfValue: 1 },
       { key: 'magneticB', label: '磁感应强度 B', min: 0.1, max: 2.0, step: 0.05, unit: 'T', showIf: 'sensorType', showIfValue: 2 },
       { key: 'currentI', label: '控制电流 I', min: 0.2, max: 2.0, step: 0.1, unit: 'A', showIf: 'sensorType', showIfValue: 2 },
-      { key: 'rFixed', label: '分压定值电阻 R0', min: 1000, max: 20000, step: 500, unit: 'Ω', hideIf: 'sensorType', hideIfValue: 2 },
+      { key: 'capacitorGap', label: '极板间距 d', min: 1.0, max: 10.0, step: 0.2, unit: 'mm', showIf: 'sensorType', showIfValue: 3 },
+      { key: 'rFixed', label: '变阻器阻值 R₀', min: 1000, max: 20000, step: 500, unit: 'Ω', showIf: 'sensorType', showIfValue: [0, 1] },
     ],
   },
 })
