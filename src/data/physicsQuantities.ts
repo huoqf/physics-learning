@@ -39,6 +39,7 @@ type BuilderName =
   | 'buildNuclearReactionQuantities'
   | 'buildDoubleSlitInterferenceQuantities'
   | 'buildDiffractionQuantities'
+  | 'buildDispersionQuantities'
   | 'buildPolarizationQuantities'
   | 'buildLaserQuantities'
   | 'buildEmOscillationQuantities'
@@ -206,6 +207,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-nuclear-reaction':    { loader: () => import('./quantities/nuclearReaction'),  builderName: 'buildNuclearReactionQuantities' },
   'anim-double-slit-interference': { loader: () => import('./quantities/doubleSlitInterference'), builderName: 'buildDoubleSlitInterferenceQuantities' },
   'anim-diffraction': { loader: () => import('./quantities/diffraction'), builderName: 'buildDiffractionQuantities' },
+  'anim-dispersion': { loader: () => import('./quantities/dispersion'), builderName: 'buildDispersionQuantities' },
   'anim-polarization': { loader: () => import('./quantities/polarization'), builderName: 'buildPolarizationQuantities' },
   'anim-laser': { loader: () => import('./quantities/laser'), builderName: 'buildLaserQuantities' },
   'anim-thin-film-interference': { loader: () => import('./quantities/thinFilmInterference'), builderName: 'buildThinFilmInterferenceQuantities' },

@@ -47,6 +47,7 @@ async function loadExtendedRegistry(): Promise<void> {
         { opticsThinLensAnimations: opticsThinLens },
         { opticsInterferenceAnimations: opticsInterference },
         { opticsDiffractionAnimations: opticsDiffraction },
+        { opticsDispersionAnimations: opticsDispersion },
         { opticsPolarizationAnimations: opticsPolarization },
         { opticsLaserAnimations: opticsLaser },
         { modernPhysicsAnimations: modernPhysics },
@@ -70,6 +71,7 @@ async function loadExtendedRegistry(): Promise<void> {
         import('./registries/optics-thin-lens'),
         import('./registries/optics-interference'),
         import('./registries/optics-diffraction'),
+        import('./registries/optics-dispersion'),
         import('./registries/optics-polarization'),
         import('./registries/optics-laser'),
         import('./registries/modern-physics'),
@@ -84,7 +86,7 @@ async function loadExtendedRegistry(): Promise<void> {
         emEmOscillation, emSensors,
         thermoKinematics, thermoGasLaws, thermoFirstLaw, thermoSecondLaw,
         opticsReflection, opticsRefraction, opticsTotalInternalReflection, opticsThinLens, opticsInterference,
-        opticsDiffraction, opticsPolarization, opticsLaser,
+        opticsDiffraction, opticsDispersion, opticsPolarization, opticsLaser,
         modernPhysics,
         vibrationOsc,
         combinedFields,
@@ -104,7 +106,7 @@ async function loadExtendedRegistry(): Promise<void> {
  * 历史上曾出现漂移（本次修正前为 98，真实值为 102）。
  * `tests/data/animationCount.test.ts` 已加入守卫，二者不一致时测试失败。
  */
-export const ANIMATION_COUNT = 122
+export const ANIMATION_COUNT = 123
 
 /** 同步获取 config（core 动画立即命中，extended 动画未加载时返回 undefined） */
 export function getAnimationConfig(id: string): AnimationConfig | undefined {

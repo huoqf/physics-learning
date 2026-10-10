@@ -57,7 +57,7 @@ export const waveOpticsKnowledge: KnowledgeNode[] = [
     chapter: '波动光学',
     module: 'wave-optics',
     importance: 'gaokao',
-    animationIds: ['anim-refraction', 'anim-double-slit-interference'],
+    animationIds: ['anim-dispersion'],
     problemIds: [],
     prerequisites: ['optics-1-2', 'wave-optics-1-1'],
   },
