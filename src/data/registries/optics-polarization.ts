@@ -6,7 +6,7 @@ export const opticsPolarizationAnimations = defineAnimations({
     title: '光的偏振',
     knowledgeId: 'wave-optics-1-3',
     Component: lazy(() => import('@/features/optics/polarization/PolarizationAnimation')),
-    controlsMode: 'timed' as const,
+    controlsMode: 'param' as const,
     defaultParams: {
       mode: 0,
       polarizerAngle: 45,

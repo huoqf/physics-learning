@@ -6,7 +6,7 @@ export const opticsDiffractionAnimations = defineAnimations({
     title: '光的衍射与泊松亮斑',
     knowledgeId: 'wave-optics-1-2',
     Component: lazy(() => import('@/features/optics/diffraction/DiffractionAnimation')),
-    controlsMode: 'timed' as const,
+    controlsMode: 'param' as const,
     defaultParams: {
       mode: 0,
       wavelength: 650,

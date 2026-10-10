@@ -19,7 +19,7 @@ interface PolarizationSceneProps {
   analyzerAngle: number
   glassesAngle: number
   filterAngle: number
-  sceneScale: SceneScale
+  sceneScale?: SceneScale
 }
 
 export function PolarizationScene({

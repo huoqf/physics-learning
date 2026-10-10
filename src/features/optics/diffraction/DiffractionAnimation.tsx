@@ -34,17 +34,15 @@ export default function DiffractionAnimation() {
   })
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
-        <DiffractionScene
-          physics={physics}
-          canvasSize={canvasSize}
-          mode={mode}
-          wavelength={wavelength}
-          obstacleSize={obstacleSize}
-          screenDistance={screenDistance}
-        />
-      </AnimationSvgCanvas>
-    </div>
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+      <DiffractionScene
+        physics={physics}
+        canvasSize={canvasSize}
+        mode={mode}
+        wavelength={wavelength}
+        obstacleSize={obstacleSize}
+        screenDistance={screenDistance}
+      />
+    </AnimationSvgCanvas>
   )
 }

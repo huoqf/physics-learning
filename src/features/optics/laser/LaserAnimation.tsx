@@ -1,4 +1,4 @@
-import { useAnimationViewport, useSceneScale } from '@/hooks'
+import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
@@ -50,36 +50,23 @@ export default function LaserAnimation() {
     time,
   })
 
-  // ── 5. SceneScale 比例尺 ──
-  const sceneScale = useSceneScale({
-    vp,
-    preset: CANVAS_PRESETS.splitV,
-    anchor: 'center',
-    physicsScaleDesign: 84,
-    physicsWidth: 10,
-    physicsHeight: 4,
-  })
-
-  // ── 6. 统一标准的动画画布渲染 ──
+  // ── 5. 统一标准的动画画布渲染 ──
   return (
-    <div ref={containerRef} className="w-full h-full bg-white rounded-lg border border-neutral-200 overflow-hidden relative">
-      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
-        <LaserScene
-          physics={physics}
-          canvasSize={canvasSize}
-          sceneScale={sceneScale}
-          mode={mode}
-          propagationDistance={propagationDistance}
-          divergenceAngleNormal={divergenceAngleNormal}
-          wavelength={wavelength}
-          slitDistance={slitDistance}
-          screenDist={screenDist}
-          laserPower={laserPower}
-          focusDiameter={focusDiameter}
-          material={material}
-          time={time}
-        />
-      </AnimationSvgCanvas>
-    </div>
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+      <LaserScene
+        physics={physics}
+        canvasSize={canvasSize}
+        mode={mode}
+        propagationDistance={propagationDistance}
+        divergenceAngleNormal={divergenceAngleNormal}
+        wavelength={wavelength}
+        slitDistance={slitDistance}
+        screenDist={screenDist}
+        laserPower={laserPower}
+        focusDiameter={focusDiameter}
+        material={material}
+        time={time}
+      />
+    </AnimationSvgCanvas>
   )
 }

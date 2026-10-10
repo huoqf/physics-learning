@@ -15,7 +15,7 @@ interface LaserSceneProps {
     width: number
     height: number
   }
-  sceneScale: SceneScale
+  sceneScale?: SceneScale
   mode: number
   propagationDistance: number
   divergenceAngleNormal: number

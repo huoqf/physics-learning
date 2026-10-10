@@ -27,12 +27,26 @@ description: 新建动画页面 / 创建新的物理动画组件 / 新增动画�
 | 粒子/物体在视野内自由运动 | `'viewport'` | `physicsWidth`, `physicsHeight`（**真实物理米数**） | 10m 视野 → `physicsWidth: 10` |
 | 圆周/对称，原点在中心 | `'center'` | `physicsScaleDesign`（1m=多少设计像素） | 50px/m → `physicsScaleDesign: 50` |
 | 非标准原点（如平抛：原点在左上方某处） | `'custom'` | `customOriginX/Y`、`customScaleX/Y`（**X=Y 等比**） | 见骨架代码 |
-| 全固定设计坐标（光学折射/干涉等） | 不调用 useSceneScale | — | 直接写坐标值 |
+| 光学几何/波动（光路示意+条纹映射） | 设计坐标系 + 局部比例 | 物理层 SI 严格计算，场景层示意排布与条纹映射 | 见 OPTICS_RULES.md |
 
 ### C. 选 controlsMode
 
-- 绝大多数情况用 `'timed'`（有时间轴的过程动画，默认可省略）
-- 永续循环无终点（热运动/布朗运动/分子碰撞）→ `'loop'`；纯参数探索无时间轴（分子力势能曲线/微观估算）→ `'param'`
+- 绝大多数力学/电磁学用 `'timed'`（有时间轴的过程动画，默认可省略）
+- 稳态光学现象（衍射、薄膜干涉、偏振、折射反射）→ 严格使用 `'param'`（纯参数探索，无倒计时）
+- 永续循环无终点（相干波前扩散、热运动/布朗运动）→ `'loop'`
+
+---
+
+### 🌈 光学（几何与波动）专项路由（按需调用）
+
+若任务涉及**光的反射/折射/全反射/透镜成像**或**光的干涉（双缝/薄膜/劈尖/牛顿环）、衍射（单缝/圆孔/泊松亮斑）、偏振、激光、色散**等光学场景：
+- **权威规范文档**：严格遵守 [OPTICS_RULES.md](file:///d:/code/physic/physics-learning/.agents/skills/refactor-animation-page/references/OPTICS_RULES.md)
+- **controlsMode 铁律**：稳态图样（单缝衍射、薄膜干涉、偏振角度、折射反射）必须用 `'param'`；波前连续扩散用 `'loop'`；**严禁误用 `'timed'`**（避免产生荒谬的 10 秒倒计时条）。
+- **跨数量级双层映射架构**：
+  - 物理 Hook：严格以真实物理单位（$\text{nm}, \text{mm}, \text{m}$）计算条纹间距 $\Delta x$、光程差、光强比，供右屏看板展示；
+  - 场景 Scene：采用设计坐标示意排布，条纹与光强曲线按比例保真动态缩放，**严禁在 useSceneScale 伪造凑数参数**。
+- **色彩与光谱铁律**：光线/波前/条纹色彩必须调用 `wavelengthToHex(wavelength)` 映射为真实物理色；白光干涉必须呈现内紫由外红彩带。
+- **光强空间图与对齐**：核心图表为光强分布 $I(y)$ 或 $I(\theta)$，必须与屏幕亮暗条纹空间相位严格对齐。
 
 ---
 

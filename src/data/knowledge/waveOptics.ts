@@ -8,7 +8,7 @@ export const waveOpticsKnowledge: KnowledgeNode[] = [
     module: 'wave-optics',
     importance: 'gaokao',
     animationIds: ['anim-double-slit-interference'],
-    problemIds: [],
+    problemIds: ['prob-2023-quanguo-exp-doubleslit'],
     prerequisites: ['optics-1-2'], // 依赖光的折射定律
   },
   {
@@ -28,7 +28,7 @@ export const waveOpticsKnowledge: KnowledgeNode[] = [
     module: 'wave-optics',
     importance: 'gaokao',
     animationIds: ['anim-polarization'],
-    problemIds: [],
+    problemIds: ['prob-2022-zhejiang-polarization'],
     prerequisites: ['wave-optics-1-2'],
   },
   {
@@ -50,5 +50,15 @@ export const waveOpticsKnowledge: KnowledgeNode[] = [
     animationIds: ['anim-thin-film-interference'],
     problemIds: ['prob-2021-shandong-07'],
     prerequisites: ['wave-optics-1-1'],
+  },
+  {
+    id: 'wave-optics-1-6',
+    title: '光的色散与光谱综合',
+    chapter: '波动光学',
+    module: 'wave-optics',
+    importance: 'gaokao',
+    animationIds: ['anim-refraction', 'anim-double-slit-interference'],
+    problemIds: [],
+    prerequisites: ['optics-1-2', 'wave-optics-1-1'],
   },
 ]

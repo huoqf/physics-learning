@@ -1,5 +1,5 @@
 import { useShallow } from 'zustand/react/shallow'
-import { useAnimationViewport, useSceneScale } from '@/hooks'
+import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
@@ -34,30 +34,18 @@ export default function PolarizationAnimation() {
     time,
   })
 
-  // ── 5. 比例尺设置 (符合规范) ──
-  const sceneScale = useSceneScale({
-    vp,
-    preset: CANVAS_PRESETS.full,
-    anchor: 'viewport',
-    physicsWidth: 8.4,
-    physicsHeight: 6.5,
-  })
-
-  // ── 6. 渲染 ──
+  // ── 5. 渲染 ──
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
-        <PolarizationScene
-          physics={physics}
-          canvasSize={canvasSize}
-          mode={mode}
-          polarizerAngle={polarizerAngle}
-          analyzerAngle={analyzerAngle}
-          glassesAngle={glassesAngle}
-          filterAngle={filterAngle}
-          sceneScale={sceneScale}
-        />
-      </AnimationSvgCanvas>
-    </div>
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+      <PolarizationScene
+        physics={physics}
+        canvasSize={canvasSize}
+        mode={mode}
+        polarizerAngle={polarizerAngle}
+        analyzerAngle={analyzerAngle}
+        glassesAngle={glassesAngle}
+        filterAngle={filterAngle}
+      />
+    </AnimationSvgCanvas>
   )
 }
