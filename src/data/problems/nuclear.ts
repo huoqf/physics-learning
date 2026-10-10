@@ -78,7 +78,7 @@ export const nuclearGaokaoProblems: Problem[] = [
     difficulty: 2,
     questionType: 'calculation',
     verified: true,
-    knowledgeIds: ['nuclear-1-2'],
+    knowledgeIds: ['nuclear-1-2', 'nuclear-1-3'],
     tags: ['高考真题', '半衰期计算', '碳14年代测定', '指数衰变'],
     targetAnimation: {
       animId: 'anim-nuclear-half-life',
@@ -119,7 +119,7 @@ export const nuclearGaokaoProblems: Problem[] = [
     difficulty: 3,
     questionType: 'calculation',
     verified: true,
-    knowledgeIds: ['nuclear-1-3', 'nuclear-1-4'],
+    knowledgeIds: ['nuclear-1-4', 'nuclear-1-5'],
     tags: ['高考真题', '核聚变', '比结合能', '质量亏损', '质能方程'],
     targetAnimation: {
       animId: 'anim-nuclear-reaction',

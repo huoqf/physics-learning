@@ -71,6 +71,20 @@ description: 新建动画页面 / 创建新的物理动画组件 / 新增动画�
 
 ---
 
+### ☢️ 近代物理与原子核物理专项路由（按需调用）
+
+若任务涉及**原子核结构、玻尔能级、天然放射、衰变与半衰期、质能方程、质量亏损天平、重核裂变与轻核聚变**等核物理场景：
+- **权威规范文档**：严格遵守 [NUCLEAR_RULES.md](file:///d:/code/physic/physics-learning/.agents/skills/refactor-animation-page/references/NUCLEAR_RULES.md)
+- **controlsMode 铁律**：稳态结构（天平质量亏损、核子组成、反应方程配平、能级图）严格使用 `'param'`；衰变过程/时序链式反应使用 `'timed'`；**严禁在稳态天平/能级页面误用 `'timed'`**。
+- **跨 15 数量级双层映射架构**：
+  - 物理 Hook：严格以真实物理单位（$\text{fm}, \text{u}, \text{MeV}$）计算质量亏损、释放能量、比结合能，供右屏看板展示；
+  - 场景 Scene：微观核子与宏观轨道采用设计坐标示意排布，**严禁在 useSceneScale 中传入 1e-15 等极端物理米数**。
+- **微观粒子色彩与材质**：严禁用 `<Ball type="steel">` 金属球代替核子；质子必须为深红带正号（`PHYSICS_COLORS.forceArrowRed`）、中子为中性灰蓝（`PHYSICS_COLORS.appliedForce`）、$\beta$ 粒子为高速青蓝（`PHYSICS_COLORS.velocity`）、$\alpha$ 粒子为金红四核团。
+- **三屏职责红线**：中屏严禁大段公式推导卡片（如外切圆/内切圆理论分析卡片），中屏上方只放标准图表（`RelationChart`），文字推导与考点 100% 收口至右屏 [PhysicsPanel](file:///d:/code/physic/physics-learning/src/components/Formula/PhysicsPanel.tsx)。
+- **布局分屏铁律**：图表与动画分屏严格使用 `CANVAS_PRESETS.splitV`，上下两区域必须用 `flex-1 min-h-0`，严禁写死 `h-[310px] shrink-0`。
+
+---
+
 ## Step 1：文件结构
 
 ```

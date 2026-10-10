@@ -90,8 +90,8 @@ export default function NuclearReactionAnimation() {
 
   return (
     <div className="w-full h-full flex flex-col gap-2 p-1">
-      {/* 上半屏：比结合能关系曲线图 */}
-      <div className="h-[310px] shrink-0 w-full overflow-hidden">
+      {/* 上半屏：比结合能关系曲线图 (flex-1 min-h-0 自适应) */}
+      <div className="flex-1 min-h-0 w-full overflow-hidden">
         <RelationChart
           points={physics.smoothPoints}
           xLabel="质量数 A"

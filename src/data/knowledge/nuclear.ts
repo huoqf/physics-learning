@@ -25,6 +25,17 @@ export const nuclearKnowledge: KnowledgeNode[] = [
   },
   {
     id: 'nuclear-1-3',
+    title: '放射性同位素应用与辐射防护',
+    chapter: '核物理',
+    module: 'nuclear',
+    importance: 'gaokao',
+    animationIds: ['anim-nuclear-half-life'],
+    problemIds: ['prob-2023-beijing-carbon-halflife'],
+    gaokaoFrequency: '5年5考 / 示踪原子与C-14测年',
+    prerequisites: ['nuclear-1-2'],
+  },
+  {
+    id: 'nuclear-1-4',
     title: '核反应、结合能与质量亏损',
     chapter: '核物理',
     module: 'nuclear',
@@ -35,7 +46,7 @@ export const nuclearKnowledge: KnowledgeNode[] = [
     prerequisites: ['nuclear-1-2'],
   },
   {
-    id: 'nuclear-1-4',
+    id: 'nuclear-1-5',
     title: '重核裂变与轻核聚变',
     chapter: '核物理',
     module: 'nuclear',
@@ -43,6 +54,6 @@ export const nuclearKnowledge: KnowledgeNode[] = [
     animationIds: ['anim-nuclear-reaction'],
     problemIds: ['prob-2024-shandong-fusion-binding'],
     gaokaoFrequency: '5年9考 / 聚变裂变方程',
-    prerequisites: ['nuclear-1-3'],
+    prerequisites: ['nuclear-1-4'],
   },
 ]

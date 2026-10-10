@@ -104,67 +104,7 @@ const IonizationPenetrationChart: React.FC<{ font: (size: number) => number }> =
   )
 }
 
-// 模式2专属：静止核在匀强磁场中衰变径迹理论解析卡片
-const MagneticDecayAnalysisCard: React.FC<{ decayType: number }> = ({ decayType }) => {
-  const isAlpha = decayType === 0
 
-  return (
-    <div className="w-full h-full bg-slate-900 text-slate-100 rounded-lg border border-slate-700/80 p-4 flex flex-col justify-between overflow-y-auto">
-      <div className="flex items-center justify-between border-b border-slate-700/60 pb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-amber-400 font-extrabold text-sm">🎯 高考压轴模型</span>
-          <span className="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-mono border border-slate-700">
-            {isAlpha ? 'α 衰变 (外切圆轨迹)' : 'β 衰变 (内切圆轨迹)'}
-          </span>
-        </div>
-        <div className="text-xs text-slate-400 font-mono">
-          {isAlpha ? '²³⁸₉₂U → ²³⁴₉₀Th + ⁴₂He' : '¹⁴₆C → ¹⁴₇N + ⁰₋₁e'}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-3 my-2 text-xs">
-        <div className="bg-slate-800/80 p-2.5 rounded border border-slate-700">
-          <div className="text-sky-400 font-bold mb-1">① 动量守恒定理</div>
-          <div className="font-mono text-slate-200">p₁ = p₂ = p</div>
-          <div className="text-slate-400 text-[11px] mt-1">静止母核衰变裂解，反冲核与放射微粒动量等大反向。</div>
-        </div>
-
-        <div className="bg-slate-800/80 p-2.5 rounded border border-slate-700">
-          <div className="text-emerald-400 font-bold mb-1">② 轨迹半径与电荷反比</div>
-          <div className="font-mono text-slate-200">R = p / (|q|B) ∝ 1 / |q|</div>
-          <div className="text-slate-400 text-[11px] mt-1">
-            {isAlpha
-              ? 'R_α : R_Th = 90 : 2 = 45 : 1 (α 粒子半径极大)'
-              : 'R_β : R_N = 7 : 1 (β 粒子外侧大圆)'}
-          </div>
-        </div>
-
-        <div className="bg-slate-800/80 p-2.5 rounded border border-slate-700">
-          <div className="text-amber-400 font-bold mb-1">③ 轨迹几何切向判定</div>
-          <div className="font-mono text-slate-200">
-            {isAlpha ? '同种电荷反向受力 → 外切圆' : '异种电荷同向受力 → 内切圆'}
-          </div>
-          <div className="text-slate-400 text-[11px] mt-1">
-            {isAlpha
-              ? '两粒子均带正电，洛伦兹力指向切线相反侧。'
-              : '一正一负，速度相反导致洛伦兹力指向同侧。'}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between bg-slate-950/60 px-3 py-2 rounded border border-slate-800 text-[11px] text-slate-300">
-        <div>
-          <span className="text-rose-400 font-bold">动能分配规律：</span>
-          <span className="font-mono ml-1">E_k = p² / (2m) ∝ 1 / m</span>
-          <span className="text-slate-400 ml-2">（质量极小的衰变微粒分得绝大部分动能）</span>
-        </div>
-        <div className="text-slate-400 font-mono">
-          {isAlpha ? 'E_kα : E_kTh = 234 : 4 ≈ 58.5 : 1' : 'E_kβ : E_kN ≈ 25000 : 1'}
-        </div>
-      </div>
-    </div>
-  )
-}
 
 export default function NuclearDecayAnimation() {
   // ── 1. Zustand Store ──
@@ -225,11 +165,36 @@ export default function NuclearDecayAnimation() {
     return pts
   }, [])
 
+  // 模式2专属：轨道半径与核电荷反比关系曲线 R = p / (|q|B) ∝ 1/|q|
+  const radiusCurvePoints = useMemo(() => {
+    const pts = []
+    for (let q = 0.8; q <= 10.0; q += 0.2) {
+      pts.push({ x: q, y: 10.0 / q })
+    }
+    return pts
+  }, [])
+
+  const radiusMarkers = useMemo(() => {
+    if (decayType === 0) {
+      // α 衰变: α 粒子 (|q|=2), 新核 Th (|q|=90 示意投影为大电荷端)
+      return [
+        { axis: 'point' as const, x: 2.0, y: 5.0, label: 'α 粒子 (|q|=2, 半径大 R_α=45 R_Th)', color: PHYSICS_COLORS.photonInfrared },
+        { axis: 'point' as const, x: 9.0, y: 1.11, label: '反冲钍核 (|q|=90, 半径极小 R_Th)', color: PHYSICS_COLORS.velocity },
+      ]
+    } else {
+      // β 衰变: β 粒子 (|q|=1), 新核 N (|q|=7)
+      return [
+        { axis: 'point' as const, x: 1.0, y: 10.0, label: 'β 粒子 (|q|=1, 外侧大圆 R_β=7 R_N)', color: PHYSICS_COLORS.velocity },
+        { axis: 'point' as const, x: 7.0, y: 1.43, label: '反冲氮核 (|q|=7, 内侧小圆 R_N)', color: PHYSICS_COLORS.photonInfrared },
+      ]
+    }
+  }, [decayType])
+
   // ── 7. 渲染 ──
   return (
     <div className="w-full h-full flex flex-col gap-2 p-1">
-      {/* 上半屏：图表与理论解析展示区 */}
-      <div className="h-[310px] shrink-0 w-full overflow-hidden">
+      {/* 上半屏：图表展示区 (flex-1 min-h-0 自适应，严禁写死固定高度) */}
+      <div className="flex-1 min-h-0 w-full overflow-hidden">
         {mode === 0 ? (
           <RelationChart
             points={forceCurvePoints}
@@ -251,7 +216,18 @@ export default function NuclearDecayAnimation() {
         ) : mode === 1 ? (
           <IonizationPenetrationChart font={canvasSize.font} />
         ) : (
-          <MagneticDecayAnalysisCard decayType={decayType} />
+          <RelationChart
+            points={radiusCurvePoints}
+            xLabel="核电荷量绝对值 |q| (e)"
+            yLabel="轨迹半径 R (相对值)"
+            title={`匀强磁场衰变轨迹半径与电荷反比曲线 (R ∝ 1/|q|) — 当前：${decayType === 0 ? 'α 衰变 (外切圆)' : 'β 衰变 (内切圆)'}`}
+            xDomain={[0.5, 10.5]}
+            yDomain={[0, 12.0]}
+            showGrid={true}
+            markers={radiusMarkers}
+            series="primary"
+            mainLabel="反比理论线 R = p/(|q|B)"
+          />
         )}
       </div>
 
