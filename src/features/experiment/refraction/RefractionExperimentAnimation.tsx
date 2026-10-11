@@ -54,16 +54,21 @@ export default function RefractionExperimentAnimation() {
     }
   }, [physicsResult.physics.theta2MeasRad, physicsResult.physics.theta1Rad])
 
+  const xDomain = useMemo<[number, number]>(() => {
+    const maxX = Math.max(0.75, ...chartData.map((d) => d.x))
+    return [0, Math.min(1.0, Math.ceil(maxX * 105) / 100)]
+  }, [chartData])
+
   return (
     <div className="w-full h-full flex flex-col gap-2 p-2 bg-slate-50 rounded-lg">
       {/* 1. 上分屏 (50%)：高考数据拟合与图像法分析 */}
       <div className="flex-1 min-h-0 bg-white rounded-lg p-2 border border-slate-200 shadow-sm flex flex-col overflow-hidden">
         <RelationChart
           points={chartData}
-          xDomain={[0, 0.7]}
+          xDomain={xDomain}
           yDomain={[0, 1.0]}
           cursorX={currentPoint.x}
-          title={`高考图像斜率法：sin θ₁ - sin θ₂ 拟合直线 (斜率 k ≈ n = ${physicsResult.physics.nMeas.toFixed(3)})`}
+          title={`高考图像斜率法：sin θ₁ - sin θ₂ 关系图线 (割线斜率 k ≈ n = ${physicsResult.physics.nMeas.toFixed(3)})`}
           xLabel="sin θ₂ (折射角正弦)"
           yLabel="sin θ₁ (入射角正弦)"
         />

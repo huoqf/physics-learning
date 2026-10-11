@@ -3,7 +3,7 @@ import {
   solveRefractionExperiment,
   REFRACTION_EXP_DEFAULTS,
 } from '@/physics/experimentRefraction'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 
 /**
  * 高考实验：插针法测定玻璃折射率——右屏物理看板数据构建器
@@ -72,7 +72,20 @@ export function buildExperimentRefractionQuantities(
       symbol: 'δ',
       value: parseFloat(res.relativeErrorPercent.toFixed(2)),
       unit: '%',
-      color: Math.abs(res.relativeErrorPercent) < 0.1 ? PHYSICS_COLORS.velocity : '#EF4444',
+      color: Math.abs(res.relativeErrorPercent) < 0.1 ? PHYSICS_COLORS.velocity : CANVAS_COLORS.alertRed,
+    },
+    {
+      label: '全反射临界角',
+      symbol: 'C',
+      value: parseFloat(res.criticalAngleDeg.toFixed(1)),
+      unit: '°',
+      color: PHYSICS_COLORS.lightRayNormal,
+    },
+    {
+      label: '出射光线侧移量',
+      symbol: 'Δx',
+      value: parseFloat(res.lateralOffsetMm.toFixed(2)),
+      unit: 'mm',
     },
   ]
 
@@ -101,6 +114,33 @@ export function buildExperimentRefractionQuantities(
     )
   }
 
+  // 若选用图像斜率法，追加当前工作点的正弦坐标与割线斜率
+  if (method === 2) {
+    quantities.push(
+      {
+        label: '入射角正弦值',
+        symbol: 'sin θ₁',
+        value: parseFloat(Math.sin(res.theta1Rad).toFixed(3)),
+        unit: '',
+        color: PHYSICS_COLORS.electricPotential,
+      },
+      {
+        label: '实测折射角正弦值',
+        symbol: 'sin θ₂测',
+        value: parseFloat(Math.sin(res.theta2MeasRad).toFixed(3)),
+        unit: '',
+        color: PHYSICS_COLORS.velocity,
+      },
+      {
+        label: '图线割线斜率',
+        symbol: 'k',
+        value: parseFloat(res.nMeas.toFixed(3)),
+        unit: '',
+        color: PHYSICS_COLORS.acceleration,
+      }
+    )
+  }
+
   // 2. 核心公式与物理定理
   const formulas = [
     {
@@ -121,8 +161,22 @@ export function buildExperimentRefractionQuantities(
       name: '高考图像斜率法',
       latex: '\\sin \\theta_1 = n \\cdot \\sin \\theta_2',
       level: 'derived' as const,
-      condition: '多次测量改变入射角 θ₁',
-      note: '以 sin θ₂ 为横轴、sin θ₁ 为纵轴作图，图线斜率 k 即为折射率 n',
+      condition: '多次改变入射角 θ₁',
+      note: '以 sin θ₂ 为横轴、sin θ₁ 为纵轴作图，图线割线斜率 k 即为待测折射率 n',
+    },
+    {
+      name: '全反射临界角与出射判定',
+      latex: 'C = \\arcsin\\left(\\frac{1}{n}\\right)',
+      level: 'derived' as const,
+      condition: '光从介质射向空气',
+      note: '从空气入玻璃时折射角 θ₂ 恒小于 C (sin θ₂ = sin θ₁ / n < 1/n)，因此平行玻璃砖内绝不会全反射！',
+    },
+    {
+      name: '平行玻璃砖出射侧移',
+      latex: '\\Delta x = \\frac{d \\cdot \\sin(\\theta_1 - \\theta_2)}{\\cos \\theta_2}',
+      level: 'derived' as const,
+      condition: '两界面平行且厚度为 d',
+      note: '出射光线与入射光线严格平行，沿原入射方向横向侧移 Δx',
     },
   ]
 
@@ -133,11 +187,15 @@ export function buildExperimentRefractionQuantities(
       importance: 'gaokao' as const,
     },
     {
-      text: '【入射角选取黄金区间】入射角 θ₁ 不宜太小（小于 15° 会导致折射角太小，读数相对误差大）；也不宜太大（大于 75° 时反射光过强，折射出射光太弱，不易观察）。通常以 30°~60° 为最佳。',
+      text: '【入射角选取黄金区间】入射角 θ₁ 不宜太小（小于 15° 会导致折射角太小，读数相对误差大）；也不宜太大（大于 60° 时反射光过强，折射出射光太弱，不易观察）。通常以 30°~60° 为最佳。',
       importance: 'gaokao' as const,
     },
     {
       text: '【下表面边界画偏的误差铁律】若将出射边界 bb\' 误画窄（向内移），会导致所画的折射角 θ₂ 偏小，由公式反算得到的折射率 n 偏大；反之若画宽，则 θ₂ 偏大，n 偏小。',
+      importance: 'gaokao' as const,
+    },
+    {
+      text: '【全反射临界角经典辨析】玻璃介质临界角 C = arcsin(1/n) ≈ 41.8°(n=1.5)。学生常误以为入射角大时在玻璃砖内会发生全反射。注意：光线是从光疏进入光密，θ₂ < C 恒成立，下表面入射角等于 θ₂，故在平行下表面绝对不会发生全反射！',
       importance: 'gaokao' as const,
     },
     {
@@ -148,6 +206,13 @@ export function buildExperimentRefractionQuantities(
 
   // 4. 实时实验警示
   const warnings: WarningItem[] = []
+
+  if (res.clampedByModel) {
+    warnings.push({
+      text: `⚠️ 画偏量已达几何作图有效极限！进一步画窄会导致作图折射光线越过法线。模型已安全限制画窄量为 ${res.maxAllowedNarrowMm.toFixed(1)} mm。`,
+      level: 'danger',
+    })
+  }
 
   if (!res.evaluations.pinDistanceAdequate) {
     warnings.push({
@@ -161,14 +226,14 @@ export function buildExperimentRefractionQuantities(
       text: `⚠️ 当前入射角偏小 (${theta1}° < 25°)，折射角过小会导致正弦值测量相对误差增大。`,
       level: 'info',
     })
-  } else if (theta1 > 65) {
+  } else if (theta1 >= 60) {
     warnings.push({
-      text: `⚠️ 当前入射角偏大 (${theta1}° > 65°)，表面反射损耗剧烈，出射光线变弱难以看清插针虚像。`,
+      text: `⚠️ 当前入射角偏大 (${theta1}° ≥ 60°)，表面反射损耗剧烈，出射光线变弱难以看清插针虚像。`,
       level: 'warning',
     })
   }
 
-  if (res.errorOffsetMm !== 0) {
+  if (res.errorOffsetMm !== 0 && !res.clampedByModel) {
     warnings.push({
       text: `⚠️ 下表面 bb' 画偏探究：当前边界${res.errorOffsetMm < 0 ? '画窄' : '画宽'} ${Math.abs(res.errorOffsetMm)} mm，导致测得折射率${res.nMeas > res.nReal ? '偏大' : '偏小'} (${res.relativeErrorPercent >= 0 ? '+' : ''}${res.relativeErrorPercent.toFixed(2)}%)！`,
       level: 'danger',

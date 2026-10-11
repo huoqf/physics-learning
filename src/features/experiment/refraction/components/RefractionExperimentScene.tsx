@@ -12,6 +12,7 @@ import {
   DRAWING_PAPER_BOUNDS,
   GLASS_SLAB_DESIGN,
   NORMAL_LINE_RANGE,
+  PX_PER_MM,
   ExperimentStep,
 } from '../refractionExperimentLayout'
 
@@ -30,7 +31,7 @@ export interface RefractionExperimentSceneProps {
  * 4. 4 枚大头针 P1, P2, P3, P4（俯视金属针帽与定位针孔）；
  * 5. 人眼对齐视线光锥与虚像光路指示；
  * 6. 连线作图光路（入射、折射、出射与侧移）；
- * 7. 高考测定工具：量角器特写 / 单位圆无量角器作图法 / 误差偏折比对。
+ * 7. 高考测定工具：全圆透光量角器特写 / 单位圆无量角器作图法 / 多角度图像法采样。
  */
 export const RefractionExperimentScene: React.FC<RefractionExperimentSceneProps> = ({
   physics,
@@ -153,17 +154,28 @@ export const RefractionExperimentScene: React.FC<RefractionExperimentSceneProps>
         {p.errorOffsetMm !== 0 ? "b' (画出线)" : "b'"}
       </text>
 
-      {/* 真实下表面基准线 (如果画偏了，给出灰色对比线) */}
+      {/* 真实下表面基准线 (如果画偏了，给出灰色对比线与标注) */}
       {p.errorOffsetMm !== 0 && (
-        <line
-          x1={GLASS_SLAB_DESIGN.leftX - 30}
-          y1={oy + design.glassThicknessPx}
-          x2={GLASS_SLAB_DESIGN.leftX + GLASS_SLAB_DESIGN.width + 30}
-          y2={oy + design.glassThicknessPx}
-          stroke={CANVAS_COLORS.axis}
-          strokeWidth={1}
-          strokeDasharray="2,2"
-        />
+        <>
+          <line
+            x1={GLASS_SLAB_DESIGN.leftX - 30}
+            y1={oy + design.glassThicknessPx}
+            x2={GLASS_SLAB_DESIGN.leftX + GLASS_SLAB_DESIGN.width + 30}
+            y2={oy + design.glassThicknessPx}
+            stroke={CANVAS_COLORS.axis}
+            strokeWidth={1}
+            strokeDasharray="2,2"
+          />
+          <text
+            x={GLASS_SLAB_DESIGN.leftX + GLASS_SLAB_DESIGN.width + 35}
+            y={oy + design.glassThicknessPx + 3}
+            fontSize={font(8.5)}
+            fill={CANVAS_COLORS.axis}
+            fontWeight="bold"
+          >
+            真实底面
+          </text>
+        </>
       )}
 
       {/* 法线 NN' (垂直于界面 aa') */}
@@ -350,22 +362,26 @@ export const RefractionExperimentScene: React.FC<RefractionExperimentSceneProps>
       {/* ── 7. 测量工具与作图特写 (Step 4) ── */}
       {showMeasurements && (
         <g className="measurement-tools">
-          {/* 方法 0：半圆量角器测量法 */}
+          {/* 方法 0：全圆透光量角器测量法（中心在 O 点，同时覆盖入射角与折射角） */}
           {method === 0 && (
             <g className="protractor-overlay" transform={`translate(${ox}, ${oy})`}>
-              {/* 半圆透明量角器底盘（中心在 O 点） */}
-              <path
-                d="M -75,0 A 75,75 0 0,1 75,0 Z"
-                fill={withAlpha(colors.accent[300], 0.25)}
+              {/* 全圆半透明量角器底盘 */}
+              <circle
+                cx={0}
+                cy={0}
+                r={75}
+                fill={withAlpha(colors.accent[300], 0.18)}
                 stroke={colors.accent[600]}
                 strokeWidth={1.2}
               />
-              {/* 量角器刻度半径线 */}
+              <line x1={-75} y1={0} x2={75} y2={0} stroke={colors.accent[600]} strokeWidth={0.8} />
+
+              {/* 上半圆刻度半径线 (测 θ₁) */}
               {[15, 30, 45, 60, 75].map((deg) => {
                 const rad = (deg * Math.PI) / 180
                 return (
                   <line
-                    key={deg}
+                    key={`top-${deg}`}
                     x1={-70 * Math.sin(rad)}
                     y1={-70 * Math.cos(rad)}
                     x2={-75 * Math.sin(rad)}
@@ -375,6 +391,22 @@ export const RefractionExperimentScene: React.FC<RefractionExperimentSceneProps>
                   />
                 )
               })}
+              {/* 下半圆刻度半径线 (测 θ₂) */}
+              {[15, 30, 45, 60, 75].map((deg) => {
+                const rad = (deg * Math.PI) / 180
+                return (
+                  <line
+                    key={`bottom-${deg}`}
+                    x1={70 * Math.sin(rad)}
+                    y1={70 * Math.cos(rad)}
+                    x2={75 * Math.sin(rad)}
+                    y2={75 * Math.cos(rad)}
+                    stroke={colors.accent[600]}
+                    strokeWidth={1}
+                  />
+                )
+              })}
+
               {/* 入射角 θ₁ 弧线标注 */}
               <path
                 d={`M 0,-40 A 40,40 0 0,0 ${-40 * Math.sin(p.theta1Rad)},${-40 * Math.cos(p.theta1Rad)}`}
@@ -382,16 +414,23 @@ export const RefractionExperimentScene: React.FC<RefractionExperimentSceneProps>
                 stroke={PHYSICS_COLORS.electricPotential}
                 strokeWidth={1.8}
               />
-              <text
-                x={-28}
-                y={-45}
-                fontSize={font(10)}
-                fill={PHYSICS_COLORS.electricPotential}
-                fontWeight="bold"
-                textAnchor="middle"
-              >
-                {`θ₁ = ${p.theta1Deg.toFixed(1)}°`}
-              </text>
+              {(() => {
+                const midRad1 = p.theta1Rad / 2
+                const tx1 = -52 * Math.sin(midRad1)
+                const ty1 = -52 * Math.cos(midRad1)
+                return (
+                  <text
+                    x={tx1}
+                    y={ty1}
+                    fontSize={font(10)}
+                    fill={PHYSICS_COLORS.electricPotential}
+                    fontWeight="bold"
+                    textAnchor="middle"
+                  >
+                    {`θ₁ = ${p.theta1Deg.toFixed(1)}°`}
+                  </text>
+                )
+              })()}
 
               {/* 测得折射角 θ₂ 弧线标注 */}
               <path
@@ -400,16 +439,23 @@ export const RefractionExperimentScene: React.FC<RefractionExperimentSceneProps>
                 stroke={PHYSICS_COLORS.velocity}
                 strokeWidth={1.8}
               />
-              <text
-                x={28}
-                y={45}
-                fontSize={font(10)}
-                fill={PHYSICS_COLORS.velocity}
-                fontWeight="bold"
-                textAnchor="middle"
-              >
-                {`θ₂ = ${p.theta2MeasDeg.toFixed(1)}°`}
-              </text>
+              {(() => {
+                const midRad2 = p.theta2MeasRad / 2
+                const tx2 = 52 * Math.sin(midRad2)
+                const ty2 = 52 * Math.cos(midRad2)
+                return (
+                  <text
+                    x={tx2}
+                    y={ty2 + 4}
+                    fontSize={font(10)}
+                    fill={PHYSICS_COLORS.velocity}
+                    fontWeight="bold"
+                    textAnchor="middle"
+                  >
+                    {`θ₂ = ${p.theta2MeasDeg.toFixed(1)}°`}
+                  </text>
+                )
+              })()}
             </g>
           )}
 
@@ -420,7 +466,7 @@ export const RefractionExperimentScene: React.FC<RefractionExperimentSceneProps>
               <circle
                 cx={ox}
                 cy={oy}
-                r={p.unitCircleRadiusMm * 1.8}
+                r={p.unitCircleRadiusMm * PX_PER_MM}
                 fill="none"
                 stroke={PHYSICS_COLORS.magneticField}
                 strokeWidth={1.2}
@@ -428,7 +474,7 @@ export const RefractionExperimentScene: React.FC<RefractionExperimentSceneProps>
               />
               {/* 点 A: 辅助圆与入射光线交点 */}
               {(() => {
-                const rPx = p.unitCircleRadiusMm * 1.8
+                const rPx = p.unitCircleRadiusMm * PX_PER_MM
                 const ax = ox - rPx * Math.sin(p.theta1Rad)
                 const ay = oy - rPx * Math.cos(p.theta1Rad)
                 // 垂足 A' 在法线上
@@ -494,6 +540,71 @@ export const RefractionExperimentScene: React.FC<RefractionExperimentSceneProps>
                   </>
                 )
               })()}
+            </g>
+          )}
+
+          {/* 方法 2：高考图像斜率法数据采样视觉 */}
+          {method === 2 && (
+            <g className="slope-method-visual">
+              {/* 采样光线示踪：虚线示意多组入射角采样 */}
+              {[30, 60].map((sampleTheta) => {
+                const sRad1 = (sampleTheta * Math.PI) / 180
+                const sRad2 = Math.asin(Math.sin(sRad1) / p.nReal)
+                const inLen = 60
+                const outLen = design.glassThicknessPx
+                return (
+                  <g key={sampleTheta} opacity={0.35}>
+                    <line
+                      x1={ox - inLen * Math.sin(sRad1)}
+                      y1={oy - inLen * Math.cos(sRad1)}
+                      x2={ox}
+                      y2={oy}
+                      stroke={PHYSICS_COLORS.electricPotential}
+                      strokeWidth={1}
+                      strokeDasharray="3,3"
+                    />
+                    <line
+                      x1={ox}
+                      y1={oy}
+                      x2={ox + outLen * Math.tan(sRad2)}
+                      y2={oy + outLen}
+                      stroke={PHYSICS_COLORS.velocity}
+                      strokeWidth={1}
+                      strokeDasharray="3,3"
+                    />
+                  </g>
+                )
+              })}
+              {/* 右上角数据采样说明标牌 */}
+              <g transform={`translate(${GLASS_SLAB_DESIGN.leftX + GLASS_SLAB_DESIGN.width - 200}, 20)`}>
+                <rect
+                  x={0}
+                  y={0}
+                  width={190}
+                  height={32}
+                  rx={4}
+                  fill={CANVAS_COLORS.white}
+                  stroke={PHYSICS_COLORS.velocity}
+                  strokeWidth={1}
+                />
+                <text
+                  x={10}
+                  y={14}
+                  fontSize={font(9.5)}
+                  fill={PHYSICS_COLORS.velocity}
+                  fontWeight="bold"
+                >
+                  多角度连续采样中 (见上方图表)
+                </text>
+                <text
+                  x={10}
+                  y={26}
+                  fontSize={font(8.5)}
+                  fill={CANVAS_COLORS.labelText}
+                >
+                  {`当前点: (${Math.sin(p.theta2MeasRad).toFixed(3)}, ${Math.sin(p.theta1Rad).toFixed(3)})`}
+                </text>
+              </g>
             </g>
           )}
         </g>

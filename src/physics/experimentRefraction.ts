@@ -30,15 +30,15 @@ export function radToDeg(rad: number): number {
 }
 
 export interface RefractionExperimentInput {
-  /** 入射角 (度, 15° ~ 75°) */
+  /** 入射角 (度, 15° ~ 65° 黄金区间) */
   theta1Deg: number
   /** 玻璃砖真实折射率 (1.30 ~ 1.80) */
   nReal: number
-  /** 玻璃砖厚度 (mm, 30 ~ 70 mm) */
+  /** 玻璃砖厚度 (mm, 35 ~ 65 mm) */
   dMm: number
   /** 大头针间距 (mm, 20 ~ 70 mm) */
   pinDistMm: number
-  /** 下表面画偏误差 (mm, -10 ~ +10 mm，负为画窄，正为画宽) */
+  /** 下表面画偏误差 (mm, -6 ~ +6 mm，负为画窄，正为画宽；受几何有效域约束) */
   errorOffsetMm?: number
   /** 单位圆辅助圆半径 (mm, 默认 35 mm) */
   circleRadiusMm?: number
@@ -55,12 +55,19 @@ export interface RefractionExperimentResult {
   /** 理论折射角 (度) */
   theta2Deg: number
   theta2Rad: number
+  /** 玻璃介质的全反射临界角 (度) C = arcsin(1/n) */
+  criticalAngleDeg: number
+  criticalAngleRad: number
   /** 玻璃砖真实厚度 (mm) */
   dMm: number
   /** 实际画出的玻璃砖厚度 (mm) = dMm + errorOffsetMm */
   dDrawnMm: number
-  /** 下表面画偏量 (mm) */
+  /** 经模型有效域校验后的实际采用下表面画偏量 (mm) */
   errorOffsetMm: number
+  /** 原始请求画偏量是否因超出几何有效域被物理层安全钳制 */
+  clampedByModel: boolean
+  /** 当前参数下允许画窄的最大绝对值 (mm) */
+  maxAllowedNarrowMm: number
   /** 真实折射率 */
   nReal: number
 
@@ -109,11 +116,10 @@ export interface RefractionExperimentResult {
 export function solveRefractionExperiment(
   input: RefractionExperimentInput,
 ): RefractionExperimentResult {
-  const theta1Deg = Math.min(Math.max(input.theta1Deg, 15), 75)
+  const theta1Deg = Math.min(Math.max(input.theta1Deg, 15), 65)
   const nReal = Math.min(Math.max(input.nReal, 1.2), 2.0)
-  const dMm = Math.min(Math.max(input.dMm, 20), 80)
+  const dMm = Math.min(Math.max(input.dMm, 30), 80)
   const pinDistMm = Math.min(Math.max(input.pinDistMm, 15), 80)
-  const errorOffsetMm = Math.min(Math.max(input.errorOffsetMm ?? 0, -15), 15)
   const circleRadiusMm = Math.min(Math.max(input.circleRadiusMm ?? 35, 20), 50)
 
   const theta1Rad = degToRad(theta1Deg)
@@ -124,18 +130,43 @@ export function solveRefractionExperiment(
   const theta2Rad = Math.asin(sinTheta2)
   const theta2Deg = radToDeg(theta2Rad)
 
+  // 全反射临界角 C = arcsin(1 / nReal)
+  const criticalAngleRad = Math.asin(1 / nReal)
+  const criticalAngleDeg = radToDeg(criticalAngleRad)
+
   // 内部光线在真实下表面处的横向平移 Δx = d * tan(θ₂)
   const lateralShiftMm = dMm * Math.tan(theta2Rad)
-  // 平行板侧移
+  // 平行板出射侧移量 d * sin(θ₁ - θ₂) / cos(θ₂)
   const lateralOffsetMm = (dMm * Math.sin(theta1Rad - theta2Rad)) / Math.cos(theta2Rad)
+
+  // ── 模型有效域推导与安全钳制 ──
+  // 学生移砖后将折射光线出射点误定在画出下表面与出射线交点：
+  // x_drawn = d·tan(θ₂) + ε·tan(θ₁)，y_drawn = d + ε。
+  // 若 ε 负得过多（画太窄），x_drawn 会趋近法线甚至穿过法线至负半轴，产生反向折射或除零爆炸；
+  // 实验作图要求折射光线横向偏移至少保留理论值的 40% (即 x_drawn >= 0.40·d·tan(θ₂))，
+  // 对应画窄极限 ε >= -0.60·d·(tan θ₂ / tan θ₁)，且画窄绝对值不超过 6.0 mm。
+  const theoreticalMaxNarrow = dMm * (Math.tan(theta2Rad) / Math.tan(theta1Rad))
+  const maxSafeNarrowMm = Math.min(0.60 * theoreticalMaxNarrow, 6.0)
+  const minAllowedErrorMm = -maxSafeNarrowMm
+  const maxAllowedErrorMm = 6.0
+
+  const rawError = input.errorOffsetMm ?? 0
+  let errorOffsetMm = rawError
+  let clampedByModel = false
+
+  if (rawError < minAllowedErrorMm) {
+    errorOffsetMm = minAllowedErrorMm
+    clampedByModel = true
+  } else if (rawError > maxAllowedErrorMm) {
+    errorOffsetMm = maxAllowedErrorMm
+    clampedByModel = true
+  }
 
   // 关键几何坐标计算（以入射点 O 为坐标原点 (0, 0)，法线为 Y 轴，界面为 X 轴）：
   // 光线从左上方射入 O(0, 0)，方向向量为 (sin θ₁, cos θ₁)
   const pointO: PinPosition = { x: 0, y: 0 }
 
   // P1, P2 在入射光线上（Y < 0）
-  // P2 靠近 O，距离 O 为 1.0 * pinDistMm
-  // P1 远离 O，距离 O 为 2.0 * pinDistMm
   const pinP2: PinPosition = {
     x: -pinDistMm * Math.sin(theta1Rad),
     y: -pinDistMm * Math.cos(theta1Rad),
@@ -151,19 +182,14 @@ export function solveRefractionExperiment(
     y: dMm,
   }
 
-  // 画出的下表面（可能存在画偏误差）
+  // 画出的下表面（考虑经过有效域约束后的画偏量）
   const dDrawnMm = dMm + errorOffsetMm
-  // 学生移去玻璃砖后，将折射光线出射点误定在画出的下表面 bb' 与出射光线的交点处：
-  // 出射光线从 pointOReal(lateralShiftMm, dMm) 出发，方向仍为 (sin θ₁, cos θ₁)
-  // 出射光线方程：x = lateralShiftMm + (y - dMm) * tan(θ₁)
   const pointODrawn: PinPosition = {
     x: lateralShiftMm + errorOffsetMm * Math.tan(theta1Rad),
     y: dDrawnMm,
   }
 
   // P3, P4 在出射光线上（从 pointOReal 向右下方延伸，Y > dMm）
-  // P3 靠近出射点，距离 O_real 为 1.0 * pinDistMm
-  // P4 远离出射点，距离 O_real 为 2.0 * pinDistMm
   const pinP3: PinPosition = {
     x: pointOReal.x + pinDistMm * Math.sin(theta1Rad),
     y: pointOReal.y + pinDistMm * Math.cos(theta1Rad),
@@ -174,20 +200,20 @@ export function solveRefractionExperiment(
   }
 
   // 学生作图连线：连接 O(0, 0) 与 pointODrawn(xDrawn, yDrawn) 作为“折射光线”
-  // 测量得到的折射角 θ₂_meas
-  const measuredTanTheta2 = Math.max(1e-4, pointODrawn.x / Math.max(1e-4, pointODrawn.y))
+  // 测量得到的折射角 θ₂_meas (由于有效域保障，pointODrawn.x > 0 且 pointODrawn.y > 0，天然无除零/越界)
+  const measuredTanTheta2 = pointODrawn.x / pointODrawn.y
   const theta2MeasRad = Math.atan(measuredTanTheta2)
   const theta2MeasDeg = radToDeg(theta2MeasRad)
 
-  // 测得折射率
+  // 测得折射率 (移除无依据的 : nReal 假兜底，物理直算自洽)
   const sinTheta2Meas = Math.sin(theta2MeasRad)
-  const nMeas = sinTheta2Meas > 1e-4 ? sinTheta1 / sinTheta2Meas : nReal
+  const nMeas = sinTheta1 / sinTheta2Meas
   const relativeErrorPercent = ((nMeas - nReal) / nReal) * 100
 
   // 单位圆法：以 O 为圆心半径 R
   const distAAPrimeMm = circleRadiusMm * sinTheta1
   const distBBPrimeMm = circleRadiusMm * sinTheta2Meas
-  const nCircleMeas = distBBPrimeMm > 1e-4 ? distAAPrimeMm / distBBPrimeMm : nReal
+  const nCircleMeas = distAAPrimeMm / distBBPrimeMm
 
   // 高考评价
   const pinDistanceAdequate = pinDistMm >= 40
@@ -199,9 +225,13 @@ export function solveRefractionExperiment(
     theta1Rad,
     theta2Deg,
     theta2Rad,
+    criticalAngleDeg,
+    criticalAngleRad,
     dMm,
     dDrawnMm,
     errorOffsetMm,
+    clampedByModel,
+    maxAllowedNarrowMm: maxSafeNarrowMm,
     nReal,
     lateralShiftMm,
     lateralOffsetMm,
@@ -236,7 +266,8 @@ export function generateRefractionSeries(
   errorOffsetMm = 0,
   dMm = 50,
 ): Array<{ theta1Deg: number; sinTheta1: number; sinTheta2Meas: number; sinTheta2Real: number }> {
-  const angles = [15, 25, 35, 45, 55, 65, 75]
+  // 高考实验标准取样角区间 (15° ~ 65°，避免大于 65° 时的边缘几何畸变与强反射衰减)
+  const angles = [15, 25, 35, 45, 55, 65]
   return angles.map((ang) => {
     const res = solveRefractionExperiment({
       theta1Deg: ang,
