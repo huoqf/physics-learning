@@ -129,11 +129,6 @@
       "count": 2
     }
   },
-  "src/features/mechanics/experiment/components/MechanicsExperimentScene.tsx": {
-    "no-restricted-syntax": {
-      "count": 4
-    }
-  },
   "src/features/modern/bohr-theory/components/BohrOrbits.tsx": {
     "no-restricted-syntax": {
       "count": 14

@@ -35,7 +35,7 @@ export const mechanicsExperimentAnimations = defineAnimations({
         key: 'a',
         label: '加速度 a',
         min: 0.1,
-        max: 8,
+        max: 10,
         step: 0.1,
         unit: 'm/s²',
         group: '运动学参数',
@@ -85,12 +85,13 @@ export const mechanicsExperimentAnimations = defineAnimations({
         key: 'm',
         label: '钩码质量 m',
         min: 0.05,
-        max: 1.0,
+        max: 0.3,
         step: 0.05,
         unit: 'kg',
         group: '胡克定律',
         showIf: 'mode',
         showIfValue: 2,
+        description: '单个钩码质量；上限对应弹簧最大伸长量 14.7 cm（画布量程内）',
       },
     ],
     controlMeta: [
@@ -143,7 +144,8 @@ export const mechanicsExperimentAnimations = defineAnimations({
       {
         type: 'tip',
         group: '高考要点提示',
-        content: '① 打点纸带逐差法公式：a = [(x6-x3)-(x3-x0)] / 9T²（或位移段 [(s4+s5+s6)-(s1+s2+s3)] / 9T²）；② 探究 a 与 F 关系必须平衡摩擦力（轻推小车匀速穿过打点计时器）；③ 验证机械能守恒需选第 1、2 点间距约为 2mm（即 0.5·g·T² ≈ 1.96mm）的纸带。',
+        content:
+          '① 逐差法：a = [(x₆−x₃)−(x₃−x₀)] / 9T²，式中 T 是计数周期（每 5 个打点取 1 个计数点，T = 5T₀ = 0.1 s），切勿代入打点周期 0.02 s；② 探究 a 与 F 关系必须先平衡摩擦力（轻推小车匀速穿过打点计时器）；③ 验证机械能守恒需选第 1、2 点间距约 2 mm（即 0.5·g·T₀² ≈ 1.96 mm）的纸带。',
       },
     ],
   },
@@ -226,7 +228,7 @@ export const mechanicsExperimentAnimations = defineAnimations({
         type: 'tip',
         group: '高考实验决策',
         content:
-          '金属丝电阻 Rx 仅数欧姆，远小于电压表内阻（约 3000Ω），故采用电流表外接法；R-L 图像法求斜率 k = ΔR/ΔL，由 ρ = k·π·d²/4 计算可有效规避零点误差。',
+          '金属丝电阻 Rx 仅约 1.8 Ω（判据 √(R_A·R_V) ≈ 39 Ω），属小电阻，必须用电流表外接法；R-L 图线拟合斜率 k = ΔR/ΔL，由 ρ = k·π·d²/4 计算可自动消除纵轴截距类系统误差（如内接法多出来的 R_A）。注意：变阻器 R 调大后，回路电流 I = E/(R_测 + R + r) 与金属丝两端电压 U = I·R_测 会同步变小——这正是限流式接法的特征，与 R-L 图线的斜率无关。',
       },
     ],
   },
@@ -261,7 +263,8 @@ export const mechanicsExperimentAnimations = defineAnimations({
         step: 1,
         unit: 'Ω',
         group: '调零电位器',
-        description: '0 为理想精准调零点（短接表针指 0Ω）',
+        description:
+          '0 为理想精准调零点（短接表针精确指右端 0Ω）；非 0 时短接表针将偏离满偏，读数随之偏大或偏小',
         marks: [
           { value: 0, label: '精准调零点', variant: 'critical' },
         ],

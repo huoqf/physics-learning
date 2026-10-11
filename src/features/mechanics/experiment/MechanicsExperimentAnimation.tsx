@@ -4,12 +4,21 @@ import { AnimationSvgCanvas } from '@/components/Layout'
 import { VelocityTimeChart, RelationChart } from '@/components/Chart'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
+import { TRACK_MAX_M, hookeSeries, timeToReach, velocityAt } from '@/physics/experimentMechanics'
 import { useMechanicsExperimentPhysics } from './hooks/useMechanicsExperimentPhysics'
 import { MechanicsExperimentScene } from './components/MechanicsExperimentScene'
+import { TRACK_ORIGIN_DESIGN_X, TRACK_PX_PER_M, TRACK_GROUND_Y } from './mechanicsExperimentLayout'
+
+/** v-t / F-Δx 图采样点数 */
+const CHART_SAMPLES = 40
 
 /**
  * 高考力学实验基础 - 主编排动画组件 (MechanicsExperimentAnimation)
- * 采用 50%/50% flex splitV 经典分屏布局（上屏物理图表 + 下屏实验 SVG 画布）
+ *
+ * 采用 50%/50% flex splitV 经典分屏布局（上屏物理图表 + 下屏实验 SVG 画布）。
+ * 上屏图表与中屏场景共用 `@/physics/experimentMechanics` 的运动学真源：
+ * 小车行程受轨道末端挡块限制，图表时间轴同样截到挡块时刻，杜绝"图在加速、
+ * 车已停住"的两张皮。
  */
 export default function MechanicsExperimentAnimation() {
   // 1. Zustand Store 订阅
@@ -27,17 +36,20 @@ export default function MechanicsExperimentAnimation() {
   const mNum = Number.isFinite(Number(params?.m)) ? Number(params.m) : 0.2
   const timeNum = Number.isFinite(Number(time)) ? Number(time) : 0
 
-  // 2. Viewport & Scale 适配 (根据 new-animation-page 规范)
+  // 2. Viewport & Scale 适配：物理原点固定在轨道起点（计时器纸带出口），
+  //    设计比例与轨道常量同源，保证小车全程留在画布内且与刻度尺读数一致。
   const { containerRef, canvasSize, vp } = useAnimationViewport({
     preset: CANVAS_PRESETS.splitV,
   })
 
-  // 2. Viewport & Scale 适配 (使用规范 anchor: 'center' 契合 840x325 设计坐标系)
   const sceneScale = useSceneScale({
     vp,
     preset: CANVAS_PRESETS.splitV,
-    anchor: 'center',
-    physicsScaleDesign: 500,
+    anchor: 'custom',
+    customScaleX: TRACK_PX_PER_M,
+    customScaleY: TRACK_PX_PER_M,
+    customOriginX: TRACK_ORIGIN_DESIGN_X,
+    customOriginY: TRACK_GROUND_Y,
     refMagnitudes: { velocity: Math.max(v0Num, 5) },
   })
 
@@ -53,23 +65,23 @@ export default function MechanicsExperimentAnimation() {
     time: timeNum,
   })
 
-  // v-t 图点集格式为 { t, v }
-  const vtPoints = Array.from({ length: 21 }).map((_, i) => {
-    const tStep = (i / 20) * 3
-    const vVal = v0Num + aNum * tStep
-    return { t: tStep, v: Number.isFinite(vVal) ? vVal : 0 }
+  // 4. 上屏图表：横轴上限取"到达轨道末端挡块的时刻"，与中屏运动时长同源
+  const travelTime = timeToReach(v0Num, aNum, TRACK_MAX_M)
+  const chartTimeMax = Number.isFinite(travelTime) && travelTime > 0.3 ? travelTime : 3
+
+  const vtPoints = Array.from({ length: CHART_SAMPLES + 1 }).map((_, i) => {
+    const tStep = (i / CHART_SAMPLES) * chartTimeMax
+    return { t: tStep, v: velocityAt(v0Num, aNum, tStep) }
   })
 
-  // 胡克定律 F-Δx 图点集格式为 { x, y }
-  const hookePoints = Array.from({ length: 6 }).map((_, i) => {
-    const mStep = i * 0.1
-    const fStep = mStep * 9.8
-    const deltaXVal = fStep / Math.max(1, kNum)
-    return {
-      x: Number.isFinite(deltaXVal) ? deltaXVal : 0,
-      y: Number.isFinite(fStep) ? fStep : 0,
-    }
-  })
+  // 胡克定律 F-Δx 图：依次挂 1…6 个钩码，图线过原点，斜率即劲度系数 k
+  const hookeData = hookeSeries(mNum, kNum, 6)
+  const hookePoints = [
+    { x: 0, y: 0 },
+    ...hookeData.map((point) => ({ x: point.extension, y: point.force })),
+  ]
+  const hookeMaxExtension = hookeData.length > 0 ? hookeData[hookeData.length - 1].extension : 0
+  const hookeMaxForce = hookeData.length > 0 ? hookeData[hookeData.length - 1].force : 0
 
   return (
     <div className="w-full h-full flex flex-col gap-2 p-2 bg-slate-50 rounded-lg">
@@ -78,8 +90,9 @@ export default function MechanicsExperimentAnimation() {
         {modeNum === 2 ? (
           <RelationChart
             points={hookePoints}
-            xDomain={[0, 0.25]}
-            yDomain={[0, 6]}
+            xDomain={[0, Math.max(0.05, hookeMaxExtension * 1.15)]}
+            yDomain={[0, Math.max(0.5, hookeMaxForce * 1.15)]}
+            cursorX={physics.deltaX}
             title="胡克定律 F - Δx 拟合直线"
             xLabel="Δx / m"
             yLabel="F / N"
@@ -88,8 +101,8 @@ export default function MechanicsExperimentAnimation() {
           <VelocityTimeChart
             mode="static"
             points={vtPoints}
-            currentTime={timeNum}
-            tMax={3}
+            currentTime={Math.min(timeNum, chartTimeMax)}
+            tMax={chartTimeMax}
             title="匀变速直线运动 v-t 图"
           />
         )}
@@ -106,6 +119,7 @@ export default function MechanicsExperimentAnimation() {
             physics={physics}
             canvasSize={canvasSize}
             sceneScale={sceneScale}
+            d={dNum}
             time={timeNum}
           />
         </AnimationSvgCanvas>

@@ -101,13 +101,18 @@ export function buildDoubleSlitInterferenceQuantities(
       importance: 'hard',
     },
     {
-      text: '双缝干涉仪结构作用：滤光片（获得单色光）、单缝（获得线光源）、双缝（获得相干光）',
+      text: '双缝干涉仪结构作用：滤光片（获得单色光）、单缝（获得线光源）、双缝（获得相干光）。注意：本页中屏只画了光源 + 双缝 + 光屏，未画出单缝与滤光片。',
       importance: 'core',
     },
   ]
 
   // 4. 易错警示区
-  const warnings: WarningItem[] = []
+  const warnings: WarningItem[] = [
+    {
+      text: '【范围声明】本页是「光的干涉」原理演示，只讲条纹间距 Δx = (L/d)λ 与条纹分布。高考实验「用双缝干涉测光的波长」所需的实验装置与读数操作——滤光片/单缝/双缝/遮光筒组装、测微目镜分划板对准与测微手轮读数、Δx = (xₙ − x₁)/(n − 1) 的逐差计算——不在本页范围内。',
+      level: 'warning',
+    },
+  ]
   if (fringeSpacing > 5.0) {
     warnings.push({
       text: '当前条纹间距较大 (Δx > 5mm)，实际实验中条纹稀疏，视野内能观察到的条纹数量较少。',

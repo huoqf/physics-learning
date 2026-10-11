@@ -173,6 +173,12 @@ export function useBulbVAPhysics(params: BulbVAPhysicsParams) {
       R_slider_max,
       U_rated,
       I_rated,
+      // 以下的电表/电源内阻与 R_real 必须一并交给中屏电路渲染，
+      // 否则 ChainCircuitBuilder 会退回自身默认值 (Rx=5.0, RA=0.5)，
+      // 导致中屏表盘读数与右屏工作点不是同一个电路状态。
+      RV,
+      RA,
+      r,
     }
   }, [circuitType, meterWiring, sliderRatio, E, r, R_slider_max, showLoadLine, E_load, r_load])
 }

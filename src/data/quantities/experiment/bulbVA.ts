@@ -119,12 +119,19 @@ export function buildBulbVAQuantities(
         level: 'core',
         condition: '适用于纯电阻元件，R 为割线电阻而非微分切线斜率',
       },
-      {
-        name: '外接法系统误差修正',
-        latex: 'R_{\\text{测}} = \\frac{R_x R_V}{R_x + R_V} < R_x',
-        level: 'important',
-        condition: '因电压表分流，测得电阻偏小；因 Rx ≪ RV，误差极小',
-      },
+      meterWiring === 'external'
+        ? {
+            name: '外接法系统误差（电压表分流）',
+            latex: 'R_{\\text{测}} = \\frac{R_x R_V}{R_x + R_V} < R_x',
+            level: 'important',
+            condition: '电压表与灯泡并联分流，测得值偏小；因 Rx ≪ RV，本页误差仅约 -0.3%',
+          }
+        : {
+            name: '内接法系统误差（电流表分压）',
+            latex: 'R_{\\text{测}} = R_x + R_A > R_x',
+            level: 'important',
+            condition: '电流表与灯泡串联分压，测得值偏大；RA 与 Rx 可比，本页误差达 +6% 量级',
+          },
       {
         name: '电源负载线方程',
         latex: 'I = \\frac{E - U}{r}',

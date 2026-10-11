@@ -13,7 +13,18 @@ const VIEW_HEIGHT = 650
 const NORMAL_LENGTH = 180
 
 const SEMI_R = 140
-const RECT_W = 280
+/**
+ * 平行玻璃砖（进阶模式）水平宽度。
+ *
+ * 取值依据：内部光线的水平侧移 ΔL = d·tanθ₂。在参数域内最极端处
+ * （n = 1.2、θ₁ → 90°、d = 40 mm，即 D = 200 px）有 θ₂ = 56.44°、tanθ₂ = 1.507，
+ * 侧移峰值 = 200 × 1.507 ≈ 301 px。
+ * 砖宽 460、入射点固定在左端 22% 处，则入射点右侧可用宽度 = 460 × 0.78 ≈ 359 px > 301 px，
+ * 因此**在整个参数域内内部光线必然从下表面射出**，绝不会穿出右侧壁。
+ */
+const RECT_W_ADVANCED = 460
+/** 进阶模式入射点距玻璃砖左端的比例（为其右侧留出 78% 宽度供侧移消耗） */
+const ENTRY_RATIO_ADVANCED = 0.22
 const RAY_LEN = 180
 /** 玻璃砖厚度缩放系数：将 mm 参数映射到 SVG viewBox 单位 */
 const THICKNESS_SCALE = 5
@@ -266,7 +277,7 @@ function AdvancedMode({
   font: (v: number) => number
   rectD: number
 }) {
-  const W = RECT_W
+  const W = RECT_W_ADVANCED
   const D = rectD
   const normalLen = NORMAL_LENGTH * 0.6
   const rayLen = RAY_LEN
@@ -274,12 +285,13 @@ function AdvancedMode({
 
   const isTotalReflection = isNaN(theta2_deg)
 
-  // 玻璃砖位置（居中偏左）
-  const glassX = cx - W * 0.3
+  // 玻璃砖水平居中；入射点固定在砖顶面左端 22% 处，
+  // 保证内部光线的全部可能侧移都落在砖内（见 RECT_W_ADVANCED 注释）
+  const glassX = cx - W / 2
   const glassY = cy - D / 2
 
-  // 入射点：上表面中点
-  const entryX = glassX + W / 2
+  // 入射点：上表面左侧固定比例处
+  const entryX = glassX + W * ENTRY_RATIO_ADVANCED
   const entryY = glassY
 
   // 入射方向（从左上射入）
@@ -310,12 +322,15 @@ function AdvancedMode({
   const extendEndX = entryX + extendLen * incDirX
   const extendEndY = entryY + extendLen * incDirY
 
-  // 侧移 Δx = d * sin(θ₁ - θ₂) / cos(θ₂)
+  // 侧移 Δx = d·sin(θ₁ − θ₂) / cos(θ₂)
   const delta_x = D * Math.sin(theta1Rad - theta2Rad) / Math.cos(theta2Rad)
 
-  // 出射点偏移标注的垂足点（从出射点沿入射方向的垂线）
-  const perpDirX = -incDirY
-  const perpDirY = incDirX
+  // 出射点向「入射方向延长线」作垂线的垂足。
+  // 入射方向单位矢量为 (incDirX, incDirY)，其垂线方向有 (±incDirY, ∓incDirX) 两个选择；
+  // 取 (incDirY, −incDirX) 才能满足 Δx = (出射点 − 入射点)·perp，
+  // 即垂足 = 出射点 + Δx·perp 恰好落在入射方向延长线上（可用余弦定理直接验证）。
+  const perpDirX = incDirY
+  const perpDirY = -incDirX
   const footX = exitX + delta_x * perpDirX
   const footY = exitY + delta_x * perpDirY
 
@@ -401,9 +416,9 @@ function AdvancedMode({
       )}
 
       {/* 侧移 Δx 标注 */}
-      {!isTotalReflection && theta1 > 0 && delta_x > 1 && (
+      {!isTotalReflection && theta1 > 0 && delta_x > 6 && (
         <g>
-          {/* 侧移标注线（垂直于入射方向） */}
+          {/* 侧移标注线（垂直于入射方向，两端分别落在出射光线与入射方向延长线上） */}
           <line
             x1={exitX} y1={exitY}
             x2={footX} y2={footY}
@@ -411,10 +426,10 @@ function AdvancedMode({
             strokeWidth={STROKE.annotation}
             strokeDasharray={`${DASH.reference[0]} ${DASH.reference[1]}`}
           />
-          {/* Δx 标签 */}
+          {/* Δx 标签：垂直于标注线、向出射光线外侧偏 11px，避免压住两条平行光线 */}
           <text
-            x={(exitX + footX) / 2 + perpDirX * 12}
-            y={(exitY + footY) / 2 + perpDirY * 12}
+            x={(exitX + footX) / 2 - incDirX * 11}
+            y={(exitY + footY) / 2 - incDirY * 11}
             textAnchor="middle"
             dominantBaseline="middle"
             fill={OPTICS_COLORS.lateralOffset}

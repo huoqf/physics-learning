@@ -1,5 +1,19 @@
 import { useMemo } from 'react'
 
+import {
+  PHOTOGATE_A_X_M,
+  PHOTOGATE_B_X_M,
+  TRACK_MAX_M,
+  buildTapeCountingDots,
+  calcDiffMethodAcceleration,
+  countingPeriod,
+  readPhotogate,
+  solveHooke,
+  solveTrackMotion,
+  tickerPeriod,
+} from '@/physics/experimentMechanics'
+import { TRACK_PX_PER_M } from '../mechanicsExperimentLayout'
+
 export interface UseMechanicsExperimentPhysicsParams {
   /** 实验模式: 0 - 打点计时器与纸带 | 1 - 光电门测速 | 2 - 胡克定律 */
   mode: number
@@ -20,21 +34,35 @@ export interface UseMechanicsExperimentPhysicsParams {
 }
 
 export interface MechanicsExperimentPhysicsResult {
-  /** 当前主移动物体的物理位置 x (m) */
+  /** 当前小车位移 x (m)，已按轨道长度钳制 */
   x: number
-  /** 当前主移动物体的物理速度 v (m/s) */
+  /** 当前小车速度 v (m/s)，到达末端挡块后为 0 */
   v: number
-  /** 模式0: 纸带打点相对像素位置数组 (px) */
+  /** 有效运动时长 (s) = min(动画时间, 到达挡块时刻) */
+  tActive: number
+  /** 到达末端挡块的时刻 (s) */
+  tEnd: number
+  /** 是否已到达末端挡块 */
+  reachedEnd: boolean
+  /** 打点周期 T₀ = 1/f (s) */
+  tickerPeriodS: number
+  /** 计数周期 T = 5T₀ (s)，逐差法公式中的 T */
+  countingPeriodS: number
+  /** 模式0: 纸带打点位置数组 (design-unit，原点为计时器出口) */
   tapeDots: number[]
-  /** 模式0: 逐差法计算得到的加速度 a (m/s²) */
-  aCalculated: number
-  /** 模式1: 光电门 1 遮光时间 Δt1 (ms) */
+  /** 模式0: 逐差法测得的加速度 (m/s²)；计数点不足 7 个时为 null */
+  aCalculated: number | null
+  /** 模式1: 光电门 A 遮光时间 Δt1 (ms)，未触发为 0 */
   dt1Ms: number
-  /** 模式1: 光电门 2 遮光时间 Δt2 (ms) */
+  /** 模式1: 光电门 B 遮光时间 Δt2 (ms)，未触发为 0 */
   dt2Ms: number
-  /** 模式1: 光电门 1 是否处于遮光感应状态 */
+  /** 模式1: 光电门 A 测得速度 vA = d/Δt1 (m/s)，未触发为 0 */
+  vA: number
+  /** 模式1: 光电门 B 测得速度 vB = d/Δt2 (m/s)，未触发为 0 */
+  vB: number
+  /** 模式1: 光电门 A 是否处于遮光感应状态 */
   isBlocked1: boolean
-  /** 模式1: 光电门 2 是否处于遮光感应状态 */
+  /** 模式1: 光电门 B 是否处于遮光感应状态 */
   isBlocked2: boolean
   /** 模式2: 弹簧伸长量 Δx (m) */
   deltaX: number
@@ -43,8 +71,11 @@ export interface MechanicsExperimentPhysicsResult {
 }
 
 /**
- * 高考力学实验基础 - 纯物理计算 Hook
- * 计算打点纸带点集、逐差法加速度、光电门遮光时间与胡克定律弹簧形变
+ * 高考力学实验基础 - 物理计算 Hook（薄封装层）
+ *
+ * 全部数值来自 `@/physics/experimentMechanics` 的单一可信源，
+ * 右屏看板（data/quantities/mechanics/experiment-base.ts）消费同一批函数，
+ * 从而保证"图上 / 数上 / 动画上"永远一致。
  */
 export function useMechanicsExperimentPhysics({
   mode: _mode,
@@ -57,77 +88,46 @@ export function useMechanicsExperimentPhysics({
   time,
 }: UseMechanicsExperimentPhysicsParams): MechanicsExperimentPhysicsResult {
   return useMemo(() => {
-    const T = 1 / Math.max(1, freq) // 打点周期 T (s)
-    const g = 9.8
+    // ── 运动学（含末端挡块钳制）──
+    const motion = solveTrackMotion({ v0, a, time, xMax: TRACK_MAX_M })
 
-    // 1. 运动学基础位置 x 与速度 v (限制有效实验轨道长度 xMax = 1.2m)
-    const xMax = 1.2
-    const tEnd = a > 0
-      ? (-v0 + Math.sqrt(Math.max(0, v0 * v0 + 2 * a * xMax))) / a
-      : (v0 > 0 ? xMax / v0 : 3.0)
+    // ── 模式 0：打点纸带计数点与逐差法 ──
+    const tapeDots = buildTapeCountingDots({
+      v0,
+      a,
+      time,
+      freq,
+      pxPerMeter: TRACK_PX_PER_M,
+      xMax: TRACK_MAX_M,
+    })
+    const T = countingPeriod(freq)
+    const aCalculated = calcDiffMethodAcceleration(tapeDots, TRACK_PX_PER_M, T)
 
-    const effectiveTime = Math.min(time, tEnd)
-    const isReachedEnd = time >= tEnd
-    const x = Math.min(xMax, v0 * effectiveTime + 0.5 * a * effectiveTime * effectiveTime)
-    const v = isReachedEnd ? 0 : v0 + a * effectiveTime
+    // ── 模式 1：双光电门遮光读数 ──
+    const gateA = readPhotogate({ x: motion.x, v0, a, d, gateX: PHOTOGATE_A_X_M })
+    const gateB = readPhotogate({ x: motion.x, v0, a, d, gateX: PHOTOGATE_B_X_M })
 
-    // 2. 模式 0：打点纸带点迹计算 (高考标准: 每 5 个打点取 1 个计数点，计数点周期 T_count = 5 * T)
-    const Tcount = 5 * T
-    const pxPerMeter = 500
-    const tapeDots: number[] = []
-    for (let kStep = 0; kStep <= 6; kStep++) {
-      const tStep = kStep * Tcount
-      if (tStep <= time) {
-        // 打点时刻小车位移 x_k，在当前时刻 time 处，该点距离打点计时器出口的相对像素为 (x - x_k) * pxPerMeter
-        const xK = v0 * tStep + 0.5 * a * tStep * tStep
-        const dotDistPx = (x - xK) * pxPerMeter
-        tapeDots.push(dotDistPx)
-      }
-    }
-
-    // 逐差法计算加速度: a_calc = [(s456) - (s123)] / (9 * T_count^2)
-    let aCalculated = a
-    if (tapeDots.length >= 7) {
-      const s123 = (tapeDots[0] - tapeDots[3]) / pxPerMeter
-      const s456 = (tapeDots[3] - tapeDots[6]) / pxPerMeter
-      aCalculated = (s456 - s123) / (9 * Tcount * Tcount)
-    }
-
-    // 3. 模式 1：光电门测速与遮光感应
-    // 光电门 1 放置在 x1 = 0.3m 处，光电门 2 放置在 x2 = 0.8m 处
-    // 车顶遮光条中心在小车内部相对偏移 +0.05m
-    const flagOffset = 0.05
-    const flagX = x + flagOffset
-    const photogate1X = 0.3
-    const photogate2X = 0.8
-
-    // 到达遮光位置的速度与遮光时间
-    const v1AtGate = Math.sqrt(Math.max(0, v0 * v0 + 2 * a * Math.max(0, photogate1X - flagOffset)))
-    const v2AtGate = Math.sqrt(Math.max(0, v0 * v0 + 2 * a * Math.max(0, photogate2X - flagOffset)))
-
-    // 触发与锁存：小车到达/通过光电门前显示 0，到达/通过后锁存显示遮光时间 Δt
-    const dt1Ms = flagX >= photogate1X - d / 2 ? (d / Math.max(0.01, v1AtGate)) * 1000 : 0
-    const dt2Ms = flagX >= photogate2X - d / 2 ? (d / Math.max(0.01, v2AtGate)) * 1000 : 0
-
-    // 判断遮光条中心是否正处于光电门感应区
-    const isBlocked1 = flagX >= photogate1X - d / 2 && flagX <= photogate1X + d / 2
-    const isBlocked2 = flagX >= photogate2X - d / 2 && flagX <= photogate2X + d / 2
-
-    // 4. 模式 2：胡克定律弹簧形变与弹力
-    const F = m * g
-    const deltaX = F / Math.max(1, k)
+    // ── 模式 2：胡克定律 ──
+    const hooke = solveHooke(m, k)
 
     return {
-      x,
-      v,
+      x: motion.x,
+      v: motion.v,
+      tActive: motion.tActive,
+      tEnd: motion.tEnd,
+      reachedEnd: motion.reachedEnd,
+      tickerPeriodS: tickerPeriod(freq),
+      countingPeriodS: T,
       tapeDots,
-      aCalculated: parseFloat(aCalculated.toFixed(3)),
-      dt1Ms: parseFloat(dt1Ms.toFixed(2)),
-      dt2Ms: parseFloat(dt2Ms.toFixed(2)),
-      isBlocked1,
-      isBlocked2,
-      deltaX,
-      F: parseFloat(F.toFixed(2)),
+      aCalculated: aCalculated === null ? null : parseFloat(aCalculated.toFixed(3)),
+      dt1Ms: parseFloat(gateA.dtMs.toFixed(2)),
+      dt2Ms: parseFloat(gateB.dtMs.toFixed(2)),
+      vA: parseFloat(gateA.velocity.toFixed(3)),
+      vB: parseFloat(gateB.velocity.toFixed(3)),
+      isBlocked1: gateA.isBlocked,
+      isBlocked2: gateB.isBlocked,
+      deltaX: hooke.extension,
+      F: parseFloat(hooke.force.toFixed(2)),
     }
   }, [v0, a, freq, d, k, m, time])
 }

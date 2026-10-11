@@ -34,6 +34,10 @@ export const ExperimentResistivityScene: React.FC<ExperimentResistivitySceneProp
     Rx_real,
     currentA,
     voltageV,
+    ammeterRange,
+    voltmeterRange,
+    E,
+    rSource,
   } = physics
 
   // ────────────────── 左半区：标准伏安法电路原理图 ──────────────────
@@ -157,9 +161,9 @@ export const ExperimentResistivityScene: React.FC<ExperimentResistivitySceneProp
         <DCSource
           x={posDC.x}
           y={posDC.y}
-          voltage={4.0}
+          voltage={E}
           type="symbol"
-          label="E=4V, r=0.5Ω"
+          label={`E=${E.toFixed(1)}V, r=${rSource.toFixed(1)}Ω`}
           polarity="right-positive"
         />
 
@@ -198,7 +202,7 @@ export const ExperimentResistivityScene: React.FC<ExperimentResistivitySceneProp
             <line x1={busLeft} y1={busTop} x2={110} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
 
             {/* 电流表 A (中心 x=140, y=95) */}
-            <DialMeter type="A" variant="symbolic" value={currentA} max={1.5} x={140} y={busTop} r={vmR} font={font} showLabel={false} />
+            <DialMeter type="A" variant="symbolic" value={currentA} max={ammeterRange} x={140} y={busTop} r={vmR} font={font} showLabel={false} />
             <text x={140} y={busTop - vmR - 6} textAnchor="middle" fill={PHYSICS_COLORS.electricCurrent} fontSize={font(10.5)} fontWeight="bold">
               I = {currentA.toFixed(3)} A
             </text>
@@ -247,7 +251,7 @@ export const ExperimentResistivityScene: React.FC<ExperimentResistivitySceneProp
             />
 
             {/* 电压表 V (中心 x=275, y=175) */}
-            <DialMeter type="V" variant="symbolic" value={voltageV} max={4} x={275} y={vmY} r={vmR} font={font} showLabel={false} />
+            <DialMeter type="V" variant="symbolic" value={voltageV} max={voltmeterRange} x={275} y={vmY} r={vmR} font={font} showLabel={false} />
             <text x={275} y={vmY + vmR + 15} textAnchor="middle" fill={PHYSICS_COLORS.electricPotential} fontSize={font(10.5)} fontWeight="bold">
               U = {voltageV.toFixed(2)} V
             </text>
@@ -266,7 +270,7 @@ export const ExperimentResistivityScene: React.FC<ExperimentResistivitySceneProp
             <line x1={115} y1={busTop} x2={165 - vmR} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
 
             {/* 电流表 A (中心 x=165, y=95) */}
-            <DialMeter type="A" variant="symbolic" value={currentA} max={1.5} x={165} y={busTop} r={vmR} font={font} showLabel={false} />
+            <DialMeter type="A" variant="symbolic" value={currentA} max={ammeterRange} x={165} y={busTop} r={vmR} font={font} showLabel={false} />
             <text x={165} y={busTop - vmR - 6} textAnchor="middle" fill={PHYSICS_COLORS.electricCurrent} fontSize={font(10.5)} fontWeight="bold">
               I = {currentA.toFixed(3)} A
             </text>
@@ -311,7 +315,7 @@ export const ExperimentResistivityScene: React.FC<ExperimentResistivitySceneProp
             />
 
             {/* 电压表 V (中心 x=240, y=175) */}
-            <DialMeter type="V" variant="symbolic" value={voltageV} max={4} x={240} y={vmY} r={vmR} font={font} showLabel={false} />
+            <DialMeter type="V" variant="symbolic" value={voltageV} max={voltmeterRange} x={240} y={vmY} r={vmR} font={font} showLabel={false} />
             <text x={240} y={vmY + vmR + 15} textAnchor="middle" fill={PHYSICS_COLORS.electricPotential} fontSize={font(10.5)} fontWeight="bold">
               U = {voltageV.toFixed(2)} V
             </text>

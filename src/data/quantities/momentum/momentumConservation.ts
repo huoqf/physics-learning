@@ -1,4 +1,4 @@
-import type { PhysicsPanelData, PhysicsQuantity, ParamDefs } from '../types'
+import type { PhysicsPanelData, PhysicsQuantity, ParamDefs, WarningItem } from '../types'
 import { normalizeParams } from '../types'
 import { GRAVITY } from '@/physics/constants'
 
@@ -42,6 +42,13 @@ export function handleMomentumConservation(
   const p = normalizeParams(params, DEFAULTS)
   const advancedMode = p.advancedMode ?? 0
   const isAdvanced = advancedMode === 1
+
+  // 知识树「验证动量守恒定律」节点借用本动画；本页只做原理演示，
+  // 故在右屏恒定挂一条范围声明，切断"本页包含该实验"的误导。
+  const scopeWarning: WarningItem = {
+    text: '【范围声明】本页为碰撞过程中动量守恒的原理演示。高考实验「验证动量守恒定律」所需的气垫导轨/两小车、光电门测碰前碰后速度、m₁v₁ = m₁v₁′ + m₂v₂′ 的读数比对与误差分析不在本页范围内。',
+    level: 'warning',
+  }
 
   if (!isAdvanced) {
     const m1 = p.m1 ?? 3
@@ -92,6 +99,7 @@ export function handleMomentumConservation(
         { text: '弹性碰撞 (e=1) 机械能守恒；完全非弹性碰撞 (e=0) 机械能损失最大', importance: 'gaokao' as const },
         { text: '高考常考恢复系数 e 在 0 到 1 之间的一般碰撞，此时动量守恒，动能减少', importance: 'gaokao' as const },
       ],
+      warnings: [scopeWarning],
     }
   } else {
     const m_slider = p.m_slider ?? 1
@@ -141,6 +149,7 @@ export function handleMomentumConservation(
           { text: '滑落后，由于不受摩擦力，滑块与木板均做匀速直线运动，系统总动量守恒', importance: 'gaokao' as const },
           { text: '滑落临界问题是高考物理压轴题的高频考点，需注意相对位移与板长关系', importance: 'gaokao' as const },
         ],
+        warnings: [scopeWarning],
       }
     } else {
       const Q = mu * m_slider * g * deltaXAtCommon
@@ -166,6 +175,7 @@ export function handleMomentumConservation(
           { text: '达到共同速度是相对运动结束、内能损失最大的临界点', importance: 'gaokao' as const },
           { text: '系统内摩擦生热公式为 Q = f·Δx_相对', importance: 'gaokao' as const },
         ],
+        warnings: [scopeWarning],
       }
     }
   }

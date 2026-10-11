@@ -154,6 +154,22 @@ export const ExperimentResistivityCenterExtra: FC = () => {
                   {physics.Rx_real.toFixed(3)} Ω
                 </div>
               </div>
+              <div className="p-2 rounded bg-slate-50 border border-slate-200">
+                <div className="text-[10px] text-slate-500">电流表读数 I</div>
+                <div className="text-xs font-bold text-slate-800 font-mono">
+                  {physics.currentA.toFixed(3)} A
+                </div>
+              </div>
+              <div className="p-2 rounded bg-slate-50 border border-slate-200">
+                <div className="text-[10px] text-slate-500">电压表读数 U</div>
+                <div className="text-xs font-bold text-slate-600 font-mono">
+                  {physics.voltageV.toFixed(3)} V
+                </div>
+              </div>
+            </div>
+            <div className="text-[10px] text-slate-500 leading-snug">
+              限流回路：I = E/(R_测 + R + r)，当前变阻器 R = {physics.R_slider.toFixed(0)} Ω。
+              注意 R-L 图线斜率与 R 无关，调 R 只改变电表读数。
             </div>
           </div>
 

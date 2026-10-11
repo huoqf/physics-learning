@@ -63,10 +63,10 @@ export function calculateOhmReading(
     }
   }
 
-  // 计算电流比率 I / I_g = rInternal / (rInternal + rx)
-  const currentFull = MULTIMETER_CONSTANTS.E_BATTERY / rInternal
-  const current = MULTIMETER_CONSTANTS.E_BATTERY / Math.max(rInternal + rx, 1e-6)
-  const ratio = Math.min(Math.max(current / currentFull, 0), 1.05)
+  // 指针偏转比 I / I_g。表头满偏电流 I_g = E / R_mid 是**固定**的（结构决定），
+  // 不能随调零状态漂移；因此 ratio = R_mid / (R_内 + R_x)。
+  // 未精准调零时 R_内 ≠ R_mid，短接（R_x = 0）指针便到不了满偏——这正是"换挡必调零"的物理由来。
+  const ratio = Math.min(Math.max(rMid / Math.max(rInternal + rx, 1e-6), 0), 1.05)
 
   // 偏角计算：-45° 为左端 0 电流（欧姆 ∞），+45° 为右端满偏（欧姆 0）
   const pointerAngleDeg =

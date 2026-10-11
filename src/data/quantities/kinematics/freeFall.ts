@@ -71,6 +71,12 @@ export function handleFreeFall(
         { text: '伽利略用"微斜面实验+合理外推"证明了自由落体规律', importance: 'gaokao' as const },
         { text: '实际落体运动中，若重力远大于阻力，可近似看作自由落体', importance: 'hard' as const },
       ],
+      warnings: [
+        {
+          text: '【范围声明】本页为自由落体运动规律演示。知识树中「验证机械能守恒定律」节点借用本页，该实验所需的纸带选取与 mgh、½mv² 逐项比对的数据处理不在本页范围内。',
+          level: 'warning' as const,
+        },
+      ],
     }
   } else {
     const latitude = p.latitude ?? 45

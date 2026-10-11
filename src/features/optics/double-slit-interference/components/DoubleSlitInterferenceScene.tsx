@@ -37,6 +37,9 @@ export function DoubleSlitInterferenceScene({
   const screenTop = centerY - screenHalf    // 185
   const screenBottom = centerY + screenHalf // 465
 
+  /** 前后两张屏（含光强曲线）可用的最大条纹间距：半屏高 205 px（y 120~530） */
+  const FRINGE_PX_DRAW_LIMIT = 200
+
   // ── 视觉布局参数（从物理参数映射到设计坐标） ─────────────────────────
   const visualLayout = useMemo(() => {
     const slitX = 230
@@ -47,18 +50,25 @@ export function DoubleSlitInterferenceScene({
     // 视觉双缝间距 d_vis (px) 随 d(0.1 ~ 0.5mm) 在 12px ~ 36px 平滑渐变
     const d_vis = 12 + ((slitDistance - 0.1) / 0.4) * 24
 
-    // 视觉条纹像素间距 fringeSpacingPx (基准 14px，对应默认参数下 ~35px)
+    // 条纹视觉间距严格正比于物理条纹间距 Δx = λL/d：
+    //   fringeSpacingPx = (L/d) · (λ/650) · 14
+    // 因此单独拖动 λ、d、L 中任意一个，条纹疏密都会等比例变化（这正是本页的教学目的）。
+    // 仅当结果超出光屏可绘高度 (±205px) 时才按绘图上限截断，避免条纹整体跑出光屏；
+    // 该截断只可能出现在「L 最大 + d 最小」的极端组合，且会在画面上给出压缩提示。
     const baseSpacingPx = 14
-    let fringeSpacingPx = (screenDistance / slitDistance) * (wavelength / 650) * baseSpacingPx
-    fringeSpacingPx = Math.max(8, Math.min(160, fringeSpacingPx))
+    const rawFringeSpacingPx =
+      (screenDistance / slitDistance) * (wavelength / 650) * baseSpacingPx
+    const fringeSpacingPx = Math.max(6, Math.min(FRINGE_PX_DRAW_LIMIT, rawFringeSpacingPx))
+    const isSpacingCompressed = rawFringeSpacingPx > FRINGE_PX_DRAW_LIMIT
 
     // 反推实现几何相干对齐的波前视觉波长 visWavelength
     const visWavelength = Math.max(4, (fringeSpacingPx * d_vis) / L_vis)
 
-    return { slitX, screenX, d_vis, fringeSpacingPx, visWavelength, L_vis }
+    return { slitX, screenX, d_vis, fringeSpacingPx, visWavelength, L_vis, isSpacingCompressed }
   }, [wavelength, slitDistance, screenDistance])
 
-  const { slitX, screenX, d_vis, fringeSpacingPx, visWavelength, L_vis } = visualLayout
+  const { slitX, screenX, d_vis, fringeSpacingPx, visWavelength, L_vis, isSpacingCompressed } =
+    visualLayout
 
   // ── 光强分布曲线 SVG Path ────────────────────────────────────────────
   const intensityPath = useMemo(() => {
@@ -119,23 +129,30 @@ export function DoubleSlitInterferenceScene({
     return canvas.toDataURL()
   }, [wavelengthColor, fringeSpacingPx])
 
-  // ── 干涉阶数指引线 ───────────────────────────────────────────────────
+  // ── 干涉级数指引线 ───────────────────────────────────────────────────
+  // 级次口径与右屏公式严格统一（见 data/quantities/doubleSlitInterference.ts）：
+  //   亮纹 δ = kλ           → y = k·Δy        (k = 0, ±1, ±2 …)
+  //   暗纹 δ = (2k+1)λ/2    → y = (k+0.5)·Δy  (k = 0, ±1 …)
+  // 即「第 1 级暗纹」对应 k = 0，而不是 k = 0.5。
   const guideLines = useMemo(() => {
+    const items: Array<{ k: number; dark: boolean; label: string }> = [
+      { k: 0, dark: false, label: '中央亮纹 (k=0)' },
+      { k: 1, dark: false, label: '第1级亮纹 (k=1)' },
+      { k: -1, dark: false, label: '第1级亮纹 (k=-1)' },
+      { k: 0, dark: true, label: '第1级暗纹 (k=0)' },
+      { k: -1, dark: true, label: '第1级暗纹 (k=-1)' },
+      { k: 2, dark: false, label: '第2级亮纹 (k=2)' },
+      { k: -2, dark: false, label: '第2级亮纹 (k=-2)' },
+    ]
     const lines = []
-    const orders = [0, 1, -1, 0.5, -0.5, 2, -2]
-    for (const k of orders) {
-      const targetY = centerY + k * fringeSpacingPx
-      if (targetY >= 120 && targetY <= 530) {
-        const isConstructive = k % 1 === 0
-        let label = `k=${k}`
-        if (k === 0) label = '中央亮纹 (k=0)'
-        else if (k === 1) label = '第1级亮纹 (k=1)'
-        else if (k === -1) label = '第1级亮纹 (k=-1)'
-        else if (k === 0.5) label = '第1级暗纹 (k=0.5)'
-        else if (k === -0.5) label = '第1级暗纹 (k=-0.5)'
-
-        lines.push({ targetY, isConstructive, label, k })
-      }
+    for (const it of items) {
+      const targetY = centerY + (it.dark ? it.k + 0.5 : it.k) * fringeSpacingPx
+      if (targetY < 120 || targetY > 530) continue
+      const isCenter = !it.dark && it.k === 0
+      // 标签只在条纹间距足够大时显示，避免相邻标签互相压盖
+      const showLabel =
+        isCenter || (!it.dark && it.k === 1 && fringeSpacingPx >= 22) || (it.dark && it.k === 0 && fringeSpacingPx >= 40)
+      lines.push({ targetY, isConstructive: !it.dark, label: it.label, isCenter, showLabel })
     }
     return lines
   }, [fringeSpacingPx, centerY])
@@ -187,17 +204,16 @@ export function DoubleSlitInterferenceScene({
         })}
       </g>
 
-      {/* ─── 4. 指引射线与全屏相位对齐线 ─── */}
+      {/* ─── 4. 指引射线（只画到光屏正面图左缘，绝不横穿正面图与光强曲线） ─── */}
       <g opacity={0.7}>
         {guideLines.map((line, idx) => {
-          const isCenter = line.k === 0
           const color = line.isConstructive ? wavelengthColor : PHYSICS_COLORS.lightRayNormal
           const dash = line.isConstructive ? undefined : '3 3'
           return (
             <g key={idx}>
-              <line x1={slitX} y1={centerY} x2={screenX} y2={line.targetY} stroke={color} strokeWidth={isCenter ? 1.5 : 1} strokeDasharray={dash} />
-              <line x1={screenX} y1={line.targetY} x2={790} y2={line.targetY} stroke={withAlpha(color, isCenter ? 0.6 : 0.3)} strokeWidth={1} strokeDasharray="2 2" />
-              {(isCenter || line.k === 1 || line.k === 0.5) && (
+              <line x1={slitX} y1={centerY} x2={screenX} y2={line.targetY} stroke={color} strokeWidth={line.isCenter ? 1.5 : 1} strokeDasharray={dash} />
+              <line x1={screenX} y1={line.targetY} x2={636} y2={line.targetY} stroke={withAlpha(color, line.isCenter ? 0.6 : 0.3)} strokeWidth={1} strokeDasharray="2 2" />
+              {line.showLabel && (
                 <text x={screenX - 8} y={line.targetY - 5} fontSize={font(9)} fill={color} textAnchor="end">{line.label}</text>
               )}
             </g>
@@ -210,7 +226,8 @@ export function DoubleSlitInterferenceScene({
         <line x1={slitX} y1={centerY} x2={screenX} y2={centerY} stroke={CANVAS_COLORS.labelText} strokeWidth={1} strokeDasharray="2 2" />
         <path d={`M ${slitX + 6} ${centerY - 3} L ${slitX} ${centerY} L ${slitX + 6} ${centerY + 3}`} fill="none" stroke={CANVAS_COLORS.labelText} strokeWidth={1} />
         <path d={`M ${screenX - 6} ${centerY - 3} L ${screenX} ${centerY} L ${screenX - 6} ${centerY + 3}`} fill="none" stroke={CANVAS_COLORS.labelText} strokeWidth={1} />
-        <text x={(slitX + screenX) / 2} y={centerY - 8} fontSize={font(12)} fill={CANVAS_COLORS.labelText} textAnchor="middle">缝屏距离 L</text>
+        {/* 标签靠尺寸线左端起排（锚点 start），避免与右侧各级条纹标签在同一条水平带上打架 */}
+        <text x={slitX + 12} y={centerY - 8} fontSize={font(12)} fill={CANVAS_COLORS.labelText} textAnchor="start">缝屏距离 L</text>
       </g>
 
       {/* ─── 6. 侧视光屏 ─── */}
@@ -229,7 +246,44 @@ export function DoubleSlitInterferenceScene({
           <rect x={640} y={120} width={40} height={410} fill={SCENE_COLORS.optical.screenDarkFill} />
         )}
         <text x={660} y={555} fontSize={font(12)} fill={CANVAS_COLORS.labelText} textAnchor="middle" fontWeight="bold">光屏正面图</text>
+        {isSpacingCompressed && (
+          <text x={660} y={112} fontSize={font(9)} fill={CANVAS_COLORS.textMuted} textAnchor="middle">
+            （条纹已按光屏上限压缩显示）
+          </text>
+        )}
       </g>
+
+      {/* ─── 8b. 条纹间距 Δx 标注（直接量在光屏正面图上，符号与右屏统一） ─── */}
+      {fringeSpacingPx >= 14 && (
+        <g>
+          <line
+            x1={700}
+            y1={centerY}
+            x2={700}
+            y2={centerY + fringeSpacingPx}
+            stroke={PHYSICS_COLORS.lightRayNormal}
+            strokeWidth={1.2}
+          />
+          <polygon points={`700,${centerY} 696,${centerY + 8} 704,${centerY + 8}`} fill={PHYSICS_COLORS.lightRayNormal} />
+          <polygon
+            points={`700,${centerY + fringeSpacingPx} 696,${centerY + fringeSpacingPx - 8} 704,${centerY + fringeSpacingPx - 8}`}
+            fill={PHYSICS_COLORS.lightRayNormal}
+          />
+          {fringeSpacingPx >= 26 && (
+            <text
+              x={706}
+              y={centerY + fringeSpacingPx / 2}
+              fontSize={font(10)}
+              fill={PHYSICS_COLORS.lightRayNormal}
+              textAnchor="start"
+              dominantBaseline="middle"
+              fontWeight="bold"
+            >
+              Δx
+            </text>
+          )}
+        </g>
+      )}
 
       {/* ─── 9. 光强分布曲线 (x: 690 ~ 790) ─── */}
       <g>

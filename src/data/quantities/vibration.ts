@@ -2,7 +2,7 @@
  * 机械振动与波（vibration）物理量看板数据构建。
  */
 import { PHYSICS_COLORS } from '@/theme/physics'
-import type { PhysicsPanelData } from './types'
+import type { PhysicsPanelData, WarningItem } from './types'
 import {
   computeAngularFrequency,
   computePendulumState,
@@ -48,6 +48,12 @@ export function buildVibrationQuantities(
     const phi = (phiDeg * Math.PI) / 180
     const mass = 1.0 // 摆球质量固定为 1.0 kg 用于受力展示
     const mode = params.mode ?? 0 // 0: 简谐运动, 1: 大角对比, 2: 能量守恒
+
+    // 范围声明：本页借用为「用单摆测重力加速度」的实验演示，需切断对未实现实验要素的承诺
+    const scopeWarning: WarningItem = {
+      text: '【范围声明】本页为单摆振动规律演示。高考实验「用单摆测重力加速度」所需的摆长测量 L = l + d/2、30~50 次全振动计时取平均、g = 4π²L/T² 的数据处理与系统误差分析不在本页范围内。',
+      level: 'warning',
+    }
 
     // 1. 基础简谐运动周期及状态计算
     const T0 = 2 * Math.PI * Math.sqrt(L / g)
@@ -103,6 +109,7 @@ export function buildVibrationQuantities(
           { text: '【大角偏离】大偏角（如 60°）单摆周期变长，其主要原因是随着摆角增大，切向回复力 -mg sinθ 的增长速度慢于简谐所需的线性增长速度。', importance: 'hard' },
           { text: '【等时性破坏】在精密计时工具中，必须对摆幅大小进行限制或采用摆轮补偿，以克服因振幅改变导致的周期漂移（非等时性）。', importance: 'gaokao' },
         ],
+        warnings: [scopeWarning],
       }
     } else if (mode === 2) {
       // ─── 模式 2: 能量守恒分析 ───
@@ -148,6 +155,7 @@ export function buildVibrationQuantities(
           { text: '【拉力极值】单摆经过最低点时拉力最大。高考极频考点结论：从 θ₀ 释放时，最低点拉力 F_拉 = mg(3 - 2cosθ₀)。特别地，从 60° 释放时最低点拉力为 2mg。', importance: 'gaokao' },
           { text: '【合力辨析】在最低点，小球加速度切向分量为 0，法向（向心）加速度最大；因此最低点合力方向严格竖直向上，不为 0。', importance: 'hard' },
         ],
+        warnings: [scopeWarning],
       }
     } else {
       // ─── 模式 0: 基础简谐运动 ───
@@ -184,6 +192,7 @@ export function buildVibrationQuantities(
           { text: '【等时性质】单摆周期具有等时性，只与 L 和 g 有关。在超重电梯中 g_等效 > g，周期变小；失重时变大；完全失重时不摆动。', importance: 'gaokao' },
           { text: '【受力分析】单摆的回复力是重力切向分力提供的；在最低点，小球合外力不为零（绳子拉力和重力径向分力之合提供向心力）。', importance: 'hard' },
         ],
+        warnings: [scopeWarning],
       }
     }
   }

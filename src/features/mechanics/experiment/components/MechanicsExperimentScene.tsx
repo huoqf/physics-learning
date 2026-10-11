@@ -12,58 +12,107 @@ import {
   Spring,
 } from '@/components/Physics'
 
-import { PHYSICS_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_COLORS, SCENE_COLORS, withAlpha } from '@/theme/physics'
 import { worldToDesign, type SceneScale } from '@/scene'
+import { DIFF_METHOD_MIN_DOTS, SPRING_NATURAL_M } from '@/physics/experimentMechanics'
 import type { MechanicsExperimentPhysicsResult } from '../hooks/useMechanicsExperimentPhysics'
+import {
+  CART_HEIGHT_PX,
+  CART_LENGTH_PX,
+  FLAG_HEIGHT_PX,
+  FLAG_OFFSET_PX,
+  PHOTOGATE_GAP_PX,
+  SPRING_ANCHOR_X,
+  SPRING_NATURAL_PX,
+  SPRING_PX_PER_M,
+  SPRING_RULER_DOMAIN_CM,
+  SPRING_RULER_LENGTH_PX,
+  SPRING_RULER_X,
+  SPRING_TOP_Y,
+  TRACK_BOARD_WIDTH,
+  TRACK_BOARD_X,
+  TRACK_GROUND_Y,
+  TRACK_ORIGIN_DESIGN_X,
+  TRACK_PX_PER_M,
+  TRACK_RULER_DOMAIN_CM,
+  TRACK_RULER_LENGTH_PX,
+  TRACK_RULER_Y,
+  TRACK_STOP_DESIGN_X,
+} from '../mechanicsExperimentLayout'
 
 interface MechanicsExperimentSceneProps {
   mode: number
   physics: MechanicsExperimentPhysicsResult
   canvasSize: { font: (size: number) => number }
   sceneScale: SceneScale
+  /** 遮光条宽度 d (m)：决定车顶遮光片的绘制宽度与速度标注口径 */
+  d: number
   time?: number
 }
 
 /**
  * 高考力学实验基础 - SVG 场景渲染组件 (MechanicsExperimentScene)
- * 根据 mode 切换打点纸带分析、光电门测速、胡克定律三大高考实验场景
+ *
+ * 根据 mode 切换打点纸带分析、光电门测速、胡克定律三大高考实验场景。
+ * 所有几何位置均由 `mechanicsExperimentLayout` 的轨道常量派生，与物理层
+ * (`@/physics/experimentMechanics`) 的轨道长度、光电门位置保持同源。
  */
 export function MechanicsExperimentScene({
   mode,
   physics,
   canvasSize,
   sceneScale,
+  d,
   time = 0,
 }: MechanicsExperimentSceneProps) {
   const { font } = canvasSize
-  const groundY = 240
+  const groundY = TRACK_GROUND_Y
 
   // 安全数值保护
   const safeX = Number.isFinite(physics?.x) ? physics.x : 0
   const safeV = Number.isFinite(physics?.v) ? physics.v : 0
-  const safeA = Number.isFinite(physics?.aCalculated) ? physics.aCalculated : 0
   const safeDt1 = Number.isFinite(physics?.dt1Ms) ? physics.dt1Ms : 0
   const safeDt2 = Number.isFinite(physics?.dt2Ms) ? physics.dt2Ms : 0
+  const safeVA = Number.isFinite(physics?.vA) ? physics.vA : 0
+  const safeVB = Number.isFinite(physics?.vB) ? physics.vB : 0
   const safeDeltaX = Number.isFinite(physics?.deltaX) ? physics.deltaX : 0
   const safeF = Number.isFinite(physics?.F) ? physics.F : 0
+  const tapeDots = physics?.tapeDots ?? []
+  const aCalculated = physics?.aCalculated ?? null
 
-  // 物体位置由物理坐标转换 (worldToDesign(x, y, sceneScale) 返回 { px, py })
+  // 小车位置由物理坐标转换 (worldToDesign(x, y, sceneScale) 返回 { px, py })
   const carDesignPos = worldToDesign(safeX, 0, sceneScale)
   const gate1Pos = worldToDesign(0.3, 0, sceneScale)
   const gate2Pos = worldToDesign(0.8, 0, sceneScale)
 
-  const carPx = carDesignPos?.px ?? 115
-  const gate1Px = gate1Pos?.px ?? 150
-  const gate2Px = gate2Pos?.px ?? 300
+  const carPx = carDesignPos?.px ?? TRACK_ORIGIN_DESIGN_X
+  const gate1Px = gate1Pos?.px ?? TRACK_ORIGIN_DESIGN_X + 90
+  const gate2Px = gate2Pos?.px ?? TRACK_ORIGIN_DESIGN_X + 240
+
+  // 遮光片绘制宽度 = 遮光条真实宽度 d（下限 3 design-unit 保证可见）
+  const flagWidthPx = Math.max(3, d * TRACK_PX_PER_M)
+
+  // 胡克定律模式的弹簧几何
+  const springBottomY = SPRING_TOP_Y + SPRING_NATURAL_PX + safeDeltaX * SPRING_PX_PER_M
+  const naturalLengthY = SPRING_TOP_Y + SPRING_NATURAL_PX
 
   return (
     <g className="mechanics-experiment-scene">
       {/* 1. 实验模式 0：打点计时器与纸带分析 */}
       {mode === 0 && (
         <g className="mode-ticker-tape">
-          {/* 实验长木板轨道与末端防冲卡块 */}
-          <PhysicsGround x={30} y={groundY} width={780} type="ground" />
-          <rect x={750} y={groundY - 26} width={12} height={26} fill="#475569" stroke="#1E293B" strokeWidth={1} rx={2} />
+          {/* 实验长木板轨道与末端防冲挡块 */}
+          <PhysicsGround x={TRACK_BOARD_X} y={groundY} width={TRACK_BOARD_WIDTH} type="ground" />
+          <rect
+            x={TRACK_STOP_DESIGN_X}
+            y={groundY - CART_HEIGHT_PX}
+            width={12}
+            height={CART_HEIGHT_PX}
+            fill={SCENE_COLORS.mechanicsApparatus.bumperRubber}
+            stroke={CANVAS_COLORS.strokeDark}
+            strokeWidth={1}
+            rx={2}
+          />
 
           {/* 打点计时器 */}
           <TickerTimer
@@ -74,24 +123,28 @@ export function MechanicsExperimentScene({
             frequency={50}
           />
 
-          {/* 打点纸带 (后端精准固定在计时器出口 x=115，前端连接小车) */}
+          {/* 打点纸带 (后端精准固定在计时器出口，前端连接小车) */}
           <PaperTape
-            x={115}
+            x={TRACK_ORIGIN_DESIGN_X}
             y={groundY - 20}
-            width={Math.max(0, carPx - 115)}
-            dots={physics.tapeDots || []}
-            showLabels
-            highlightInterval={[0, 6]}
-            highlightLabel={`逐差法 a = ${safeA.toFixed(2)} m/s²`}
+            width={Math.max(0, carPx - TRACK_ORIGIN_DESIGN_X)}
+            dots={tapeDots}
+            showLabels={tapeDots.length <= 12}
+            highlightInterval={[0, DIFF_METHOD_MIN_DOTS - 1]}
+            highlightLabel={
+              aCalculated === null
+                ? '逐差法：计数点不足'
+                : `逐差法 a = ${aCalculated.toFixed(2)} m/s²`
+            }
             fontFamily="sans-serif"
           />
 
-          {/* 高中物理课本经典木质带轮小车 (Block woodCart 还原自然协调组件比例 width=56, height=26) */}
+          {/* 高中物理课本经典木质带轮小车 */}
           <Block
             x={carPx}
-            y={groundY - 26}
-            width={56}
-            height={26}
+            y={groundY - CART_HEIGHT_PX}
+            width={CART_LENGTH_PX}
+            height={CART_HEIGHT_PX}
             type="woodCart"
             velocity={safeV}
             time={time}
@@ -99,7 +152,7 @@ export function MechanicsExperimentScene({
 
           {/* 小车速度矢量标注 */}
           <PhysicsVectorArrow
-            originDesign={{ x: carPx + 28, y: groundY - 13 }}
+            originDesign={{ x: carPx + CART_LENGTH_PX / 2, y: groundY - CART_HEIGHT_PX / 2 }}
             vector={{ x: safeV, y: 0 }}
             type="velocity"
             sceneScale={sceneScale}
@@ -107,14 +160,17 @@ export function MechanicsExperimentScene({
             font={font}
           />
 
-          {/* 测量刻度尺 */}
+          {/* 测量刻度尺：量程与轨道长度同源（0 ~ 2.00 m ⇔ 0 ~ 200 cm） */}
           <LabRuler
-            x={115}
-            y={groundY + 12}
-            length={600}
-            domain={[0, 60]}
+            x={TRACK_ORIGIN_DESIGN_X}
+            y={TRACK_RULER_Y}
+            length={TRACK_RULER_LENGTH_PX}
+            domain={TRACK_RULER_DOMAIN_CM}
             showMagnifier
-            magnifierPos={Math.min(580, Math.max(0, carPx - 115))}
+            magnifierPos={Math.max(
+              0,
+              Math.min(TRACK_RULER_LENGTH_PX - 20, carPx - TRACK_ORIGIN_DESIGN_X)
+            )}
             fontFamily="monospace"
           />
         </g>
@@ -124,12 +180,13 @@ export function MechanicsExperimentScene({
       {mode === 1 && (
         <g className="mode-photogate">
           {/* 导轨轨道 */}
-          <PhysicsGround x={30} y={groundY} width={780} type="ground" />
+          <PhysicsGround x={TRACK_BOARD_X} y={groundY} width={TRACK_BOARD_WIDTH} type="ground" />
 
-          {/* U 型光电门 1 与 光电门 2 */}
+          {/* U 型光电门 1 与 光电门 2（门隙需大于车宽，使小车可真实穿过） */}
           <Photogate
             x={gate1Px}
             y={groundY}
+            gap={PHOTOGATE_GAP_PX}
             isBlocked={!!physics.isBlocked1}
             beamVisible
             label="光电门 A"
@@ -137,27 +194,37 @@ export function MechanicsExperimentScene({
           <Photogate
             x={gate2Px}
             y={groundY}
+            gap={PHOTOGATE_GAP_PX}
             isBlocked={!!physics.isBlocked2}
             beamVisible
             label="光电门 B"
           />
 
           {/* 带有遮光条的高中物理课本经典木质小车 */}
-          <g transform={`translate(${carPx}, ${groundY - 26})`}>
+          <g transform={`translate(${carPx}, ${groundY - CART_HEIGHT_PX})`}>
             <Block
               x={0}
               y={0}
-              width={56}
-              height={26}
+              width={CART_LENGTH_PX}
+              height={CART_HEIGHT_PX}
               type="woodCart"
               velocity={safeV}
               time={time}
             />
-            {/* 车顶 1cm 宽遮光片 (位于车身中央 x=23~33) */}
-            <rect x={23} y={-16} width={10} height={16} fill="#0F172A" stroke="#38BDF8" strokeWidth={1} rx={1} />
+            {/* 车顶遮光片：中心距车左端 FLAG_OFFSET_PX，宽度即遮光条宽度 d，高度须越过红外光束 */}
+            <rect
+              x={FLAG_OFFSET_PX - flagWidthPx / 2}
+              y={-FLAG_HEIGHT_PX}
+              width={flagWidthPx}
+              height={FLAG_HEIGHT_PX}
+              fill={SCENE_COLORS.mechanicsApparatus.tapeDotActive}
+              stroke={PHYSICS_COLORS.velocity}
+              strokeWidth={1}
+              rx={1}
+            />
           </g>
 
-          {/* 双通道毫秒数字计时器 (上移至 y=18，避免遮挡光电门主体) */}
+          {/* 双通道毫秒数字计时器 */}
           <TimerDisplay
             x={45}
             y={18}
@@ -175,9 +242,18 @@ export function MechanicsExperimentScene({
             fontFamily="monospace"
           />
 
-          {/* 瞬时速度计算标注 */}
+          {/* 瞬时速度计算标注：v = d/Δt，口径与看板同源 */}
           <g transform={`translate(${gate1Px}, ${groundY - 85})`}>
-            <rect x={-65} y={-14} width={130} height={20} rx={4} fill={withAlpha(CANVAS_COLORS.white, 0.9)} stroke={CANVAS_COLORS.axis} strokeWidth={0.8} />
+            <rect
+              x={-72}
+              y={-14}
+              width={144}
+              height={20}
+              rx={4}
+              fill={withAlpha(CANVAS_COLORS.white, 0.9)}
+              stroke={CANVAS_COLORS.axis}
+              strokeWidth={0.8}
+            />
             <text
               x={0}
               y={0}
@@ -187,11 +263,20 @@ export function MechanicsExperimentScene({
               textAnchor="middle"
               dominantBaseline="middle"
             >
-              {`vA = d/Δt1 = ${safeDt1 > 0 ? (0.01 / (safeDt1 / 1000)).toFixed(2) : '0.00'} m/s`}
+              {`vA = d/Δt1 = ${safeVA.toFixed(2)} m/s`}
             </text>
           </g>
           <g transform={`translate(${gate2Px}, ${groundY - 85})`}>
-            <rect x={-65} y={-14} width={130} height={20} rx={4} fill={withAlpha(CANVAS_COLORS.white, 0.9)} stroke={CANVAS_COLORS.axis} strokeWidth={0.8} />
+            <rect
+              x={-72}
+              y={-14}
+              width={144}
+              height={20}
+              rx={4}
+              fill={withAlpha(CANVAS_COLORS.white, 0.9)}
+              stroke={CANVAS_COLORS.axis}
+              strokeWidth={0.8}
+            />
             <text
               x={0}
               y={0}
@@ -201,7 +286,7 @@ export function MechanicsExperimentScene({
               textAnchor="middle"
               dominantBaseline="middle"
             >
-              {`vB = d/Δt2 = ${safeDt2 > 0 ? (0.01 / (safeDt2 / 1000)).toFixed(2) : '0.00'} m/s`}
+              {`vB = d/Δt2 = ${safeVB.toFixed(2)} m/s`}
             </text>
           </g>
         </g>
@@ -210,44 +295,78 @@ export function MechanicsExperimentScene({
       {/* 3. 实验模式 2：胡克定律探究 (弹簧伸长量与弹力) */}
       {mode === 2 && (
         <g className="mode-hooke-law">
-          {/* 铁架台支架 (clampY=248 使夹爪精准固定在 y=72 处的弹簧顶端) */}
-          <LabStand x={420} y={320} height={280} clampY={248} attachment="clamp" />
+          {/* 铁架台：铁夹中心固定在 y = SPRING_TOP_Y 处的弹簧顶端 */}
+          <LabStand x={420} y={320} height={280} clampY={320 - SPRING_TOP_Y} attachment="clamp" />
 
-          {/* 悬挂弹簧 (初始 80px 对应 8.0cm，拉伸 Δx * 1000px) */}
+          {/* 弹簧自然长度 L₀ 基准虚线：把"总长 L"换算到"伸长量 Δx"的读数基准 */}
+          <line
+            x1={SPRING_ANCHOR_X - 44}
+            y1={naturalLengthY}
+            x2={SPRING_RULER_X + 30}
+            y2={naturalLengthY}
+            stroke={CANVAS_COLORS.axis}
+            strokeWidth={1}
+            strokeDasharray="5 4"
+          />
+          <text
+            x={SPRING_RULER_X + 46}
+            y={naturalLengthY - 6}
+            fill={CANVAS_COLORS.labelTextLight}
+            fontSize={font(10)}
+            fontFamily="monospace"
+          >
+            {`L₀ = ${(SPRING_NATURAL_M * 100).toFixed(1)} cm`}
+          </text>
+
+          {/* 悬挂弹簧 (自然长度 L₀ 对应 SPRING_NATURAL_PX) */}
           <Spring
-            x1={480}
-            y1={72}
-            x2={480}
-            y2={72 + 80 + safeDeltaX * 1000}
+            x1={SPRING_ANCHOR_X}
+            y1={SPRING_TOP_Y}
+            x2={SPRING_ANCHOR_X}
+            y2={springBottomY}
             coils={10}
             radius={14}
           />
 
           {/* 弹簧下端挂钩与钩码 */}
-          <g transform={`translate(480, ${72 + 80 + safeDeltaX * 1000})`}>
+          <g transform={`translate(${SPRING_ANCHOR_X}, ${springBottomY})`}>
             <Ball cx={0} cy={14} r={12} type="steel" />
-            {/* 钩码标注 */}
+          </g>
+
+          {/* 弹力与伸长量标注 (置于弹簧左侧，避开竖直刻度尺) */}
+          <g transform={`translate(${SPRING_ANCHOR_X - 70}, ${springBottomY - 34})`}>
             <text
-              x={20}
-              y={18}
-              fill={CANVAS_COLORS.labelText}
+              x={0}
+              y={0}
+              fill={PHYSICS_COLORS.forceNet}
               fontSize={font(11)}
-              fontFamily="sans-serif"
+              fontFamily="monospace"
+              textAnchor="end"
             >
-              {`F = ${safeF} N`}
+              {`F = ${safeF.toFixed(2)} N`}
+            </text>
+            <text
+              x={0}
+              y={16}
+              fill={PHYSICS_COLORS.displacement}
+              fontSize={font(11)}
+              fontFamily="monospace"
+              textAnchor="end"
+            >
+              {`Δx = ${safeDeltaX.toFixed(3)} m`}
             </text>
           </g>
 
-          {/* 旁侧测量直尺 (1cm = 10px，1m = 1000px) */}
+          {/* 旁侧竖直刻度尺 (1 cm = 10 design-unit)，放大镜跟随弹簧下端读数 */}
           <LabRuler
-            x={530}
-            y={72}
-            length={220}
+            x={SPRING_RULER_X}
+            y={SPRING_TOP_Y}
+            length={SPRING_RULER_LENGTH_PX}
             height={30}
             orientation="vertical"
-            domain={[0, 22]}
+            domain={SPRING_RULER_DOMAIN_CM}
             showMagnifier
-            magnifierPos={80 + safeDeltaX * 1000}
+            magnifierPos={SPRING_NATURAL_PX + safeDeltaX * SPRING_PX_PER_M}
             fontFamily="monospace"
           />
         </g>

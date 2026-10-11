@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, ChevronDown, CheckCircle2, Circle } from 'lucide-react'
+import { ChevronRight, ChevronDown, CheckCircle2, Circle, Info } from 'lucide-react'
 import { knowledgeTree } from '@/data/knowledgeTree'
 import { buildKnowledgeTree, countDescendants } from '@/data/buildKnowledgeTree'
 import { getAnimationConfigAsync } from '@/data/animationRegistry'
@@ -133,6 +133,28 @@ const KnowledgeNodeItem: React.FC<{
           </div>
         )}
       </div>
+      {/* 覆盖度声明：该节点借用了非专用实验动画时，直接把"缺哪些实验要素"摊开写，避免误导 */}
+      {!hasChildren && node.coverageNote && (
+        <div
+          className="flex items-start gap-1.5 mx-1 mb-2 rounded-md border-l-2 py-1.5 pr-2"
+          style={{
+            marginLeft: `${level * 20 + 8}px`,
+            backgroundColor: colors.warning[50],
+            borderLeftColor: colors.warning[400]
+          }}
+        >
+          <Info
+            className="w-3.5 h-3.5 flex-shrink-0 mt-[1px] ml-1.5"
+            style={{ color: colors.warning[600] }}
+          />
+          <span
+            className="text-[11px] leading-snug"
+            style={{ color: colors.warning[800] }}
+          >
+            {node.coverageNote}
+          </span>
+        </div>
+      )}
       {hasChildren && expandedNodes.has(node.id) && (
         <div>
           {node.children.map(child => (

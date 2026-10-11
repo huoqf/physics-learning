@@ -14,6 +14,12 @@ export interface KnowledgeNode {
   parentId?: string
   /** 跳转动画时注入的参数覆盖，合并到 defaultParams 之上 */
   animationParams?: Record<string, number>
+  /**
+   * 教学覆盖度声明：当该节点的动画**不是专用实验页**（例如借用理论动画演示）时，
+   * 在此写明"本节点缺哪些实验要素"，用于在知识树卡片上直接提示，切断文案的虚假承诺。
+   * 与动画页右屏看板的「范围声明」警示卡配套使用。
+   */
+  coverageNote?: string
   /** 高考考频勋章，如 '5年12考' / '高考压轴' */
   gaokaoFrequency?: string
   /** 关联的高考 18 大 Master 模型 ID */

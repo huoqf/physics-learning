@@ -17,6 +17,10 @@ export const BulbVAScene: React.FC<BulbVASceneProps> = ({ physics, font, time = 
     bulbPower,
     R_slider_max,
     E,
+    R_real,
+    RV,
+    RA,
+    r,
   } = physics
 
   return (
@@ -28,6 +32,12 @@ export const BulbVAScene: React.FC<BulbVASceneProps> = ({ physics, font, time = 
         sliderRatio={sliderRatio}
         E={E}
         R_slider_max={R_slider_max}
+        // 关键：把当前工作点的真实灯丝电阻与真实电表内阻传入，
+        // 使中屏表盘读数与右屏工作点/误差分析处于同一电路状态（同源）。
+        Rx={R_real}
+        RV={RV}
+        RA={RA}
+        r={r}
         font={font}
         renderLoad={(pos) => (
           <g>
