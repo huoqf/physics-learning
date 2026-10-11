@@ -56,6 +56,7 @@ type BuilderName =
   | 'buildExperimentResistivityQuantities'
   | 'buildExperimentMultimeterQuantities'
   | 'buildBulbVAQuantities'
+  | 'buildExperimentRefractionQuantities'
   | 'buildMicroQuantitiesData'
   | 'buildMaxwellDistributionData'
   | 'buildOilFilmExperimentData'
@@ -215,6 +216,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-experiment-resistivity': { loader: () => import('./quantities/experimentResistivity'), builderName: 'buildExperimentResistivityQuantities' },
   'anim-multimeter': { loader: () => import('./quantities/experimentMultimeter'), builderName: 'buildExperimentMultimeterQuantities' },
   'anim-experiment-bulb-va': { loader: () => import('./quantities/experiment/bulbVA'), builderName: 'buildBulbVAQuantities' },
+  'anim-experiment-refraction': { loader: () => import('./quantities/experiment/refraction'), builderName: 'buildExperimentRefractionQuantities' },
 }
 
 /** 已加载的构建器缓存（模块级单例） */

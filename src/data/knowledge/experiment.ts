@@ -104,15 +104,13 @@ export const experimentKnowledge: KnowledgeNode[] = [
   // ── 光学实验专题 ─────────────────────────────────────────────────────────────
   {
     id: 'experiment-3-3',
-    title: '测定玻璃的折射率',
+    title: '测定玻璃的折射率（插针法）',
     chapter: '实验专题',
     module: 'experiment',
     importance: 'gaokao',
-    animationIds: ['anim-refraction'],
+    animationIds: ['anim-experiment-refraction', 'anim-refraction'],
     problemIds: [],
     prerequisites: [],
-    coverageNote:
-      '覆盖度声明：本节点借用「光的折射定律」理论动画（中屏画的是半圆形玻璃砖，矩形砖只在进阶模式）。实验必需的插针法装置与操作——矩形玻璃砖、大头针 P₁~P₄ 依次插针并以前针遮挡后针定位光路、量角器读出入射角 i 与折射角 r、作图法求 n、多次测量取平均——尚未实现。',
   },
   {
     id: 'experiment-3-4',
