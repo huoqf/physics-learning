@@ -183,7 +183,7 @@ const sharedControlMeta: ControlMeta[] = [
   // ── 高考真题与经典模型一键预设（gaokao-enhancement Skill 规范） ──
   {
     type: 'preset' as const,
-    label: '📋 高考典题（LC振荡充放电与能量转化）',
+    label: '⚡ LC充放电能量转化',
     description: 'L=0.4H, C=0.4F, Q₀=1.0C，观察电荷-电流90°相位与能量互换',
     params: { scene: 0, L: 0.4, C: 0.4, dRatio: 1.0, Q0: 1.0, showDamping: 0 },
     restartOnApply: true,
@@ -192,7 +192,7 @@ const sharedControlMeta: ControlMeta[] = [
   },
   {
     type: 'preset' as const,
-    label: '📋 高考典题（麦克斯韦理论与电磁波性质）',
+    label: '🌊 麦克斯韦电磁波传播',
     description: 'f=100MHz, λ=3.0m，周期性电场与磁场正交同相同步传播',
     params: { scene: 1, fEM: 100 },
     restartOnApply: true,
@@ -201,7 +201,7 @@ const sharedControlMeta: ControlMeta[] = [
   },
   {
     type: 'preset' as const,
-    label: '📋 高考典题（收音机LC调谐与电谐振选台）',
+    label: '📻 收音机LC谐振选台',
     description: '目标电台f=100MHz，调节可变电容C=1.0C₀达成电谐振（感应电流最大）',
     params: { scene: 2, radioMode: 1, cRx: 1.0 },
     restartOnApply: true,

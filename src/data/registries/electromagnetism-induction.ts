@@ -486,20 +486,6 @@ export const electromagnetismInductionAnimations = defineAnimations({
     } as const,
     controlMeta: [
       {
-        type: 'preset',
-        label: '📋 2022全国卷（断电闪亮探究）',
-        description: 'RL=2Ω < RA=8Ω, 断开电键瞬时高亮闪烁',
-        params: { mode: 1, E: 12, RL: 2.0, RA: 8.0, L: 3.0, switchState: 1 },
-        restartOnApply: true,
-      },
-      {
-        type: 'preset',
-        label: '📋 高考临界（恰好不闪亮）',
-        description: 'RL=6Ω = RA=6Ω, 断开电键逐渐变暗熄灭',
-        params: { mode: 1, E: 12, RL: 6.0, RA: 6.0, L: 2.0, switchState: 1 },
-        restartOnApply: true,
-      },
-      {
         type: 'segmented',
         key: 'mode',
         label: '实验模型',
@@ -510,6 +496,24 @@ export const electromagnetismInductionAnimations = defineAnimations({
           { value: 1, label: '断电自感 (闪亮探究)' },
           { value: 2, label: '电磁阻尼 (摆动减幅)' },
         ],
+      },
+      {
+        type: 'preset',
+        label: '💡 断电闪亮 (RL < RA)',
+        description: 'RL=2Ω < RA=8Ω, 断开电键瞬时高亮闪烁',
+        params: { mode: 1, E: 12, RL: 2.0, RA: 8.0, L: 3.0, switchState: 1 },
+        restartOnApply: true,
+        showIf: 'mode',
+        showIfValue: 1,
+      },
+      {
+        type: 'preset',
+        label: '💡 临界不闪亮 (RL = RA)',
+        description: 'RL=6Ω = RA=6Ω, 断开电键逐渐变暗熄灭',
+        params: { mode: 1, E: 12, RL: 6.0, RA: 6.0, L: 2.0, switchState: 1 },
+        restartOnApply: true,
+        showIf: 'mode',
+        showIfValue: 1,
       },
       {
         type: 'toggle',
@@ -529,16 +533,16 @@ export const electromagnetismInductionAnimations = defineAnimations({
       },
       {
         type: 'tip',
-        group: '高考要点',
-        variant: 'primary',
+        group: '观察指引',
+        variant: 'info',
         content: (p) => {
           if (p.mode === 1) {
-            return '【高考核心考点】：断开瞬间流过灯泡的电流初值等于线圈断开前的稳态电流 IL=E/RL。若 RL < RA，灯泡电流突增必发生【闪亮】；若 RL ≥ RA 则仅渐暗熄灭。'
+            return '观察重点：断开瞬间流过灯泡电流初值等于线圈断开前的稳态电流。若 RL < RA，灯泡电流突增发生闪亮。'
           }
           if (p.mode === 2) {
-            return '【电磁阻尼考点】：穿过强磁场时导体内部产生闭合涡流，安培力阻碍相对运动（来拒去留）。梳齿开缝切断大涡流回路，阻尼效果大幅减弱。'
+            return '观察重点：梳齿开缝切断大涡流回路，电磁阻尼效果大幅减弱，摆动次数显著增加。'
           }
-          return '【通电自感考点】：闭合瞬间自感反电动势阻碍电流增加，线圈支路灯泡缓慢变亮；纯电阻支路灯泡立即发光。'
+          return '观察重点：闭合瞬间自感电动势阻碍电流增加，线圈支路灯泡缓慢变亮。'
         },
       },
     ],

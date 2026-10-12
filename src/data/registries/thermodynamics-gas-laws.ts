@@ -142,7 +142,7 @@ export const thermodynamicsGasLawsAnimations = defineAnimations({
       },
       {
         type: 'preset',
-        label: '📋 高考真题：肥皂液膜表面张力做功',
+        label: '🧼 肥皂液膜表面张力',
         group: '快捷预设',
         params: () => ({ mode: 1, solidType: 0, gamma: 0.05, capillaryRadius: 0.5, isMercury: 0 }),
       },
@@ -188,27 +188,27 @@ export const thermodynamicsGasLawsAnimations = defineAnimations({
     controlMeta: [
       {
         type: 'preset',
-        label: '📋 高考陷阱：饱和汽等温压缩（p 恒为 ps）',
+        label: '💧 饱和汽等温压缩',
         group: '快捷预设',
         params: () => ({ tempCelsius: 25, referencePressure: 4000, pistonVolume: 1.0 }),
       },
       {
         type: 'preset',
-        label: '📋 未饱和态压缩至饱和锁定',
+        label: '🔄 压缩至饱和锁定',
         group: '快捷预设',
         params: () => ({ tempCelsius: 25, referencePressure: 2400, pistonVolume: 1.0 }),
       },
       {
         type: 'preset',
-        label: '📋 降温结露过程 (RH 达 100%)',
+        label: '❄️ 降温结露过程',
         group: '快捷预设',
         params: () => ({ tempCelsius: 25, referencePressure: 1600, pistonVolume: 1.0 }),
       },
       {
         type: 'tip',
-        group: '核心考点',
-        variant: 'primary',
-        content: '【高考关键易错点】：未饱和时等温压缩遵循玻意耳定律（p ∝ 1/V）；一旦 p 达到饱和汽压 ps，多余蒸汽立即液化，此后 p 恒等于 ps，与体积完全无关——这正是饱和汽压仅由温度决定的含义。',
+        group: '观察指引',
+        variant: 'info',
+        content: '观察重点：未饱和时遵循玻意耳定律；达到饱和汽压后等温压缩蒸汽液化，压强 p 保持恒定。',
       },
     ],
     paramMeta: [

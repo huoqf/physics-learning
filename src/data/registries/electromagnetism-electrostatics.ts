@@ -193,18 +193,6 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
     } as const,
     controlMeta: [
       {
-        type: 'preset',
-        label: '📋 高考真题：验电器金属网罩屏蔽实验',
-        group: '快捷预设',
-        params: () => ({ E0: 300, mode: 2, isGrounded: 0, showFieldLines: 1, tipRadius: 1.0 }),
-      },
-      {
-        type: 'preset',
-        label: '📋 避雷针尖端微粒放电 (R=0.2mm)',
-        group: '快捷预设',
-        params: () => ({ E0: 450, mode: 1, isGrounded: 1, showFieldLines: 1, tipRadius: 0.2 }),
-      },
-      {
         type: 'segmented',
         key: 'mode',
         label: '探究主题',
@@ -215,6 +203,22 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
           { value: 1, label: '尖端放电' },
           { value: 2, label: '空腔静电屏蔽' },
         ],
+      },
+      {
+        type: 'preset',
+        label: '🛡️ 验电器金属网罩屏蔽',
+        group: '快捷预设',
+        params: () => ({ E0: 300, mode: 2, isGrounded: 0, showFieldLines: 1, tipRadius: 1.0 }),
+        showIf: 'mode',
+        showIfValue: 2,
+      },
+      {
+        type: 'preset',
+        label: '⚡ 避雷针尖端放电',
+        group: '快捷预设',
+        params: () => ({ E0: 450, mode: 1, isGrounded: 1, showFieldLines: 1, tipRadius: 0.2 }),
+        showIf: 'mode',
+        showIfValue: 1,
       },
       {
         type: 'toggle',

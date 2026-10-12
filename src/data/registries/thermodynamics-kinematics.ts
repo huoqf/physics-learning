@@ -250,14 +250,14 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
       },
       {
         type: 'preset',
-        label: '人教版教材标准配比 (1:500, 80滴/mL)',
-        group: '高考标准操作',
+        label: '🧪 标准配比 (1:500)',
+        group: '典型实验配比',
         params: { step: 3, ratio: 500, dropsPerMl: 80, powderDensity: 0 },
       },
       {
         type: 'preset',
-        label: '高浓度配比 (1:200, 50滴/mL)',
-        group: '高考标准操作',
+        label: '🧪 高浓度配比 (1:200)',
+        group: '典型实验配比',
         params: { step: 3, ratio: 200, dropsPerMl: 50, powderDensity: 0 },
       },
       {

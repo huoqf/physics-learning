@@ -207,7 +207,7 @@ export const electromagnetismAcAnimations = defineAnimations({
       },
       {
         type: 'preset',
-        label: '📋 高考真题预设：双灯交直流对比验证',
+        label: '💡 双灯交直流对比',
         group: '快捷预设',
         params: () => ({ mode: 0, isDC: 0, frequency: 50, voltage: 100, inductance: 0.5, resistance: 30 }),
       },
