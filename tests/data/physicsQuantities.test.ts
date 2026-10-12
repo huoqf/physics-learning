@@ -26,6 +26,7 @@ const TEST_ANIM_IDS = [
   'anim-em-spectrum',
   'anim-bullet-block',
   'anim-forced-resonance',
+  'anim-double-slit-interference',
 ]
 
 describe('buildPhysicsQuantities', () => {
@@ -182,5 +183,29 @@ describe('buildPhysicsQuantities', () => {
     expect(find(qs, '穿出木块速度')).toBeDefined()
     expect(find(qs, '摩擦生热 Q')).toBe('10.0') // Q = f * L = 10 * 1 = 10 J
     expect(qs.formulas?.some((f) => f.latex.includes('m v_1 + M v_2'))).toBe(true)
+  })
+
+  // ===== 光学 · 双缝干涉实验看板防除零与量程保护 =====
+  it('双缝干涉看板：即使 slitDistance=0 也能安全防除零，绝不产生 NaN', () => {
+    const qs = buildPhysicsQuantities(
+      'anim-double-slit-interference',
+      { mode: 1, slitDistance: 0, screenDistance: 0 },
+      0
+    )
+    expect(qs.quantities.length).toBeGreaterThan(0)
+    qs.quantities.forEach((q) => {
+      expect(String(q.value)).not.toBe('NaN')
+      expect(String(q.value)).not.toBe('Infinity')
+    })
+  })
+
+  it('双缝干涉看板：极端宽条纹时正确触发螺旋测微器超量程警示', () => {
+    // d=0.1, L=2.0 -> x4 > 50mm -> 超量程
+    const qs = buildPhysicsQuantities(
+      'anim-double-slit-interference',
+      { mode: 1, slitDistance: 0.1, screenDistance: 2.0, targetFringe: 4 },
+      0
+    )
+    expect(qs.warnings?.some((w) => w.text.includes('超过螺旋测微器量程'))).toBe(true)
   })
 })

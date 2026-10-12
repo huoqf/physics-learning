@@ -58,7 +58,7 @@ export function buildRefractionQuantities(
 
   const gaokaoPoints: PhysicsPanelData['gaokaoPoints'] = [
     {
-      text: '高考五星实验「插针法测定玻璃的折射率」：以 P₁P₂ 定出入射光线、P₃P₄ 定出射光线，量出 i、r 后由 n = sin i / sin r 计算。本页只演示其中的折射定律部分——插针定位、作图与多次测量不在本页范围内。',
+      text: '高考五星实验「插针法测定玻璃的折射率」：以 P₁P₂ 定出入射光线、P₃P₄ 定出射光线，量出 i、r 后由 n = sin i / sin r 计算。完整实验操作（含插针定位、量角器/单位圆法/斜率法作图及误差打靶）请前往对应高考实验专用页。',
       importance: 'gaokao',
     },
     { text: '折射率 n = sinθ₁ / sinθ₂，n 越大折射角越小', importance: 'core' },
@@ -75,8 +75,8 @@ export function buildRefractionQuantities(
   // 不存在全反射，故不再挂"全反射"告警（原分支为不可达死代码）。
   const warnings: PhysicsPanelData['warnings'] = [
     {
-      text: '【范围声明】本页是「光的折射定律」原理演示，只讲 θ₁、θ₂、n 之间的定量关系。高考实验「测定玻璃的折射率」所需的插针法装置与操作——矩形玻璃砖、大头针 P₁~P₄ 依次插针并以前针遮挡后针定位光路、量角器读出入射角 i 与折射角 r、作图法求 n、多次测量取平均——不在本页范围内。',
-      level: 'warning',
+      text: '本页为「光的折射定律」基础理论与光路演示。如需进行高考实验「测定玻璃的折射率」（插针法大头针定位、量角器与单位圆作图、下表面画偏误差打靶等实验全流程），请前往高考实验专题对应页面。',
+      level: 'info',
     },
   ]
 

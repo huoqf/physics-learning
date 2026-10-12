@@ -1,4 +1,5 @@
 import type { KnowledgeNode } from '../types'
+import { DOUBLE_SLIT_DEFAULT_PARAMS } from '@/physics/optics'
 
 export const experimentKnowledge: KnowledgeNode[] = [
   // ── 力学实验专题 ─────────────────────────────────────────────────────────────
@@ -119,10 +120,24 @@ export const experimentKnowledge: KnowledgeNode[] = [
     module: 'experiment',
     importance: 'gaokao',
     animationIds: ['anim-double-slit-interference'],
+    animationParams: {
+      ...DOUBLE_SLIT_DEFAULT_PARAMS,
+      mode: 1,
+    },
     problemIds: ['prob-2023-quanguo-exp-doubleslit'],
     prerequisites: [],
-    coverageNote:
-      '覆盖度声明：本节点借用「光的干涉」理论动画，只演示条纹间距 Δx = (L/d)λ 与条纹分布。实验必需的装置与读数——滤光片/单缝/双缝/遮光筒组装、测微目镜分划板对准与测微手轮读数、Δx = (xₙ − x₁)/(n − 1) 的逐差计算——尚未实现。',
+  },
+
+  // ── 热学实验专题 ─────────────────────────────────────────────────────────────
+  {
+    id: 'experiment-4-1',
+    title: '用油膜法估测油酸分子的大小',
+    chapter: '实验专题',
+    module: 'experiment',
+    importance: 'gaokao',
+    animationIds: ['anim-oil-film-experiment'],
+    problemIds: [],
+    prerequisites: [],
   },
 ]
 

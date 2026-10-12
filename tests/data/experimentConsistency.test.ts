@@ -68,4 +68,24 @@ describe('高考实验专题 · 高中物理规范与知识体系守卫', () => 
       }
     }
   })
+
+  it('双缝干涉知识树直达参数与注册表物理参数保持严格一致 (守卫 N3)', async () => {
+    await ensureExtendedRegistry()
+    const node = experimentKnowledge.find((k) => k.id === 'experiment-3-4')
+    expect(node).toBeDefined()
+    expect(node?.animationParams).toBeDefined()
+
+    const config = await getAnimationConfigAsync('anim-double-slit-interference')
+    expect(config).toBeDefined()
+
+    // 验证知识树直达参数的物理量 (除 mode 外) 与注册表默认值严格一致
+    const expParams = node!.animationParams!
+    const defaultParams = config!.defaultParams as Record<string, unknown>
+
+    expect(expParams.mode).toBe(1)
+    expect(expParams.wavelength).toBe(defaultParams.wavelength)
+    expect(expParams.slitDistance).toBe(defaultParams.slitDistance)
+    expect(expParams.screenDistance).toBe(defaultParams.screenDistance)
+    expect(expParams.targetFringe).toBe(defaultParams.targetFringe)
+  })
 })

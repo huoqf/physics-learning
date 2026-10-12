@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-09-29（高考实验专题 11 个核心节点全量闭环、力学预设与真题联动闭环）
+> 最后更新：2026-10-11（全仓核对：124 动画对账、真题 64+ 题、实验专题 experiment-3-3 独立实验页交付与借用节点实况校正）
 
 ---
 
@@ -55,15 +55,15 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 ## 一、超长文件拆分（P2）
 
-### 待处理（2026-09-27 核对）
+### 待处理（2026-10-11 核对）
 
 **执行优先级**：RotatingCoil → AnimationPage → RelationChart（仅类型整理）
 
 | # | 文件 | 当前行数 | 消费者 | 测试 | 拆分方案 | 风险 |
 |:-:|------|-----:|--------|:---:|---------|:---:|
-| 1 | `RotatingCoil.tsx` (`src/components/Physics/`) | 618 | 1（`ACGeneration.tsx`） | 无 | `render3DSlipRing`/`render3DBrush`/`renderBrushWires` → `rotatingCoilParts.tsx`；主组件保留顶点计算 + 深度排序 + 组装 | 低 |
-| 2 | `AnimationPage.tsx` | 560 | 1（`App.tsx` 路由） | 无 | 抽 `useFilteredParams()`（showIf/hideIf 过滤）、`useAnimationMode()`（resetParams 逻辑）。无埋点/监控/URL 同步。SidebarExtra 已删除 | 低 |
-| 3 | `RelationChart.tsx` | 561 | **30+（132 处）** | 无 | **仅做类型整理**：`RelationDataSeries`/`RelationMarker`/`RelationChartProps` → `RelationChart.types.ts`。`RCContent` 依赖 `ChartContext`，保留在组件文件中 | 低（仅类型迁移） |
+| 1 | `RotatingCoil.tsx` (`src/components/Physics/`) | 619 | 1（`ACGeneration.tsx`） | 无 | `render3DSlipRing`/`render3DBrush`/`renderBrushWires` → `rotatingCoilParts.tsx`；主组件保留顶点计算 + 深度排序 + 组装 | 低 |
+| 2 | `AnimationPage.tsx` | 569 | 1（`App.tsx` 路由） | 无 | 抽 `useFilteredParams()`（showIf/hideIf 过滤）、`useAnimationMode()`（resetParams 逻辑）。无埋点/监控/URL 同步。SidebarExtra 已删除 | 低 |
+| 3 | `RelationChart.tsx` | 579 | **30+（132 处）** | 无 | **仅做类型整理**：`RelationDataSeries`/`RelationMarker`/`RelationChartProps` → `RelationChart.types.ts`。`RCContent` 依赖 `ChartContext`，保留在组件文件中 | 低（仅类型迁移） |
 
 **补充信息**：
 
@@ -97,7 +97,7 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 ### 3.1 AnimationPage 协调职责监控（P2）
 
-> 当前 560 行（2026-09-27 核对，仍超 500 行阈值）。触发拆分条件：行数 > 500，或存在物理计算与 JSX 混写，或职责 > 8 类。
+> 当前 569 行（2026-10-11 核对，仍超 500 行阈值）。触发拆分条件：行数 > 500，或存在物理计算与 JSX 混写，或职责 > 8 类。
 
 膨胀触发区域：参数过滤（showIf/hideIf）、模式切换、RightPhysicsPanel 计算逻辑。
 如继续增长，优先抽 hook：`useFilteredParams()`、`useAnimationMode()`。
@@ -132,7 +132,7 @@ export interface AnimationModule<P extends AnimationParams> {
 ```
 
 目标：将组件、参数、面板、公式、测试聚合到同一 feature 模块附近，减少跨目录跳转。
-注：`anim-vertical-circular` quantities 已补齐（复用 `precomputeVerticalCircularMotion`），当前 118/118 动画均有 quantities 注册。
+注：`anim-vertical-circular` quantities 已补齐（复用 `precomputeVerticalCircularMotion`），当前 124/124 动画均有 quantities 注册。
 
 ### 4.2 viewModel 层 + 坐标类型（P2/P3）
 
@@ -380,7 +380,7 @@ npx playwright test
 
 > **来源**：`physics-learning-内容补全建议-2026-09-22.md`（缺口基线）+ 2026-09-24 逐轮实测核对。
 > **性质**：本章是**待完成计划**，不是完成记录。每完成一项把状态改为 `[x]`，并在 `PROCESS_LOG.md` / `logs/2026-Wxx.md` 写完成记录（含验证命令）。
-> **总账（2026-09-27）**：16 个缺口考点**已完成 15 项**（批次 1、2、3 均闭环完成，批次 4 已完成薄膜干涉、相对论时空观及部分实验专题，动画数增至 118），P0 已全部完成。
+> **总账（2026-10-11）**：16 个缺口考点**已完成 15 项**（批次 1、2、3 均闭环完成，批次 4 已完成薄膜干涉、相对论时空观及部分实验专题，动画数增至 124），P0 已全部完成。
 
 ### 9.1 缺口考点清单（16 项）
 
@@ -428,42 +428,64 @@ done
 | 3 | `ChainCircuitBuilder`（电路拓扑构建） | 传感器、感抗容抗、实验电路（**小灯泡伏安特性 `experiment-3-2` 前置核心依赖**） | 已在 `src/components/Physics/` 实现并登记 | [x] 已完成 |
 
 > **落地约束**：三者需从 `src/components/Physics/index.ts`（或 `Chart/`）导出，并在 `COMPONENT_REGISTRY.md` 登记**与源码一致的完整 props 签名**（见 §10.6）。
-> **核对命令**：`grep -rl "CharacteristicCurve\|EnergyFlowBars\|ChainCircuitBuilder" src/components src/features`（当前 0 命中）
+> **核对命令**：`grep -rl "CharacteristicCurve\|EnergyFlowBars\|ChainCircuitBuilder" src/components src/features`（实测：CharacteristicCurve 6 处、ChainCircuitBuilder 5 处已落地消费；EnergyFlowBars 未开工）
 
-### 9.3 实验专题扩展（9 个节点，P1，[x] 已全量闭环）
+### 9.3 实验专题扩展（12 个节点，P1，9/12 闭环，3 个借用过渡待内生增强）
 
-现状：`src/data/knowledge/experiment.ts` 已经构建完整的力学、电学、光学 11 个实验节点体系，严格复用既有高质量物理动画底座并补充打点纸带逐差法、光电门、测微目镜与伏安法电路决策。
+现状：`src/data/knowledge/experiment.ts` 已经构建完整的力学、电学、光学、热学 12 个实验节点体系。其中 **9 个节点已实现独立专用实验页或内生实验模式闭环**；**3 个力学节点（2-2、2-3、2-4）已挂靠相关理论/基础实验动画，具备物理与测量底座，后续视需要进一步深化专用模式**。
 
-| 建议节点 ID | 实验 | 复用资产 | 状态 |
+> **架构认知与最佳实践**：**高考实验不必全部单立空壳新动画，大量经典实验最佳实践是与核心知识点动画共建（通过 `mode` 切换或预设），既保持知识树的连续性，又避免碎片化维护。**
+> - **知识点内置高考实验/探究模式（已落地广泛实践）**：
+>   - 双缝干涉测波长（`anim-double-slit-interference` Mode 1）：光具座导轨装配 + 测微目镜视场 + 螺旋测微器读数 + 逐差法；
+>   - 自由落体（`anim-free-fall`）：牛顿管抽气真空对比实验 + 滴水法测 $g$ + 频闪打点；
+>   - 单摆（`anim-simple-pendulum`）：沙摆描迹 + 小角近似测 $g$ 探究；
+>   - 薄膜干涉（`anim-thin-film-interference`）：空气劈尖等厚干涉工件表面平整度/凹凸检测；
+>   - 气体实验三定律（`anim-gas-laws`）：玻意耳/查理/盖-吕萨克定律 U 型水银压强计实验；
+>   - 楞次定律（`anim-lenz-law`）：条形磁铁插拔线圈检流计探究感应电流方向；
+>   - 电磁阻尼与驱动（`anim-eddy-current`）：实心铝板 vs 梳状铝板强磁场阻尼对比；
+>   - 静电屏蔽（`anim-electrostatic-shielding`）：金属网罩验电器实验；
+>   - α粒子散射（`anim-alpha-scatter`）：卢瑟福金箔散射显微镜荧光屏计数实验；
+>   - 光电效应（`anim-photoelectric`）：遏止电压与普朗克常量 $h$ 测定实验。
+> - **独立专用实验专题页**：
+>   - 折射率测定（`anim-experiment-refraction` 插针法全套器材与图像斜率）；
+>   - 电阻率测量（`anim-experiment-resistivity` 螺旋测微器 + 游标卡尺双仪器读数）；
+>   - 小灯泡伏安特性（`anim-experiment-bulb-va` 分压电路 + 真实仪器连线拓扑）；
+>   - 多用电表（`anim-multimeter` 机械调零、欧姆调零、表笔回路与刻度盘）；
+>   - 电动势与内阻测定（`anim-experiment-er` U-I 图像分析）；
+>   - 油膜法测分子大小（`anim-oil-film-experiment` 配液/滴液/粉膜/方格全流程）；
+>   - 力学实验基础（`anim-mechanics-experiment-base` 纸带逐差法、光电门、胡克定律、机械能守恒预设）。
+
+| 节点 ID | 实验 | 对应动画 / 方案 | 状态 |
 |---|---|---|:---:|
 | `experiment-1-1` | 力学实验基础与纸带/光电门分析 | `anim-mechanics-experiment-base` | [x] 已完成 |
 | `experiment-2-1` | 探究加速度与力、质量的关系 | `anim-mechanics-experiment-base` 纸带逐差法与 a-F 图像 | [x] 已完成 |
-| `experiment-2-2` | 验证机械能守恒定律 | `anim-mechanics-experiment-base` 自由落体打点纸带 + `anim-free-fall` | [x] 已完成 |
-| `experiment-2-3` | 验证动量守恒定律 | `anim-momentum-conservation` | [x] 已完成 |
-| `experiment-2-4` | 用单摆测重力加速度 | `anim-simple-pendulum` 骨架 + `LabRuler` | [x] 已完成 |
+| `experiment-2-2` | 验证机械能守恒定律 | 借用 `anim-mechanics-experiment-base` + `anim-free-fall`（已有自由落体打点预设，待深化落体专区） | [ ] 借用过渡待增强 |
+| `experiment-2-3` | 验证动量守恒定律 | 借用 `anim-momentum-conservation`（待内生扩展气垫导轨双车光电门碰撞测速） | [ ] 借用过渡待增强 |
+| `experiment-2-4` | 用单摆测重力加速度 | 借用 `anim-simple-pendulum`（已有沙摆与摆长测 g，待内生扩展秒表累积计时交互） | [ ] 借用过渡待增强 |
 | `experiment-1-2` | 电学实验基础（测定电源电动势与内阻） | `anim-experiment-er` | [x] 已完成 |
-| **`experiment-3-1`** | **测量金属丝的电阻率** | **`Micrometer`（螺旋测微器）** + `VernierCaliper` | [x] 已完成 |
-| `experiment-3-2` | 描绘小灯泡的伏安特性曲线 | `ChainCircuitBuilder` + `Rheostat` `DialMeter` `LightBulb` | [x] 已完成 |
-| `experiment-3-5` | 多用电表的使用与内部原理 | `DialMeter`、大表盘、元器件台 Overlay | [x] 已完成 |
-| `experiment-3-3` | 测定玻璃的折射率 | `anim-refraction` 双界面并进与侧移插针法 | [x] 已完成 |
-| `experiment-3-4` | 用双缝干涉测光的波长 | `anim-double-slit-interference` 条纹间距 Δx=(L/d)λ 测微目镜 | [x] 已完成 |
+| **`experiment-3-1`** | **测量金属丝的电阻率** | `anim-experiment-resistivity`（**`Micrometer` 螺旋测微器** + `VernierCaliper` 游标卡尺） | [x] 已完成 |
+| `experiment-3-2` | 描绘小灯泡的伏安特性曲线 | `anim-experiment-bulb-va`（`ChainCircuitBuilder` + `Rheostat` + `DialMeter` + 分压电路） | [x] 已完成 |
+| `experiment-3-5` | 多用电表的使用与内部原理 | `anim-multimeter`（欧姆挡调零、中值电阻、红黑表笔插孔与量程开关） | [x] 已完成 |
+| `experiment-3-3` | 测定玻璃的折射率（插针法） | `anim-experiment-refraction`（插针法全套器材、量角器/单位圆法/高考图像斜率法、临界角与侧移量） | [x] **已完成（自研交付）** |
+| `experiment-3-4` | 用双缝干涉测光的波长 | `anim-double-slit-interference`（**内生扩展 Mode 1 高考实验**：光具座 7 元件装配、测微目镜视场与十字分划丝瞄准、`Micrometer` 螺旋测微手轮读数、逐差法；已完成 SSOT 纯物理层收口与仪器超量程防护） | [x] **已完成（内生扩展闭环）** |
+| `experiment-4-1` | 用油膜法估测油酸分子的大小 | `anim-oil-film-experiment`（四步全流程：溶液配制、滴液、痱子粉油膜铺展、玻璃板方格描摹与微观分子直径估算） | [x] **已完成（知识树对齐归队）** |
 
 > **教学有效性硬要求**：每个实验动画均带「**数据分析屏**」（图像斜率/截距 ↔ 物理量的对应关系），紧扣高考**误差来源 + 数据处理 + 电路/仪器决策**核心考点。
 
 ### 9.4 题库时效性（P1）
 
-- 现有题库带 `year:` 的真题共 **46** 题（实测：2021:7 / 2022:11 / 2023:19 / 2024:9）；`year: 2025` **0 条**。
+- 现有题库带 `year:` 的真题共 **64** 题（实测：2020:2 / 2021:9 / 2022:12 / 2023:26 / 2024:15）；`year: 2025` **0 条**。
 - [ ] 补 2025 年真题 8–15 道，**优先覆盖本次新增章节**（LC 振荡 / 传感器 / 多普勒 / 受迫振动 / 实验专题），避免"有动画没题"。
 - [ ] 补 2025 年代表性模拟题（河南/湖南/江苏/云南等卷）中上述章节的选择题。
 
 ### 9.5 施工批次建议
 
-| 批次 | 内容 | 理由 |
-|---|---|---|
+| 批次 | 内容 | 理由 | 状态 |
+|---|---|---|:---:|
 | 批次 1（剩余） | `electricity-5-5`、`vibration-2-3` | 考点最热 + 复用度最高 + 无既有语义冲突 | [x] 已完成 |
 | 批次 2 | `electricity-4-8/4-9`、`electricity-7-1/7-2` | 需先确认与既有 induction 动画控制项不冲突 | [x] 已完成 |
 | 批次 3 | `vibration-1-3`、`thermodynamics-2-3/2-4`、`electricity-1-8` | 需新组件，工作量中等 | [x] 已完成 |
-| 批次 4 | `wave-optics-1-5`、`mechanics-6-6`、实验专题扩展、2025 真题 | `wave-optics-1-5`、`mechanics-6-6` 与实验专题 11 个节点已全量闭环，余 2025 真题 | [进行中] 实验已全量完成 |
+| 批次 4 | `wave-optics-1-5`、`mechanics-6-6`、实验专题专用页与内生闭环、2025 真题 | `wave-optics-1-5` 与 `mechanics-6-6` 已闭环；实验专题 9/12 闭环（3-3 插针法交付、3-4 双缝干涉内生实验闭环）；余 3 处力学实验过渡及 2025 真题录入 | [进行中] 推进实验专题深化与真题补全 |
 
 **每批次收尾必跑**：`tsc -b` / `eslint . --max-warnings 0` / `vitest run` / 6 个守门脚本（`npm run check:architecture`）/ 知识树↔注册表一致性（0 悬空 0 孤儿）。
 **每个新动画必须带**：≥1 个带数值断言的单测（方向/符号类错误只有数值断言能拦）。

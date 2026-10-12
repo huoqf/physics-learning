@@ -343,3 +343,5 @@ export function wavelengthToHex(wl: number): string {
   const hexB = to255(b).toString(16).padStart(2, '0')
   return `#${hexR}${hexG}${hexB}`
 }
+
+export * from './optics/doubleSlit'

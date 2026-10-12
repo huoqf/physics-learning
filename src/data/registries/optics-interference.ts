@@ -1,4 +1,5 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
+import { DOUBLE_SLIT_DEFAULT_PARAMS } from '@/physics/optics'
 import { defineAnimations } from '../defineAnimations'
 
 export const opticsInterferenceAnimations = defineAnimations({
@@ -7,14 +8,45 @@ export const opticsInterferenceAnimations = defineAnimations({
     knowledgeId: 'wave-optics-1-1',
     Component: lazy(() => import('@/features/optics/double-slit-interference/DoubleSlitInterferenceAnimation')),
     controlsMode: 'loop' as const,
-    defaultParams: {
-      wavelength: 650,
-      slitDistance: 0.2,
-      screenDistance: 1.0,
-    } as const,
+    defaultParams: DOUBLE_SLIT_DEFAULT_PARAMS,
     controlMeta: [
-      { type: 'tip', content: '拖动滑块观察波长 λ、双缝间距 d、缝屏距离 L 对干涉条纹宽度的影响。' },
-      { type: 'tip', content: '条纹间距 Δx = (L/d)λ，增大 L、减小 d 或换用长波长光可使条纹变宽。' },
+      {
+        type: 'segmented',
+        key: 'mode',
+        group: '实验模式',
+        resetOnChange: false,
+        options: [
+          { value: 0, label: '理论演示：相干波前与光强分布' },
+          { value: 1, label: '高考实验：光具座装配与测微目镜' },
+        ],
+      },
+      {
+        type: 'segmented',
+        key: 'currentFringe',
+        group: '分划板十字丝对准',
+        showIf: 'mode',
+        showIfValue: 1,
+        options: [
+          { value: 1, label: '对准第 1 条亮纹 (读出 x₁)' },
+          { value: 4, label: '对准第 4 条亮纹 (读出 x₄)' },
+        ],
+      },
+      {
+        type: 'preset',
+        label: '🔴 经典红光实验 (650nm)',
+        description: 'd=0.30mm, L=0.8m，条纹清晰宽大，适合目视读数',
+        params: { mode: 1, wavelength: 650, slitDistance: 0.3, screenDistance: 0.8, targetFringe: 4, currentFringe: 1, handwheelOffset: 0 },
+      },
+      {
+        type: 'preset',
+        label: '🟢 灵敏绿光实验 (532nm)',
+        description: 'd=0.30mm, L=0.9m，人眼敏感波长，对比条纹疏密',
+        params: { mode: 1, wavelength: 532, slitDistance: 0.3, screenDistance: 0.9, targetFringe: 4, currentFringe: 4, handwheelOffset: 0 },
+      },
+      {
+        type: 'tip',
+        content: '操作指引：转动测量头手轮使分划板十字丝对准亮纹中心；可切换不同波长对比条纹间距。',
+      },
     ],
     paramMeta: [
       {
@@ -43,6 +75,17 @@ export const opticsInterferenceAnimations = defineAnimations({
         step: 0.1,
         unit: 'm',
         group: '基本参数',
+      },
+      {
+        key: 'handwheelOffset',
+        label: '手轮微调偏移',
+        min: -0.5,
+        max: 0.5,
+        step: 0.005,
+        unit: 'mm',
+        group: '测微手轮调节',
+        showIf: 'mode',
+        showIfValue: 1,
       },
     ],
   },
@@ -86,19 +129,19 @@ export const opticsInterferenceAnimations = defineAnimations({
       },
       {
         type: 'preset',
-        label: '📋 高考真题：工件表面凹坑检测',
-        description: '劈尖干涉条纹向薄端（左侧）弯曲，对应此处表面存在凹坑',
+        label: '🔍 工件表面凹坑检测',
+        description: '劈尖干涉条纹向薄端（左侧）弯曲，指示局部存在凹坑',
         params: { mode: 1, wavelength: 600, wedgeAngle_mrad: 0.3, defect: 1 },
       },
       {
         type: 'preset',
-        label: '📋 550nm 绿光理想增透膜',
-        description: 'd = λ/(4n) = 99.6 nm，反射光强近乎为零，剩余反射光呈淡紫蓝色',
+        label: '✨ 550nm 理想增透膜',
+        description: 'd = λ/(4n) = 99.6 nm，反射光强近乎为零，透射率最大',
         params: { mode: 0, wavelength: 550, filmThickness: 99.6, n_film: 1.38, defect: 0 },
       },
       {
         type: 'tip',
-        content: '等厚干涉核心判据：同一条纹对应空气膜厚度相同。工件表面凹陷处膜厚增大，为维持原厚度，条纹必须向劈尖薄端弯曲！',
+        content: '观察重点：同一干涉条纹对应空气膜等厚度处。工件表面凹凸会导致条纹弯曲变形。',
       },
     ],
     paramMeta: [
