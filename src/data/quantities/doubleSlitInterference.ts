@@ -201,8 +201,12 @@ export function buildDoubleSlitInterferenceQuantities(
 
   if (isExperimentMode) {
     if (isOverRange) {
+      const isUnderZero = x1 < 0 || xn < 0 || state.currentReading < 0
+      const overRangeText = isUnderZero
+        ? '⚠️ 读数低于螺旋测微器零刻度基准！高考实验考点：测量头读数必须落在 0~10 mm 有效刻度内，请反向转动手轮微调或调整双缝参数。'
+        : `⚠️ 读数超过螺旋测微器量程（10.000 mm）！高考实验考点：测量头螺旋测微手轮量程为 0~10 mm，条纹过宽 (Δx = ${fringeSpacing.toFixed(2)} mm) 时需增大双缝间距 d 或减小遮光筒长度 L，防止超出量程。`
       warnings.push({
-        text: `⚠️ 读数超过螺旋测微器量程（10.000 mm）！高考实验考点：测量头螺旋测微手轮量程为 0~10 mm，条纹过宽 (Δx = ${fringeSpacing.toFixed(2)} mm) 时需增大双缝间距 d 或减小遮光筒长度 L，防止超出量程。`,
+        text: overRangeText,
         level: 'warning',
       })
     } else if (relativeErrorPercent > 0.05) {

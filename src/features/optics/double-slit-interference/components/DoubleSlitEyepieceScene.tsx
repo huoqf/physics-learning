@@ -266,7 +266,7 @@ export const DoubleSlitEyepieceScene: React.FC<DoubleSlitEyepieceSceneProps> = (
             textAnchor="end"
             fontWeight="bold"
           >
-            ⚠️ 读数已超出 10.0mm 标称量程
+            {currentReading < 0 ? '⚠️ 读数低于 0.0mm 零刻度基准' : '⚠️ 读数已超出 10.0mm 标称量程'}
           </text>
         )}
 
@@ -300,7 +300,9 @@ export const DoubleSlitEyepieceScene: React.FC<DoubleSlitEyepieceSceneProps> = (
             fill={physics.isOverRange ? PHYSICS_COLORS.alertRed : CANVAS_COLORS.labelText}
           >
             {physics.isOverRange
-              ? '主尺刻度: > 10.0 mm (超出标称量程) | 动尺刻度: 读数无效'
+              ? currentReading < 0
+                ? '主尺刻度: < 0.0 mm (低于零刻度线) | 动尺刻度: 读数无效'
+                : '主尺刻度: > 10.0 mm (超出标称量程) | 动尺刻度: 读数无效'
               : `主尺刻度: ${fixedMm} mm ${hasHalfMm ? '+ 0.5 mm' : ''} | 动尺刻度: ${thimbleValue} × 0.01 mm`}
           </text>
           <text x={12} y={39} fontSize={font(12)} fill={CANVAS_COLORS.labelText}>
@@ -316,7 +318,9 @@ export const DoubleSlitEyepieceScene: React.FC<DoubleSlitEyepieceSceneProps> = (
             {physics.isOverRange ? (
               <tspan fill={PHYSICS_COLORS.alertRed} fontSize={font(10)} fontWeight="bold">
                 {' '}
-                (已超过螺旋测微器 10.000 mm 最大量程，请增大 d 或减小 L)
+                {currentReading < 0
+                  ? '(读数低于 0.000 mm 零刻度基准，请反向转动手轮微调)'
+                  : '(已超过螺旋测微器 10.000 mm 最大量程，请增大 d 或减小 L)'}
               </tspan>
             ) : (
               <tspan fill={CANVAS_COLORS.textMuted} fontSize={font(10)}>

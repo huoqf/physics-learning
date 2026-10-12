@@ -208,4 +208,13 @@ describe('buildPhysicsQuantities', () => {
     )
     expect(qs.warnings?.some((w) => w.text.includes('超过螺旋测微器量程'))).toBe(true)
   })
+
+  it('双缝干涉看板：大负向偏置导致读数 < 0 时正确触发低于零刻度警示', () => {
+    const qs = buildPhysicsQuantities(
+      'anim-double-slit-interference',
+      { mode: 1, currentFringe: 1, handwheelOffset: -5.0 },
+      0
+    )
+    expect(qs.warnings?.some((w) => w.text.includes('低于螺旋测微器零刻度基准'))).toBe(true)
+  })
 })
