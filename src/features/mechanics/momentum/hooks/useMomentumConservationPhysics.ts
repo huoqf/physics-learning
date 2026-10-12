@@ -247,15 +247,27 @@ function computeAdvancedMode(p: AdvancedModeParams): AdvancedModeResult {
   }
 }
 
+import {
+  computeMomentumExperiment,
+  computeTrackSlidersAtTime,
+  type MomentumExperimentResult,
+} from '@/physics/experimentMomentum'
+
 // ─── 主 Hook ──────────────────────────────────────────────────────────────
 
 export interface MomentumConservationPhysics {
+  // 模式
+  mode: number
   // 基础模式
   basic: BasicModeResult
   // 进阶模式
   advanced: AdvancedModeResult
+  // 高考实验模式
+  experiment: MomentumExperimentResult
+  trackSliders: ReturnType<typeof computeTrackSlidersAtTime>
   // 当前模式选择
   isAdvanced: boolean
+  isExperiment: boolean
   // 图表数据
   chartData: {
     currentDomainVtPoints1: { t: number; v: number }[]
@@ -290,15 +302,29 @@ export function useMomentumConservationPhysics(
   designWidth: number,
 ): MomentumConservationPhysics {
   const {
-    m1 = 3, v1 = 5,
-    m2 = 2, v2 = 0,
-    m_slider = 1, M_board = 3, v0 = 6, mu = 0.3, L = 2,
+    m1 = 3,
+    v1 = 5,
+    m2 = 2,
+    v2 = 0,
+    m_slider = 1,
+    M_board = 3,
+    v0 = 6,
+    mu = 0.3,
+    L = 2,
     advancedMode = 0,
     collisionType = 0,
     e_coefficient = 0.5,
+    // 高考实验参数
+    m1_exp = 0.4,
+    m2_exp = 0.2,
+    v1_exp = 0.8,
+    plateWidth_mm = 20.0,
+    collisionType_exp = 0,
   } = params
 
-  const isAdvanced = advancedMode === 1
+  const mode = advancedMode ?? 0
+  const isAdvanced = mode === 1
+  const isExperiment = mode === 2
 
   // ── 基础模式计算 ──
   const basic = useMemo(
@@ -312,35 +338,56 @@ export function useMomentumConservationPhysics(
     [m_slider, M_board, v0, mu, L, time, groundY, designWidth]
   )
 
+  // ── 高考实验模式计算 ──
+  const experiment = useMemo(
+    () =>
+      computeMomentumExperiment({
+        m1: m1_exp,
+        m2: m2_exp,
+        v1: v1_exp,
+        v2: 0,
+        plateWidth_mm,
+        collisionType: collisionType_exp,
+      }),
+    [m1_exp, m2_exp, v1_exp, plateWidth_mm, collisionType_exp]
+  )
+
+  const trackSliders = useMemo(
+    () => computeTrackSlidersAtTime(time, experiment),
+    [time, experiment]
+  )
+
   // ── 图表数据 ──
   const chartData = useMemo(() => {
     const { collisionTime, v1After, v2After } = basic
     const { vCommon, tCommon, isFallen, vSliderFall, vBoardFall, tFall } = advanced
 
-    // 基础模式 V-T 点集
-    const baseVtDomain1 = collisionTime === Infinity
-      ? [{ t: 0, v: v1 }, { t: 10, v: v1 }]
-      : [
-        { t: 0, v: v1 },
-        { t: Math.max(0, collisionTime - 0.001), v: v1 },
-        { t: Math.min(10, collisionTime + 0.001), v: v1After },
-        { t: 10, v: v1After },
-      ]
+    // 1. 基础模式 V-T 点集
+    const baseVtDomain1 =
+      collisionTime === Infinity
+        ? [{ t: 0, v: v1 }, { t: 10, v: v1 }]
+        : [
+            { t: 0, v: v1 },
+            { t: Math.max(0, collisionTime - 0.001), v: v1 },
+            { t: Math.min(10, collisionTime + 0.001), v: v1After },
+            { t: 10, v: v1After },
+          ]
 
-    const baseVtDomain2 = collisionTime === Infinity
-      ? [{ t: 0, v: v2 }, { t: 10, v: v2 }]
-      : [
-        { t: 0, v: v2 },
-        { t: Math.max(0, collisionTime - 0.001), v: v2 },
-        { t: Math.min(10, collisionTime + 0.001), v: v2After },
-        { t: 10, v: v2After },
-      ]
+    const baseVtDomain2 =
+      collisionTime === Infinity
+        ? [{ t: 0, v: v2 }, { t: 10, v: v2 }]
+        : [
+            { t: 0, v: v2 },
+            { t: Math.max(0, collisionTime - 0.001), v: v2 },
+            { t: Math.min(10, collisionTime + 0.001), v: v2After },
+            { t: 10, v: v2After },
+          ]
 
-    const basePtDomain1 = baseVtDomain1.map(p => ({ t: p.t, v: m1 * p.v }))
-    const basePtDomain2 = baseVtDomain2.map(p => ({ t: p.t, v: m2 * p.v }))
+    const basePtDomain1 = baseVtDomain1.map((p) => ({ t: p.t, v: m1 * p.v }))
+    const basePtDomain2 = baseVtDomain2.map((p) => ({ t: p.t, v: m2 * p.v }))
     const basePtDomainTotal = [{ t: 0, v: m1 * v1 + m2 * v2 }, { t: 10, v: m1 * v1 + m2 * v2 }]
 
-    // 进阶模式 V-T 点集
+    // 2. 进阶模式 V-T 点集
     const advVtDomain1 = isFallen
       ? [{ t: 0, v: v0 }, { t: tFall, v: vSliderFall }, { t: 10, v: vSliderFall }]
       : [{ t: 0, v: v0 }, { t: tCommon, v: vCommon }, { t: 10, v: vCommon }]
@@ -349,16 +396,57 @@ export function useMomentumConservationPhysics(
       ? [{ t: 0, v: 0 }, { t: tFall, v: vBoardFall }, { t: 10, v: vBoardFall }]
       : [{ t: 0, v: 0 }, { t: tCommon, v: vCommon }, { t: 10, v: vCommon }]
 
-    const advPtDomain1 = advVtDomain1.map(p => ({ t: p.t, v: m_slider * p.v }))
-    const advPtDomain2 = advVtDomain2.map(p => ({ t: p.t, v: M_board * p.v }))
+    const advPtDomain1 = advVtDomain1.map((p) => ({ t: p.t, v: m_slider * p.v }))
+    const advPtDomain2 = advVtDomain2.map((p) => ({ t: p.t, v: M_board * p.v }))
     const advPtDomainTotal = [{ t: 0, v: m_slider * v0 }, { t: 10, v: m_slider * v0 }]
 
+    // 3. 高考实验模式 V-T 点集
+    const expTCol = experiment.t_collision
+    const expVtDomain1 = [
+      { t: 0, v: experiment.v1 },
+      { t: Math.max(0, expTCol - 0.001), v: experiment.v1 },
+      { t: Math.min(10, expTCol + 0.001), v: experiment.v1_after },
+      { t: 10, v: experiment.v1_after },
+    ]
+    const expVtDomain2 = [
+      { t: 0, v: 0 },
+      { t: Math.max(0, expTCol - 0.001), v: 0 },
+      { t: Math.min(10, expTCol + 0.001), v: experiment.v2_after },
+      { t: 10, v: experiment.v2_after },
+    ]
+    const expPtDomain1 = expVtDomain1.map((p) => ({ t: p.t, v: experiment.m1 * p.v }))
+    const expPtDomain2 = expVtDomain2.map((p) => ({ t: p.t, v: experiment.m2 * p.v }))
+    const expPtDomainTotal = [
+      { t: 0, v: experiment.p_total_before },
+      { t: 10, v: experiment.p_total_after },
+    ]
+
     // 选择当前数据集
-    const currentDomainVtPoints1 = isAdvanced ? advVtDomain1 : baseVtDomain1
-    const currentDomainVtPoints2 = isAdvanced ? advVtDomain2 : baseVtDomain2
-    const currentDomainPtPoints1 = isAdvanced ? advPtDomain1 : basePtDomain1
-    const currentDomainPtPoints2 = isAdvanced ? advPtDomain2 : basePtDomain2
-    const currentDomainPtPointsTotal = isAdvanced ? advPtDomainTotal : basePtDomainTotal
+    const currentDomainVtPoints1 = isExperiment
+      ? expVtDomain1
+      : isAdvanced
+        ? advVtDomain1
+        : baseVtDomain1
+    const currentDomainVtPoints2 = isExperiment
+      ? expVtDomain2
+      : isAdvanced
+        ? advVtDomain2
+        : baseVtDomain2
+    const currentDomainPtPoints1 = isExperiment
+      ? expPtDomain1
+      : isAdvanced
+        ? advPtDomain1
+        : basePtDomain1
+    const currentDomainPtPoints2 = isExperiment
+      ? expPtDomain2
+      : isAdvanced
+        ? advPtDomain2
+        : basePtDomain2
+    const currentDomainPtPointsTotal = isExperiment
+      ? expPtDomainTotal
+      : isAdvanced
+        ? advPtDomainTotal
+        : basePtDomainTotal
 
     // 动态截断
     const currentVtPoints1 = getPointsUpToTime(currentDomainVtPoints1, time)
@@ -368,22 +456,46 @@ export function useMomentumConservationPhysics(
     const currentPtPointsTotal = getPointsUpToTime(currentDomainPtPointsTotal, time)
 
     return {
-      currentDomainVtPoints1, currentDomainVtPoints2,
-      currentDomainPtPoints1, currentDomainPtPoints2, currentDomainPtPointsTotal,
-      currentVtPoints1, currentVtPoints2,
-      currentPtPoints1, currentPtPoints2, currentPtPointsTotal,
+      currentDomainVtPoints1,
+      currentDomainVtPoints2,
+      currentDomainPtPoints1,
+      currentDomainPtPoints2,
+      currentDomainPtPointsTotal,
+      currentVtPoints1,
+      currentVtPoints2,
+      currentPtPoints1,
+      currentPtPoints2,
+      currentPtPointsTotal,
     }
-  }, [basic, advanced, isAdvanced, m1, v1, m2, v2, m_slider, M_board, v0, time])
+  }, [basic, advanced, experiment, isAdvanced, isExperiment, m1, v1, m2, v2, m_slider, M_board, v0, time])
 
   // ── 矢量/动量条映射 ──
-  const vMaxRef = 10
+  const vMaxRef = isExperiment ? 2.0 : 10
   const mapArrowLen = (val: number) => (Math.abs(val) / vMaxRef) * MC_LAYOUT.vectorMaxLength
 
-  const p1 = m1 * basic.currentV1
-  const p2 = m2 * basic.currentV2
-  const pTotal = isAdvanced ? m_slider * v0 : m1 * v1 + m2 * v2
-  const pMaxRef = 10 * 10
+  const p1 = isExperiment ? experiment.m1 * trackSliders.v1 : m1 * basic.currentV1
+  const p2 = isExperiment ? experiment.m2 * trackSliders.v2 : m2 * basic.currentV2
+  const pTotal = isExperiment
+    ? experiment.p_total_before
+    : isAdvanced
+      ? m_slider * v0
+      : m1 * v1 + m2 * v2
+  const pMaxRef = isExperiment ? 1.5 : 100
   const mapMomentumBar = (p: number) => (Math.abs(p) / pMaxRef) * MC_LAYOUT.momentumBarMaxLength
 
-  return { basic, advanced, isAdvanced, chartData, p1, p2, pTotal, mapArrowLen, mapMomentumBar }
+  return {
+    mode,
+    basic,
+    advanced,
+    experiment,
+    trackSliders,
+    isAdvanced,
+    isExperiment,
+    chartData,
+    p1,
+    p2,
+    pTotal,
+    mapArrowLen,
+    mapMomentumBar,
+  }
 }

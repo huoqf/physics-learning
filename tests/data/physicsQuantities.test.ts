@@ -54,6 +54,27 @@ describe('buildPhysicsQuantities', () => {
     expect(find(qs, '碰前总动量')).toBeCloseTo(find(qs, '碰后总动量') as number, 10)
   })
 
+  it('动量守恒动画高考实验模式（模式2）正确输出光电门挡光时间、速度与守恒动量', () => {
+    const qs = buildPhysicsQuantities(
+      'anim-momentum-conservation',
+      {
+        advancedMode: 2,
+        m1_exp: 0.4,
+        m2_exp: 0.2,
+        v1_exp: 0.8,
+        plateWidth_mm: 20.0,
+        collisionType_exp: 0,
+      },
+      0
+    )
+    expect(find(qs, '挡光片宽度 Δx')).toContain('20.0')
+    expect(find(qs, '碰前门1挡光时间 Δt₁')).toBe('0.0250')
+    expect(find(qs, '碰前初速度 v₁')).toBe('0.800')
+    expect(find(qs, '碰前总动量 p_前')).toBe('0.320')
+    expect(find(qs, '碰后总动量 p_后')).toBe('0.320')
+    expect(find(qs, '动量守恒相对偏差')).toBe('+0.00%')
+  })
+
   it('未知动画回退为参数键值列表', () => {
     const qs = buildPhysicsQuantities('anim-unknown', { foo: 1 }, 0)
     expect(qs.quantities.some((q) => q.label === 'foo')).toBe(true)
@@ -250,6 +271,49 @@ describe('buildPhysicsQuantities', () => {
     expect(Number(find(qsExp, '测得重力加速度 g_测'))).toBeCloseTo(9.8, 1)
     expect(find(qsExp, '小角理论偏差')).toBeDefined()
     expect(String(find(qsExp, '小角理论偏差'))).toContain('%')
+  })
+
+  // ===== 动量守恒定律与高考实验（含模式 0、1、2）=====
+  it('动量守恒物理量构建器：高考气轨实验模式（advancedMode: 2）正确输出动量对比表与反弹负动量', () => {
+    // 1. 标准同向碰撞 (m1 > m2)
+    const qsNormal = buildPhysicsQuantities(
+      'anim-momentum-conservation',
+      {
+        advancedMode: 2,
+        m1_exp: 0.4,
+        m2_exp: 0.2,
+        v1_exp: 0.8,
+        plateWidth_mm: 20.0,
+        collisionType_exp: 0,
+      },
+      0
+    )
+    expect(Number(find(qsNormal, '滑块1质量 m₁'))).toBeCloseTo(0.4, 3)
+    expect(Number(find(qsNormal, '滑块2质量 m₂'))).toBeCloseTo(0.2, 3)
+    expect(Number(find(qsNormal, '碰前门1挡光时间 Δt₁'))).toBeCloseTo(0.025, 4)
+    expect(Number(find(qsNormal, '碰前总动量 p_前'))).toBeCloseTo(0.32, 3)
+    expect(Number(find(qsNormal, '碰后总动量 p_后'))).toBeCloseTo(0.32, 3)
+    expect(Number(find(qsNormal, '滑块2碰后动量 p₂\''))).toBeCloseTo(0.213, 2)
+    expect(find(qsNormal, '动量守恒相对偏差')).toBe('+0.00%')
+
+    // 2. 反弹模式 (m1 < m2)
+    const qsRebound = buildPhysicsQuantities(
+      'anim-momentum-conservation',
+      {
+        advancedMode: 2,
+        m1_exp: 0.2,
+        m2_exp: 0.6,
+        v1_exp: 0.8,
+        plateWidth_mm: 20.0,
+        collisionType_exp: 0,
+      },
+      0
+    )
+    expect(Number(find(qsRebound, '滑块1碰后速度 v₁\''))).toBeLessThan(0)
+    expect(Number(find(qsRebound, '滑块1碰后动量 p₁\''))).toBeLessThan(0)
+    expect(find(qsRebound, '反弹门1挡光时间 Δt₁\'')).toBeDefined()
+    expect(Number(find(qsRebound, '碰前总动量 p_前'))).toBeCloseTo(0.16, 3)
+    expect(Number(find(qsRebound, '碰后总动量 p_后'))).toBeCloseTo(0.16, 3)
   })
 })
 

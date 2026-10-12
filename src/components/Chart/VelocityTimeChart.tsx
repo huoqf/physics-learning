@@ -73,6 +73,8 @@ type VelocityTimeChartProps = (StaticChartProps | AnimatedChartProps) & {
    * 阶段背景着色（绘制于曲线/面积下方，不遮挡数据）。
    */
   stages?: VTStage[]
+  /** 主系列图例标签（多系列对比时显示于图例第一项）。默认 'A' */
+  mainSeriesLabel?: string
   /** 额外 className */
   className?: string
   /** 固定尺寸模式（直接返回 `<g>`，不走 useCanvasSize + foreignObject） */
@@ -115,6 +117,7 @@ export function VelocityTimeChart({
   underlay,
   children,
   stages,
+  mainSeriesLabel,
   className = '',
   mode = 'static',
   fixedSize,
@@ -146,6 +149,7 @@ export function VelocityTimeChart({
     referenceOpacity,
     additionalSeries,
     stages,
+    mainSeriesLabel,
     showGrid,
     underlay,
     children,

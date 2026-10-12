@@ -49,10 +49,16 @@ export const experimentKnowledge: KnowledgeNode[] = [
     module: 'experiment',
     importance: 'gaokao',
     animationIds: ['anim-momentum-conservation'],
+    animationParams: {
+      advancedMode: 2,
+      m1_exp: 0.4,
+      m2_exp: 0.2,
+      v1_exp: 0.8,
+      plateWidth_mm: 20.0,
+      collisionType_exp: 0,
+    },
     problemIds: [],
     prerequisites: ['experiment-1-1'],
-    coverageNote:
-      '覆盖度声明：本节点借用「碰撞中动量守恒」原理动画，只演示碰撞前后的动量关系。实验必需的气垫导轨/两小车、光电门测碰前碰后速度、m₁v₁ = m₁v₁′ + m₂v₂′ 的读数比对与误差分析尚未实现。',
   },
   {
     id: 'experiment-2-4',

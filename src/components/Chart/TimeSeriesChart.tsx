@@ -97,6 +97,8 @@ export type TimeSeriesChartProps = (StaticTSProps | AnimatedTSProps) & {
   underlay?: ReactNode
   children?: ReactNode
   stages?: VTStage[]
+  /** 主系列图例标签（多系列对比时显示于图例第一项）。默认 'A' */
+  mainSeriesLabel?: string
   showReferenceLine?: boolean
   referencePoints?: TSPoint[]
   referenceColor?: string
@@ -166,6 +168,7 @@ function TSContent({
   series,
   additionalSeries,
   stages,
+  mainSeriesLabel,
   tDomain,
   underlay,
   children,
@@ -336,7 +339,7 @@ function TSContent({
             stroke={mainColor} strokeWidth={2} />
           <text x={plotOrigin.x + plotSize.width - 110} y={plotOrigin.y + 13}
             fontSize={font(FONT.small)} fill={PHYSICS_COLORS.labelText}>
-            {points.length > 0 ? (series === 'primary' ? 'A' : '') : ''}
+            {mainSeriesLabel ?? (points.length > 0 ? (series === 'primary' ? 'A' : '') : '')}
           </text>
 
           {additionalSeries.map((s, i) => {

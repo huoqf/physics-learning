@@ -460,7 +460,7 @@ done
 | `experiment-1-1` | 力学实验基础与纸带/光电门分析 | `anim-mechanics-experiment-base` | [x] 已完成 |
 | `experiment-2-1` | 探究加速度与力、质量的关系 | `anim-mechanics-experiment-base` 纸带逐差法与 a-F 图像 | [x] 已完成 |
 | `experiment-2-2` | 验证机械能守恒定律 | 借用 `anim-mechanics-experiment-base` + `anim-free-fall`（已有自由落体打点预设，待深化落体专区） | [ ] 借用过渡待增强 |
-| `experiment-2-3` | 验证动量守恒定律 | 借用 `anim-momentum-conservation`（待内生扩展气垫导轨双车光电门碰撞测速） | [ ] 借用过渡待增强 |
+| `experiment-2-3` | 验证动量守恒定律 | `anim-momentum-conservation`（**内生扩展 Mode 2 高考实验**：气垫导轨、光电门1与光电门2测速、挡光片 $\Delta x$ 毫秒级计时、弹性/完全非弹性碰撞、反弹负动量矢量性、动量守恒比对与动能损失分析） | [x] **已完成（内生扩展闭环）** |
 | `experiment-2-4` | 用单摆测重力加速度 | `anim-simple-pendulum`（**内生扩展 Mode 3 高考实验**：摆长 $L=l+d/2$ 米尺卡尺两段测定、累积计时法 $T=t/N$、纯物理层 SSOT 下沉、右屏 $g_{测}$ 反求与相对误差比对表、中屏 $T^2-L$ 拟合图线与斜率法数据分析） | [x] **已完成（内生扩展闭环）** |
 | `experiment-1-2` | 电学实验基础（测定电源电动势与内阻） | `anim-experiment-er` | [x] 已完成 |
 | **`experiment-3-1`** | **测量金属丝的电阻率** | `anim-experiment-resistivity`（**`Micrometer` 螺旋测微器** + `VernierCaliper` 游标卡尺） | [x] 已完成 |
@@ -485,7 +485,7 @@ done
 | 批次 1（剩余） | `electricity-5-5`、`vibration-2-3` | 考点最热 + 复用度最高 + 无既有语义冲突 | [x] 已完成 |
 | 批次 2 | `electricity-4-8/4-9`、`electricity-7-1/7-2` | 需先确认与既有 induction 动画控制项不冲突 | [x] 已完成 |
 | 批次 3 | `vibration-1-3`、`thermodynamics-2-3/2-4`、`electricity-1-8` | 需新组件，工作量中等 | [x] 已完成 |
-| 批次 4 | `wave-optics-1-5`、`mechanics-6-6`、实验专题专用页与内生闭环、2025 真题 | `wave-optics-1-5` 与 `mechanics-6-6` 已闭环；实验专题 10/12 闭环（3-3 插针法交付、3-4 双缝干涉内生实验闭环、2-4 单摆测g内生实验闭环）；余 2 处力学实验过渡及 2025 真题录入 | [进行中] 推进实验专题深化与真题补全 |
+| 批次 4 | `wave-optics-1-5`、`mechanics-6-6`、实验专题专用页与内生闭环、2025 真题 | `wave-optics-1-5` 与 `mechanics-6-6` 已闭环；实验专题 11/12 闭环（3-3 插针法交付、3-4 双缝干涉内生实验闭环、2-4 单摆测g内生实验闭环、2-3 动量守恒内生实验闭环）；余 1 处力学实验过渡及 2025 真题录入 | [进行中] 推进实验专题深化与真题补全 |
 
 **每批次收尾必跑**：`tsc -b` / `eslint . --max-warnings 0` / `vitest run` / 6 个守门脚本（`npm run check:architecture`）/ 知识树↔注册表一致性（0 悬空 0 孤儿）。
 **每个新动画必须带**：≥1 个带数值断言的单测（方向/符号类错误只有数值断言能拦）。
