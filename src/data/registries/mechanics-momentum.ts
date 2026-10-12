@@ -1,5 +1,15 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
+import {
+  computeMomentumExperimentDuration,
+  momentumExperimentInputFromParams,
+} from '@/physics/experimentMomentum'
+
+/**
+ * 基础/进阶模式时间轴时长 (s)。
+ * 两球碰撞与滑块-木板模型碰后即匀速，物理过程无自然终点，沿用历史全局默认值 30s。
+ */
+const MOMENTUM_BASE_MAX_TIME = 30
 
 export const mechanicsMomentumAnimations = defineAnimations({
   'anim-momentum': {
@@ -71,7 +81,10 @@ export const mechanicsMomentumAnimations = defineAnimations({
     title: '动量守恒定律',
     knowledgeId: 'mechanics-8-4',
     Component: lazy(() => import('@/features/mechanics/momentum/MomentumConservationAnimation')),
-    maxTime: (params) => (params.advancedMode === 2 ? 5.0 : 10.0),
+    maxTime: (params) =>
+      params?.advancedMode === 2
+        ? computeMomentumExperimentDuration(momentumExperimentInputFromParams(params))
+        : MOMENTUM_BASE_MAX_TIME,
     defaultParams: {
       m1: 3,
       v1: 5,
@@ -91,6 +104,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
       v1_exp: 0.8,
       plateWidth_mm: 20.0,
       collisionType_exp: 0,
+      timing_err: 0.0,
     } as const,
     paramMeta: [
       { key: 'm1', label: 'A球质量 m₁', min: 0.5, max: 10, step: 0.5, unit: 'kg', showIf: 'advancedMode', showIfValue: 0 },
@@ -107,6 +121,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
       { key: 'm2_exp', label: '滑块2质量 m₂', min: 0.1, max: 1.0, step: 0.05, unit: 'kg', showIf: 'advancedMode', showIfValue: 2 },
       { key: 'v1_exp', label: '碰前初速度 v₁', min: 0.2, max: 2.0, step: 0.1, unit: 'm/s', showIf: 'advancedMode', showIfValue: 2 },
       { key: 'plateWidth_mm', label: '挡光片宽度 Δx', min: 10, max: 40, step: 2, unit: 'mm', showIf: 'advancedMode', showIfValue: 2 },
+      { key: 'timing_err', label: '计时误差 Δt_err', min: -2.0, max: 2.0, step: 0.1, unit: 'ms', showIf: 'advancedMode', showIfValue: 2 },
     ],
     controlMeta: [
       {
@@ -163,21 +178,28 @@ export const mechanicsMomentumAnimations = defineAnimations({
         type: 'preset',
         label: '📋 高考标准：弹性碰撞 (m₁>m₂)',
         description: '两滑块碰后同向向右运动，系统总动量与动能严格守恒',
-        params: { advancedMode: 2, m1_exp: 0.4, m2_exp: 0.2, v1_exp: 0.8, plateWidth_mm: 20.0, collisionType_exp: 0 },
+        params: { advancedMode: 2, m1_exp: 0.4, m2_exp: 0.2, v1_exp: 0.8, plateWidth_mm: 20.0, collisionType_exp: 0, timing_err: 0.0 },
         restartOnApply: true,
       },
       {
         type: 'preset',
         label: '📋 高考经典：完全非弹性碰 (粘合)',
         description: '碰后两滑块粘合合为一体同速滑行，机械能损失达到理论最大',
-        params: { advancedMode: 2, m1_exp: 0.3, m2_exp: 0.3, v1_exp: 0.9, plateWidth_mm: 20.0, collisionType_exp: 1 },
+        params: { advancedMode: 2, m1_exp: 0.3, m2_exp: 0.3, v1_exp: 0.9, plateWidth_mm: 20.0, collisionType_exp: 1, timing_err: 0.0 },
         restartOnApply: true,
       },
       {
         type: 'preset',
         label: '📋 高考陷阱：反弹测速 (m₁<m₂)',
         description: '碰后滑块1反向回穿光电门1，负速度与负动量矢量判定',
-        params: { advancedMode: 2, m1_exp: 0.2, m2_exp: 0.6, v1_exp: 0.8, plateWidth_mm: 20.0, collisionType_exp: 0 },
+        params: { advancedMode: 2, m1_exp: 0.2, m2_exp: 0.6, v1_exp: 0.8, plateWidth_mm: 20.0, collisionType_exp: 0, timing_err: 0.0 },
+        restartOnApply: true,
+      },
+      {
+        type: 'preset',
+        label: '📋 误差探究：光电门测速误差',
+        description: '模拟光电门毫秒计 +0.5ms 系统计时偏差对速度反算及动量守恒验证的影响',
+        params: { advancedMode: 2, m1_exp: 0.4, m2_exp: 0.2, v1_exp: 0.8, plateWidth_mm: 20.0, collisionType_exp: 0, timing_err: 0.5 },
         restartOnApply: true,
       },
       {

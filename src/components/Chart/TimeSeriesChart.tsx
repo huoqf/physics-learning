@@ -332,32 +332,50 @@ function TSContent({
         />
       )}
 
-      {hasLegend && (
-        <g>
-          <line x1={plotOrigin.x + plotSize.width - 130} y1={plotOrigin.y + 10}
-            x2={plotOrigin.x + plotSize.width - 115} y2={plotOrigin.y + 10}
-            stroke={mainColor} strokeWidth={2} />
-          <text x={plotOrigin.x + plotSize.width - 110} y={plotOrigin.y + 13}
-            fontSize={font(FONT.small)} fill={PHYSICS_COLORS.labelText}>
-            {mainSeriesLabel ?? (points.length > 0 ? (series === 'primary' ? 'A' : '') : '')}
-          </text>
+      {hasLegend && (() => {
+        const items = [
+          {
+            label: mainSeriesLabel ?? (points.length > 0 ? (series === 'primary' ? 'A' : '') : ''),
+            color: mainColor,
+          },
+          ...additionalSeries.map((s, i) => ({
+            label: s.label ?? (i === 0 ? 'B' : `S${i + 1}`),
+            color: s.series ? SERIES_MAP[s.series] : PHYSICS_COLORS.displacement,
+          })),
+        ].filter((it) => it.label)
 
-          {additionalSeries.map((s, i) => {
-            const color = s.series ? SERIES_MAP[s.series] : PHYSICS_COLORS.displacement
-            return (
-              <g key={`legend-${i}`}>
-                <line x1={plotOrigin.x + plotSize.width - 70} y1={plotOrigin.y + 10}
-                  x2={plotOrigin.x + plotSize.width - 55} y2={plotOrigin.y + 10}
-                  stroke={color} strokeWidth={2} />
-                <text x={plotOrigin.x + plotSize.width - 50} y={plotOrigin.y + 13}
-                  fontSize={font(FONT.small)} fill={PHYSICS_COLORS.labelText}>
-                  {s.label ?? 'B'}
-                </text>
-              </g>
-            )
-          })}
-        </g>
-      )}
+        const itemWidth = 84
+        const totalLegendWidth = items.length * itemWidth
+        const startX = Math.max(plotOrigin.x + 8, plotOrigin.x + plotSize.width - totalLegendWidth)
+
+        return (
+          <g id="chart-legend">
+            {items.map((it, idx) => {
+              const xPos = startX + idx * itemWidth
+              return (
+                <g key={`legend-item-${idx}`}>
+                  <line
+                    x1={xPos}
+                    y1={plotOrigin.y + 10}
+                    x2={xPos + 15}
+                    y2={plotOrigin.y + 10}
+                    stroke={it.color}
+                    strokeWidth={2}
+                  />
+                  <text
+                    x={xPos + 20}
+                    y={plotOrigin.y + 13}
+                    fontSize={font(FONT.small)}
+                    fill={PHYSICS_COLORS.labelText}
+                  >
+                    {it.label}
+                  </text>
+                </g>
+              )
+            })}
+          </g>
+        )
+      })()}
     </g>
   )
 }
@@ -385,6 +403,7 @@ export function TimeSeriesChart({
   underlay,
   children,
   stages,
+  mainSeriesLabel,
   showReferenceLine,
   referencePoints,
   referenceColor,
@@ -453,6 +472,7 @@ export function TimeSeriesChart({
         series={series}
         additionalSeries={additionalSeries}
         stages={stages}
+        mainSeriesLabel={mainSeriesLabel}
         tDomain={tDomain}
         underlay={underlay}
         children={children}

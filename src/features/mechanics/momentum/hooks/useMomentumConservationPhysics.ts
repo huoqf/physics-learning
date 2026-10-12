@@ -250,6 +250,8 @@ function computeAdvancedMode(p: AdvancedModeParams): AdvancedModeResult {
 import {
   computeMomentumExperiment,
   computeTrackSlidersAtTime,
+  experimentDurationFromResult,
+  momentumExperimentInputFromParams,
   type MomentumExperimentResult,
 } from '@/physics/experimentMomentum'
 
@@ -285,6 +287,7 @@ export interface MomentumConservationPhysics {
   p1: number
   p2: number
   pTotal: number
+  tMax: number
   mapArrowLen: (val: number) => number
   mapMomentumBar: (p: number) => number
 }
@@ -320,6 +323,7 @@ export function useMomentumConservationPhysics(
     v1_exp = 0.8,
     plateWidth_mm = 20.0,
     collisionType_exp = 0,
+    timing_err = 0.0,
   } = params
 
   const mode = advancedMode ?? 0
@@ -341,16 +345,21 @@ export function useMomentumConservationPhysics(
   // ── 高考实验模式计算 ──
   const experiment = useMemo(
     () =>
-      computeMomentumExperiment({
-        m1: m1_exp,
-        m2: m2_exp,
-        v1: v1_exp,
-        v2: 0,
-        plateWidth_mm,
-        collisionType: collisionType_exp,
-      }),
-    [m1_exp, m2_exp, v1_exp, plateWidth_mm, collisionType_exp]
+      computeMomentumExperiment(
+        momentumExperimentInputFromParams({
+          m1_exp,
+          m2_exp,
+          v1_exp,
+          plateWidth_mm,
+          collisionType_exp,
+          timing_err,
+        })
+      ),
+    [m1_exp, m2_exp, v1_exp, plateWidth_mm, collisionType_exp, timing_err]
   )
+
+  // 实验时长（时间轴总长与图表 x 轴上界的唯一来源，与注册表 maxTime 同源）
+  const expTMax = useMemo(() => experimentDurationFromResult(experiment), [experiment])
 
   const trackSliders = useMemo(
     () => computeTrackSlidersAtTime(time, experiment),
@@ -400,25 +409,26 @@ export function useMomentumConservationPhysics(
     const advPtDomain2 = advVtDomain2.map((p) => ({ t: p.t, v: M_board * p.v }))
     const advPtDomainTotal = [{ t: 0, v: m_slider * v0 }, { t: 10, v: m_slider * v0 }]
 
-    // 3. 高考实验模式 V-T 点集
+    // 3. 高考实验模式 V-T 点集（自适应实际碰撞与穿门耗时，时长来自 SSOT `expTMax`）
     const expTCol = experiment.t_collision
+
     const expVtDomain1 = [
       { t: 0, v: experiment.v1 },
       { t: Math.max(0, expTCol - 0.001), v: experiment.v1 },
-      { t: Math.min(10, expTCol + 0.001), v: experiment.v1_after },
-      { t: 10, v: experiment.v1_after },
+      { t: Math.min(expTMax, expTCol + 0.001), v: experiment.v1_after },
+      { t: expTMax, v: experiment.v1_after },
     ]
     const expVtDomain2 = [
       { t: 0, v: 0 },
       { t: Math.max(0, expTCol - 0.001), v: 0 },
-      { t: Math.min(10, expTCol + 0.001), v: experiment.v2_after },
-      { t: 10, v: experiment.v2_after },
+      { t: Math.min(expTMax, expTCol + 0.001), v: experiment.v2_after },
+      { t: expTMax, v: experiment.v2_after },
     ]
     const expPtDomain1 = expVtDomain1.map((p) => ({ t: p.t, v: experiment.m1 * p.v }))
     const expPtDomain2 = expVtDomain2.map((p) => ({ t: p.t, v: experiment.m2 * p.v }))
     const expPtDomainTotal = [
       { t: 0, v: experiment.p_total_before },
-      { t: 10, v: experiment.p_total_after },
+      { t: expTMax, v: experiment.p_total_after },
     ]
 
     // 选择当前数据集
@@ -467,21 +477,31 @@ export function useMomentumConservationPhysics(
       currentPtPoints2,
       currentPtPointsTotal,
     }
-  }, [basic, advanced, experiment, isAdvanced, isExperiment, m1, v1, m2, v2, m_slider, M_board, v0, time])
+  }, [basic, advanced, experiment, expTMax, isAdvanced, isExperiment, m1, v1, m2, v2, m_slider, M_board, v0, time])
 
   // ── 矢量/动量条映射 ──
   const vMaxRef = isExperiment ? 2.0 : 10
   const mapArrowLen = (val: number) => (Math.abs(val) / vMaxRef) * MC_LAYOUT.vectorMaxLength
 
-  const p1 = isExperiment ? experiment.m1 * trackSliders.v1 : m1 * basic.currentV1
-  const p2 = isExperiment ? experiment.m2 * trackSliders.v2 : m2 * basic.currentV2
+  const p1 = isExperiment
+    ? time <= experiment.t_collision
+      ? experiment.p1_before
+      : experiment.p1_after_measured
+    : m1 * basic.currentV1
+  const p2 = isExperiment
+    ? time <= experiment.t_collision
+      ? 0
+      : experiment.p2_after_measured
+    : m2 * basic.currentV2
   const pTotal = isExperiment
-    ? experiment.p_total_before
+    ? experiment.p_total_before_measured
     : isAdvanced
       ? m_slider * v0
       : m1 * v1 + m2 * v2
   const pMaxRef = isExperiment ? 1.5 : 100
   const mapMomentumBar = (p: number) => (Math.abs(p) / pMaxRef) * MC_LAYOUT.momentumBarMaxLength
+  // 图表 x 轴上界：实验模式跟随 SSOT 实验时长；基础/进阶模式沿用固定的 10s 观察窗口
+  const tMax = isExperiment ? expTMax : 10
 
   return {
     mode,
@@ -495,6 +515,7 @@ export function useMomentumConservationPhysics(
     p1,
     p2,
     pTotal,
+    tMax,
     mapArrowLen,
     mapMomentumBar,
   }

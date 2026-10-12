@@ -56,6 +56,7 @@ export const experimentKnowledge: KnowledgeNode[] = [
       v1_exp: 0.8,
       plateWidth_mm: 20.0,
       collisionType_exp: 0,
+      timing_err: 0,
     },
     problemIds: [],
     prerequisites: ['experiment-1-1'],

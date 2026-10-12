@@ -3,6 +3,10 @@ import { experimentKnowledge } from '@/data/knowledge/experiment'
 import { experimentProblems } from '@/data/problems/experiment'
 import { knowledgeIndex } from '@/data/knowledgeTree'
 import { getAnimationConfigAsync, ensureExtendedRegistry } from '@/data/animationRegistry'
+import {
+  computeMomentumExperimentDuration,
+  momentumExperimentInputFromParams,
+} from '@/physics/experimentMomentum'
 
 describe('高考实验专题 · 高中物理规范与知识体系守卫', () => {
   it('所有实验知识点 ID 唯一且合法', () => {
@@ -108,6 +112,43 @@ describe('高考实验专题 · 高中物理规范与知识体系守卫', () => 
     expect(expParams.d_mm).toBe(defaultParams.d_mm)
     expect(expParams.n_cycles).toBe(defaultParams.n_cycles)
     expect(expParams.timing_err).toBe(defaultParams.timing_err)
+  })
+
+  it('动量守恒高考实验时长：注册表 maxTime 与物理层 SSOT 在全参数网格上严格一致', async () => {
+    await ensureExtendedRegistry()
+    const config = await getAnimationConfigAsync('anim-momentum-conservation')
+    expect(config).toBeDefined()
+
+    const maxTime = config!.maxTime
+    expect(typeof maxTime, 'maxTime 必须为函数形式才能随实验参数自适应').toBe('function')
+    const resolve = maxTime as (p: Record<string, number>) => number
+
+    // 曾经的分歧根因：注册表另写一套硬编码距离公式，且完全遗漏「滑块 1 同向穿门 2」，
+    // 导致 8.7% 的参数组合下时间轴被截断、滑块 1 穿门演示不可达。此处把两处锁死。
+    let checked = 0
+    for (const collisionType_exp of [0, 1]) {
+      for (const m1_exp of [0.1, 0.4, 0.7, 1.0]) {
+        for (const m2_exp of [0.1, 0.4, 0.7, 1.0]) {
+          for (const v1_exp of [0.2, 0.5, 0.8, 1.1, 1.4, 1.7, 2.0]) {
+            const caseParams = { advancedMode: 2, m1_exp, m2_exp, v1_exp, collisionType_exp, timing_err: 0 }
+            const registryMaxTime = resolve(caseParams)
+            const ssot = computeMomentumExperimentDuration(
+              momentumExperimentInputFromParams(caseParams),
+            )
+            expect(
+              registryMaxTime,
+              `参数 ${JSON.stringify(caseParams)} 下注册表 maxTime=${registryMaxTime}s 与物理层 SSOT=${ssot}s 不一致`,
+            ).toBe(ssot)
+            checked++
+          }
+        }
+      }
+    }
+    expect(checked).toBe(4 * 4 * 7 * 2)
+
+    // 非实验模式（基础两球 / 滑块-木板）沿用固定 30s 时间轴
+    expect(resolve({ advancedMode: 0 })).toBe(30)
+    expect(resolve({ advancedMode: 1 })).toBe(30)
   })
 })
 

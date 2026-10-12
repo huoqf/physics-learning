@@ -6,6 +6,7 @@ interface MomentumConservationChartsProps {
   currentTime: number
   isAdvanced: boolean
   isExperiment?: boolean
+  tMax?: number
 }
 
 export default function MomentumConservationCharts({
@@ -13,9 +14,11 @@ export default function MomentumConservationCharts({
   currentTime,
   isAdvanced,
   isExperiment = false,
+  tMax,
 }: MomentumConservationChartsProps) {
   const series1Label = isExperiment ? '滑块1' : isAdvanced ? '滑块' : 'A球'
   const series2Label = isExperiment ? '滑块2' : isAdvanced ? '木板' : 'B球'
+  const effectiveTMax = tMax ?? (isExperiment ? 5 : 10)
   return (
     <div className="flex gap-4 flex-1 min-h-0">
       <div className="flex-1 bg-white border border-neutral-200/80 rounded-xl p-3 shadow-sm relative overflow-hidden flex flex-col">
@@ -25,7 +28,7 @@ export default function MomentumConservationCharts({
             points={chartData.currentVtPoints1}
             domainPoints={chartData.currentDomainVtPoints1}
             currentTime={currentTime}
-            tMax={isExperiment ? 5 : 10}
+            tMax={effectiveTMax}
             title={isExperiment ? '气轨滑块速度 (V-T)' : '速度-时间图像 (V-T)'}
             xLabel="时间 t (s)"
             yLabel="速度 v (m/s)"
@@ -49,7 +52,7 @@ export default function MomentumConservationCharts({
             points={chartData.currentPtPoints1}
             domainPoints={chartData.currentDomainPtPoints1}
             currentTime={currentTime}
-            tMax={isExperiment ? 5 : 10}
+            tMax={effectiveTMax}
             title={isExperiment ? '系统动量守恒 (P-T)' : '动量-时间图像 (P-T)'}
             xLabel="时间 t (s)"
             yLabel="动量 p (kg·m/s)"

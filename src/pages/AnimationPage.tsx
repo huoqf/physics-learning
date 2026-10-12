@@ -235,7 +235,9 @@ function RightPhysicsPanel({
   useEffect(() => {
     let alive = true
     setBuilderReady(false)
-    preloadQuantityBuilder(animId).then(() => { if (alive) setBuilderReady(true) })
+    preloadQuantityBuilder(animId).then(() => {
+      if (alive) setBuilderReady(true)
+    })
     return () => { alive = false }
   }, [animId])
   // 播放时用 0.1s 精度减少重算，拖动时用精确时间保持响应
