@@ -41,5 +41,4 @@ export * from './emWave'
 export * from './thinFilm'
 export * from './dcCircuit'
 export * from './magnetism'
-
-
+export * from './experimentPendulum'

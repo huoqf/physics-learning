@@ -27,6 +27,7 @@ const TEST_ANIM_IDS = [
   'anim-bullet-block',
   'anim-forced-resonance',
   'anim-double-slit-interference',
+  'anim-simple-pendulum',
 ]
 
 describe('buildPhysicsQuantities', () => {
@@ -217,4 +218,39 @@ describe('buildPhysicsQuantities', () => {
     )
     expect(qs.warnings?.some((w) => w.text.includes('低于螺旋测微器零刻度基准'))).toBe(true)
   })
+
+  // ===== 单摆振动与高考实验（含模式 0、1、2、3）=====
+  it('单摆物理量构建器：简谐与能量守恒模式正常输出', () => {
+    const qs0 = buildPhysicsQuantities('anim-simple-pendulum', { mode: 0, L: 1.0, g: 9.8, theta0: 5 }, 0)
+    expect(Number(find(qs0, '重力 G'))).toBeCloseTo(9.8, 1)
+
+    const qs1 = buildPhysicsQuantities('anim-simple-pendulum', { mode: 1, L: 1.0, g: 9.8, theta0: 30 }, 0)
+    expect(Number(find(qs1, '真实周期 T_real'))).toBeGreaterThan(2.007)
+
+    const qs2 = buildPhysicsQuantities('anim-simple-pendulum', { mode: 2, L: 1.0, g: 9.8, theta0: 10 }, 0)
+    expect(Number(find(qs2, '总机械能 E'))).toBeGreaterThan(0)
+  })
+
+  it('单摆物理量构建器：高考实验模式（mode 3）正确解析参数并输出自洽重力加速度与小角偏差', () => {
+    const qsExp = buildPhysicsQuantities(
+      'anim-simple-pendulum',
+      {
+        mode: 3,
+        l_line: 0.99,
+        d_mm: 20.0,
+        n_cycles: 40,
+        g: 9.8,
+        timing_err: 0,
+        theta0_exp: 4,
+      },
+      0
+    )
+    expect(Number(find(qsExp, '有效摆长 L'))).toBeCloseTo(1.0, 3)
+    expect(Number(find(qsExp, '单摆周期 T'))).toBeCloseTo(2.007, 2)
+    expect(Number(find(qsExp, '测得重力加速度 g_测'))).toBeCloseTo(9.8, 1)
+    expect(find(qsExp, '小角理论偏差')).toBeDefined()
+    expect(String(find(qsExp, '小角理论偏差'))).toContain('%')
+  })
 })
+
+

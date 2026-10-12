@@ -1,5 +1,6 @@
 import type { KnowledgeNode } from '../types'
 import { DOUBLE_SLIT_DEFAULT_PARAMS } from '@/physics/optics'
+import { SIMPLE_PENDULUM_DEFAULT_PARAMS } from '@/physics/experimentPendulum'
 
 export const experimentKnowledge: KnowledgeNode[] = [
   // ── 力学实验专题 ─────────────────────────────────────────────────────────────
@@ -30,6 +31,12 @@ export const experimentKnowledge: KnowledgeNode[] = [
     module: 'experiment',
     importance: 'gaokao',
     animationIds: ['anim-mechanics-experiment-base', 'anim-free-fall'],
+    animationParams: {
+      mode: 0,
+      v0: 0,
+      a: 9.8,
+      freq: 50,
+    },
     problemIds: [],
     prerequisites: ['experiment-1-1'],
     coverageNote:
@@ -54,10 +61,12 @@ export const experimentKnowledge: KnowledgeNode[] = [
     module: 'experiment',
     importance: 'gaokao',
     animationIds: ['anim-simple-pendulum'],
+    animationParams: {
+      ...SIMPLE_PENDULUM_DEFAULT_PARAMS,
+      mode: 3,
+    },
     problemIds: [],
     prerequisites: ['experiment-1-1'],
-    coverageNote:
-      '覆盖度声明：本节点借用「单摆振动规律」原理动画，只演示周期与摆长的定性关系。实验必需的摆长 L = l + d/2 测量、30~50 次全振动计时取平均、g = 4π²L/T² 的数据处理与系统误差分析尚未实现。',
   },
 
   // ── 电学实验专题 ─────────────────────────────────────────────────────────────

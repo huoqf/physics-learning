@@ -88,4 +88,26 @@ describe('高考实验专题 · 高中物理规范与知识体系守卫', () => 
     expect(expParams.screenDistance).toBe(defaultParams.screenDistance)
     expect(expParams.targetFringe).toBe(defaultParams.targetFringe)
   })
+
+  it('单摆测重力加速度知识树直达参数、无coverageNote与注册表严格一致', async () => {
+    await ensureExtendedRegistry()
+    const node = experimentKnowledge.find((k) => k.id === 'experiment-2-4')
+    expect(node).toBeDefined()
+    expect(node?.animationParams).toBeDefined()
+    // 验证 coverageNote 已随高考实验模式内生落地而移除
+    expect(node?.coverageNote).toBeUndefined()
+
+    const config = await getAnimationConfigAsync('anim-simple-pendulum')
+    expect(config).toBeDefined()
+
+    const expParams = node!.animationParams!
+    const defaultParams = config!.defaultParams as Record<string, unknown>
+
+    expect(expParams.mode).toBe(3)
+    expect(expParams.l_line).toBe(defaultParams.l_line)
+    expect(expParams.d_mm).toBe(defaultParams.d_mm)
+    expect(expParams.n_cycles).toBe(defaultParams.n_cycles)
+    expect(expParams.timing_err).toBe(defaultParams.timing_err)
+  })
 })
+

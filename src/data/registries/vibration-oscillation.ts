@@ -1,5 +1,6 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
+import { SIMPLE_PENDULUM_DEFAULT_PARAMS } from '@/physics/experimentPendulum'
 
 // ===== 机械振动与波 =====
 export const vibrationOscillationAnimations = defineAnimations({
@@ -80,21 +81,29 @@ export const vibrationOscillationAnimations = defineAnimations({
     CenterExtra: lazy(() => import('@/features/vibration/simpleHarmonic/SimplePendulumCenterExtra')),
     centerLayout: 'splitH',
     controlsMode: 'timed' as const,
-    maxTime: 20,
-    defaultParams: {
-      L: 1.5,
-      g: 9.8,
-      theta0: 8,
-      phiDeg: 0,
-      mode: 0,
-      showGraph: 1,
-      showHelper: 1,
-    } as const,
+    maxTime: (params) => {
+      if (params?.mode === 3) {
+        const l = params.l_line ?? 0.985
+        const d = (params.d_mm ?? 20.0) / 2000
+        const L = l + d
+        const g = params.g ?? 9.8
+        const n = params.n_cycles ?? 40
+        const T = 2 * Math.PI * Math.sqrt(L / g)
+        return Math.ceil(n * T) + 2
+      }
+      return 20
+    },
+    defaultParams: SIMPLE_PENDULUM_DEFAULT_PARAMS,
     paramMeta: [
-      { key: 'L', label: '摆长 L', min: 1.0, max: 2.0, step: 0.1, unit: 'm', group: '摆参数' },
-      { key: 'g', label: '重力加速度 g', min: 2.0, max: 20.0, step: 0.1, unit: 'm/s²', group: '环境参数' },
-      { key: 'theta0', label: '最大摆角 θ₀', min: 2, max: 60, step: 1, unit: '°', group: '摆参数' },
-      { key: 'phiDeg', label: '初相位 φ', min: 0, max: 360, step: 5, unit: '°', group: '摆参数' },
+      { key: 'L', label: '摆长 L', min: 1.0, max: 2.0, step: 0.1, unit: 'm', group: '摆参数', hideIf: 'mode', hideIfValue: 3 },
+      { key: 'g', label: '重力加速度 g', min: 2.0, max: 20.0, step: 0.1, unit: 'm/s²', group: '环境参数', hideIf: 'mode', hideIfValue: 3 },
+      { key: 'theta0', label: '最大摆角 θ₀', min: 2, max: 60, step: 1, unit: '°', group: '摆参数', hideIf: 'mode', hideIfValue: 3 },
+      { key: 'phiDeg', label: '初相位 φ', min: 0, max: 360, step: 5, unit: '°', group: '摆参数', hideIf: 'mode', hideIfValue: 3 },
+      { key: 'l_line', label: '摆线长 l', min: 0.7, max: 1.3, step: 0.005, unit: 'm', group: '实验测量', showIf: 'mode', showIfValue: 3 },
+      { key: 'd_mm', label: '摆球直径 d', min: 12.0, max: 28.0, step: 0.1, unit: 'mm', group: '实验测量', showIf: 'mode', showIfValue: 3 },
+      { key: 'theta0_exp', label: '摆角 θ₀ (≤5°)', min: 1, max: 5, step: 0.5, unit: '°', group: '实验测量', showIf: 'mode', showIfValue: 3 },
+      { key: 'n_cycles', label: '全振动次数 N', min: 20, max: 60, step: 5, unit: '次', group: '实验测量', showIf: 'mode', showIfValue: 3 },
+      { key: 'timing_err', label: '秒表计时误差 Δt', min: -0.5, max: 0.5, step: 0.05, unit: 's', group: '误差探究', showIf: 'mode', showIfValue: 3 },
     ],
     controlMeta: [
       {
@@ -106,7 +115,36 @@ export const vibrationOscillationAnimations = defineAnimations({
           { value: 0, label: '简谐运动（小角近似）' },
           { value: 1, label: '大角对比（简谐 vs 真实）' },
           { value: 2, label: '能量守恒分析' },
+          { value: 3, label: '高考实验：单摆测 g' },
         ],
+      },
+      {
+        type: 'preset',
+        label: '📋 高考标准：有效摆长约 1m 与 40 次全振动',
+        description: '标准单摆实验 (l=0.985m, d=20mm, N=40, θ₀=4°)',
+        params: { mode: 3, l_line: 0.985, d_mm: 20.0, n_cycles: 40, timing_err: 0, theta0_exp: 4, theta0: 4, g: 9.8 },
+        restartOnApply: true,
+      },
+      {
+        type: 'preset',
+        label: '📋 误差探究：秒表滞后停表偏差 (+0.4s)',
+        description: '模拟人工反应慢停 0.4s 导致测得周期偏大、g 偏小',
+        params: { mode: 3, l_line: 0.985, d_mm: 20.0, n_cycles: 40, timing_err: 0.4, theta0_exp: 4, theta0: 4, g: 9.8 },
+        restartOnApply: true,
+      },
+      {
+        type: 'preset',
+        label: '📋 摆长对比：短摆长 0.7m 测 g',
+        description: '测量不同摆长数据 (l=0.690m, d=20mm, N=40)',
+        params: { mode: 3, l_line: 0.69, d_mm: 20.0, n_cycles: 40, timing_err: 0, theta0_exp: 4, theta0: 4, g: 9.8 },
+        restartOnApply: true,
+      },
+      {
+        type: 'preset',
+        label: '📋 简谐基础：小角单摆 (θ₀=5°)',
+        description: '基础小角等时性单摆演示 (L=1.0m, g=9.8m/s²)',
+        params: { mode: 0, L: 1.0, g: 9.8, theta0: 5, phiDeg: 0 },
+        restartOnApply: true,
       },
       {
         type: 'toggle',
@@ -148,6 +186,13 @@ export const vibrationOscillationAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 2,
         content: '在摆动过程中系统总机械能守恒。高考高频结论：从 $\\theta_0$ 释放，经过最低点时绳子拉力最大且 $F_{拉,max} = mg(3-2\\cos\\theta_0)$。',
+      },
+      {
+        type: 'tip',
+        group: '高考要点提示',
+        showIf: 'mode',
+        showIfValue: 3,
+        content: '高考实验要点：① 摆长 $L = l + d/2$ 必须算至球心；② 从平衡位置（速度最大）开始计时并累积 30~50 次全振动，大幅稀释秒表反应误差；③ 摆角 $\\theta \\le 5^\\circ$ 确保小角单摆近似。',
       },
     ],
   },
