@@ -117,8 +117,8 @@ export const mechanicsMomentumAnimations = defineAnimations({
       { key: 'mu', label: '动摩擦因数 μ', min: 0.1, max: 0.6, step: 0.05, unit: '', showIf: 'advancedMode', showIfValue: 1 },
       { key: 'L', label: '木板长度 L', min: 0.5, max: 5, step: 0.5, unit: 'm', showIf: 'advancedMode', showIfValue: 1 },
       // 高考实验参数
-      { key: 'm1_exp', label: '滑块1质量 m₁', min: 0.1, max: 1.0, step: 0.05, unit: 'kg', showIf: 'advancedMode', showIfValue: 2 },
-      { key: 'm2_exp', label: '滑块2质量 m₂', min: 0.1, max: 1.0, step: 0.05, unit: 'kg', showIf: 'advancedMode', showIfValue: 2 },
+      { key: 'm1_exp', label: '滑块1质量 m₁', min: 0.1, max: 1.0, step: 0.01, unit: 'kg', showIf: 'advancedMode', showIfValue: 2 },
+      { key: 'm2_exp', label: '滑块2质量 m₂', min: 0.1, max: 1.0, step: 0.01, unit: 'kg', showIf: 'advancedMode', showIfValue: 2 },
       { key: 'v1_exp', label: '碰前初速度 v₁', min: 0.2, max: 2.0, step: 0.1, unit: 'm/s', showIf: 'advancedMode', showIfValue: 2 },
       { key: 'plateWidth_mm', label: '挡光片宽度 Δx', min: 10, max: 40, step: 2, unit: 'mm', showIf: 'advancedMode', showIfValue: 2 },
       { key: 'timing_err', label: '计时误差 Δt_err', min: -2.0, max: 2.0, step: 0.1, unit: 'ms', showIf: 'advancedMode', showIfValue: 2 },
@@ -190,9 +190,9 @@ export const mechanicsMomentumAnimations = defineAnimations({
       },
       {
         type: 'preset',
-        label: '📋 高考陷阱：反弹测速 (m₁<m₂)',
-        description: '碰后滑块1反向回穿光电门1，负速度与负动量矢量判定',
-        params: { advancedMode: 2, m1_exp: 0.2, m2_exp: 0.6, v1_exp: 0.8, plateWidth_mm: 20.0, collisionType_exp: 0, timing_err: 0.0 },
+        label: '📋 2022全国甲卷：反弹碰撞验证',
+        description: 'm₁=0.304kg碰撞m₂=0.510kg反向弹回，验证动量守恒与弹性碰撞判据',
+        params: { advancedMode: 2, m1_exp: 0.304, m2_exp: 0.510, v1_exp: 0.8, plateWidth_mm: 20.0, collisionType_exp: 0, timing_err: 0.0 },
         restartOnApply: true,
       },
       {

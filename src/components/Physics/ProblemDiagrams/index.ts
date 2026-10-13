@@ -22,6 +22,8 @@ import {
   Prob2024Zhejiang6Diagram,
 } from './MasterProblemDiagrams'
 
+import { Prob2022QuanguoExpMomentumDiagram } from './Prob2022QuanguoExpMomentumDiagram'
+
 export interface ProblemDiagramProps {
   /** 是否为解答步骤配图（解答步骤中包含受力分析与辅助分解） */
   showAnalysis?: boolean
@@ -32,6 +34,8 @@ export interface ProblemDiagramProps {
  * 根据 problemId 映射返回对应的高考真题矢量图组件
  */
 export const problemDiagramRegistry: Record<string, React.FC<ProblemDiagramProps>> = {
+  // 实验专题：2022全国甲卷气垫导轨碰撞与动量守恒
+  'prob-2022-quanguo-exp-momentum': Prob2022QuanguoExpMomentumDiagram,
   // 18 大 Master 模型第 1~3 号的专属题干示意图
   // （对应题目已按 provenance 铁律转为「模型演练题」verified: false，键名跟随题目 id 改名）
   'prob-block-board-model': Prob2024Quanguo21Diagram,

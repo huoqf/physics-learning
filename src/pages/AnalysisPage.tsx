@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Eye, EyeOff, Zap, Award } from 'lucide-react'
-import { ContentWithKatex, StepCard, KnowledgeChain, ProblemDeconstruction, useAnalysisSteps } from '@/features/analysis'
+import { FormattedProblemContent, StepCard, KnowledgeChain, ProblemDeconstruction, useAnalysisSteps } from '@/features/analysis'
 import { getKnowledgeNode } from '@/data/knowledgeTree'
 import { getProblemDiagram } from '@/components/Physics/ProblemDiagrams'
 import { Button, Badge } from '@/components/UI'
@@ -109,9 +109,7 @@ export default function AnalysisPage() {
             <div className="text-xs font-semibold text-neutral-500 mb-2 flex items-center gap-1">
               <span>{isVerifiedProblem ? '📄 高考真题试题原文：' : '📄 题目原文（模型演练题）：'}</span>
             </div>
-            {problem.content.split('\n').map((line, i) => (
-              <p key={i} className="mb-2 last:mb-0"><ContentWithKatex content={line} /></p>
-            ))}
+            <FormattedProblemContent content={problem.content} />
           </div>
 
           {/* 若该题配置有标准矢量示意图，渲染题干纯净模式示意图 (Skill 0A 绝对纯净无解题线) */}

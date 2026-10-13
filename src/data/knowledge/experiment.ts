@@ -58,7 +58,7 @@ export const experimentKnowledge: KnowledgeNode[] = [
       collisionType_exp: 0,
       timing_err: 0,
     },
-    problemIds: [],
+    problemIds: ['prob-2022-quanguo-exp-momentum'],
     prerequisites: ['experiment-1-1'],
   },
   {

@@ -1,4 +1,5 @@
 export { ContentWithKatex } from './components/ContentWithKatex'
+export { FormattedProblemContent } from './components/FormattedProblemContent'
 export { StepCard } from './components/StepCard'
 export { KnowledgeChain } from './components/KnowledgeChain'
 export { ProblemDeconstruction } from './components/ProblemDeconstruction'

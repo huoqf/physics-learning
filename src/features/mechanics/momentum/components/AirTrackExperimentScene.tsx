@@ -314,7 +314,7 @@ export function AirTrackExperimentScene({
               textAnchor="middle"
               fontWeight="bold"
             >
-              m₁={experiment.m1.toFixed(2)}kg
+              m₁={experiment.m1.toFixed(3)}kg
             </text>
 
             {experiment.collisionType === 0 ? (
@@ -407,7 +407,7 @@ export function AirTrackExperimentScene({
               textAnchor="middle"
               fontWeight="bold"
             >
-              m₂={experiment.m2.toFixed(2)}kg
+              m₂={experiment.m2.toFixed(3)}kg
             </text>
 
             <rect x={slider2Px - 2} y={groundY - 18} width={3} height={14} fill={SCENE_COLORS.mechanicsApparatus.airTrackBeam} rx={1} />
