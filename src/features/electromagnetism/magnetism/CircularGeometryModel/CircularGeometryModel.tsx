@@ -6,6 +6,7 @@ import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
 import { worldToDesign } from '@/scene'
 import { PhysicsVectorArrow, ParticleTrajectory } from '@/components/Physics'
 import { AnimationSvgCanvas } from '@/components/Layout'
+import { computeCircularGeometryOrbit, type MagBoundaryType } from '@/physics'
 
 export default function CircularGeometryModel() {
   const { containerRef, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.splitH })
@@ -17,7 +18,7 @@ export default function CircularGeometryModel() {
 
   // 1. 获取物理与控制参数
   const boundaryType = params.boundaryType ?? 0 // 0: 单边界, 1: 矩形边界, 2: 圆形边界
-  const particleSign = params.particleSign ?? 1 // 1: 正电荷, -1: 负电荷
+  const chargeSign = params.particleSign ?? 1 // 1: 正电荷, -1: 负电荷
   const velocity = params.velocity ?? 3.0 // 1.0 ~ 5.0 m/s
   const angle = params.angle ?? 60 // 0° ~ 180°
   const B = params.magneticB ?? 1.0 // 0.2 ~ 2.0 T
@@ -28,61 +29,32 @@ export default function CircularGeometryModel() {
 
   const angleRad = (angle * Math.PI) / 180
 
-  // 2. 物理常量与计算
-  const R = velocity / B // 轨道半径 R = mv / (qB)
-  const omega = B // 角速度大小
-  
-  // 圆心坐标计算 (物理坐标，以 (0,0) 为发射点)
-  const xc = particleSign * R * Math.sin(angleRad)
-  const yc = -particleSign * R * Math.cos(angleRad)
-
-  // 3. 高精度出射时刻迭代计算 (dt = 1ms)
-  const tOut = useMemo(() => {
-    const dt = 0.001
-    const maxT = 12.0
-    let t = 0.005 // 略微偏离初始时刻以避免边界浮点判定误差
-    const omegaDir = -particleSign * omega
-    const theta0 = angleRad + particleSign * Math.PI / 2
-
-    while (t < maxT) {
-      const curTheta = theta0 + omegaDir * t
-      const curX = xc + R * Math.cos(curTheta)
-      const curY = yc + R * Math.sin(curTheta)
-
-      let inB = false
-      if (boundaryType === 0) {
-        inB = curY >= 0
-      } else if (boundaryType === 1) {
-        inB = curX >= -3.0 && curX <= 3.0 && curY >= 0 && curY <= 4.0
-      } else {
-        inB = curX * curX + (curY - 3.5) * (curY - 3.5) <= 3.5 * 3.5
-      }
-
-      if (!inB) {
-        return t - dt / 2
-      }
-      t += dt
-    }
-    return maxT
-  }, [boundaryType, particleSign, omega, R, xc, yc, angleRad])
+  // 2. 轨道解算（圆心/相位/出射时刻）——与右屏看板共用同一物理函数，杜绝双真源
+  const orbit = useMemo(
+    () =>
+      computeCircularGeometryOrbit({
+        particleSign: chargeSign,
+        velocity,
+        angleDeg: angle,
+        B,
+        boundaryType: boundaryType as MagBoundaryType,
+      }),
+    [chargeSign, velocity, angle, B, boundaryType]
+  )
+  const { R, xc, yc, theta0, omegaDir, tOut } = orbit
 
   // 出射状态
   const exitState = useMemo(() => {
-    const omegaDir = -particleSign * omega
-    const theta0 = angleRad + particleSign * Math.PI / 2
     const curTheta = theta0 + omegaDir * tOut
     const xOut = xc + R * Math.cos(curTheta)
     const yOut = yc + R * Math.sin(curTheta)
     const vxOut = -omegaDir * R * Math.sin(curTheta)
     const vyOut = omegaDir * R * Math.cos(curTheta)
     return { xOut, yOut, vxOut, vyOut }
-  }, [tOut, omega, particleSign, angleRad, xc, yc, R])
+  }, [tOut, omegaDir, theta0, xc, yc, R])
 
   // 粒子实时运动状态计算
   const getParticleState = useCallback((tVal: number) => {
-    const omegaDir = -particleSign * omega
-    const theta0 = angleRad + particleSign * Math.PI / 2
-
     if (tVal <= 0) {
       const vx0 = velocity * Math.cos(angleRad)
       const vy0 = velocity * Math.sin(angleRad)
@@ -112,7 +84,7 @@ export default function CircularGeometryModel() {
         inField: false,
       }
     }
-  }, [omega, particleSign, angleRad, velocity, tOut, exitState, xc, yc, R])
+  }, [omegaDir, theta0, angleRad, velocity, tOut, exitState, xc, yc, R])
 
   // 动画时间复位逻辑：如果粒子飞出太远，循环发射
   useEffect(() => {
@@ -260,7 +232,7 @@ export default function CircularGeometryModel() {
             predictedPoints={predictedPoints}
             tailPoints={tailPoints}
             isFocus={true}
-            chargeSign={particleSign > 0 ? '+' : '-'}
+            chargeSign={chargeSign > 0 ? '+' : '-'}
           />
 
           {/* Step 1: 速度垂线 */}

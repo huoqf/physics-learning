@@ -28,3 +28,11 @@ export type { VelocitySelectorPoint } from './velocitySelector'
 
 export { getCoilPolarity } from './polarity'
 export type { CoilPolarity } from './polarity'
+
+export {
+  computeCircularGeometryOrbit,
+  isInsideMagBoundary,
+  type CircularGeometryParams,
+  type CircularGeometryOrbit,
+  type MagBoundaryType,
+} from './circularGeometry'

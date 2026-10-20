@@ -13,7 +13,11 @@ export function buildLightRodRopeQuantities(
   const L = constraint === 0 ? (params.L ?? 1.2) : 1.2
   const g = GRAVITY
 
-  const trajectory = precomputeLightRodRopeTrajectory(m1, m2, L, g, constraint, 6)
+  // 必须与 useLightRodRopePhysics 用同一套初值，否则看板与中屏各算各的（双真源）
+  const theta0 = params.theta0 ?? 30
+  const theta0Rad = ((90 - theta0) * Math.PI) / 180
+  const v0 = params.v0 ?? 0
+  const trajectory = precomputeLightRodRopeTrajectory(m1, m2, L, g, constraint, 6, 0.02, theta0Rad, v0)
   const state = getLRRStateAtTime(trajectory, time)
 
   if (constraint === 0) {

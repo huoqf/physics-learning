@@ -1,5 +1,6 @@
 import {
   calculateLenzsLaw,
+  lenzsMagnetVelocityAt,
   calculateCuttingEMF,
   computeRodStateAtTime,
   computeFaradayMagnetFlux,
@@ -136,7 +137,10 @@ export function handleInduction(
         inducedFieldDirection,
         equivalentPole,
         forceType,
-      } = calculateLenzsLaw(params.magnetPole ?? 1, params.velocity ?? 0)
+      } = calculateLenzsLaw(
+        params.magnetPole ?? 1,
+        lenzsMagnetVelocityAt(params.magnetSpeed ?? 2, params.motionMode ?? 1, time)
+      )
 
       return {
         quantities: [

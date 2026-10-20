@@ -84,8 +84,10 @@ export function calculateThinFilmInterference(input: ThinFilmPhysicsInput): Thin
   const distToOddPi = Math.abs(normalizedPhaseMod2Pi - Math.PI)
   const distToEvenPi = Math.min(normalizedPhaseMod2Pi, 2 * Math.PI - normalizedPhaseMod2Pi)
 
-  const isDestructive = distToOddPi < 0.25 || reflectance < 0.15
-  const isConstructive = distToEvenPi < 0.25 || reflectance > 0.85
+  // 相长/相消只由相位差判定：不能拿"反射率低"当相消条件——单层膜的 R 天然只有 4% 左右，
+  // 一旦用 reflectance<0.15 兜底，相位判据会被永久短路，增反极大也被误报为增透。
+  const isDestructive = distToOddPi < 0.25
+  const isConstructive = distToEvenPi < 0.25
 
   return {
     hasHalfWaveLossTop,

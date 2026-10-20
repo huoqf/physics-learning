@@ -484,7 +484,7 @@ export function calculateFreeThreeChargeEquilibrium(
     const ratio = Math.sqrt(absQ1) / (Math.sqrt(absQ1) + Math.sqrt(absQ2))
     const r13 = r * ratio
     const r23 = r - r13
-    const q3 = -(q1 * q2) / Math.pow(Math.sqrt(absQ1) + Math.sqrt(absQ2), 2)
+    const q3 = -(Math.abs(q1 * q2)) / Math.pow(Math.sqrt(absQ1) + Math.sqrt(absQ2), 2)
     return { q3, r13, r23, valid: true }
   } else {
     // 异号：q3 在绝对值小的一端的外侧
@@ -500,7 +500,7 @@ export function calculateFreeThreeChargeEquilibrium(
       const d13 = r * ratio // 实际距离
       const r13 = -d13 // x 坐标偏移
       const r23 = r + d13
-      const q3 = -(q1 * q2) / Math.pow(Math.sqrt(absQ2) - Math.sqrt(absQ1), 2)
+      const q3 = -(Math.abs(q1 * q2)) / Math.pow(Math.sqrt(absQ2) - Math.sqrt(absQ1), 2)
       return { q3, r13, r23, valid: true }
     } else {
       // q3 在 q2 外侧
@@ -509,7 +509,7 @@ export function calculateFreeThreeChargeEquilibrium(
       const d23 = r * ratio
       const r13 = r + d23
       const r23 = d23
-      const q3 = -(q1 * q2) / Math.pow(Math.sqrt(absQ1) - Math.sqrt(absQ2), 2)
+      const q3 = -(Math.abs(q1 * q2)) / Math.pow(Math.sqrt(absQ1) - Math.sqrt(absQ2), 2)
       return { q3, r13, r23, valid: true }
     }
   }

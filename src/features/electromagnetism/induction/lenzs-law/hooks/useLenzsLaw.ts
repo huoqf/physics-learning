@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { calculateLenzsLaw } from '@/physics'
+import { calculateLenzsLaw, lenzsMagnetVelocityAt } from '@/physics'
 import { useAnimationFrame } from '@/utils/animation'
 
 // 舒展充盈 840×650 视口坐标系下的垂直运动范围与线圈中心
@@ -126,11 +126,11 @@ export function useLenzsLaw() {
 
     if (motionMode === 1) {
       magnetY = y_top + (y_coil - y_top) * smoothK
-      velocity = -magnetSpeed * Math.sin(progress * Math.PI) // 靠近为负值
     } else {
       magnetY = y_coil + (y_top - y_coil) * smoothK
-      velocity = magnetSpeed * Math.sin(progress * Math.PI) // 远离为正值
     }
+    // 与右屏看板共用同一速度函数，避免双真源
+    velocity = lenzsMagnetVelocityAt(magnetSpeed, motionMode, time)
   } else {
     magnetY = magnetYState
     velocity = dragVelocity.current

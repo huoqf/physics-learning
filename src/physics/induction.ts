@@ -174,11 +174,13 @@ export function calculateLenzsLaw(
     fluxChange === 'increasing' ? 'repulsion' :
     fluxChange === 'decreasing' ? 'attraction' : null
 
-  // 当前动作描述
+  // 当前动作描述（速度为 0 时不能说"远离/靠近"，否则首帧会显示错误的动作）
   const currentAction =
-    magnetPole > 0
-      ? (velocity < 0 ? 'N极靠近' : 'N极远离')
-      : (velocity < 0 ? 'S极靠近' : 'S极远离')
+    Math.abs(velocity) < 0.1
+      ? '静止（磁通量稳定）'
+      : magnetPole > 0
+        ? (velocity < 0 ? 'N极靠近' : 'N极远离')
+        : (velocity < 0 ? 'S极靠近' : 'S极远离')
 
   return {
     originalFieldDirection,
@@ -189,6 +191,27 @@ export function calculateLenzsLaw(
     forceType,
     currentAction,
   }
+}
+
+/**
+ * 楞次定律演示中磁铁的运动速度随时间的变化（靠近为负、远离为正）。
+ *
+ * 中屏动画与右屏看板必须共用本函数：之前看板读的是 params.velocity（注册表里根本没有这个键），
+ * 导致看板全程显示"磁通量稳定/无感应电流"，与动画完全脱节。
+ *
+ * @param magnetSpeed 磁铁速度幅值 (m/s)
+ * @param motionMode 1=靠近线圈，2=远离线圈
+ * @param time 动画时间 (s)，单程周期 T=2s
+ */
+export function lenzsMagnetVelocityAt(
+  magnetSpeed: number,
+  motionMode: number,
+  time: number
+): number {
+  const T = 2
+  const progress = Math.min(1, Math.max(0, time / T))
+  const envelope = Math.sin(progress * Math.PI)
+  return motionMode === 1 ? -magnetSpeed * envelope : magnetSpeed * envelope
 }
 
 /**

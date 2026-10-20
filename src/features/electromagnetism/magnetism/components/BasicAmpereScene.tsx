@@ -71,8 +71,12 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
   }, [rodX, cy])
 
   // 3. 电源位置与连接导线 (标准垂直长正短负符号)
+  // 垂直摆放时：'right-positive' = 正极在上，'left-positive' = 正极在下。
+  // 页面标注的电流方向为「棒中向上」，故正极必须在下端，外电路才由正极流出、
+  // 经下导轨 → 棒由下向上 → 上导轨 → 回到负极。原先取 right-positive 会使
+  // 拓扑电流方向与"电流向上"的标注相反。
   const posDC = { x: 45, y: cy }
-  const polarity = I >= 0 ? 'right-positive' : 'left-positive'
+  const polarity = I >= 0 ? 'left-positive' : 'right-positive'
   const dcTerms = getDCSourceTerminals(posDC.x, posDC.y, polarity)
   const wire1Path = `M ${dcTerms.top.x} ${dcTerms.top.y} L ${dcTerms.top.x} ${cy - railH / 2} L ${cx - railW / 2} ${cy - railH / 2}`
   const wire2Path = `M ${dcTerms.bottom.x} ${dcTerms.bottom.y} L ${dcTerms.bottom.x} ${cy + railH / 2} L ${cx - railW / 2} ${cy + railH / 2}`

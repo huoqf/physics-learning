@@ -19,7 +19,10 @@ export const NUCLIDES: NuclideData[] = [
   { name: '氘', symbol: '²₁H', Z: 1, N: 1, A: 2, mNucleus: 2.013553, eBinding: 2.22 },
   { name: '氚', symbol: '³₁H', Z: 1, N: 2, A: 3, mNucleus: 3.015500, eBinding: 8.48 },
   { name: '氦-4', symbol: '⁴₂He', Z: 2, N: 2, A: 4, mNucleus: 4.001506, eBinding: 28.30 },
-  { name: '碳-12', symbol: '¹²₆C', Z: 6, N: 6, A: 12, mNucleus: 12.000000, eBinding: 89.09 },
+  // 本表其余核素均填「核质量」；¹²C 旧值 12.000000 是原子质量（含 6 个电子），
+  // 与裸核子相减会少算 6mₑc² ≈ 3.07 MeV，故 E_b 由 92.16 掉到 89.09，与同页比结合能曲线互斥。
+  // 核质量 = 12 − 6×0.0005486 = 11.996709 u
+  { name: '碳-12', symbol: '¹²₆C', Z: 6, N: 6, A: 12, mNucleus: 11.996709, eBinding: 92.16 },
   { name: '铁-56', symbol: '⁵⁶₂₆Fe', Z: 26, N: 30, A: 56, mNucleus: 55.920680, eBinding: 492.26 },
   { name: '铀-238', symbol: '²³⁸₉₂U', Z: 92, N: 146, A: 238, mNucleus: 238.000300, eBinding: 1801.7 },
 ]

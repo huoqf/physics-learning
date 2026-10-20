@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { RelationChart } from '@/components/Chart'
 import { Card } from '@/components/UI'
+import { computeCircularGeometryOrbit, type MagBoundaryType } from '@/physics'
 
 export default function CircularGeometryModelExtra() {
   const params = useAnimationStore((s) => s.params)
@@ -11,8 +12,6 @@ export default function CircularGeometryModelExtra() {
   const angle = params.angle ?? 60 // 0° ~ 180°
   const B = params.magneticB ?? 1.0 // 0.2 ~ 2.0 T
   const boundaryType = params.boundaryType ?? 0 // 0: 单边界, 1: 矩形, 2: 圆形
-  
-  const angleRad = (angle * Math.PI) / 180
 
   // 图表一: R-v 关系 (R = v/B)
   const rVsVPoints = useMemo(() => {
@@ -24,44 +23,21 @@ export default function CircularGeometryModelExtra() {
   }, [B])
 
   // 图表二: t-v 关系 (偏转时间 t 随速度 v 的响应)
+  // 逐点调用与中屏、看板同一个物理函数，避免出现第三份独立实现
   const tVsVPoints = useMemo(() => {
     const pts = []
     for (let vel = 1.0; vel <= 5.01; vel += 0.1) {
-      const R_val = vel / B
-      const xc_val = particleSign * R_val * Math.sin(angleRad)
-      const yc_val = -particleSign * R_val * Math.cos(angleRad)
-
-      const dt = 0.001
-      let tempT = 0.005
-      const maxT = 12.0
-      const omegaDir = -particleSign * B
-      const theta0 = angleRad + particleSign * Math.PI / 2
-      let tOutVal = maxT
-
-      while (tempT < maxT) {
-        const curTheta = theta0 + omegaDir * tempT
-        const curX = xc_val + R_val * Math.cos(curTheta)
-        const curY = yc_val + R_val * Math.sin(curTheta)
-
-        let inB = false
-        if (boundaryType === 0) {
-          inB = curY >= 0
-        } else if (boundaryType === 1) {
-          inB = curX >= -3.0 && curX <= 3.0 && curY >= 0 && curY <= 4.0
-        } else {
-          inB = curX * curX + (curY - 3.5) * (curY - 3.5) <= 3.5 * 3.5
-        }
-
-        if (!inB) {
-          tOutVal = tempT - dt / 2
-          break
-        }
-        tempT += dt
-      }
-      pts.push({ x: vel, y: tOutVal })
+      const { tOut } = computeCircularGeometryOrbit({
+        particleSign,
+        velocity: vel,
+        angleDeg: angle,
+        B,
+        boundaryType: boundaryType as MagBoundaryType,
+      })
+      pts.push({ x: vel, y: tOut })
     }
     return pts
-  }, [boundaryType, particleSign, B, angleRad])
+  }, [boundaryType, particleSign, B, angle])
 
   return (
     <div className="flex-1 min-h-0 flex flex-col p-4 gap-4 overflow-y-auto bg-neutral-50/20">

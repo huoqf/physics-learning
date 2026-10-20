@@ -108,17 +108,17 @@ export default function ClosedCircuit() {
         {/* ==================== 2. 高中物理规范电流矢量指示 ==================== */}
         {I > 0.02 && (
           <g fill={activeColor} stroke="none" opacity={0.9}>
-            {/* 顶路向右 */}
-            <polygon points={`240,${top - 4} 248,${top} 240,${top + 4}`} />
-            <polygon points={`550,${top - 4} 558,${top} 550,${top + 4}`} />
-            {/* 右路向下 */}
-            <polygon points={`${right - 4},85 ${right},93 ${right + 4},85`} />
-            <polygon points={`${right - 4},195 ${right},203 ${right + 4},195`} />
-            {/* 底路向左回流 */}
-            <polygon points={`590,${bottom - 4} 582,${bottom} 590,${bottom + 4}`} />
-            <polygon points={`210,${bottom - 4} 202,${bottom} 210,${bottom + 4}`} />
-            {/* 左路向上 */}
-            <polygon points={`${left - 4},145 ${left},137 ${left + 4},145`} />
+            {/* 底路：由电源正极（右接线柱）出、经右侧上行——外电路电流自正极流出 */}
+            <polygon points={`590,${bottom - 4} 598,${bottom} 590,${bottom + 4}`} />
+            <polygon points={`210,${bottom - 4} 218,${bottom} 210,${bottom + 4}`} />
+            {/* 右路向上 */}
+            <polygon points={`${right - 4},93 ${right},85 ${right + 4},93`} />
+            <polygon points={`${right - 4},203 ${right},195 ${right + 4},203`} />
+            {/* 顶路向左 */}
+            <polygon points={`248,${top - 4} 240,${top} 248,${top + 4}`} />
+            <polygon points={`558,${top - 4} 550,${top} 558,${top + 4}`} />
+            {/* 左路向下 */}
+            <polygon points={`${left - 4},137 ${left},145 ${left + 4},137`} />
           </g>
         )}
 

@@ -5,6 +5,8 @@ import {
   calculateCircularBoundaryExit,
   calcParticleRadius,
   calcParticlePeriod,
+  computeCircularGeometryOrbit,
+  type MagBoundaryType,
 } from '../../../physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import type { PhysicsPanelData } from '../types'
@@ -383,46 +385,20 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
     }
     case 'anim-magnetic-circular-geom': {
       const boundaryType = params.boundaryType ?? 0
-      const particleSign = params.particleSign ?? 1
+      const chargeSign = params.particleSign ?? 1
       const velocity = params.velocity ?? 3.0
       const angle = params.angle ?? 60
       const B = params.magneticB ?? 1.0
 
-      const angleRad = (angle * Math.PI) / 180
-      const R = velocity / B
-      const omega = B
-      
-      const xc = particleSign * R * Math.sin(angleRad)
-      const yc = -particleSign * R * Math.cos(angleRad)
-
-      // 迭代计算 tOut (dt = 1ms)
-      const dt = 0.001
-      const maxT = 12.0
-      let tOut = maxT
-      let t = 0.005
-      const omegaDir = -particleSign * omega
-      const theta0 = angleRad + particleSign * Math.PI / 2
-
-      while (t < maxT) {
-        const curTheta = theta0 + omegaDir * t
-        const curX = xc + R * Math.cos(curTheta)
-        const curY = yc + R * Math.sin(curTheta)
-
-        let inB = false
-        if (boundaryType === 0) {
-          inB = curY >= 0
-        } else if (boundaryType === 1) {
-          inB = curX >= -3.0 && curX <= 3.0 && curY >= 0 && curY <= 4.0
-        } else {
-          inB = curX * curX + (curY - 3.5) * (curY - 3.5) <= 3.5 * 3.5
-        }
-
-        if (!inB) {
-          tOut = t - dt / 2
-          break
-        }
-        t += dt
-      }
+      // 与中屏共用同一轨道解算（圆心/相位/出射时刻），避免两处各算一套
+      const { R, omega, xc, theta0, omegaDir, tOut } = computeCircularGeometryOrbit({
+        particleSign: chargeSign,
+        velocity,
+        angleDeg: angle,
+        B,
+        boundaryType: boundaryType as MagBoundaryType,
+      })
+      const particleSign = chargeSign
 
       // 计算实时停留时间
       const curT = time <= tOut ? time : tOut
@@ -435,9 +411,8 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
         triangleFormula = '(R - d)^2 + \\left(\\frac{L}{2}\\right)^2 = R^2'
       } else if (boundaryType === 1) {
         boundaryName = '矩形边界'
-        // 出射点的坐标
-        const omegaDirExit = -particleSign * omega
-        const thetaExit = theta0 + omegaDirExit * tOut
+        // 出射点的坐标（直接复用轨道解算的相位变化率与起始相位）
+        const thetaExit = theta0 + omegaDir * tOut
         const xOut = xc + R * Math.cos(thetaExit)
         triangleFormula = `(R - d)^2 + x_{\\text{offset}}^2 = R^2 \\implies (R - 4.0)^2 + (${Math.abs(xOut - xc).toFixed(2)})^2 = R^2`
       } else {

@@ -38,14 +38,15 @@ export function calculateAverageImpactForce(
 }
 
 /**
- * 计算缓冲垫碰撞时间（由软硬度推导）
- * 简化模型：k 越大垫越硬，碰撞时间越短
- * Δt ≈ m·v / (k·Δx)，其中 Δx 为缓冲压缩量
- * 简化为 Δt = m / k（k 为软硬度系数，单位 kg/s）
+ * 计算缓冲垫接触时间（粘性阻尼模型的时间常数）
+ * 模型：缓冲垫以粘性阻尼 k 吸收动量，动量衰减的时间常数为 m/k。
+ * Δt = m / k，其中 k 的单位是 kg/s（与界面标注一致）。
+ *
+ * 注意：若把 k 当成弹簧刚度（N/m），则必须改用 Δt = π√(m/k)，两者不可混用。
  *
  * @param m 物体质量 (kg)
- * @param k 缓冲垫软硬度系数 (kg/s)，必须 > 0
- * @returns dt 碰撞时间 (s)
+ * @param k 缓冲垫阻尼系数 (kg/s)，必须 > 0
+ * @returns dt 接触时间 (s)
  */
 export function calculateCollisionTime(m: number, k: number): number {
   return m / k
