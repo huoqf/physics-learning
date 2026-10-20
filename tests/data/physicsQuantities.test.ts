@@ -75,9 +75,9 @@ describe('buildPhysicsQuantities', () => {
     expect(find(qs, '动量守恒相对偏差')).toBe('+0.00%')
   })
 
-  it('未知动画回退为参数键值列表', () => {
+  it('未知动画没有任何声明，兜底为空而不是猜标签', () => {
     const qs = buildPhysicsQuantities('anim-unknown', { foo: 1 }, 0)
-    expect(qs.quantities.some((q) => q.label === 'foo')).toBe(true)
+    expect(qs.quantities).toHaveLength(0)
   })
 
   // ===== 电磁学 · 静电场（M4-1）=====

@@ -113,6 +113,16 @@ export function getAnimationConfig(id: string): AnimationConfig | undefined {
   return fullRegistry[id]
 }
 
+/**
+ * 列出全部动画 ID（按注册表顺序）。
+ *
+ * 仅供测试与工具使用——调用前需先 `await ensureExtendedRegistry()`，
+ * 否则只能拿到 core 部分。用于「全量守卫」类检查，例如兜底看板是否每个动画都非空。
+ */
+export function getAllAnimationIds(): string[] {
+  return Object.keys(fullRegistry)
+}
+
 /** 异步获取 config（extended 动画自动触发懒加载） */
 export async function getAnimationConfigAsync(id: string): Promise<AnimationConfig | undefined> {
   if (!fullRegistry[id]) {

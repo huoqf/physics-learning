@@ -2,6 +2,8 @@ import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, FlaskConical, Play } from 'lucide-react'
 import { buildPhysicsQuantities, preloadQuantityBuilder } from '@/data/physicsQuantities'
+import { buildParamVocabulary } from '@/data/paramVocabulary'
+import type { ControlMeta, ParamMeta } from '@/data/types'
 import { getAnimationConfig } from '@/data/animationRegistry'
 import { knowledgeTree } from '@/data/knowledgeTree'
 import { useAnimationStore } from '@/stores'
@@ -222,8 +224,12 @@ function AnimationCenter({
  */
 function RightPhysicsPanel({
   animId,
+  paramMeta,
+  controlMeta,
 }: {
   animId: string
+  paramMeta: ParamMeta[]
+  controlMeta?: ControlMeta[]
 }) {
   const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
@@ -244,12 +250,18 @@ function RightPhysicsPanel({
   }, [animId])
   // 播放时用 0.1s 精度减少重算，拖动时用精确时间保持响应
   const effectiveTime = isPlaying ? Math.round(time * 10) / 10 : time
+  // 兜底看板的中文名与单位一律取自本动画自己的 paramMeta / controlMeta，
+  // 不做任何"按键名猜标签"的全域映射（同一个 L 在不同动画里是不同物理量）。
+  const vocabulary = useMemo(
+    () => buildParamVocabulary(paramMeta, controlMeta, params),
+    [paramMeta, controlMeta, params],
+  )
   const physicsQuantities = useMemo(
     () => {
       void builderReady // 引用就绪标记：构建器预载完成翻转时触发重算，从兜底数据切换为真实物理量
-      return buildPhysicsQuantities(animId, params, effectiveTime, lastChangedParam)
+      return buildPhysicsQuantities(animId, params, effectiveTime, lastChangedParam, vocabulary)
     },
-    [animId, params, effectiveTime, lastChangedParam, builderReady]
+    [animId, params, effectiveTime, lastChangedParam, builderReady, vocabulary]
   )
 
   return (
@@ -563,7 +575,7 @@ export default function AnimationPage() {
               />
             </div>
           ) : (
-            <RightPhysicsPanel animId={config.id} />
+            <RightPhysicsPanel animId={config.id} paramMeta={paramMeta} controlMeta={config.controlMeta} />
           )
         }
       />

@@ -4,7 +4,8 @@
  * 按动画 ID 懒加载对应的物理量构建模块，避免将全部 2500+ 行代码打入主 bundle。
  * 构建器加载后缓存，后续帧调用为同步执行，不影响 60fps 渲染。
  */
-import type { PhysicsPanelData, QuantityBuilder } from './quantities/types'
+import type { PhysicsPanelData, PhysicsQuantity, QuantityBuilder } from './quantities/types'
+import type { ParamVocabEntry } from './paramVocabulary'
 
 // 重导出类型，保持对外接口不变
 export type { PhysicsQuantity, GaokaoPoint, Formula, PhysicsPanelData } from './quantities/types'
@@ -258,6 +259,7 @@ export function buildPhysicsQuantities(
   params: Record<string, number>,
   time: number,
   lastChangedParam?: string | null,
+  vocabulary?: Map<string, ParamVocabEntry>,
 ): PhysicsPanelData {
   const builder = builderCache.get(animId)
   if (builder) {
@@ -271,45 +273,27 @@ export function buildPhysicsQuantities(
     if (result) return result
   }
 
-/**
- * 常见物理参数英文键名 → 规范中文标签映射。
- *
- * 仅用于构建器异步加载的首帧短暂兜底，杜绝向用户吐出裸英文键名。
- */
-const COMMON_PARAM_LABELS: Record<string, string> = {
-  // 电磁学
-  L: '电感 L',
-  C: '电容 C',
-  Q0: '初始电荷量 Q₀',
-  showDamping: '阻尼衰减',
-  fEM: '频率 f',
-  scene: '演示场次',
-  band: '电磁波谱段',
-  B: '磁感应强度 B',
-  E: '电场强度 E',
-  U: '电压 U',
-  I: '电流 I',
-  R: '电阻 R',
-  r: '内阻 r',
-  // 力学与通用
-  m: '质量 m',
-  v0: '初速度 v₀',
-  v: '速度 v',
-  a: '加速度 a',
-  theta: '倾角 θ',
-  mu: '动摩擦因数 μ',
-  k: '劲度系数 k',
-  h: '高度 h',
-  x: '位移 x',
-  t: '时间 t',
+  return buildFallbackPanel(params, vocabulary)
 }
 
-  // 兜底：构建器未加载或不匹配时，返回参数列表（映射为规范中文标签）
-  return {
-    quantities: Object.entries(params).map(([key, value]) => ({
-      label: COMMON_PARAM_LABELS[key] ?? key,
-      value,
-      unit: '',
-    })),
+/**
+ * 兜底看板：构建器尚未加载（或该动画压根没有构建器）时的占位内容。
+ *
+ * 只显示该动画**声明过**的参数，名与单位取自 `paramMeta` / `controlMeta`
+ * （见 `paramVocabulary.ts`）。词表缺失时宁可为空，也不按键名猜标签——
+ * 裸英文键（`mu1`）和串域标签（木板长度 `L` → 「电感 L」）都比空白更糟。
+ */
+function buildFallbackPanel(
+  params: Record<string, number>,
+  vocabulary?: Map<string, ParamVocabEntry>,
+): PhysicsPanelData {
+  if (!vocabulary || vocabulary.size === 0) return { quantities: [] }
+
+  const quantities: PhysicsQuantity[] = []
+  for (const [key, entry] of vocabulary) {
+    const value = params[key]
+    if (value == null) continue
+    quantities.push({ label: entry.label, value, unit: entry.unit ?? '' })
   }
+  return { quantities }
 }

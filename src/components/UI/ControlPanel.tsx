@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react'
 import type { ControlMeta, ControlCondition } from '@/data/types'
+import { isEntryVisible } from '@/data/paramVocabulary'
 import { OptionButton } from './OptionButton'
 import { Button } from './Button'
 import { SegmentedControl } from './SegmentedControl'
@@ -22,27 +23,6 @@ interface ControlPanelProps {
   toggleDualObjects?: () => void
   storeStates?: Record<string, boolean>
   disabled?: boolean
-}
-
-function matchesConditionValue(actual: number | undefined, expected: number | readonly number[]): boolean {
-  if (Array.isArray(expected)) {
-    return actual != null && (expected as readonly number[]).includes(actual)
-  }
-  return actual === expected
-}
-
-function isControlVisible(control: ControlMeta, params: Record<string, number>) {
-  if (control.showIf) {
-    if (control.showIfValue != null) {
-      if (!matchesConditionValue(params[control.showIf], control.showIfValue)) return false
-    } else if (!params[control.showIf]) {
-      return false
-    }
-  }
-  if (control.hideIf && control.hideIfValue != null) {
-    if (matchesConditionValue(params[control.hideIf], control.hideIfValue)) return false
-  }
-  return true
 }
 
 function defaultGroup(control: ControlMeta) {
@@ -83,7 +63,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   disabled = false,
 }) => {
   const groups = useMemo(() => {
-    const visibleControls = controls.filter((control) => isControlVisible(control, params))
+    const visibleControls = controls.filter((control) => isEntryVisible(control, params))
     const grouped: Array<{ label: string; controls: ControlMeta[] }> = []
     const indexByGroup = new Map<string, number>()
 
