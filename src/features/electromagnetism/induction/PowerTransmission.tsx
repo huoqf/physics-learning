@@ -75,7 +75,7 @@ export default function PowerTransmission() {
     spawnInterval, lineColor, blurStd, shadowOpacity, lineWidth,
     chartTop, chartBottom, nodeY, plantX, stepUpX, lineStartX, lineEndX,
     stepDownX, userX, voltagePoints, idealPoints, ratedY, u3Y,
-    bulbCount, bulbSpacing, bulbsStartX,
+    bulbCount, bulbSpacing, bulbsStartX, U1, isStepUp,
   } = pt
   const {
     P1: P1_real, I_line, deltaU, P_loss, U3, U4, P_user, eta, isOverloaded,
@@ -242,6 +242,8 @@ export default function PowerTransmission() {
           I_line={I_line}
           P_loss={P_loss}
           U2={(params.U2 ?? 10) * 1000}
+          U1={U1}
+          isStepUp={isStepUp}
           U3={U3}
           P_user={P_user}
           P1_real={P1_real}

@@ -232,10 +232,18 @@ export async function preloadQuantityBuilder(animId: string): Promise<void> {
   const reg = quantityRegistry[animId]
   if (!reg) return
 
-  const module = await reg.loader()
-  const builder = module[reg.builderName]
-  if (builder) {
-    builderCache.set(animId, builder)
+  // 绝不让本函数 reject：调用方依赖它 resolve 后触发一次重渲染来脱离首帧兜底。
+  // 若动态 import 因 HMR / 网络抖动失败，此处吞掉异常并给出告警，下次进入再重试。
+  try {
+    const module = await reg.loader()
+    const builder = module[reg.builderName]
+    if (builder) {
+      builderCache.set(animId, builder)
+    } else {
+      console.warn(`[quantities] 构建器 ${reg.builderName} 不存在于模块中（${animId}）`)
+    }
+  } catch (err) {
+    console.warn(`[quantities] 构建器加载失败（${animId}），将停留兜底数据：`, err)
   }
 }
 

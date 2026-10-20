@@ -61,22 +61,24 @@ export function handleVelocity(
     const x1 = v * t1
     const x2 = v * t2
     const { vBar } = calculateAverageVelocity(x1, x2, t1, t2)
-    const isDeltaTSmall = deltaT <= 0.05
-    const conceptStatus = isDeltaTSmall
-      ? 'Δt 极小，平均速度≈瞬时速度'
-      : deltaT <= 0.5
-        ? 'Δt 较小，平均速度接近瞬时速度'
-        : 'Δt 较大，平均速度无法代表该瞬间'
 
+    // 基础模式是匀速直线运动：任意 Δt 内 v̄ 恒等于 v，本身就无法体现"两者分离"。
+    // 旧文案按 Δt 大小硬写"Δt 较大，平均速度无法代表该瞬间"，与同屏显示的 v̄ = v 自相矛盾。
     return {
       quantities: [
         ...base,
-        { label: '平均速度 v̄', value: vBar, unit: 'm/s', highlight: 'positive' as const },
-        { label: '概念状态', value: conceptStatus, unit: '' },
+        { label: '瞬时速度 v', value: v, unit: 'm/s', highlight: 'positive' as const },
+        { label: '平均速度 v̄', value: vBar, unit: 'm/s' },
+        {
+          label: '概念状态',
+          value: '匀速运动：任意时段内 v̄ ≡ v（Δt 再大也相等）；要观察 v̄ 随 Δt 收缩而趋近瞬时值，请切到「进阶：变速运动」',
+          unit: '',
+        },
       ],
       gaokaoPoints: [
         { text: '速度是矢量，方向就是物体此时的运动方向', importance: 'core' as const },
-        { text: '平均速度大小不一定等于平均速率', importance: 'hard' as const },
+        { text: '平均速度 = 位移 / 时间，方向与位移同向，与平均速率无关', importance: 'hard' as const },
+        { text: '只有变速运动中平均速度才与瞬时速度不等，"Δt→0"才成为求瞬时速度的方法', importance: 'hard' as const },
       ],
     }
   } else {

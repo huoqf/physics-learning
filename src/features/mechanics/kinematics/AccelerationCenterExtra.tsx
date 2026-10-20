@@ -184,13 +184,16 @@ export default function AccelerationCenterExtra() {
   const animHeight = height * LAYOUT.ANIMATION_HEIGHT_RATIO
 
   // ── x-t 图数据 ──
+  // 追及模式下轿车（A）初始就在前方 deltaX0 处，警车（B）从 0 出发——
+  // 必须与路面图 `carAX = startX + (deltaX0 + xA)` 用同一套绝对位置，否则图上两车起点互换。
   const xtDataA = useMemo(() => {
     const pts: { t: number; x: number }[] = []
+    const x0 = chaseMode === 0 ? deltaX0 : 0
     for (let t = 0; t <= maxTime; t += 0.1) {
-      pts.push({ t, x: vA * t })
+      pts.push({ t, x: x0 + vA * t })
     }
     return pts
-  }, [vA, maxTime])
+  }, [vA, maxTime, chaseMode, deltaX0])
 
   const xtDataB = useMemo(() => {
     const pts: { t: number; x: number }[] = []
@@ -198,9 +201,9 @@ export default function AccelerationCenterExtra() {
       const t1 = t0 + vMax / aB_chase
       for (let t = 0; t <= maxTime; t += 0.1) {
         let x: number
-        if (t < t0) { x = deltaX0 }
-        else if (t < t1) { x = deltaX0 + 0.5 * aB_chase * (t - t0) * (t - t0) }
-        else { x = deltaX0 + 0.5 * aB_chase * (t1 - t0) * (t1 - t0) + vMax * (t - t1) }
+        if (t < t0) { x = 0 }
+        else if (t < t1) { x = 0.5 * aB_chase * (t - t0) * (t - t0) }
+        else { x = 0.5 * aB_chase * (t1 - t0) * (t1 - t0) + vMax * (t - t1) }
         pts.push({ t, x })
       }
     } else {
@@ -209,7 +212,7 @@ export default function AccelerationCenterExtra() {
       }
     }
     return pts
-  }, [chaseMode, vL, vMax, t0, aB_chase, aB_meet, deltaX0, maxTime])
+  }, [chaseMode, vL, vMax, t0, aB_chase, aB_meet, maxTime])
 
   // ── v-t 图数据 ──
   const vtDataA = useMemo(() => {
@@ -283,6 +286,12 @@ export default function AccelerationCenterExtra() {
   // 车辆位置（轿车初始在前方 deltaX0 米处）
   const carAX = startX + (chaseMode === 0 ? deltaX0 + state.xA : state.xA) * scale
   const carBX = startX + (chaseMode === 0 ? state.xB : state.xB) * scale
+
+  // 读数必须与上面两图和路面图共用同一套绝对位置：calculatePoliceChase 返回的
+  // state.xA 是相对轿车自身起点的位移，直接显示会让 t=0 出现 x_A=0、x_B=0 却
+  // Δx=80 的自我矛盾（三角形不闭合）。
+  const dispXA = chaseMode === 0 ? deltaX0 + state.xA : state.xA
+  const dispXB = state.xB
 
   // ── 矢量场景配置 ──
   const sceneScale = useSceneScale({
@@ -475,10 +484,10 @@ export default function AccelerationCenterExtra() {
               t = {time.toFixed(1)} s
             </text>
             <text x={roadLeft + 120} y={30} fontSize={font(13)} fill={PHYSICS_COLORS.displacement} fontWeight="bold">
-              x_A = {state.xA.toFixed(1)} m
+              x_A = {dispXA.toFixed(1)} m
             </text>
             <text x={roadLeft + 260} y={30} fontSize={font(13)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">
-              x_B = {state.xB.toFixed(1)} m
+              x_B = {dispXB.toFixed(1)} m
             </text>
             <text x={roadLeft + 400} y={30} fontSize={font(13)} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">
               Δx = {state.deltaX.toFixed(1)} m

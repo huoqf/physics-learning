@@ -16,6 +16,10 @@ export interface VoltagePoint {
 }
 
 export interface PowerTransmissionPhysics {
+  /** 发电机端电压（首级变压器原边，定值） */
+  U1: number
+  /** 首级变压器是否升压（U₂ ≥ U₁） */
+  isStepUp: boolean
   /** 物理因变量 */
   physics: {
     P1: number
@@ -152,19 +156,27 @@ export function usePowerTransmissionPhysics(
   const lineWidth = px(2) + heatIntensity * px(3)
 
   // ─── 电压剖面图数据 ──────────────────────────────────────────────────────────
+  // U₁ 为发电机端电压（定值 10 kV），U₂ 由升压变压器抬升后送入线路。
   const U1_display = 10000
-  const minVisibleDrop = px(30)
   const voltageDropRatio = Math.min(1, Math.max(0, deltaU / U2))
-  const actualDropPixels = (chartBottom - chartTop) * voltageDropRatio
-  const visibleDropPixels = Math.max(actualDropPixels, minVisibleDrop)
+  // 纵向按「15% 相对压降占满」的比例映射，并去掉固定像素下限：
+  // 原来 Math.max(…, px(30)) 会吃掉小压降，U₂ 从 50kV 调到 12kV 时 ΔU 变 4 倍画面却纹丝不动。
+  const visibleDropPixels = (chartBottom - chartTop) * 0.7 * Math.min(1, voltageDropRatio / 0.15)
   const u3Y = chartTop + visibleDropPixels
+
+  // U₂ < U₁ 时首级变压器实为降压，剖面与标注都要跟着翻转，否则画面会"升压"给一个已降低的电压
+  const isStepUp = U2 >= U1_display
+  const u1Y = isStepUp ? chartBottom : chartTop
+  const u2Y = isStepUp
+    ? chartTop
+    : chartTop + (chartBottom - chartTop) * 0.45 * (1 - U2 / U1_display)
 
   const u4Target = 220 * (k / 0.02)
   const u4Y = chartBottom - (chartBottom - chartTop) * 0.7 * (u4Target === 0 ? 0 : U4 / u4Target)
 
   const voltagePoints: VoltagePoint[] = [
-    { x: plantX, y: chartBottom, label: 'U₁', value: U1_display },
-    { x: stepUpX, y: chartTop, label: 'U₂', value: U2 },
+    { x: plantX, y: u1Y, label: 'U₁', value: U1_display },
+    { x: stepUpX, y: u2Y, label: 'U₂', value: U2 },
     { x: lineEndX, y: u3Y, label: 'U₃', value: U3 },
     { x: userX, y: u4Y, label: 'U₄', value: U4 },
   ]
@@ -185,6 +197,8 @@ export function usePowerTransmissionPhysics(
 
   return {
     physics: { P1: P1_real, I_line, deltaU, P_loss, U3, U4, P_user, eta, isOverloaded },
+    U1: U1_display,
+    isStepUp,
     heatIntensity,
     voltageRatio,
     userBrightness,

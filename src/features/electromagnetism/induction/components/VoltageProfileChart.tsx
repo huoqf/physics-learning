@@ -56,16 +56,16 @@ export function VoltageProfileChart({
       <line x1={plantX} y1={chartBottom} x2={userX + px(20)} y2={chartBottom}
         stroke={PHYSICS_COLORS.grid} strokeWidth={px(1)} />
 
-      {/* 实际电压折线下方面积渐变填充 */}
+      {/* 实际电压折线下方面积渐变填充（首段取 U₁/U₂ 的实际高度，兼容降压情形） */}
       <path
-        d={`M ${plantX} ${chartBottom} L ${plantX} ${chartBottom} L ${stepUpX} ${chartTop} L ${lineEndX} ${voltagePoints[2].y} L ${userX} ${voltagePoints[3].y} L ${userX} ${chartBottom} Z`}
+        d={`M ${plantX} ${chartBottom} L ${plantX} ${voltagePoints[0].y} L ${stepUpX} ${voltagePoints[1].y} L ${lineEndX} ${voltagePoints[2].y} L ${userX} ${voltagePoints[3].y} L ${userX} ${chartBottom} Z`}
         fill="url(#chartAreaGrad)"
       />
 
       {/* 输电线损耗高亮三角形区域 */}
       {deltaU > 5 && (
         <path
-          d={`M ${stepUpX} ${chartTop} L ${lineEndX} ${chartTop} L ${lineEndX} ${voltagePoints[2].y} Z`}
+          d={`M ${stepUpX} ${voltagePoints[1].y} L ${lineEndX} ${voltagePoints[1].y} L ${lineEndX} ${voltagePoints[2].y} Z`}
           fill={TRANSMISSION_COLORS.powerLoss}
           opacity="0.1"
         />
@@ -129,10 +129,10 @@ export function VoltageProfileChart({
         标准 220V
       </text>
 
-      {/* ΔU 标注 */}
-      <line x1={stepUpX + px(10)} y1={chartTop} x2={stepUpX + px(10)} y2={voltagePoints[2].y}
+      {/* ΔU 标注（自 U₂ 处起算，兼容首级为降压时的剖面） */}
+      <line x1={stepUpX + px(10)} y1={voltagePoints[1].y} x2={stepUpX + px(10)} y2={voltagePoints[2].y}
         stroke={TRANSMISSION_COLORS.powerLoss} strokeWidth={px(1.5)} strokeDasharray="3 2" />
-      <text x={stepUpX + px(18)} y={(chartTop + voltagePoints[2].y) / 2} fontSize={font(10)}
+      <text x={stepUpX + px(18)} y={(voltagePoints[1].y + voltagePoints[2].y) / 2} fontSize={font(10)}
         fill={TRANSMISSION_COLORS.powerLoss} textAnchor="start">
         ΔU={deltaU.toFixed(0)}V
       </text>

@@ -62,9 +62,11 @@ export default function ClapeyronCenterExtra() {
     },
   ], [V, P])
 
-  // 5. Y 轴的显示极限 (温度为 T_MAX 时的极限压强 P)
+  // 5. Y 轴显示上限：以「可视窗口中段体积 × 最高温度」为满量程基准。
+  // 旧实现取角点 (V_MIN, T_MAX) 的压强（p ∝ 1/V，此处达 5×10⁷ Pa），
+  // 使常态 5×10⁵ Pa 只占纵轴 1%，250~500 K 六条等温线全叠在底部一条线上。
   const yMax = useMemo(
-    () => solveClapeyron({ key: 'V', value: V_MIN }, { key: 'T', value: T_MAX }, 'P', N_DEFAULT),
+    () => 1.2 * solveClapeyron({ key: 'V', value: V_MAX / 2 }, { key: 'T', value: T_MAX }, 'P', N_DEFAULT),
     [],
   )
 

@@ -719,10 +719,22 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       const a1 = p.mu1 * g
       const a2 = (p.mu1 * p.m * g - p.mu2 * (p.m + p.M) * g) / p.M
       const effA2 = a2 > 0 ? a2 : 0
-      const tCo = p.v0 / (a1 + effA2)
-      return [
-        { time: Number(tCo.toFixed(2)), label: '恰好滑动共速', variant: 'critical', autoPause: true },
+      const relA = a1 + effA2 // 相对减速度
+      // ① 共速时刻：v₀ − relA·t = 0
+      const tCo = relA > 1e-9 ? p.v0 / relA : Infinity
+      // ② 滑离时刻：相对位移 v₀t − ½·relA·t² = L（取小根）
+      const disc = p.v0 * p.v0 - 2 * relA * p.L
+      const tFall = disc >= 0 && relA > 1e-9 ? (p.v0 - Math.sqrt(disc)) / relA : Infinity
+      // 谁先发生谁才是真正的临界事件：默认参数下 tFall≈0.6 s 远早于 tCo≈1.7 s，
+      // 旧实现无条件标注"恰好滑动共速"，等于给了一个永远到不了的时刻。
+      const events = [
+        { time: tCo, label: '恰好滑动共速' },
+        { time: tFall, label: '滑块滑离木板' },
       ]
+        .filter((e) => Number.isFinite(e.time) && e.time > 0)
+        .sort((a, b) => a.time - b.time)
+      if (events.length === 0) return []
+      return [{ time: Number(events[0].time.toFixed(2)), label: events[0].label, variant: 'critical' as const, autoPause: true }]
     },
     defaultParams: {
       m: 1,

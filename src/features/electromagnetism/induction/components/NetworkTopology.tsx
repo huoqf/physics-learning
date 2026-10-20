@@ -32,6 +32,10 @@ interface NetworkTopologyProps {
   I_line: number
   P_loss: number
   U2: number
+  /** 发电机端电压（首级变压器原边） */
+  U1?: number
+  /** 首级变压器是否为升压（U₂ ≥ U₁） */
+  isStepUp?: boolean
   U3: number
   P_user: number
   P1_real: number
@@ -71,6 +75,8 @@ export function NetworkTopology({
   I_line,
   P_loss,
   U2,
+  U1 = 10000,
+  isStepUp = true,
   U3,
   P_user,
   P1_real,
@@ -227,11 +233,11 @@ export function NetworkTopology({
         />
         <text x={0} y={px(48)} fontSize={font(11)}
           fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
-          升压变压器
+          {isStepUp ? '升压变压器' : '降压变压器'}
         </text>
         <text x={0} y={px(60)} fontSize={font(8.5)} fill={PHYSICS_COLORS.axis}
           textAnchor="middle">
-          U₂={(U2 / 1000).toFixed(0)}kV
+          {(U1 / 1000).toFixed(0)}kV → {(U2 / 1000).toFixed(0)}kV
         </text>
       </g>
 

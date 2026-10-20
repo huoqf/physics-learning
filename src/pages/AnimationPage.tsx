@@ -235,7 +235,9 @@ function RightPhysicsPanel({
   useEffect(() => {
     let alive = true
     setBuilderReady(false)
-    preloadQuantityBuilder(animId).then(() => {
+    // 用 finally 而不是 then：无论加载成功、失败还是超时，都要翻转一次就绪标记，
+    // 否则右面板会一直停在英文参数兜底列表，直到用户碰一下参数才刷新。
+    preloadQuantityBuilder(animId).finally(() => {
       if (alive) setBuilderReady(true)
     })
     return () => { alive = false }
