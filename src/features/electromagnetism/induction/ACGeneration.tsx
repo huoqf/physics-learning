@@ -9,11 +9,10 @@
  * @agent-rule 3D 投影常量定义于 PROJ / LAYOUT 命名对象
  * @agent-rule 中间屏左右分区：左侧 SVG 仿真，右侧 MiniChart 时序曲线
  */
-import { useRef, useMemo, useCallback } from 'react'
+import { useMemo, useCallback } from 'react'
 import { useAnimationViewport } from '@/hooks'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { useAnimationFrame } from '@/utils/animation'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, FONT, withAlpha } from '@/theme/physics'
 import { colors } from '@/theme/colors'
@@ -57,11 +56,10 @@ const LAYOUT = {
 } as const
 
 export default function ACGeneration() {
-  const { params, isPlaying, speed } = useAnimationStore(
+  const { params, time } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
-      isPlaying: s.isPlaying,
-      speed: s.speed,
+      time: s.time,
     }))
   )
   const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
@@ -76,13 +74,8 @@ export default function ACGeneration() {
   const showVelocityDecomp = params.showVelocityDecomp ?? 0
   const showCoilNormal = params.showCoilNormal ?? 0
 
-  // ── 动画时间 ──────────────────────────────────────────────────────────────
-  const tRef = useRef(0)
-  useAnimationFrame(
-    (dt) => { tRef.current += (dt / 1000) * (speed ?? 1) },
-    { playing: isPlaying, speed: speed ?? 1 }
-  )
-  const t = tRef.current
+  // ── 动画时间：直接与全局 store 时间同步，支持进度拖动与重置清零 ─────────────
+  const t = time
 
   // ── 物理状态计算（纯函数） ──────────────────────────────────────────────
   const state = useMemo(
@@ -200,30 +193,47 @@ export default function ACGeneration() {
   )
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // MiniChart 时序数据
+  // MiniChart 时序数据（独立双轴：Φ 与 e 各自拥有独立饱满的量程）
+  //
+  // 曲线按解析模型采样，而不是在 render 里累积历史点：
+  // 历史点在"暂停 / 拖动进度条 / 重置"时要么停止增长，要么留下旧时间段的点，
+  // 一旦拖动就会出现"看板有数、图线空白"或"图线相位与游标错位"。
+  // Φ(t) 与 e(t) 都是闭式函数，直接按 [tMin, tMax] 采样再由 MiniChart 在游标处裁剪，
+  // 播放、暂停、拖动任意切换都只取决于当前 t。
   // ═══════════════════════════════════════════════════════════════════════════
   const CHART_WINDOW = 8
-  const histRef = useRef<{ t: number; phi: number; e: number }[]>([])
-  if (isPlaying) {
-    histRef.current.push({ t, phi, e })
-    const cut = t - CHART_WINDOW
-    histRef.current = histRef.current.filter((p) => p.t >= cut)
-  }
-  const hist = histRef.current
   const tMin = Math.max(0, t - CHART_WINDOW)
   const tMax = t > CHART_WINDOW ? t : CHART_WINDOW
 
-  const chartLines: MiniChartLine[] = useMemo(() => [
-    { key: 'phi', color: PHYSICS_COLORS.magneticField, name: 'Φ (Wb)', strokeWidth: 2 },
-    { key: 'e', color: PHYSICS_COLORS.emf, name: 'e (V)', strokeWidth: 2 },
+  const hist = useMemo(() => {
+    const samples = 240
+    const pts: { t: number; phi: number; e: number }[] = []
+    for (let i = 0; i <= samples; i++) {
+      const tt = tMin + ((tMax - tMin) * i) / samples
+      const s = computeACGenerationState(B, S, omega, N, initialPhase, tt)
+      pts.push({ t: tt, phi: s.phi, e: s.e })
+    }
+    return pts
+  }, [tMin, tMax, B, S, omega, N, initialPhase])
+
+  const phiMax = B * S
+  const phiLines: MiniChartLine[] = useMemo(() => [
+    { key: 'phi', color: PHYSICS_COLORS.magneticField, name: 'Φ (Wb)', strokeWidth: 2, valueDigits: 4 },
   ], [])
 
-  const chartStaticLines: MiniChartStaticLine[] = useMemo(() => [
-    { value: Em, color: PHYSICS_COLORS.emf, strokeDasharray: '4,4', name: 'Em' },
+  const eLines: MiniChartLine[] = useMemo(() => [
+    { key: 'e', color: PHYSICS_COLORS.emf, name: 'e (V)', strokeWidth: 2, valueDigits: 2 },
+  ], [])
+
+  const phiStaticLines: MiniChartStaticLine[] = useMemo(() => [
+    { value: phiMax, color: PHYSICS_COLORS.magneticField, strokeDasharray: '4,4', name: '+BS', valueDigits: 4 },
+    { value: -phiMax, color: PHYSICS_COLORS.magneticField, strokeDasharray: '4,4', name: '-BS', valueDigits: 4 },
+  ], [phiMax])
+
+  const eStaticLines: MiniChartStaticLine[] = useMemo(() => [
+    { value: Em, color: PHYSICS_COLORS.emf, strokeDasharray: '4,4', name: '+Em' },
     { value: -Em, color: PHYSICS_COLORS.emf, strokeDasharray: '4,4', name: '-Em' },
-    { value: B * S, color: PHYSICS_COLORS.magneticField, strokeDasharray: '4,4', name: 'BS' },
-    { value: -B * S, color: PHYSICS_COLORS.magneticField, strokeDasharray: '4,4', name: '-BS' },
-  ], [Em, B, S])
+  ], [Em])
 
   // ═══════════════════════════════════════════════════════════════════════════
   return (
@@ -404,34 +414,57 @@ export default function ACGeneration() {
 
     </AnimationSvgCanvas>
 
-    {/* ═══════════ 右侧 HTML 层 MiniChart 时序曲线 ════════════ */}
+    {/* ═══════════ 右侧 HTML 层 MiniChart 时序曲线（拆分独立双图） ════════════ */}
     <div
-      className="absolute"
+      className="absolute flex flex-col justify-between"
       style={{
         left: CHARTL * vp.scale + vp.tx,
         top: vp.ty,
         width: CHARTW * vp.scale,
         height: H * vp.scale,
         padding: font(8),
+        gap: font(8),
+        boxSizing: 'border-box',
       }}
     >
-      <MiniChart
-        title="Φ − t 与 e − t 时序曲线"
-        xMin={tMin}
-        xMax={tMax}
-        yMin={-(Em * 1.3 || 1)}
-        yMax={Em * 1.3 || 1}
-        points={hist}
-        lines={chartLines}
-        xKey="t"
-        yLabel="Φ (Wb) / e (V)"
-        xLabel="t / s"
-        currentVals={{ phi, e }}
-        currentXVal={t}
-        staticLines={chartStaticLines}
-        minWidth={200}
-        minHeight={H - 20}
-      />
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <MiniChart
+          title="磁通量 Φ − t 图像"
+          xMin={tMin}
+          xMax={tMax}
+          yMin={-(phiMax * 1.3 || 0.01)}
+          yMax={phiMax * 1.3 || 0.01}
+          points={hist}
+          lines={phiLines}
+          xKey="t"
+          yLabel="Φ (Wb)"
+          xLabel="t / s"
+          currentVals={{ phi }}
+          currentXVal={t}
+          staticLines={phiStaticLines}
+          minWidth={CHARTW - 20}
+          minHeight={(H - 30) / 2}
+        />
+      </div>
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <MiniChart
+          title="感应电动势 e − t 图像"
+          xMin={tMin}
+          xMax={tMax}
+          yMin={-(Em * 1.3 || 1)}
+          yMax={Em * 1.3 || 1}
+          points={hist}
+          lines={eLines}
+          xKey="t"
+          yLabel="e (V)"
+          xLabel="t / s"
+          currentVals={{ e }}
+          currentXVal={t}
+          staticLines={eStaticLines}
+          minWidth={CHARTW - 20}
+          minHeight={(H - 30) / 2}
+        />
+      </div>
     </div>
     </div>
   )

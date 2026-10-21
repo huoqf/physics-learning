@@ -108,6 +108,46 @@ describe('全量守卫：每个动画的兜底看板都不能空、不能吐英�
     await ensureExtendedRegistry()
   })
 
+  it('枚举型参数显示中文选项名，而不是被格式化成 6.00 / 0.00', async () => {
+    await ensureExtendedRegistry()
+    const config = getAnimationConfig('anim-multimeter')!
+    const params = config.defaultParams as Record<string, number>
+    const vocab = buildParamVocabulary(config.paramMeta, config.controlMeta, params)
+    // 用不存在的 animId 强制走兜底分支（构建器缓存不会介入）
+    const panel = buildPhysicsQuantities('anim-fallback-probe', params, 0, null, vocab)
+    const get = (label: string) => panel.quantities.find((q) => q.label === label)?.value
+
+    expect(get('电表挡位选择')).toBe('Ω ×1') // rangeIndex: 6
+    expect(get('待测器件插座')).toBe('定值电阻') // componentType: 0
+    // 连续参数仍按数值显示，且保留单位
+    expect(get('待测定值阻值 Rx')).toBe(30)
+    expect(panel.quantities.find((q) => q.label === '待测定值阻值 Rx')?.unit).toBe('Ω')
+  })
+
+  it('全站枚举参数都能翻成中文，且不会出现纯数字挡位', async () => {
+    await ensureExtendedRegistry()
+    const offenders: string[] = []
+
+    for (const id of getAllAnimationIds()) {
+      const config = getAnimationConfig(id)
+      if (!config) continue
+      const params = config.defaultParams as Record<string, number>
+      const paramMeta = config.buildParamMeta
+        ? config.buildParamMeta(params)
+        : config.paramMeta ?? []
+      const vocab = buildParamVocabulary(paramMeta, config.controlMeta, params)
+
+      for (const [key, entry] of vocab) {
+        if (!entry.options || params[key] == null) continue
+        const matched = entry.options.find((o) => o.value === params[key])
+        if (!matched) continue
+        if (matched.label === key) offenders.push(`${id}:${key}`)
+      }
+    }
+
+    expect(offenders).toEqual([])
+  })
+
   it('124 个动画的默认参数都能解析出可读的中文名', () => {
     const ids = getAllAnimationIds()
     expect(ids).toHaveLength(ANIMATION_COUNT)

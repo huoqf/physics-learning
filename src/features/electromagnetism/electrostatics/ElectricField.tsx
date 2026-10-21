@@ -11,6 +11,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useElectricFieldPhysics } from './hooks/useElectricFieldPhysics'
+import { TWO_CHARGE_SEPARATION_M } from '@/physics'
 import { ElectricFieldBasicScene } from './ElectricFieldBasicScene'
 import { ElectricFieldAdvancedScene } from './ElectricFieldAdvancedScene'
 import { useSceneScale } from '@/hooks'
@@ -52,10 +53,12 @@ export default function ElectricField() {
   const cx = w * 0.3
   const cy = centerY
 
-  // 进阶模式下的两个固定源电荷位置
+  // 进阶模式下的两个固定源电荷位置。
+  // 间距由物理层的 TWO_CHARGE_SEPARATION_M 反推（6cm × pxPerCm），
+  // 不再写死 0.52w —— 画布宽高比一变，写死的比例就会与看板的物理间距脱钩。
   const cx1 = w * 0.22
   const cy1 = centerY
-  const cx2 = w * 0.52
+  const cx2 = cx1 + TWO_CHARGE_SEPARATION_M * 100 * pxPerCm
   const cy2 = centerY
 
   // 试探电荷的实际设计坐标

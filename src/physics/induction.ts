@@ -333,6 +333,15 @@ export function computeFaradayEmf(turns: number, area: number, dBdt: number): nu
 }
 
 /**
+ * 法拉第"匀变磁场"模式（mode 1）的初始磁感应强度 B₀ (T)。
+ *
+ * 中屏从 t=0 起按 B(t) = B₀ + (dB/dt)·t 均匀增磁，所以 B(0) = B₀ = 0。
+ * 看板必须用同一个 B₀ 才能与中屏的 Φ(t) 对齐——旧实现写 `-dBdt*5`，
+ * 让 Φ 整体偏了 −5·(dB/dt)·S，与中屏从零开始增磁的画面对不上。
+ */
+export const FARADAY_UNIFORM_B0 = 0
+
+/**
  * 计算条形磁铁在线圈轴线产生的近似轴线磁通量。
  * @param magnetLeftPx 磁铁左端 x 坐标（px）
  * @param B            磁铁磁感应强度（T）

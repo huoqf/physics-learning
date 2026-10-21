@@ -1,4 +1,5 @@
 import {
+  FARADAY_UNIFORM_B0,
   calculateLenzsLaw,
   lenzsMagnetVelocityAt,
   calculateCuttingEMF,
@@ -27,7 +28,8 @@ export function handleInduction(
       const B_magnet = params.B ?? 1.2
       const magnetV = params.magnetV ?? 140
       const dBdt = params.dBdt ?? 0.5
-      const B0 = -dBdt * 5
+      // B₀ 与中屏共用 physics 常量（中屏从 t=0 的 B=0 开始均匀增磁）
+      const B0 = FARADAY_UNIFORM_B0
       const tNow = time % 10
       const COIL_AREA_M2 = 0.02
 

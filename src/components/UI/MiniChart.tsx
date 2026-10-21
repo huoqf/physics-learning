@@ -16,6 +16,12 @@ export interface MiniChartLine {
   strokeDasharray?: string
   name: string
   showValueInLegend?: boolean
+  /**
+   * 图例数值的小数位数，默认 1。
+   * 量级很小的量（如 Φ ≈ 0.02 Wb）固定 1 位会全被显示成 0.0，
+   * 必须由调用方按物理量级指定。
+   */
+  valueDigits?: number
 }
 
 /** 静态参考水平线 */
@@ -25,6 +31,8 @@ export interface MiniChartStaticLine {
   strokeDasharray?: string
   name: string
   showValueInLegend?: boolean
+  /** 图例数值的小数位数，默认 1 */
+  valueDigits?: number
 }
 
 export interface MiniChartProps {
@@ -151,7 +159,7 @@ function MiniChartContent({
             <g key={`legend-${line.key}`} transform={`translate(0, ${idx * font(11)})`}>
               <line x1={0} y1={-3} x2={10} y2={-3} stroke={line.color} strokeWidth={1.5} strokeDasharray={line.strokeDasharray} />
               <text x={14} y={1} fontSize={font(FONT.small)} fill={CHART_COLORS.tickLabel} fontWeight="600" className="select-none">
-                {line.name}{showVal ? `: ${currentVal.toFixed(1)}` : ''}
+                {line.name}{showVal ? `: ${currentVal.toFixed(line.valueDigits ?? 1)}` : ''}
               </text>
             </g>
           )
@@ -162,7 +170,7 @@ function MiniChartContent({
             <g key={`legend-s-${idx}`} transform={`translate(0, ${(lines.length + idx) * font(11)})`}>
               <line x1={0} y1={-3} x2={10} y2={-3} stroke={sLine.color} strokeWidth={1.2} strokeDasharray={sLine.strokeDasharray} />
               <text x={14} y={1} fontSize={font(FONT.small)} fill={CHART_COLORS.tickLabel} fontWeight="600" className="select-none">
-                {sLine.name}{showVal ? `: ${sLine.value.toFixed(1)}` : ''}
+                {sLine.name}{showVal ? `: ${sLine.value.toFixed(sLine.valueDigits ?? 1)}` : ''}
               </text>
             </g>
           )

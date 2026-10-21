@@ -10,6 +10,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { useFaradayPhysics } from './hooks/useFaradayPhysics'
+import { FARADAY_UNIFORM_B0 } from '@/physics'
 import { FaradayMagnetSandbox } from './FaradayMagnetSandbox'
 import { FaradayFieldSandbox } from './FaradayFieldSandbox'
 import { FaradayChartPanel } from './FaradayChartPanel'
@@ -32,7 +33,7 @@ export default function FaradayLaw() {
   const B_magnet = params.B ?? 1.2
   const magnetV = params.magnetV ?? 140
   const dBdt = params.dBdt ?? 0.5
-  const B0 = 0
+  const B0 = FARADAY_UNIFORM_B0
 
   // ── 布局参数（设计坐标系） ────────────────────────────────────────────────
   const W = preset.width

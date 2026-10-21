@@ -15,6 +15,16 @@ export const EARTH_MASS = 5.97e24
 /** 地球半径 (m) */
 export const EARTH_RADIUS = 6.37e6
 
+/**
+ * 卫星发射演示的入轨半径比 r₀ / R_地球。
+ *
+ * 中屏的发射-转弯-入轨动画就在这个半径进轨，看板算在轨段也必须用它。
+ * 历史问题：中屏 1.05、看板写死 1.35，同一页给出两条不同的轨道。
+ */
+export const SATELLITE_LAUNCH_RADIUS_RATIO = 1.05
+
+
+
 /** 理想气体常量 R (J/(mol·K)) */
 export const GAS_CONSTANT = 8.314
 

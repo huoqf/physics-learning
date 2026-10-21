@@ -81,6 +81,55 @@ export function calculateBranchCurrentAndPower(
 }
 
 /**
+ * 电感线圈的直流电阻 R_coil (Ω)。
+ *
+ * 人教版"通直阻交"对照实验的基准：线圈本身有 15Ω 直流电阻，所以对照支路
+ * 用同样 15Ω 的定值电阻，两个灯泡亮度才可直接比较。
+ *
+ * 中屏与看板必须共用这一个值。历史问题：中屏用 15Ω，看板把「灯泡内阻」当作
+ * 支路总电阻、又给线圈塞了个 2Ω 的魔法数，同一时刻两边电流对不上。
+ */
+export const AC_COIL_DC_RESISTANCE = 15
+
+/** 支路中被测元件类型 */
+export type ACBranchDevice = 'resistor' | 'inductor' | 'capacitor'
+
+export interface ACBranchState {
+  /** 支路有效值电流 (A) */
+  current: number
+  /** 支路总阻抗 (Ω) */
+  impedance: number
+  /** 灯泡自身消耗的功率 (W) = I²·R_灯 */
+  bulbPower: number
+  /** 该元件串入的直流电阻 (Ω)：线圈 15Ω，电阻 15Ω，电容 0 */
+  seriesResistance: number
+}
+
+/**
+ * 计算"灯泡 + 被测元件"串联支路的稳态电流与灯泡功率。
+ *
+ * 这是中屏亮度/电流与看板读数的**唯一**算法：串联电阻只由元件类型决定
+ * （线圈带上它固有的 15Ω），灯泡功率必须按灯泡自身电阻算，不能用总阻抗算。
+ */
+export function calculateACBranchState(
+  voltage: number,
+  bulbResistance: number,
+  deviceType: ACBranchDevice,
+  reactance: number,
+  isDC = false,
+): ACBranchState {
+  const seriesResistance = deviceType === 'capacitor' ? 0 : AC_COIL_DC_RESISTANCE
+  const totalR = bulbResistance + seriesResistance
+  const calc = calculateBranchCurrentAndPower(voltage, totalR, reactance, isDC, 0)
+  return {
+    current: calc.current,
+    impedance: calc.impedance,
+    bulbPower: calc.current * calc.current * bulbResistance,
+    seriesResistance,
+  }
+}
+
+/**
  * 计算 LC 谐振频率 f0 (使 X_L = X_C 的固有频率)
  * 公式：f_0 = 1 / (2 * π * √(L * C))
  *

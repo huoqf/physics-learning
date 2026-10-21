@@ -94,13 +94,22 @@ export function isPhotoelectricEffect(nu: number, W0: number): boolean {
   return hv >= W0
 }
 
+/** 反向电压段指数模型的衰减速率常数 (V⁻¹) */
+export const PHOTOCURRENT_DECAY_K = 2.5
+
 /**
  * 计算光电流 I (μA)
  *
  * 基于反向电压的指数衰减模型：
  * - 当 U ≥ 0 时，电流达到饱和 I = I_max
- * - 当 -U_c < U < 0 时，I = I_max × (1 - exp(-k × (U + U_c)))
+ * - 当 -U_c < U < 0 时，I = I_max × (1 - exp(-k(U + U_c))) / (1 - exp(-kU_c))
  * - 当 U ≤ -U_c 时，I = 0
+ *
+ * **归一化分母 (1 - exp(-kU_c)) 不可省**：原始模型在 U → 0⁻ 时只剩
+ * I_max(1 - exp(-kU_c))，而 U ≥ 0 段是 I_max，两者在 U = 0 处有一个向上跳变，
+ * 缺口大小随遏止电压变化（U_c = 1.5V 时 2.4%，U_c = 0.5V 时 28.7%）。
+ * I-U 图线上出现竖直线段在物理上不成立——I-U 曲线必须连续。
+ * 归一化后 I(0⁻) = I_max，U = 0 处只有斜率转折（饱和拐点），没有跳变。
  *
  * @param U 极板电压 (V)，负值为反向电压
  * @param Uc 遏止电压 (V)
@@ -111,9 +120,12 @@ export function calculatePhotocurrent(U: number, Uc: number, Imax: number): numb
   if (Uc <= 0) return 0
   if (U >= 0) return Imax
   if (U <= -Uc) return 0
-  // 指数衰减模型，k 控制衰减速率
-  const k = 2.5
-  return Imax * (1 - Math.exp(-k * (U + Uc)))
+  const k = PHOTOCURRENT_DECAY_K
+  const kUc = k * Uc
+  // kUc → 0 时分母趋零，改用同一模型的线性极限 I = Imax(U + Uc)/Uc
+  if (kUc < 1e-9) return Imax * ((U + Uc) / Uc)
+  const saturated = 1 - Math.exp(-kUc)
+  return (Imax * (1 - Math.exp(-k * (U + Uc)))) / saturated
 }
 
 /**

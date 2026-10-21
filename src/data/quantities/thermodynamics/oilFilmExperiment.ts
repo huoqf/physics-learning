@@ -37,8 +37,8 @@ export function buildOilFilmExperimentData(
       { label: '油膜展开面积 S', value: res.areaCm2.toFixed(1), unit: 'cm²', color: PHYSICS_COLORS.velocity },
       {
         label: '估算分子直径(膜厚) d',
-        value: (res.moleculeDiameterM * 1e10).toFixed(2),
-        unit: 'Å (10⁻¹⁰m)',
+        value: `${(res.moleculeDiameterM * 1e9).toFixed(2)} nm / ${(res.moleculeDiameterM * 1e10).toFixed(1)}`,
+        unit: 'Å',
         highlight: 'extreme',
         color: PHYSICS_COLORS.forceNet,
       },

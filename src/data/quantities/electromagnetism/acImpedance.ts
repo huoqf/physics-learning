@@ -1,9 +1,9 @@
 import type { PhysicsPanelData } from '../types'
 import { normalizeParams, type ParamDefs } from '../types'
 import {
+  calculateACBranchState,
   calculateInductiveReactance,
   calculateCapacitiveReactance,
-  calculateBranchCurrentAndPower,
   calculateResonanceFrequency,
 } from '@/physics/electromagnetism/acImpedance'
 
@@ -39,13 +39,17 @@ export function buildACImpedanceQuantities(
   const f0 = calculateResonanceFrequency(p.inductance, capFarad)
 
   // 支路2状态
+  // 元件类型决定串联直流电阻：电感线圈带 15Ω、电容器为 0（见 physics 层常量）。
+  // 旧实现把「灯泡内阻」当支路总电阻、又给线圈塞了个 2Ω 魔法数，
+  // 同一时刻中屏与看板的支路电流对不上。
   const targetReactance = p.mode === 1 ? XC : XL
-  const branch2Calc = calculateBranchCurrentAndPower(
+  const branch2Device = p.mode === 1 ? 'capacitor' : 'inductor'
+  const branch2Calc = calculateACBranchState(
     p.voltage,
     p.resistance,
+    branch2Device,
     targetReactance,
     isDC,
-    p.mode === 1 ? 0 : 2,
   )
 
   return {
@@ -76,7 +80,7 @@ export function buildACImpedanceQuantities(
       {
         label: '灯泡2消耗功率',
         symbol: 'P_2',
-        value: +branch2Calc.power.toFixed(1),
+        value: +branch2Calc.bulbPower.toFixed(1),
         unit: 'W',
       },
     ],

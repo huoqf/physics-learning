@@ -1,8 +1,7 @@
-import type { PhysicsPanelData, ParamDefs } from './types'
+import type { PhysicsPanelData, ParamDefs, Formula, WarningItem } from './types'
 import { normalizeParams } from './types'
 import {
-  calculateOhmReading,
-  calculateVoltageReading,
+  calculateMultimeterCircuit,
 } from '@/physics/experimentMultimeter'
 import { PHYSICS_COLORS } from '@/theme/physics'
 
@@ -22,6 +21,130 @@ const MULTIMETER_DEFAULTS: ParamDefs<MultimeterParams> = {
   probesConnected: { default: 1 },
 }
 
+/** 欧姆挡：欧姆表回路（闭合电路欧姆定律 + 调零 + 中值电阻） */
+const OHM_FORMULAS: Formula[] = [
+  {
+    name: '欧姆表回路欧姆定律',
+    latex: 'I = \\frac{E}{R_{\\text{内}} + R_x} = \\frac{E}{R_{\\Omega} + R_x}',
+    level: 'core',
+    condition: '闭合回路电流与待测电阻呈非线性反比关系',
+  },
+  {
+    name: '欧姆调零满偏电流',
+    latex: 'I_g = \\frac{E}{R_{\\Omega}} \\implies R_{\\Omega} = \\frac{E}{I_g}',
+    level: 'core',
+    condition: '短接红黑表笔时电流达满偏，对应欧姆刻度 0',
+  },
+  {
+    name: '中值电阻与半偏状态',
+    latex: 'I = \\frac{1}{2} I_g \\iff R_x = R_{\\Omega} = R_{\\text{中}}',
+    level: 'core',
+    condition: '指针指正中央刻度时，待测阻值恰好等于内部总内阻',
+  },
+]
+
+/** 直流电压挡：表头串联分压大电阻（电表改装） */
+const DCV_FORMULAS: Formula[] = [
+  {
+    name: '串联分压电阻',
+    latex: 'R_V = \\frac{U}{I_g} - R_g = (n - 1)R_g',
+    level: 'core',
+    condition: '电压挡 = 表头串联一个大电阻，量程越大串联电阻越大',
+  },
+  {
+    name: '电压表总内阻',
+    latex: 'R_{\\text{内}} = R_g + R_V = \\frac{U_{\\text{满}}}{I_g}',
+    level: 'important',
+    condition: '理想电压表内阻无穷大，实际内阻越大对被测电路影响越小',
+  },
+  {
+    name: '电压扩程倍数',
+    latex: 'n = \\frac{U}{U_g} = \\frac{U}{I_g R_g}',
+    level: 'core',
+    condition: 'U_g = I_g R_g 为表头满偏电压',
+  },
+]
+
+/** 直流电流挡：表头并联分流小电阻（电表改装） */
+const DCA_FORMULAS: Formula[] = [
+  {
+    name: '并联分流电阻',
+    latex: 'R_A = \\frac{I_g R_g}{I - I_g} = \\frac{R_g}{n - 1}',
+    level: 'core',
+    condition: '电流挡 = 表头并联一个小电阻，量程越大分流电阻越小',
+  },
+  {
+    name: '电流表总内阻',
+    latex: 'R_{\\text{内}} = \\frac{R_g R_A}{R_g + R_A}',
+    level: 'important',
+    condition: '理想电流表内阻为零，实际内阻越小对被测电路影响越小',
+  },
+  {
+    name: '电流扩程倍数',
+    latex: 'n = \\frac{I}{I_g} = 1 + \\frac{R_g}{R_A}',
+    level: 'core',
+    condition: '总电流 = 表头电流 + 分流电阻电流',
+  },
+]
+
+/**
+ * 多用电表的公式体系必须跟随当前挡位。
+ *
+ * 旧实现把三条欧姆表公式写死：学生切到 DCV / DCA 挡时，右屏仍在讲
+ * `I = E/(R_内+R_x)`，与"正在测电压/测电流"完全脱节。
+ * 这里按 `calculateMultimeterCircuit()` 返回的 `rangeType` 分派，
+ * 电压挡讲串联分压扩程、电流挡讲并联分流扩程——正是高考电表改装的两条主线。
+ */
+function formulasForRange(rangeType: 'OFF' | 'DCV' | 'DCA' | 'OHM'): Formula[] {
+  switch (rangeType) {
+    case 'DCV':
+      return DCV_FORMULAS
+    case 'DCA':
+      return DCA_FORMULAS
+    case 'OHM':
+      return OHM_FORMULAS
+    case 'OFF':
+    default:
+      // 关断挡没有测量回路，硬塞欧姆表公式反而误导；安全规范见「高考要点·用毕归位」
+      return []
+  }
+}
+
+/** 操作规范提示同样随挡位切换 */
+function warningsForRange(rangeType: 'OFF' | 'DCV' | 'DCA' | 'OHM'): WarningItem[] {
+  switch (rangeType) {
+    case 'DCV':
+      return [
+        {
+          text: '易错陷阱：电压挡必须并联在被测元件两端，且红表笔接高电势端；量程应使指针落在满偏的 1/3~2/3 之间，超量程会打表。',
+          level: 'warning',
+        },
+      ]
+    case 'DCA':
+      return [
+        {
+          text: '易错陷阱：电流挡必须串联接入电路，红表笔接电流流入端；严禁把电流挡直接并在电源两端（相当于短路，会烧毁表头或保险丝）。',
+          level: 'danger',
+        },
+      ]
+    case 'OHM':
+      return [
+        {
+          text: '易错陷阱：测电阻前必须将待测电阻从原电路中断开，严禁带电测量；手握表笔时切勿同时触碰金属针尖，防止人体并联电阻引入测量误差。',
+          level: 'danger',
+        },
+      ]
+    case 'OFF':
+    default:
+      return [
+        {
+          text: '用毕归位：测量结束后必须把选择开关旋至 OFF 挡或交流电压最高挡，防止两表笔意外短接放电耗尽内部电池。',
+          level: 'info',
+        },
+      ]
+  }
+}
+
 export function buildExperimentMultimeterQuantities(
   animId: string,
   params: Record<string, number>,
@@ -32,88 +155,29 @@ export function buildExperimentMultimeterQuantities(
   const p = normalizeParams(params, MULTIMETER_DEFAULTS)
   const isConnected = p.probesConnected === 1
 
-  let rEffective = p.rxNominal
-  if (p.componentType === 1) {
-    rEffective = 25
-  } else if (p.componentType === 2) {
-    rEffective = 5000000
-  } else if (p.componentType === 3) {
-    rEffective = 2800
-  }
+  const res = calculateMultimeterCircuit({
+    rangeIndex: p.rangeIndex,
+    zeroOffset: p.zeroOffset,
+    componentType: p.componentType,
+    rxNominal: p.rxNominal,
+    probesConnected: isConnected,
+  })
 
-  // 1. 挡位模式名称
-  const RANGE_NAMES = [
-    'OFF (关断)',
-    'DCV 2.5V',
-    'DCV 10V',
-    'DCV 50V',
-    'DCA 10mA',
-    'DCA 100mA',
-    'Ω ×1',
-    'Ω ×10',
-    'Ω ×100',
-    'Ω ×1k',
-  ]
-  const currentRangeName = RANGE_NAMES[p.rangeIndex] ?? 'OFF'
-
-  // 2. 计算物理量
-  let readingText = 'OFF'
-  let deflectionPercent = 0
-  let rMidText = '—'
-  let statusText = '正常'
-
-  if (p.rangeIndex >= 6) {
-    // 欧姆挡
-    const multipliers = [1, 10, 100, 1000]
-    const mult = multipliers[p.rangeIndex - 6] ?? 1
-    const res = calculateOhmReading(mult, rEffective, p.zeroOffset, isConnected)
-    readingText = res.readingDisplay
-    deflectionPercent = +(res.deflectionRatio * 100).toFixed(1)
-    rMidText = `${res.rMid} Ω`
-    statusText =
-      res.advice === 'switch_larger'
-        ? '偏角过小（建议换大倍率挡）'
-        : res.advice === 'switch_smaller'
-        ? '偏角过大（建议换小倍率挡）'
-        : res.advice === 'adjust_zero'
-        ? '未精准调零（误差偏大）'
-        : '适宜读数区（中值附近）'
-  } else if (p.rangeIndex >= 1 && p.rangeIndex <= 3) {
-    // 电压挡
-    const maxVs = [2.5, 10, 50]
-    const maxV = maxVs[p.rangeIndex - 1] ?? 10
-    const testV = isConnected
-      ? p.componentType === 3
-        ? 6.0
-        : Math.min(p.rxNominal * 0.005, maxV * 1.05)
-      : 0
-    const res = calculateVoltageReading(testV, maxV, isConnected)
-    readingText = res.readingDisplay
-    deflectionPercent = +(res.deflectionRatio * 100).toFixed(1)
-    statusText = '直流电压测量态'
-  } else if (p.rangeIndex >= 4 && p.rangeIndex <= 5) {
-    // 电流挡
-    const maxAs = [0.01, 0.1]
-    const maxA = maxAs[p.rangeIndex - 4] ?? 0.01
-    const testA = isConnected ? Math.min(p.rxNominal * 0.0001, maxA * 1.05) : 0
-    const res = calculateVoltageReading(testA, maxA, isConnected)
-    readingText = `${(res.deflectionRatio * maxA * 1000).toFixed(1)} mA`
-    deflectionPercent = +(res.deflectionRatio * 100).toFixed(1)
-    statusText = '直流电流测量态'
-  }
+  const deflectionPercent = +(res.deflectionRatio * 100).toFixed(1)
+  const rMidText = res.rangeType === 'OHM' ? `${res.rMid} Ω` : '—'
 
   return {
     quantities: [
       {
         label: '当前选择挡位',
-        value: currentRangeName,
+        value: res.rangeName,
         unit: '',
         color: PHYSICS_COLORS.velocity,
         highlight: 'positive',
       },
       {
         label: '仪表当前读数',
-        value: readingText,
+        value: res.readingDisplay,
         unit: '',
         color: PHYSICS_COLORS.emf,
         highlight: 'extreme',
@@ -131,31 +195,12 @@ export function buildExperimentMultimeterQuantities(
       },
       {
         label: '测量工况与换挡建议',
-        value: statusText,
+        value: res.statusText,
         unit: '',
-        highlight: statusText.includes('建议') ? 'negative' : 'positive',
+        highlight: res.statusText.includes('建议') || res.statusText.includes('⚠️') ? 'negative' : 'positive',
       },
     ],
-    formulas: [
-      {
-        name: '欧姆表回路欧姆定律',
-        latex: 'I = \\frac{E}{R_{\\text{内}} + R_x} = \\frac{E}{R_{\\Omega} + R_x}',
-        level: 'core',
-        condition: '闭合回路电流与待测电阻呈非线性反比关系',
-      },
-      {
-        name: '欧姆调零满偏电流',
-        latex: 'I_g = \\frac{E}{R_{\\Omega}} \\implies R_{\\Omega} = \\frac{E}{I_g}',
-        level: 'core',
-        condition: '短接红黑表笔时电流达满偏，对应欧姆刻度 0',
-      },
-      {
-        name: '中值电阻与半偏状态',
-        latex: 'I = \\frac{1}{2} I_g \\iff R_x = R_{\\Omega} = R_{\\text{中}}',
-        level: 'core',
-        condition: '指针指正中央刻度时，待测阻值恰好等于内部总内阻',
-      },
-    ],
+    formulas: formulasForRange(res.rangeType),
     gaokaoPoints: [
       {
         text: '【红进黑出铁律】电流始终从红表笔流入多用电表、从黑表笔流出。内部电源正极连接的是黑表笔，负极连接红表笔。测二极管时，黑表笔接二极管正极时指针偏角大（正向导通）。',
@@ -177,12 +222,11 @@ export function buildExperimentMultimeterQuantities(
         text: '【黑箱探测铁律】探测未知黑箱时，第一步必须先用【直流电压挡】测量任意两端子间是否有电压！确认无电源后方可使用欧姆挡，严禁直接用欧姆挡测量含电源电路（防止烧毁表头）。',
         importance: 'gaokao',
       },
-    ],
-    warnings: [
       {
-        text: '易错陷阱：测电阻前必须将待测电阻从原电路中断开，严禁带电测量；手握表笔时切勿同时触碰金属针尖，防止人体并联电阻引入测量误差。',
-        level: 'danger',
+        text: '【电表改装】电压挡串联分压电阻、电流挡并联分流电阻，改的是量程不是表头；改装后内阻随之变化，电压表内阻越大越好、电流表内阻越小越好。',
+        importance: 'gaokao',
       },
     ],
+    warnings: warningsForRange(res.rangeType),
   }
 }

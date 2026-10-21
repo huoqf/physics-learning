@@ -1,4 +1,4 @@
-import { calculateACRMS, calculateTransformerWithLoad, calculatePowerTransmission } from '../../../physics'
+import { calculateACRMS, calculateTransformerWithLoad, calculatePowerTransmission, computeACGenerationState } from '../../../physics'
 import { getEffectiveCurrent, getTheoreticalThermalState, type WaveformType } from '../../../physics/rmsCalculator'
 import { PHYSICS_COLORS, TRANSMISSION_COLORS } from '@/theme/physics'
 import type { PhysicsPanelData, PhysicsQuantity } from '../types'
@@ -16,18 +16,16 @@ export function handleAc(
       const S = params.S ?? 0.04
       const omega = params.omega ?? 2
       const N = params.N ?? 100
-      const initialPhase = params.initialPhase ?? 0
+      // 注册表里 initialPhase 的单位是「度」，而 computeACGenerationState 收的是弧度。
+      // 原先这里直接把度数当弧度加进相位（θ₀=90 时会凭空多出 90 rad ≈ 5157°），
+      // 中屏却做了 ×π/180 换算，两边读数必然对不上。统一走同一个纯函数，换算只做一次。
+      const initialPhaseRad = ((params.initialPhase ?? 0) * Math.PI) / 180
       const mode = params.mode ?? 0
-      // 峰值电动势 Em = NBSω
-      const Em = N * B * S * omega
+      const { phi, e, Em, isNeutral, isMaxEmf } = computeACGenerationState(
+        B, S, omega, N, initialPhaseRad, time,
+      )
       const { V_rms } = calculateACRMS(Em)
       const freq = omega / (2 * Math.PI)
-      // 瞬时值（纯函数计算，与 ACGeneration.tsx 中的 state 一致）
-      const theta = omega * time + initialPhase
-      const phi = B * S * Math.cos(theta)
-      const e = Em * Math.sin(theta)
-      const isNeutral = Math.abs(Math.sin(theta)) < 0.09
-      const isMaxEmf = Math.abs(Math.cos(theta)) < 0.09
 
       const formulas = [
         { name: '磁通量公式', latex: '\\Phi = BS\\cos(\\omega t + \\theta_0)', level: 'core' as const },

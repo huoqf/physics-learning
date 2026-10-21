@@ -293,7 +293,13 @@ function buildFallbackPanel(
   for (const [key, entry] of vocabulary) {
     const value = params[key]
     if (value == null) continue
-    quantities.push({ label: entry.label, value, unit: entry.unit ?? '' })
+    // 枚举型参数（挡位/模式/步骤）显示中文选项名，而不是被格式化成 6.00 / 0.00
+    const enumLabel = entry.options?.find((o) => o.value === value)?.label
+    quantities.push({
+      label: entry.label,
+      value: enumLabel ?? value,
+      unit: enumLabel ? '' : (entry.unit ?? ''),
+    })
   }
   return { quantities }
 }

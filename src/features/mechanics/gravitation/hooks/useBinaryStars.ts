@@ -1,7 +1,13 @@
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { calculateBinaryStars, calculateTripleStars } from '@/physics/celestial'
+import {
+  calculateBinaryStars,
+  calculateTripleStars,
+  CELESTIAL_SIM_G,
+  BINARY_STARS_DEFAULT_TOTAL_MASS,
+  TRIPLE_STARS_DEFAULT_MASS,
+} from '@/physics/celestial'
 
 export type BinaryStarsState =
   | {
@@ -47,6 +53,11 @@ export type BinaryStarsState =
       scale: number
     }
 
+// 物理常数（与 physics/celestial 严格同源）
+const G = CELESTIAL_SIM_G
+const TOTAL_MASS = BINARY_STARS_DEFAULT_TOTAL_MASS
+const STAR_MASS = TRIPLE_STARS_DEFAULT_MASS // 三星模式下每颗星质量
+
 export function useBinaryStars(): BinaryStarsState | null {
   const { params, time } = useAnimationStore(
     useShallow((s) => ({
@@ -59,21 +70,16 @@ export function useBinaryStars(): BinaryStarsState | null {
   const L = params.L ?? 8.0
   const massRatio = params.massRatio ?? 1.0
 
-  // 物理常数
-  const G = 1.0
-  const totalMass = 10.0
-  const starMass = 5.0 // 三星模式下每颗星质量
-
   // 1. 双星物理解算
   const binaryData = useMemo(() => {
     if (mode !== 0) return null
-    return calculateBinaryStars(L, massRatio, G, totalMass)
+    return calculateBinaryStars(L, massRatio, G, TOTAL_MASS)
   }, [mode, L, massRatio])
 
   // 2. 三星物理解算
   const tripleData = useMemo(() => {
     if (mode !== 1) return null
-    return calculateTripleStars(L, G, starMass)
+    return calculateTripleStars(L, G, STAR_MASS)
   }, [mode, L])
 
   // 3. 计算随时间旋转的坐标与矢量
@@ -156,7 +162,7 @@ export function useBinaryStars(): BinaryStarsState | null {
       return {
         mode: 1 as const,
         L,
-        starMass,
+        starMass: STAR_MASS,
         r,
         rPx: r * scale,
         pos1,

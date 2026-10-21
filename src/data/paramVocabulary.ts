@@ -16,6 +16,15 @@ import type { ControlMeta, ParamMeta } from './types'
 export interface ParamVocabEntry {
   label: string
   unit?: string
+  /**
+   * 枚举型参数（segmented / modeGrid）的「取值 → 中文标签」。
+   *
+   * 这类参数的值是挡位索引（`rangeIndex: 6`、`mode: 0`、`step: 3`），
+   * 直接进看板会被格式化成 `6.00 / 0.00 / 3.00`——数值没错，但学生读不出任何信息。
+   * 兜底看板据此把取值翻成中文（`Ω ×1`、`双星系统`、`步骤4: 方格描摹计算`）。
+   * 连续可调的 `paramMeta` 参数没有这一项，仍按数值显示。
+   */
+  options?: ReadonlyArray<{ value: number; label: string }>
 }
 
 /** showIf / hideIf 的条件求值——左屏控件与右屏兜底共用这一份实现 */
@@ -84,7 +93,11 @@ export function buildParamVocabulary(
     if (vocab.has(control.key)) continue
     if (!control.label) continue
     if (!isEntryVisible(control, params)) continue
-    vocab.set(control.key, { label: control.label })
+    const options =
+      control.type === 'segmented'
+        ? control.options.map((o) => ({ value: o.value, label: o.label }))
+        : control.modes.map((m) => ({ value: m.value, label: m.label }))
+    vocab.set(control.key, { label: control.label, options })
   }
 
   return vocab

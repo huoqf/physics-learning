@@ -10,6 +10,43 @@ interface OilFilmSceneProps {
   font: (size: number) => number
 }
 
+/** 油膜边缘起伏：单位半径方向上的归一化轮廓（多边形生成与格点包含判定共用同一函数） */
+function filmEdgeWobble(angle: number): number {
+  return (
+    1.0 +
+    0.12 * Math.sin(angle * 3) +
+    0.08 * Math.cos(angle * 5 + 0.8) -
+    0.06 * Math.sin(angle * 2 - 0.5)
+  )
+}
+
+/** 油膜轮廓多边形顶点数 */
+const FILM_EDGE_POINTS = 28
+
+/** 单位轮廓多边形的面积（鞋带公式）——把"物理展开面积"标定为"像素半径"用 */
+const FILM_EDGE_UNIT_AREA = (() => {
+  const pts: [number, number][] = []
+  for (let i = 0; i < FILM_EDGE_POINTS; i++) {
+    const a = (i * 2 * Math.PI) / FILM_EDGE_POINTS
+    const r = filmEdgeWobble(a)
+    pts.push([r * Math.cos(a), r * Math.sin(a)])
+  }
+  let twice = 0
+  for (let i = 0; i < pts.length; i++) {
+    const [x1, y1] = pts[i]
+    const [x2, y2] = pts[(i + 1) % pts.length]
+    twice += x1 * y2 - x2 * y1
+  }
+  return Math.abs(twice) / 2
+})()
+
+/** 单位轮廓的最大半径（决定缩小时油膜能否装进浅盘） */
+const FILM_EDGE_MAX_WOBBLE = (() => {
+  let max = 0
+  for (let i = 0; i < 720; i++) max = Math.max(max, filmEdgeWobble((i * Math.PI) / 360))
+  return max
+})()
+
 export function OilFilmScene({
   step,
   calcResult,
@@ -21,28 +58,32 @@ export function OilFilmScene({
   const centerY = height * 0.5
   const dishRadius = Math.min(width * 0.4, height * 0.42)
 
-  // 根据计算面积缩放油膜半径 (设计像素)
-  const filmRadius = useMemo(() => {
-    const scale = Math.sqrt(calcResult.areaCm2 / 250)
-    return Math.min(dishRadius * 0.78, Math.max(dishRadius * 0.4, dishRadius * 0.62 * scale))
-  }, [calcResult.areaCm2, dishRadius])
+  // 浅盘物理半径标定为 11.5 cm；油膜等效物理半径由展开面积反算
+  const filmRadiusCm = Math.sqrt(calcResult.areaCm2 / Math.PI)
+
+  // 每厘米对应的画布像素：先按浅盘标定，若油膜（含边缘起伏）超出浅盘可视范围则整体缩小比例。
+  // 必须让「1 cm 方格」与「油膜半径」共用同一个 pxPerCm——否则画出来的格子数与
+  // 看板报出的 N 格对不上（极端参数下油膜面积可达 1000+ cm²，旧代码把半径一夹，
+  // 图里只剩三百来格，学生一数就和读数打架）。
+  const pxPerCm = Math.min(
+    dishRadius / 11.5,
+    (dishRadius * 0.85) / Math.max(filmRadiusCm * FILM_EDGE_MAX_WOBBLE, 1e-6),
+  )
+  // 方格板每个方格对应 1.0 cm × 1.0 cm，边长严格等于 pxPerCm
+  const cellSize = pxPerCm
+
+  // 油膜多边形面积必须等于物理展开面积：A_px = S(cm²) × (1cm 的像素数)²
+  const filmRadius = Math.sqrt(
+    (calcResult.areaCm2 * cellSize * cellSize) / FILM_EDGE_UNIT_AREA,
+  )
 
   // 生成真实高考实验特征的不规则单分子油膜平滑多边形轮廓
   const filmPath = useMemo(() => {
-    const pointsCount = 28
     const dPts: [number, number][] = []
-    for (let i = 0; i < pointsCount; i++) {
-      const angle = (i * 2 * Math.PI) / pointsCount
-      // 引入几个不同谐波的起伏模拟不规则油膜边缘
-      const wobble =
-        1.0 +
-        0.12 * Math.sin(angle * 3) +
-        0.08 * Math.cos(angle * 5 + 0.8) -
-        0.06 * Math.sin(angle * 2 - 0.5)
-      const r = filmRadius * wobble
-      const px = centerX + r * Math.cos(angle)
-      const py = centerY + r * Math.sin(angle)
-      dPts.push([px, py])
+    for (let i = 0; i < FILM_EDGE_POINTS; i++) {
+      const angle = (i * 2 * Math.PI) / FILM_EDGE_POINTS
+      const r = filmRadius * filmEdgeWobble(angle)
+      dPts.push([centerX + r * Math.cos(angle), centerY + r * Math.sin(angle)])
     }
     return (
       dPts.reduce((acc, pt, i) => `${acc} ${i === 0 ? 'M' : 'L'} ${pt[0]} ${pt[1]}`, '') + ' Z'
@@ -52,29 +93,30 @@ export function OilFilmScene({
   // 生成坐标方格网络（第 3 步方格板）
   const gridCells = useMemo(() => {
     if (step < 3) return []
-    const cellSize = 22
-    const cells: { x: number; y: number; state: 'full' | 'half' | 'empty' }[] = []
-    const startX = centerX - dishRadius * 0.85
-    const endX = centerX + dishRadius * 0.85
-    const startY = centerY - dishRadius * 0.85
-    const endY = centerY + dishRadius * 0.85
+    const cells: { x: number; y: number; state: 'full' | 'empty'; edgeGap: number }[] = []
+    const boardHalf = dishRadius * 0.85
 
-    for (let x = startX; x <= endX; x += cellSize) {
-      for (let y = startY; y <= endY; y += cellSize) {
-        const midX = x + cellSize / 2
-        const midY = y + cellSize / 2
-        const dist = Math.sqrt((midX - centerX) ** 2 + (midY - centerY) ** 2)
-        if (dist <= filmRadius * 0.85) {
-          cells.push({ x, y, state: 'full' })
-        } else if (dist <= filmRadius * 1.1) {
-          cells.push({ x, y, state: 'half' })
-        } else if (dist <= dishRadius * 0.85) {
-          cells.push({ x, y, state: 'empty' })
-        }
+    for (let x = centerX - boardHalf; x + cellSize <= centerX + boardHalf; x += cellSize) {
+      for (let y = centerY - boardHalf; y + cellSize <= centerY + boardHalf; y += cellSize) {
+        const dx = x + cellSize / 2 - centerX
+        const dy = y + cellSize / 2 - centerY
+        const dist = Math.hypot(dx, dy)
+        // 方格中心落在油膜轮廓内即计为一格（"超过半格算一格"的等价判定）
+        const edge = filmRadius * filmEdgeWobble(Math.atan2(dy, dx))
+        cells.push({ x, y, state: dist <= edge ? 'full' : 'empty', edgeGap: Math.abs(dist - edge) })
       }
     }
+
+    // 图上数出来的格数必须与看板 N 完全一致：只允许在轮廓边界上增删最接近的几个格，
+    // 不允许像旧代码那样用 0.88/1.08 两个魔法系数去近似，那样会多报 17% 的格。
+    const target = calcResult.gridCount
+    if (target > 0 && target !== cells.filter((c) => c.state === 'full').length) {
+      const ranked = [...cells].sort((a, b) => a.edgeGap - b.edgeGap).slice(0, target)
+      const counted = new Set(ranked)
+      for (const c of cells) c.state = counted.has(c) ? 'full' : 'empty'
+    }
     return cells
-  }, [step, centerX, centerY, dishRadius, filmRadius])
+  }, [step, centerX, centerY, dishRadius, filmRadius, cellSize, calcResult.gridCount])
 
   return (
     <g>
@@ -273,15 +315,9 @@ export function OilFilmScene({
               key={i}
               x={c.x}
               y={c.y}
-              width={22}
-              height={22}
-              fill={
-                c.state === 'full'
-                  ? withAlpha(PHYSICS_COLORS.velocity, 0.35)
-                  : c.state === 'half'
-                    ? withAlpha(THERMO_COLORS.heatAbsorb, 0.25)
-                    : 'none'
-              }
+              width={cellSize}
+              height={cellSize}
+              fill={c.state === 'full' ? withAlpha(PHYSICS_COLORS.velocity, 0.35) : 'none'}
               stroke={withAlpha(CANVAS_COLORS.axis, 0.25)}
               strokeWidth={0.8}
             />
@@ -322,7 +358,7 @@ export function OilFilmScene({
         fill={THERMO_COLORS.heatAbsorb}
       >
         {step === 3
-          ? `测得油膜有效方格数 N ≈ ${calcResult.gridCount} 格 (示意)，有效面积 S = ${calcResult.areaCm2.toFixed(1)} cm²，估算分子直径 d = ${(calcResult.moleculeDiameterM * 1e9).toFixed(2)} nm (${(calcResult.moleculeDiameterM * 1e10).toFixed(1)} Å)`
+          ? `测得油膜有效方格数 N = ${calcResult.gridCount} 格，有效面积 S = ${calcResult.areaCm2.toFixed(1)} cm²，估算分子直径 d = ${(calcResult.moleculeDiameterM * 1e9).toFixed(2)} nm (${(calcResult.moleculeDiameterM * 1e10).toFixed(1)} Å)`
           : '实验核心思想：单分子油膜假设 + 球形分子紧密排列模型'}
       </text>
     </g>

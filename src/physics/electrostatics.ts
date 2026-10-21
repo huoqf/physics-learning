@@ -146,6 +146,16 @@ export function calculateElectricField(k: number, q: number, r: number): { E: nu
   return { E: (k * q) / (r * r), valid: true, singular: false }
 }
 
+/**
+ * 两点电荷实验的物理间距 (m)：6 cm。
+ *
+ * 这是模型约定，不是画布尺寸——中屏按 `20cm 画布宽 / 6cm 间距` 摆放电荷，
+ * 看板按它算合场强。两边必须引用同一个值。
+ * 历史问题：中屏 6cm、看板写死 5.25cm，合场强在中点差 3 倍、远端差近 4 倍。
+ */
+export const TWO_CHARGE_SEPARATION_M = 0.06
+
+
 /** 点电荷电势 V = kq/r（V） */
 export function calculateElectricPotential(k: number, q: number, r: number): { V: number; valid: boolean; singular: boolean } {
   if (r === 0) return { V: q === 0 ? NaN : Math.sign(q) * Infinity, valid: false, singular: true }

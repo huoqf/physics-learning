@@ -1,11 +1,13 @@
 import {
   GRAVITATIONAL_CONSTANT,
   EARTH_MASS,
+  SATELLITE_LAUNCH_RADIUS_RATIO,
   calculateOrbitalSpeed,
   calculateKeplerOrbit,
   calculateLaunchTrajectory,
   calculateBinaryStars,
   calculateTripleStars,
+  TRIPLE_STARS_DEFAULT_MASS,
   computeHohmannElements,
   computeTransferState,
   megaMetersToMeters,
@@ -165,7 +167,9 @@ export function buildGravitationQuantities(
             currentV = v0 * (t_animation / 8)
           } else {
             // 在轨阶段：重现极坐标积分
-            const r0 = 1.35 * R_earth
+            // 入轨半径必须与中屏（satelliteLayout 的 rLaunchRatio）同源，
+            // 旧实现写死 1.35R 而中屏在 1.05R 入轨，同一页两条轨道。
+            const r0 = SATELLITE_LAUNCH_RADIUS_RATIO * R_earth
             const v_c = Math.sqrt(G * M_earth / r0)
             const alpha = (r0 * v0 * v0) / (G * M_earth)
             const e_ecc = Math.abs(alpha - 1)
@@ -242,12 +246,12 @@ export function buildGravitationQuantities(
 
       if (mode === 0) {
         // 双星系统
-        const { m1, m2, r1, r2, v1, v2, T } = calculateBinaryStars(L, massRatio)
+        const { r1, r2, v1, v2, T, F, a1, a2 } = calculateBinaryStars(L, massRatio)
         quantities.push(
           { label: '轨道半径 r₁ / r₂', value: `${r1.toFixed(2)}m / ${r2.toFixed(2)}m`, unit: '' },
           { label: '线速度 v₁ / v₂', value: `${v1.toFixed(2)}m/s / ${v2.toFixed(2)}m/s`, unit: '' },
-          { label: '各自向心力 F₁ / F₂', value: `均为 ${(GRAVITATIONAL_CONSTANT * m1 * m2 / (L * L)).toFixed(2)}`, unit: 'N' },
-          { label: '各自向心加速度 a₁ / a₂', value: `${(GRAVITATIONAL_CONSTANT * m2 / (L * L)).toFixed(2)}m/s² / ${(GRAVITATIONAL_CONSTANT * m1 / (L * L)).toFixed(2)}m/s²`, unit: '' },
+          { label: '各自向心力 F₁ / F₂', value: `均为 ${F.toFixed(2)}`, unit: 'N' },
+          { label: '各自向心加速度 a₁ / a₂', value: `${a1.toFixed(2)}m/s² / ${a2.toFixed(2)}m/s²`, unit: '' },
           { label: '运行周期 T', value: T.toFixed(2), unit: 's', highlight: 'positive' as const }
         )
 
@@ -264,8 +268,8 @@ export function buildGravitationQuantities(
         )
       } else {
         // 三星系统
-        const { r, fNet, v, T } = calculateTripleStars(L)
-        const starMass = 5.0
+        const starMass = TRIPLE_STARS_DEFAULT_MASS
+        const { r, fNet, v, T } = calculateTripleStars(L, undefined, starMass)
 
         quantities.push(
           { label: '单星质量 m', value: starMass.toFixed(1), unit: 'kg' },

@@ -1,8 +1,9 @@
 import { useMemo } from 'react'
 import {
+  AC_COIL_DC_RESISTANCE,
+  calculateACBranchState,
   calculateInductiveReactance,
   calculateCapacitiveReactance,
-  calculateBranchCurrentAndPower,
   calculateResonanceFrequency,
 } from '@/physics/electromagnetism/acImpedance'
 
@@ -66,19 +67,20 @@ export function useACImpedancePhysics(params: ACImpedanceParams): ACImpedancePhy
     const f0 = calculateResonanceFrequency(inductance, capFarad)
 
     // 人教版控制变量法基准：
-    // 线圈具备固有的直流电阻 R_coil (15 Ω)
+    // 线圈具备固有的直流电阻 R_coil (15 Ω)，与看板共用同一个常量
     // 纯电阻支路选用阻值等于 R_coil 的定值电阻作为严格对照
-    const coilDCR = 15
+    const coilDCR = AC_COIL_DC_RESISTANCE
 
     let typeA: 'resistor' | 'inductor' | 'capacitor' = 'resistor'
     let typeB: 'resistor' | 'inductor' | 'capacitor' = 'inductor'
-    let labelA = '支路 1: 对照电阻 (R=15Ω)'
-    let labelB = '支路 2: 电感线圈 (L, r=15Ω)'
+    // 标签里的 15Ω 也取自常量，避免图上写着 15Ω、计算却用了别的值
+    let labelA = `支路 1: 对照电阻 (R=${coilDCR}Ω)`
+    let labelB = `支路 2: 电感线圈 (L, r=${coilDCR}Ω)`
 
     if (mode === 1) {
       typeA = 'resistor'
       typeB = 'capacitor'
-      labelA = '支路 1: 对照电阻 (R=15Ω)'
+      labelA = `支路 1: 对照电阻 (R=${coilDCR}Ω)`
       labelB = '支路 2: 电容器 C'
     } else if (mode === 2) {
       typeA = 'inductor'
@@ -93,32 +95,21 @@ export function useACImpedancePhysics(params: ACImpedanceParams): ACImpedancePhy
     ): BranchState => {
       let reactance = 0
       let phaseShift = 0
-      let seriesRes = 0
 
       if (type === 'resistor') {
-        seriesRes = coilDCR
+        // 对照电阻：本身 15Ω，无电抗
       } else if (type === 'inductor') {
         reactance = XL
         phaseShift = -Math.PI / 4
-        seriesRes = coilDCR
       } else if (type === 'capacitor') {
         reactance = XC
         phaseShift = Math.PI / 4
-        seriesRes = 0
       }
 
-      // 计算有效值电流与灯泡消耗功率
-      const totalR = resistance + seriesRes
-      const calc = calculateBranchCurrentAndPower(
-        voltage,
-        totalR,
-        reactance,
-        isDC,
-        0,
-      )
-
-      // 灯泡本身分担的功率 P = I² * resistance
-      const bulbPower = calc.current * calc.current * resistance
+      // 有效值电流与灯泡功率走 physics 层唯一实现——右屏看板调用同一个函数，
+      // 串联的线圈 15Ω 直流电阻由它在内部按元件类型判定，不再两边各写一遍。
+      const calc = calculateACBranchState(voltage, resistance, type, reactance, isDC)
+      const bulbPower = calc.bulbPower
       const relativeBrightness = Math.min(1, Math.max(0, bulbPower / BASE_POWER_NORM))
 
       // 瞬时载流子运动相位

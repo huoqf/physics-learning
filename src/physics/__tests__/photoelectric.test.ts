@@ -12,6 +12,8 @@ import {
   SODIUM_WORK_FUNCTION,
   DEFAULT_WORK_FUNCTION,
   COMPTON_WAVELENGTH_NM,
+  calculatePhotocurrent,
+  generateIUCurve,
 } from '../photoelectric'
 
 describe('光电效应与康普顿散射纯物理计算单测', () => {
@@ -95,5 +97,49 @@ describe('光电效应与康普顿散射纯物理计算单测', () => {
     // 初始波长 0.02 nm，在 90 度散射后波长拉长
     const scattered = calculateComptonScatteredWavelength(0.02, 90)
     expect(scattered).toBeCloseTo(0.02 + COMPTON_WAVELENGTH_NM, 8)
+  })
+
+  describe('光电流 I-U 模型连续性', () => {
+    it('U → 0⁻ 与 U ≥ 0 的电流一致，曲线上不存在竖直跳变', () => {
+      // 遏止电压越小，旧模型在 U=0 处的缺口越大（Uc=0.5V 时约 28.7%），
+      // 因此必须逐档验证，而不是只看某一组参数。
+      for (const Uc of [0.5, 0.58, 1.0, 1.5, 3.0]) {
+        const Imax = 30
+        const left = calculatePhotocurrent(-1e-9, Uc, Imax)
+        const right = calculatePhotocurrent(0, Uc, Imax)
+        expect(right).toBe(Imax)
+        expect(left).toBeCloseTo(Imax, 6)
+      }
+    })
+
+    it('遏止电压处电流为零，且整段单调不减', () => {
+      const Uc = 1.5
+      const Imax = 27
+      expect(calculatePhotocurrent(-Uc, Uc, Imax)).toBe(0)
+      expect(calculatePhotocurrent(-Uc - 0.5, Uc, Imax)).toBe(0)
+
+      const pts = generateIUCurve(Uc, Imax, -3, 2, 200)
+      for (let i = 1; i < pts.length; i++) {
+        expect(pts[i].y).toBeGreaterThanOrEqual(pts[i - 1].y - 1e-9)
+        // 相邻采样点之间不允许出现跳变（饱和拐点是斜率转折，不是断点）
+        expect(Math.abs(pts[i].y - pts[i - 1].y)).toBeLessThan(Imax * 0.1)
+      }
+      expect(pts[pts.length - 1].y).toBeCloseTo(Imax, 9)
+    })
+
+    it('遏止电压趋零时退化为线性段而不是 NaN', () => {
+      const Imax = 20
+      for (const Uc of [1e-12, 1e-10, 1e-8]) {
+        const v = calculatePhotocurrent(-Uc / 2, Uc, Imax)
+        expect(Number.isFinite(v)).toBe(true)
+        expect(v).toBeCloseTo(Imax / 2, 4)
+      }
+    })
+
+    it('不发生光电效应（Uc ≤ 0）时电流恒为零', () => {
+      expect(calculatePhotocurrent(2, 0, 30)).toBe(0)
+      expect(calculatePhotocurrent(-2, 0, 30)).toBe(0)
+      expect(calculatePhotocurrent(-2, -1, 30)).toBe(0)
+    })
   })
 })

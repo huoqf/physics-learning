@@ -20,6 +20,9 @@ export interface OilFilmResult {
   diameterAngstrom: number // 分子直径 (Å)
 }
 
+/** 理想油酸分子长度/单分子层厚度真实基准约为 1.12 × 10⁻⁹ m (1.12 nm / 11.2 Å) */
+export const OIL_ACID_MOLECULE_THICKNESS = 1.12e-9
+
 /**
  * 依据实验参数计算油膜展开与分子直径
  */
@@ -33,8 +36,8 @@ export function calculateOilFilm(params: OilFilmParams): OilFilmResult {
   const vPureAcidMl = vDropMl / ratio
   const vPureAcidM3 = vPureAcidMl * 1e-6
 
-  // 3. 理想油酸分子直径基准 d_true 约为 1.12 × 10⁻¹⁰ m (1.12 Å)
-  const dTrue = 1.12e-10
+  // 3. 理想油酸分子直径基准
+  const dTrue = OIL_ACID_MOLECULE_THICKNESS
 
   // 4. 痱子粉厚度影响扩散受阻程度
   let spreadFactor = 1.0

@@ -1,4 +1,4 @@
-import { EARTH_RADIUS } from '@/physics/constants'
+import { EARTH_RADIUS, SATELLITE_LAUNCH_RADIUS_RATIO } from '@/physics/constants'
 
 export const LAYOUT = {
   designWidth: 700,
@@ -20,7 +20,8 @@ export const LAYOUT = {
     timeScale: 500,
   },
   mode1: {
-    rLaunchRatio: 1.05,
+    // 入轨半径比取自 physics 常量，与右屏看板共用（不再各写一个数）
+    rLaunchRatio: SATELLITE_LAUNCH_RADIUS_RATIO,
     timeScale: 400,
     maxPhysicsTime: 7200,
     dt: 0.05,

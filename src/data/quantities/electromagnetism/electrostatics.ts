@@ -4,9 +4,11 @@ import {
   calculateCapacitor,
   calculateChargeInEFieldTrajectory,
   getChargeInEFieldTimeScale,
+  TWO_CHARGE_SEPARATION_M,
 } from '../../../physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import type { PhysicsPanelData, PhysicsQuantity } from '../types'
 
 const COULOMB_K = 9e9
@@ -120,7 +122,9 @@ export function handleElectrostatics(
           configName = '等量同种负电荷'
         }
 
-        const d_half = 5.25 * 0.01
+        // 半间距必须与中屏同源：中屏把两点电荷放在相距 6cm 处（见 ElectricField.tsx），
+        // 这里写死 5.25cm 会让合场强在中点差 3 倍、远端差近 4 倍。
+        const d_half = TWO_CHARGE_SEPARATION_M / 2
         const xp = rTest * 0.01
 
         const r1 = Math.abs(xp + d_half)
@@ -389,13 +393,18 @@ export function handleElectrostatics(
     case 'anim-field-lines': {
       const topology = params.topology ?? 2
       const qSource = params.qSource ?? 5
-      const probeX = params.probeX ?? 350
+      // 电荷坐标必须与中屏同一套：中屏按 full 画布的中心摆放（cx=w/2, cy=h/2），
+      // 探针电势又按"探针到各电荷的距离"计算。这里原先写死 350/240，
+      // 与中屏的 420/325 差 (70, 85)，导致探针读数与图上取点位置对不上。
+      const FIELD_LINES_W = CANVAS_PRESETS.full.width
+      const FIELD_LINES_H = CANVAS_PRESETS.full.height
+      const probeX = params.probeX ?? FIELD_LINES_W / 2
       const probeY = params.probeY ?? 150
-      const probeStartX = params.probeStartX ?? 350
+      const probeStartX = params.probeStartX ?? FIELD_LINES_W / 2
       const probeStartY = params.probeStartY ?? 150
 
-      const cx = 350
-      const cy = 240
+      const cx = FIELD_LINES_W / 2
+      const cy = FIELD_LINES_H / 2
       const separation = 160
 
       interface ChargeConfig {
