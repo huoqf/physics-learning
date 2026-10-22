@@ -11,7 +11,12 @@ import {
   FARADAY_UNIFORM_B0,
   SATELLITE_LAUNCH_RADIUS_RATIO,
   computeACGenerationState,
+  computeRCTransient,
+  rcTauFromParams,
+  computeProjectileStrobe,
+  computeCentripetalFit,
 } from '@/physics'
+import { electromagnetismElectrostaticsAnimations } from '@/data/registries/electromagnetism-electrostatics'
 import { LAYOUT } from '@/features/mechanics/gravitation/satelliteLayout'
 
 const EPS = 1e-9
@@ -167,6 +172,99 @@ describe('A 组 · 中屏与看板共用同一套常量/函数', () => {
     const dStr = String(value(panel, '估算分子直径(膜厚) d'))
     expect(dStr).toContain('1.12 nm')
     expect(dStr).toContain('11.2')
+  })
+
+  // ── #11 RC 暂态：看板读数与中屏曲线共用 computeRCTransient / 同一个 τ ────────
+  it('电容器 RC 暂态：看板 u_C / i / ∫i dt 与 computeRCTransient 同源，t=τ 时恰为 63.2%', async () => {
+    await preloadQuantityBuilder('anim-capacitor')
+    const params = { mode: 1, emf: 6, R_t: 10, C_t: 200, phase: 0 }
+    // kΩ × μF → s：10 kΩ × 200 μF = 2 s
+    const tau = rcTauFromParams(params)
+    expect(tau).toBeCloseTo(2, 10)
+
+    const state = computeRCTransient(6, 10e3, 200e-6, tau, 'charge')
+    expect(state.uC / 6).toBeCloseTo(0.632, 3)
+
+    const panel = buildPhysicsQuantities('anim-capacitor', params, tau)
+    expect(num(panel, '时间常数')).toBeCloseTo(tau, 1)
+    expect(num(panel, '电容电压')).toBeCloseTo(state.uC, 1)
+    expect(num(panel, '回路电流')).toBeCloseTo(Math.abs(state.i) * 1e3, 2)
+    // 面积即电量：∫i dt 与 q 必须落在同一数量级同一数值上
+    expect(num(panel, '极板电量')).toBeCloseTo(state.q * 1e6, -1)
+    expect(num(panel, '∫i dt（面积）')).toBeCloseTo(state.areaCharge * 1e6, -1)
+
+    // 放电模式 t=τ 时 u_C 应为 E·e⁻¹
+    const dis = buildPhysicsQuantities('anim-capacitor', { ...params, phase: 1 }, tau)
+    expect(num(dis, '电容电压')).toBeCloseTo(6 * Math.exp(-1), 1)
+
+    // 面积公式必须随充/放电切换：放电面积是"已放出的电量" CE − C·u_C，不是 C·u_C
+    const areaFormula = (p: ReturnType<typeof buildPhysicsQuantities>) =>
+      (p.formulas ?? []).find((f) => f.name === '面积即电量')?.latex ?? ''
+    expect(areaFormula(panel)).toContain('\\Delta Q = C')
+    expect(areaFormula(dis)).toContain('CE - C')
+    // 放电 t=τ 时，面积应等于 CE − q（而不是 q）
+    expect(num(dis, '∫i dt（面积）')).toBeCloseTo(1200 - 6 * Math.exp(-1) * 200, 0)
+  })
+
+  // ── 注册表：RC 模式必须能播放（'param' 会让 time 永远停在 0）──────────────────
+  it('电容器：注册表按 mode 动态解析播放模式与时长，模式 0 仍保持纯参数静态图', () => {
+    const config = electromagnetismElectrostaticsAnimations['anim-capacitor']
+    const modeOf = config.controlsMode as (p: Record<string, number>) => string
+    const maxTimeOf = config.maxTime as (p: Record<string, number>) => number
+
+    expect(modeOf({ mode: 0 })).toBe('param')
+    expect(modeOf({ mode: 1 })).toBe('timed')
+    expect(maxTimeOf({ mode: 1, R_t: 10, C_t: 200 })).toBeCloseTo(10, 10)
+    expect(maxTimeOf({ mode: 0 })).toBe(30)
+
+    // 默认仍停在模式 0，老页面/老链接的行为不因新增模式而改变
+    expect((config.defaultParams as Record<string, number>).mode).toBe(0)
+  })
+
+  // ── #12 平抛频闪：看板读数与中屏打点同一份采样 ─────────────────────────────
+  it('平抛频闪：看板逐差 = gT²、间距比 1:3:5 与 computeProjectileStrobe 同源；有阻力时整层关闭', async () => {
+    await preloadQuantityBuilder('anim-projectile')
+    const params = { v0x: 10, g: 9.8, modelMode: 0, strobeMode: 1, strobeT: 0.2 }
+    const t = 1.0
+    const s = computeProjectileStrobe(10, 9.8, 0.2, t)
+
+    const panel = buildPhysicsQuantities('anim-projectile', params, t)
+    expect(num(panel, '已打点数 n')).toBe(s.marks.length)
+    expect(num(panel, '逐差 ΔΔy = gT²')).toBeCloseTo(s.diffOfDy, 3)
+    expect(num(panel, '首段竖直间距 Δy₁')).toBeCloseTo(s.firstDy, 3)
+    expect(String(value(panel, '竖直间距比'))).toBe('1 : 3 : 5')
+    // 逐差就是 gT²：9.8 × 0.04 = 0.392
+    expect(s.diffOfDy).toBeCloseTo(9.8 * 0.04, 10)
+
+    // 有空气阻力 → 竖直方向不再匀加速，频闪结论必须整层收回
+    const damped = buildPhysicsQuantities('anim-projectile', { ...params, airResistance: 0.05 }, t)
+    expect(value(damped, '频闪打点')).toBe('已关闭')
+    expect((damped.formulas ?? []).some((f) => f.name.includes('逐差'))).toBe(false)
+    expect((damped.quantities ?? []).some((q) => q.label.startsWith('逐差'))).toBe(false)
+  })
+
+  // ── #13 向心 F–ω²：看板斜率与卡片拟合同源 ──────────────────────────────────
+  it('向心 F–ω²：看板理论斜率 = m·r、拟合斜率来自最小二乘，与 computeCentripetalFit 同源', async () => {
+    await preloadQuantityBuilder('anim-centripetal')
+    const m = 2
+    const r = 3
+    const params = { r, v: 3, m, fitMode: 1, showWaveform: 1, showCompare: 0 }
+    const fit = computeCentripetalFit(m, r, { vMin: 1, vMax: 10 })
+
+    const panel = buildPhysicsQuantities('anim-centripetal', params, 0)
+    expect(num(panel, '理论斜率 k = m·r')).toBeCloseTo(fit.slope, 2) // 6.00
+    expect(num(panel, '拟合斜率 k_fit')).toBeCloseTo(fit.fitSlope, 2)
+    expect(num(panel, '角速度平方 ω²')).toBeCloseTo(1, 1) // ω = v/r = 1
+    expect(num(panel, '拟合相对偏差')).toBeCloseTo(fit.slopeError * 100, 1)
+    expect((panel.formulas ?? []).some((f) => f.name.includes('F–ω²'))).toBe(true)
+
+    // 对照线：质量加倍后斜率翻倍
+    const cmp = buildPhysicsQuantities('anim-centripetal', { ...params, showCompare: 1 }, 0)
+    expect(num(cmp, '对照斜率')).toBeCloseTo(2 * m * r, 2)
+
+    // 模式 A 不输出任何拟合读数（不能把两套斜率同时塞给同一张图）
+    const theory = buildPhysicsQuantities('anim-centripetal', { ...params, fitMode: 0 }, 0)
+    expect((theory.quantities ?? []).some((q) => q.label.includes('拟合'))).toBe(false)
   })
 })
 

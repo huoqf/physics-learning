@@ -26,15 +26,59 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     knowledgeId: 'mechanics-5-5',
     Component: lazy(() => import('@/features/mechanics/circular/CentripetalAnimation')),
     controlsMode: 'loop',
-    defaultParams: { r: 3, v: 3, m: 1, showWaveform: 1, showAcceleration: 1 } as const,
+    defaultParams: {
+      r: 3,
+      v: 3,
+      m: 1,
+      showWaveform: 1,
+      showAcceleration: 1,
+      fitMode: 0,
+      showCompare: 0,
+    } as const,
     paramMeta: [
       { key: 'r', label: '半径 r', min: 3, max: 5, step: 0.1, unit: 'm' },
       { key: 'v', label: '线速度 v', min: 1, max: 10, step: 0.5, unit: 'm/s' },
       { key: 'm', label: '质量 m', min: 0.5, max: 5, step: 0.1, unit: 'kg' },
     ],
     controlMeta: [
+      {
+        type: 'segmented',
+        key: 'fitMode',
+        group: '关系图模式',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '理论 F–a' },
+          { value: 1, label: '实验探究 F–ω²' },
+        ],
+      },
       { type: 'toggle', key: 'showAcceleration', label: '显示加速度矢量', group: '显示辅助' },
-      { type: 'toggle', key: 'showWaveform', label: '显示 F-a 联动图表', group: '显示辅助' },
+      { type: 'toggle', key: 'showWaveform', label: '显示右上角关系图卡片', group: '显示辅助' },
+      {
+        type: 'toggle',
+        key: 'showCompare',
+        label: '对照：质量加倍（斜率翻倍）',
+        group: '显示辅助',
+        showIf: 'fitMode',
+        showIfValue: 1,
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        showIf: 'fitMode',
+        showIfValue: 1,
+        variant: 'primary',
+        title: '🧪 探究向心力与角速度的关系',
+        content:
+          '保持 m、r 不变，只改变 ω：F–ω² 图线是一条过原点的直线，斜率 k = m·r。5 个圆点是模拟测量值（±1.5% 误差），淡虚线是理论线 k = m·r —— 两者几乎重合。打开「质量加倍」对照，斜率正好翻倍，这就是控制变量法。',
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        showIf: 'fitMode',
+        showIfValue: 0,
+        content:
+          'F–a 图线斜率恒等于质量 m：改变质量 m，直线的倾斜程度随之改变，说明「质量是惯性大小的量度」。',
+      },
     ],
   },
   'anim-vertical-circular': {

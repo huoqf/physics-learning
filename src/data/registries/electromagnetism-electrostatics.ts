@@ -1,5 +1,6 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
+import { rcTauFromParams, rcWindowFromParams } from '@/physics'
 
 // ===== 电磁学 · 静电场（[M4-1]）=====
 export const electromagnetismElectrostaticsAnimations = defineAnimations({
@@ -98,19 +99,106 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
     title: '平行板电容器',
     knowledgeId: 'electricity-1-4',
     Component: lazy(() => import('@/features/electromagnetism/electrostatics/Capacitor')),
-    controlsMode: 'param' as const,
-    defaultParams: { S: 100, d: 5, epsilon_r: 1, U: 12, connected: 1, savedQ: 2.12496e-10 } as const,
+    // 模式 0（决定式/动态分析）是纯参数型静态图；模式 1（RC 暂态）必须能播放，
+    // 所以控制模式与时长都按 mode 动态解析，而不是写死一个 'param'。
+    controlsMode: (params: Record<string, number>) =>
+      params.mode === 1 ? ('timed' as const) : ('param' as const),
+    maxTime: (params: Record<string, number>) => (params.mode === 1 ? rcWindowFromParams(params) : 30),
+    criticalTimes: (params: Record<string, number>) => {
+      if (params.mode !== 1) return []
+      const tau = rcTauFromParams(params)
+      return [
+        { time: tau, label: 't = τ（u_C 达 63.2%）', variant: 'info' as const },
+        { time: 3 * tau, label: 't = 3τ（95%）', variant: 'info' as const },
+        { time: 5 * tau, label: 't = 5τ（≈充满）', variant: 'critical' as const },
+      ]
+    },
+    defaultParams: {
+      S: 100,
+      d: 5,
+      epsilon_r: 1,
+      U: 12,
+      connected: 1,
+      savedQ: 2.12496e-10,
+      // ── 模式 1：RC 充放电暂态 ──
+      mode: 0,
+      emf: 6,
+      R_t: 10,
+      C_t: 200,
+      phase: 0,
+    } as const,
     paramMeta: [
-      { key: 'S', label: '正对面积 S', min: 50, max: 200, step: 10, unit: 'cm²' },
-      { key: 'd', label: '板间距 d', min: 2, max: 10, step: 0.5, unit: 'mm' },
+      { key: 'S', label: '正对面积 S', min: 50, max: 200, step: 10, unit: 'cm²', showIf: 'mode', showIfValue: 0 },
+      { key: 'd', label: '板间距 d', min: 2, max: 10, step: 0.5, unit: 'mm', showIf: 'mode', showIfValue: 0 },
+      { key: 'emf', label: '电源电动势 E', min: 2, max: 12, step: 1, unit: 'V', showIf: 'mode', showIfValue: 1 },
+      { key: 'R_t', label: '回路电阻 R', min: 1, max: 40, step: 1, unit: 'kΩ', showIf: 'mode', showIfValue: 1 },
+      { key: 'C_t', label: '电容 C', min: 50, max: 800, step: 50, unit: 'μF', showIf: 'mode', showIfValue: 1 },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'connected', label: '电路状态', group: '模型选择',
-        options: [{ value: 1, label: '连接电源 (U不变)' }, { value: 0, label: '断开电源 (Q不变)' }] },
-      { type: 'toggle', key: 'epsilon_r', label: '插入电介质 (εᵣ = 5)', group: '显示辅助',
-        trueValue: 5, falseValue: 1 },
-      { type: 'tip', group: '教学提示', variant: 'primary',
-        content: '1. 断开电源+插入电介质→静电计张角闭合（电压降低）。2. 断开电源+拉大板间距→电压升高但 E 恒定。' },
+      {
+        type: 'segmented',
+        key: 'mode',
+        group: '模型选择',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '平行板决定式' },
+          { value: 1, label: 'RC 充放电暂态' },
+        ],
+      },
+      {
+        type: 'segmented',
+        key: 'connected',
+        label: '电路状态',
+        group: '模型选择',
+        resetOnChange: true,
+        showIf: 'mode',
+        showIfValue: 0,
+        options: [
+          { value: 1, label: '连接电源 (U不变)' },
+          { value: 0, label: '断开电源 (Q不变)' },
+        ],
+      },
+      {
+        type: 'segmented',
+        key: 'phase',
+        label: '过程选择',
+        group: '模型选择',
+        resetOnChange: true,
+        showIf: 'mode',
+        showIfValue: 1,
+        options: [
+          { value: 0, label: '充电 (S 闭合)' },
+          { value: 1, label: '放电 (S 断开)' },
+        ],
+      },
+      {
+        type: 'toggle',
+        key: 'epsilon_r',
+        label: '插入电介质 (εᵣ = 5)',
+        group: '显示辅助',
+        trueValue: 5,
+        falseValue: 1,
+        showIf: 'mode',
+        showIfValue: 0,
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        variant: 'primary',
+        showIf: 'mode',
+        showIfValue: 0,
+        content: '1. 断开电源+插入电介质→静电计张角闭合（电压降低）。2. 断开电源+拉大板间距→电压升高但 E 恒定。',
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        variant: 'primary',
+        showIf: 'mode',
+        showIfValue: 1,
+        title: '💡 面积即电量',
+        content:
+          '拖动进度条到 t = τ：u_C 恰好到 63.2%，i 恰好剩 36.8%。i–t 图线下的阴影面积就是流过导线截面的电量——充电时等于右屏 q，放电时等于 CE − q，可逐点对照。',
+      },
     ],
   },
   'anim-field-lines': {

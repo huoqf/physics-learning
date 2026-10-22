@@ -275,6 +275,8 @@ export const mechanicsKinematicsAnimations = defineAnimations({
       airResistance: 0,
       showProjections: 1,
       showTangentMidpoint: 1,
+      strobeMode: 0,
+      strobeT: 0.2,
     } as const,
     paramMeta: [
       {
@@ -316,6 +318,22 @@ export const mechanicsKinematicsAnimations = defineAnimations({
         showIf: 'modelMode',
         showIfValue: 0,
       },
+      {
+        key: 'strobeT',
+        label: '频闪周期 T',
+        min: 0.05,
+        max: 0.5,
+        step: 0.05,
+        unit: 's',
+        group: '实验图层',
+        showIf: 'strobeMode',
+        showIfValue: 1,
+        marks: [
+          { value: 0.1, label: '0.1' },
+          { value: 0.2, label: '推荐', variant: 'recommended' },
+          { value: 0.4, label: '稀疏' },
+        ],
+      },
     ],
     controlMeta: [
       {
@@ -356,6 +374,22 @@ export const mechanicsKinematicsAnimations = defineAnimations({
         group: '视觉辅助',
         showIf: 'modelMode',
         showIfValue: 1,
+      },
+      {
+        type: 'toggle',
+        key: 'strobeMode',
+        label: '频闪打点图层（Δy = gT²）',
+        group: '实验图层',
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        showIf: 'strobeMode',
+        showIfValue: 1,
+        variant: 'primary',
+        title: '📷 频闪照片：一张图读出两个方向',
+        content:
+          '水平方向相邻打点等距 → 匀速；竖直方向相邻打点间距成 1:3:5 → 初速为零的匀加速；相邻两段之差恒为 gT²，用逐差即可求当地重力加速度。开启空气阻力后该图层自动关闭，因为此时竖直方向不再匀加速。',
       },
       {
         type: 'tip',

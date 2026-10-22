@@ -2,6 +2,7 @@ import {
   calculateCircularMotion,
   calculateConicalPendulumState,
   calculateDiskRotationState,
+  computeCentripetalFit,
   precomputeVerticalCircularMotion,
 } from '../../physics'
 import { GRAVITY } from '../../physics/constants'
@@ -71,6 +72,8 @@ export function buildCircularQuantities(
       const m = params.m ?? 1
       const advancedMode = params.advancedMode ?? 0
       const trackType = params.trackType ?? 0
+      const fitMode = params.fitMode ?? 0
+      const showCompare = params.showCompare ?? 0
 
       const isAdvanced = advancedMode === 1
 
@@ -158,6 +161,70 @@ export function buildCircularQuantities(
           { text: '向心力来源：向心力是效果力，受力分析中绝对不能额外画出向心力，它只能由重力、弹力、摩擦力等其他力或它们的合力提供。', importance: 'gaokao' as const },
           { text: '做功特性：向心力由于方向与速度时刻垂直，因此对做圆周运动的物体做功恒为零（不做功）。', importance: 'hard' as const }
         ]
+
+        // ── 模式 B：F–ω² 实验探究 ───────────────────────────────────────
+        // 与右上角卡片、卡片拖动反解共用 computeCentripetalFit，看板不自己再算一遍斜率。
+        if (fitMode === 1) {
+          const fit = computeCentripetalFit(m, r, { vMin: 1, vMax: 10 })
+          quantities.push(
+            { label: '角速度平方 ω²', value: (omega * omega).toFixed(2), unit: 'rad²/s²' },
+            {
+              label: '理论斜率 k = m·r',
+              value: fit.slope.toFixed(2),
+              unit: 'kg·m',
+              highlight: 'extreme' as const,
+            },
+            {
+              label: '拟合斜率 k_fit',
+              value: fit.fitSlope.toFixed(3),
+              unit: 'kg·m',
+              highlight: 'extreme' as const,
+            },
+            {
+              label: '拟合相对偏差',
+              value: `${(fit.slopeError * 100).toFixed(1)}`,
+              unit: '%',
+            },
+            { label: '采样点数', value: `${fit.samples.length}`, unit: '组' },
+          )
+          if (showCompare === 1) {
+            quantities.push({
+              label: '对照斜率（质量加倍）',
+              value: fit.compareSlope.toFixed(2),
+              unit: 'kg·m',
+            })
+          }
+
+          formulas.push(
+            {
+              name: 'F–ω² 线性关系',
+              latex: 'F = (mr)\\,\\omega^{2}',
+              level: 'important',
+              condition: '保持 m、r 不变，只改变 ω',
+            },
+            {
+              name: '过原点最小二乘拟合',
+              latex: 'k = \\frac{\\sum \\omega_i^{2} F_i}{\\sum \\omega_i^{4}}',
+              level: 'core',
+              condition: '由实验采样点求出斜率，而不是直接套 m·r',
+            },
+            {
+              name: '控制变量：质量加倍',
+              latex: 'k(2m) = 2mr = 2k',
+              level: 'important',
+              condition: '斜率翻倍，图线变陡，截距仍为 0',
+            },
+          )
+
+          gaokaoPoints.push({
+            text: `【探究向心力实验】用向心力演示仪（或力传感器）保持 m、r 不变，改变角速度：F–ω² 图线为过原点的直线，拟合斜率 k_fit = ${fit.fitSlope.toFixed(2)} kg·m，与理论值 m·r = ${fit.slope.toFixed(2)} kg·m 一致，从而验证 F = m·r·ω²。`,
+            importance: 'gaokao' as const,
+          })
+          gaokaoPoints.push({
+            text: '【图线斜率的物理意义】F–ω² 图的斜率是 m·r：换用质量更大的小球，斜率变大；换用更长的绳（r 变大），斜率也变大。这正是控制变量法在图像上的体现。',
+            importance: 'core' as const,
+          })
+        }
       }
 
       return {

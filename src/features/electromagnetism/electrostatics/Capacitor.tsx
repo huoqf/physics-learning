@@ -8,6 +8,8 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateCapacitor } from '@/physics'
 import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import CapacitorChart from './CapacitorChart'
+import CapacitorTransientChart from './CapacitorTransientChart'
+import CapacitorTransientLab from './CapacitorTransientLab'
 
 // 物理常数定义 (SI)
 const EPS0 = 8.854e-12
@@ -52,6 +54,7 @@ export default function Capacitor() {
   const { font } = canvasSize
 
   const { S = 100, d = 5, epsilon_r = 1, U = 12, connected = 1, savedQ } = params
+  const mode = params.mode ?? 0
   const isConnected = connected >= 0.5
   const hasDielectric = epsilon_r > 1.5
 
@@ -99,6 +102,20 @@ export default function Capacitor() {
       setIsFlowing(false)
     }
   }, { playing: isFlowing })
+
+  // ---- 模式二：RC 充放电暂态（同一页面内的实验图层，独立场景与图表）----
+  if (mode === 1) {
+    return (
+      <div className="w-full h-full flex flex-col">
+        <div className="h-[28%] shrink-0 px-1.5 pt-1.5">
+          <CapacitorTransientChart />
+        </div>
+        <div className="flex-1 min-h-0">
+          <CapacitorTransientLab />
+        </div>
+      </div>
+    )
+  }
 
   // ---- 画布几何布局（使用设计坐标系）----
   const cx = DESIGN_WIDTH * LAYOUT.cxRatio

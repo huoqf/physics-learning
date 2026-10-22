@@ -1,6 +1,6 @@
 import type { PhysicsPanelData, PhysicsQuantity, ParamDefs } from '../types'
 import { normalizeParams } from '../types'
-import { GRAVITY } from '../../../physics'
+import { GRAVITY, computeProjectileStrobe } from '../../../physics'
 
 interface Params {
   v0x: number
@@ -8,6 +8,8 @@ interface Params {
   modelMode: number
   inclineAngle: number
   airResistance: number
+  strobeMode: number
+  strobeT: number
 }
 
 const DEFAULTS: ParamDefs<Params> = {
@@ -16,6 +18,8 @@ const DEFAULTS: ParamDefs<Params> = {
   modelMode: { default: 0 },
   inclineAngle: { default: 30 },
   airResistance: { default: 0 },
+  strobeMode: { default: 0 },
+  strobeT: { default: 0.2 },
 }
 
 export function handleProjectile(
@@ -31,6 +35,9 @@ export function handleProjectile(
   const g = p.g ?? GRAVITY
   const modelMode = p.modelMode ?? 0
   const inclineAngle = p.inclineAngle ?? 30
+  const airResistance = p.airResistance ?? 0
+  const strobeMode = p.strobeMode ?? 0
+  const strobeT = p.strobeT ?? 0.2
 
   const height = 10.0
   const groundTime = Math.sqrt((2 * height) / g)
@@ -77,11 +84,52 @@ export function handleProjectile(
     )
   }
 
+  // ── 频闪打点图层：只有"无阻力 + 频闪开启"时 Δy = gT² 才成立 ──────────────
+  // 有空气阻力时竖直方向不再是 ½gt²，仍给出 Δy = gT² 就是错误结论，所以整段只在这里输出。
+  const strobeOn = strobeMode === 1 && airResistance === 0
+  const strobe = strobeOn ? computeProjectileStrobe(v0x, g, strobeT, activeT) : null
+  if (strobe) {
+    quantities.push(
+      { label: '频闪周期 T', value: strobe.period.toFixed(2), unit: 's' },
+      { label: '已打点数 n', value: `${strobe.marks.length}`, unit: '个' },
+      { label: '水平间距 Δx = v₀T', value: strobe.dx.toFixed(2), unit: 'm' },
+      { label: '首段竖直间距 Δy₁', value: strobe.firstDy.toFixed(3), unit: 'm' },
+      {
+        label: '逐差 ΔΔy = gT²',
+        value: strobe.diffOfDy.toFixed(3),
+        unit: 'm',
+        highlight: 'extreme' as const,
+      },
+    )
+    if (strobe.ratios.length >= 3) {
+      quantities.push({
+        label: '竖直间距比 Δyₖ',
+        value: strobe.ratios.slice(0, 3).join(' : '),
+        unit: '',
+        highlight: 'extreme' as const,
+      })
+    }
+  } else if (strobeMode === 1 && airResistance > 0) {
+    quantities.push({
+      label: '频闪打点',
+      value: '已关闭',
+      unit: '',
+    })
+  }
+
   const formulas: import('../types').Formula[] = [
     { name: '水平分运动', latex: 'x = v_{0x} t', level: 'core' },
     { name: '竖直分运动', latex: 'y = \\frac{1}{2}gt^2', level: 'core' },
     { name: '偏角核心二级结论', latex: '\\tan\\theta = 2\\tan\\alpha', level: 'important', condition: '速度反向延长线过水平位移中点' },
   ]
+
+  if (strobeOn) {
+    formulas.push(
+      { name: '频闪：水平等距', latex: '\\Delta x = v_0 T', level: 'core', condition: '相邻打点水平间距恒定 → 水平匀速' },
+      { name: '频闪：竖直间距成奇数比', latex: '\\Delta y_k = \\tfrac{1}{2}gT^{2}(2k-1)', level: 'important', condition: 'Δy₁ : Δy₂ : Δy₃ = 1 : 3 : 5，初速为零的匀加速' },
+      { name: '频闪：逐差求 g', latex: 'g = \\frac{\\Delta\\Delta y}{T^{2}}', level: 'important', condition: '用逐差法测当地重力加速度' },
+    )
+  }
 
   if (modelMode === 2) {
     formulas.push(
@@ -95,6 +143,18 @@ export function handleProjectile(
     { text: '二级结论【中点定理】：速度偏角的正切值恒等于位移偏角正切值的 2 倍 (tanθ = 2tanα)；速度反向延长线必过水平位移的中点。', importance: 'gaokao' as const },
     { text: '斜面平抛突破法：物体落回斜面上时，位移矢量偏角等于斜面倾角 (tanα = tanφ)；当速度方向与斜面平行时，物体距离斜面最远。', importance: 'hard' as const },
   ]
+
+  if (strobeOn) {
+    gaokaoPoints.push({
+      text: '【频闪照片实验】一张频闪照片同时验证两件事：水平方向相邻间距相等 → 匀速；竖直方向相邻间距成 1:3:5 → 匀加速。用逐差 ΔΔy = gT² 即可测出当地重力加速度，无需秒表。',
+      importance: 'gaokao' as const,
+    })
+  } else if (strobeMode === 1 && airResistance > 0) {
+    gaokaoPoints.push({
+      text: '【频闪前提】Δy = gT² 只在忽略空气阻力时成立。开启阻力后竖直方向不是匀加速，频闪图层与判据同步关闭，避免把结论用错场景。',
+      importance: 'core' as const,
+    })
+  }
 
   return { quantities, formulas, gaokaoPoints }
 }

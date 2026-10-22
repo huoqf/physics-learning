@@ -16,6 +16,7 @@ import {
 import { worldToDesign, type SceneScale } from '@/scene'
 import type { ViewportInfo } from '@/utils/useViewport'
 import type { ProjectilePhysicsResult } from '../hooks/useProjectilePhysics'
+import { ProjectileStrobeLayer } from './ProjectileStrobeLayer'
 
 interface ProjectileSceneProps {
   physics: ProjectilePhysicsResult
@@ -28,6 +29,16 @@ interface ProjectileSceneProps {
   showProjections?: boolean
   modelMode?: number
   inclineAngle?: number
+  /** 水平初速度（频闪图层用） */
+  v0x?: number
+  /** 重力加速度（频闪图层用） */
+  g?: number
+  /** 频闪打点开关：1 开启 */
+  strobeMode?: number
+  /** 频闪周期 T (s) */
+  strobeT?: number
+  /** 空气阻力系数：> 0 时竖直方向不是匀加速，频闪图层不成立 */
+  airResistance?: number
 }
 
 export function ProjectileScene({
@@ -41,6 +52,11 @@ export function ProjectileScene({
   showProjections = true,
   modelMode = 0,
   inclineAngle = 30,
+  v0x = 10,
+  g = 9.8,
+  strobeMode = 0,
+  strobeT = 0.2,
+  airResistance = 0,
 }: ProjectileSceneProps) {
   const { font } = canvasSize
 
@@ -191,6 +207,20 @@ export function ProjectileScene({
         isFocus
         chargeSign="none"
       />
+
+      {/* 3.5 频闪打点图层：Δy = gT² 只在无阻力时成立 */}
+      {strobeMode === 1 && airResistance === 0 && (
+        <ProjectileStrobeLayer
+          v0x={v0x}
+          g={g}
+          period={strobeT}
+          activeT={physics.activeT}
+          sceneScale={sceneScale}
+          font={font}
+          noteX={vp.designLeft + 10}
+          noteY={groundLevelPos.cy - 12}
+        />
+      )}
 
       {/* 4. 分运动投影球与辅助线 */}
       {showProjections && !physics.isLanded && (

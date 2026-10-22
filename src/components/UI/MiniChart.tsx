@@ -49,6 +49,11 @@ export interface MiniChartProps {
   currentVals: Record<string, number>
   currentXVal: number
   staticLines?: MiniChartStaticLine[]
+  /**
+   * 阴影面积：把某条曲线在 `[xMin, 游标]` 区间与 y = 0 之间填充。
+   * 用于「图线下的面积有物理意义」的场景（i–t 图下面积 = ΔQ）。
+   */
+  shadedArea?: { key: string; color: string; opacity?: number }
   minWidth?: number
   minHeight?: number
   className?: string
@@ -63,6 +68,7 @@ function MiniChartContent({
   currentVals,
   currentXVal,
   staticLines,
+  shadedArea,
 }: {
   points: Record<string, number>[]
   lines: MiniChartLine[]
@@ -72,6 +78,7 @@ function MiniChartContent({
   currentVals: Record<string, number>
   currentXVal: number
   staticLines: MiniChartStaticLine[]
+  shadedArea?: { key: string; color: string; opacity?: number }
 }) {
   const ctx = useChartContext()
 
@@ -104,6 +111,18 @@ function MiniChartContent({
           strokeDasharray={sLine.strokeDasharray}
         />
       ))}
+
+      {/* 阴影面积（图线下的积分量，如 i–t 图下面积 = ΔQ） */}
+      {shadedArea && visiblePoints.length >= 2 && (() => {
+        const baseY = Math.max(plotOrigin.y, Math.min(plotOrigin.y + plotSize.height, toSvgY(0)))
+        const pts = visiblePoints
+          .map((p) => `${toSvgX(p[xKey])},${toSvgY(p[shadedArea.key])}`)
+          .join(' L ')
+        const d = `M ${toSvgX(visiblePoints[0][xKey])},${baseY} L ${pts} L ${toSvgX(
+          visiblePoints[visiblePoints.length - 1][xKey],
+        )},${baseY} Z`
+        return <path d={d} fill={shadedArea.color} opacity={shadedArea.opacity ?? 0.18} stroke="none" />
+      })()}
 
       {/* 绘制轨迹曲线 */}
       {visiblePoints.length >= 2 &&
@@ -194,6 +213,7 @@ export function MiniChart({
   currentVals,
   currentXVal,
   staticLines = [],
+  shadedArea,
   minWidth = 300,
   minHeight = 130,
   className = '',
@@ -227,6 +247,7 @@ export function MiniChart({
         currentVals={currentVals}
         currentXVal={currentXVal}
         staticLines={staticLines}
+        shadedArea={shadedArea}
       />
     </BasePhysicsChart>
   )

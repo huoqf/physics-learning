@@ -4,6 +4,10 @@ import {
   calculateCapacitor,
   calculateChargeInEFieldTrajectory,
   getChargeInEFieldTimeScale,
+  computeRCTransient,
+  rcTauFromParams,
+  rcWindowFromParams,
+  type RCPhase,
   TWO_CHARGE_SEPARATION_M,
 } from '../../../physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
@@ -295,6 +299,158 @@ export function handleElectrostatics(
       }
     }
     case 'anim-capacitor': {
+      const capMode = params.mode ?? 0
+
+      // ── 模式 1：RC 充放电暂态 ──────────────────────────────────
+      // 与中屏场景、上方 i–t / u_C–t 曲线共用 computeRCTransient 与同一套 τ，
+      // 右屏所有读数都是"当前 time 的函数"，不存在独立累积的状态。
+      if (capMode === 1) {
+        const emf = params.emf ?? 6
+        const R = (params.R_t ?? 10) * 1e3
+        const C = (params.C_t ?? 200) * 1e-6
+        const phase: RCPhase = (params.phase ?? 0) === 1 ? 'discharge' : 'charge'
+        const isCharge = phase === 'charge'
+
+        const windowSec = rcWindowFromParams(params)
+        const tau = rcTauFromParams(params)
+        const t = Math.min(Math.max(time, 0), windowSec)
+        const st = computeRCTransient(emf, R, C, t, phase)
+
+        const energyFull = 0.5 * C * emf * emf // 充满时储能 ½CE²
+        // 充电全过程电源做功 W = qE = CE²，其中恰好一半进电场、一半在 R 上生热
+        const sourceWork = C * emf * emf
+
+        return {
+          quantities: [
+            ...base,
+            {
+              label: '时间常数',
+              symbol: 'τ',
+              value: tau,
+              unit: 's',
+              color: PHYSICS_COLORS.capacitor,
+              highlight: 'extreme' as const,
+            },
+            { label: '当前时刻', symbol: 't', value: t, unit: 's' },
+            { label: 't / τ', value: t / tau, unit: '' },
+            {
+              label: '电容电压',
+              symbol: 'u_C',
+              value: st.uC,
+              unit: 'V',
+              color: PHYSICS_COLORS.electricPotential,
+              highlight: 'extreme' as const,
+            },
+            {
+              label: '回路电流',
+              symbol: 'i',
+              value: Math.abs(st.i) * 1e3,
+              unit: 'mA',
+              color: PHYSICS_COLORS.velocity,
+            },
+            {
+              label: '极板电量',
+              symbol: 'q',
+              value: st.q * 1e6,
+              unit: 'μC',
+              color: PHYSICS_COLORS.positiveCharge,
+            },
+            {
+              label: '∫i dt（面积）',
+              value: st.areaCharge * 1e6,
+              unit: 'μC',
+              color: PHYSICS_COLORS.work,
+              highlight: 'extreme' as const,
+            },
+            {
+              label: '电场储能',
+              symbol: 'E_C',
+              value: st.storedEnergy * 1e3,
+              unit: 'mJ',
+              color: PHYSICS_COLORS.kineticEnergy,
+            },
+            { label: '电阻热功率', symbol: 'P', value: st.heatPower * 1e3, unit: 'mW' },
+          ],
+          formulas: [
+            {
+              name: isCharge ? '充电电压方程' : '放电电压方程',
+              latex: isCharge ? 'u_C = E\\left(1 - e^{-t/RC}\\right)' : 'u_C = E\\,e^{-t/RC}',
+              level: 'core',
+              condition: isCharge ? 'S 闭合，电容器从零开始充电' : 'S 断开，电容经 R 放电',
+            },
+            {
+              name: '电流方程',
+              latex: isCharge
+                ? 'i = \\frac{E}{R}\\,e^{-t/RC}'
+                : 'i = -\\frac{E}{R}\\,e^{-t/RC}',
+              level: 'core',
+              condition: isCharge
+                ? '闭合瞬间电流最大 i₀ = E/R，随后按 e 指数衰减'
+                : '负号表示放电电流方向与充电时相反',
+            },
+            {
+              name: '时间常数',
+              latex: '\\tau = RC',
+              level: 'core',
+              note: `本题 τ = ${tau.toFixed(2)} s，t = τ 时 ${isCharge ? 'u_C 升至 63.2%' : 'u_C 降至 36.8%'}`,
+            },
+            {
+              name: '面积即电量',
+              // 充电：面积 = 已充入的电量 C·u_C；放电：面积 = 已放出的电量 CE − C·u_C。
+              // 两种情形公式不同，写同一个会在放电模式下把 758 μC 错读成 441 μC。
+              latex: isCharge
+                ? '\\int_0^t i\\,\\mathrm{d}t = \\Delta Q = C\\,u_C'
+                : '\\int_0^t |i|\\,\\mathrm{d}t = CE - C\\,u_C',
+              level: 'important',
+              condition: isCharge
+                ? 'i–t 图线与时间轴围成的面积'
+                : '放电时面积为"已放出的电量"，与 q 互补',
+            },
+            {
+              name: isCharge ? '充电能量分配（电源做功 / 电场储能 / 电阻生热）' : '放电能量转化',
+              latex: isCharge
+                ? 'W_{E} = CE^{2}, \\quad E_C = \\tfrac{1}{2}CE^{2}, \\quad Q_{R} = \\tfrac{1}{2}CE^{2}'
+                : 'Q_{R} = \\tfrac{1}{2}CE^{2}',
+              level: 'important',
+              condition: isCharge
+                ? '无论 R 多大，电源做功总有一半变成电阻内能'
+                : '放电：储存的 ½CE² 全部在电阻上转为内能',
+              note: isCharge
+                ? `本题 W源 = ${sourceWork.toExponential(2)} J，其中一半（${energyFull.toExponential(2)} J）储存在电场中`
+                : `本题初态储能 ${energyFull.toExponential(2)} J，放完后全部在电阻上变为内能`,
+            },
+          ],
+          gaokaoPoints: [
+            {
+              text: `【τ 只由 R、C 决定】τ = RC = ${tau.toFixed(2)} s，与电源电动势 E 无关。改变 E 只改变曲线高度（i₀ = E/R），不改变衰减快慢。`,
+              importance: 'gaokao',
+            },
+            {
+              text: '【三个特征时刻】t = τ 时 u_C 达 63.2%、i 剩 36.8%；t = 3τ 时约 95%；t = 5τ 时约 99.3%，可视作"充满/放完"。',
+              importance: 'core',
+            },
+            {
+              text: '【面积 = 电量】i–t 图线下的面积 ∫|i| dt 就是这段时间内流过导线截面的电荷量：充电时等于极板电荷的增量，放电时等于减少量。',
+              importance: 'gaokao',
+            },
+            {
+              text: '【充电效率恒为 50%】电源做功 W = CE²，电场只储存 ½CE²，另一半无论 R 多大都在电阻上转为内能——R 只决定快慢，不决定分配比例。',
+              importance: 'hard',
+            },
+          ],
+          warnings: [
+            {
+              text: `易错点：误以为 R 越大越"容易充满"。实际上 R 越大 τ = RC 越大，充电越慢；但最终稳定电压仍是 u_C = E，与 R 无关。`,
+              level: 'warning',
+            },
+            {
+              text: '注意：i–t 图线的面积是电荷量 ΔQ（单位 C），不是功或功率，切勿与 P–t 图的面积混淆。',
+              level: 'info',
+            },
+          ],
+        }
+      }
+
       const S = params.S ?? 100
       const d = params.d ?? 5
       const epsilon_r = params.epsilon_r ?? 1

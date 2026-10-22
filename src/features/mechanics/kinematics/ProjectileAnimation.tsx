@@ -28,6 +28,8 @@ export default function ProjectileAnimation() {
     airResistance = 0,
     showProjections = 1,
     showTangentMidpoint = 1,
+    strobeMode = 0,
+    strobeT = 0.2,
   } = params
 
   // 2. 挂载标准的 splitV Viewport (横向分屏：上 50% 图表，下 50% 动画)
@@ -134,6 +136,11 @@ export default function ProjectileAnimation() {
             showProjections={Boolean(showProjections)}
             modelMode={modelMode}
             inclineAngle={inclineAngle}
+            v0x={v0x}
+            g={g}
+            strobeMode={strobeMode}
+            strobeT={strobeT}
+            airResistance={airResistance}
           />
         </AnimationSvgCanvas>
       </div>
