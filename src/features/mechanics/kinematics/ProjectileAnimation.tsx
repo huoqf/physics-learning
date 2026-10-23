@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
+import { resolveVelocityRefs } from '@/utils/vectorRefs'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { VelocityTimeChart } from '@/components/Chart'
 import { useAnimationStore } from '@/stores'
@@ -51,6 +52,13 @@ export default function ProjectileAnimation() {
   // 4. SceneScale 建立物理到设计的比例尺转换
   // 原点 (70, 35) 为抛出点设计坐标，1m=25px 等比缩放（确保合速度方向准确）
   // 地面 y=-10m → designY = 35 + 10×25 = 285px
+  //
+  // 场景里同时画 vₓ / v_y / v 三个矢量，三者的 refMagnitude 必须由 resolveVelocityRefs 成对配：
+  // 只配 velocity 时分量拿到 ref=0 被回退成恒定 minLength，vₓ 与 v_y 全程等长，
+  // 等于在说「两个分速度都不变」，与平抛的真实关系相反。规则与理由见 utils/vectorRefs。
+  const peakComponentSpeed = Math.max(v0x, g * physics.groundTime) // vₓ 恒定、v_y 落地最大
+  const peakSpeed = Math.hypot(v0x, g * physics.groundTime)
+  const velRefs = resolveVelocityRefs(peakSpeed, peakComponentSpeed)
   const sceneScale = useSceneScale({
     vp,
     preset: CANVAS_PRESETS.splitV,
@@ -59,7 +67,7 @@ export default function ProjectileAnimation() {
     customOriginY: 35,
     customScaleX: 25,
     customScaleY: 25,
-    refMagnitudes: { velocity: Math.max(v0x, 10) },
+    refMagnitudes: { velocity: velRefs.main, velocityX: velRefs.component, velocityY: velRefs.component },
   })
 
   // 落地自动暂停动画
