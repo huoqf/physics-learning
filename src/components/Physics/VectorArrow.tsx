@@ -14,6 +14,23 @@ import { calculateVectorPixelLength } from '../../utils/vectorLength';
  */
 export type ArrowType = 'physical-real' | 'physical-schematic' | 'visual-only'
 
+/** 已告警过的缩放比（模块级，避免逐帧重复刷同一条告警） */
+const warnedNonUniform = new Set<string>()
+const WARN_NON_UNIFORM_MAX = 20
+
+/**
+ * 判断两轴缩放是否真的不等（相对误差判据）。
+ *
+ * 不能用 `scaleX !== scaleY`：等比场景下两轴走的是不同浮点路径，
+ * 会得到 9.285714285714285 / 9.285714285714286 这种只差 1 ULP 的结果，
+ * 严格判等会把它误判成非等比，并在每帧、每个箭头上各刷一条告警。
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export function isNonUniformScale(scaleX: number, scaleY: number, relTol = 1e-6): boolean {
+  const denom = Math.max(Math.abs(scaleX), Math.abs(scaleY), Number.EPSILON)
+  return Math.abs(scaleX - scaleY) / denom > relTol
+}
+
 /**
  * 矢量箭头组件 Props
  *
@@ -104,11 +121,16 @@ export function VectorArrow({
     );
   }
 
-  if (process.env.NODE_ENV !== 'production' && sceneScale.scaleX !== sceneScale.scaleY && !sceneScale.intentionalNonUniformScale) {
-    console.warn(
-      `[VectorArrow] sceneScale 非等比缩放 (scaleX=${sceneScale.scaleX}, scaleY=${sceneScale.scaleY})，` +
-      '矢量方向可能失真。如需非等比缩放，请确认这是有意为之。'
-    );
+  if (process.env.NODE_ENV !== 'production' && !sceneScale.intentionalNonUniformScale && isNonUniformScale(sceneScale.scaleX, sceneScale.scaleY)) {
+    // 同一组缩放比只告警一次：箭头每帧重渲染，逐帧刷同一条告警会把真正的告警淹掉
+    const key = `${sceneScale.scaleX.toFixed(3)}|${sceneScale.scaleY.toFixed(3)}`;
+    if (!warnedNonUniform.has(key) && warnedNonUniform.size < WARN_NON_UNIFORM_MAX) {
+      warnedNonUniform.add(key);
+      console.warn(
+        `[VectorArrow] sceneScale 非等比缩放 (scaleX=${sceneScale.scaleX}, scaleY=${sceneScale.scaleY})，` +
+        '矢量方向可能失真。如需非等比缩放，请确认这是有意为之。'
+      );
+    }
   }
 
   const dir = normalize(vector);

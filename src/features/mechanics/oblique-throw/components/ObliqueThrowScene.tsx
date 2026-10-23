@@ -16,6 +16,8 @@ export interface ObliqueThrowSceneProps {
   showGrid?: boolean
   showVacuumCompare?: boolean
   showPrevTrajectory?: boolean
+  targetWidth?: number
+  targetHeight?: number
 }
 
 /**
@@ -43,6 +45,8 @@ export function ObliqueThrowScene({
   showGrid = true,
   showVacuumCompare = false,
   showPrevTrajectory = true,
+  targetWidth,
+  targetHeight,
 }: ObliqueThrowSceneProps) {
   const { font } = canvasSize
 
@@ -56,8 +60,8 @@ export function ObliqueThrowScene({
 
   // 2. 动态物理刻度轴与网格线生成 (Physical Ruler Ticks)
   const ticksData = useMemo(() => {
-    const maxPhysicalX = Math.max(physics.range * 1.15, 15)
-    const maxPhysicalY = Math.max(physics.topY * 1.35, 6)
+    const maxPhysicalX = Math.max(targetWidth ?? physics.range * 1.15, 15)
+    const maxPhysicalY = Math.max(targetHeight ?? physics.topY * 1.35, 6)
 
     const xStep = getNiceStep(maxPhysicalX, 7)
     const yStep = getNiceStep(maxPhysicalY, 5)
@@ -73,7 +77,7 @@ export function ObliqueThrowScene({
     }
 
     return { xTicks, yTicks }
-  }, [physics.range, physics.topY, sceneScale])
+  }, [physics.range, physics.topY, sceneScale, targetWidth, targetHeight])
 
   // 3. 轨迹坐标转换
   const historyDesignPoints = useMemo(() => {
