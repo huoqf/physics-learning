@@ -6,7 +6,7 @@
  *
  * 输出：
  *   1. src/ANNOTATIONS.md — 完整映射表
- *   2. 更新 src/data/knowledge/MEMORY.md — 写入映射表供 agent 检索
+ *   2. MEMORY.md — 用同一张表原位替换「## 动画映射表」小节（agent 检索用的权威副本）
  *
  * 用法：node scripts/gen-annotations.mjs
  */
@@ -18,6 +18,8 @@ import { join, basename, dirname, resolve } from 'path'
 const ROOT = resolve(import.meta.dirname, '..')
 const REGISTRIES_GLOB = 'src/data/registries/*.ts'
 const MEMORY_PATH = join(ROOT, 'src', 'ANNOTATIONS.md')
+/** agent 检索用的权威副本，其「## 动画映射表」小节由本脚本原位替换 */
+const MEMORY_DOC_PATH = join(ROOT, 'MEMORY.md')
 
 // ─── 解析工具 ───────────────────────────────────────────────
 
@@ -254,30 +256,92 @@ function main() {
     }
   }
 
-  // 4. 输出 ANNOTATIONS.md
+  // 4. 表格行只生成一次，ANNOTATIONS.md 与 MEMORY.md 共用，杜绝两处各自漂移
+  const rowLines = results.map((r) => {
+    const sceneCol = r.scene || '—'
+    const physicsCol = r.physics || '—'
+    const ceCol = r.centerExtra || '—'
+    return `| ${r.animId} | ${r.title} | ${r.entry} | ${sceneCol} | ${physicsCol} | ${ceCol} |`
+  })
+
+  const tableHeader = [
+    '| anim-id | title | entry | scene | physics | centerExtra |',
+    '|---------|-------|-------|-------|---------|-------------|',
+  ]
+
+  // 4.1 输出 ANNOTATIONS.md
   const lines = [
     '# 动画映射表',
     '',
     '> 自动生成，请勿手动编辑。运行 `node scripts/gen-annotations.mjs` 重新生成。',
     '',
-    '| anim-id | title | entry | scene | physics | centerExtra |',
-    '|---------|-------|-------|-------|---------|-------------|',
+    ...tableHeader,
+    ...rowLines,
+    '',
+    `共 ${results.length} 个动画条目。`,
+    '',
   ]
-
-  for (const r of results) {
-    const sceneCol = r.scene || '—'
-    const physicsCol = r.physics || '—'
-    const ceCol = r.centerExtra || '—'
-    lines.push(`| ${r.animId} | ${r.title} | ${r.entry} | ${sceneCol} | ${physicsCol} | ${ceCol} |`)
-  }
-
-  lines.push('')
-  lines.push(`共 ${results.length} 个动画条目。`)
-  lines.push('')
 
   writeFileSync(MEMORY_PATH, lines.join('\n'), 'utf-8')
   console.log(`✓ 已生成 ${MEMORY_PATH}`)
+
+  // 4.2 同步 MEMORY.md 的「## 动画映射表」小节
+  syncMemoryDoc([...tableHeader, ...rowLines], results.length)
+
   console.log(`  共 ${results.length} 个动画，其中 ${results.filter(r => r.scene).length} 有 Scene，${results.filter(r => r.physics).length} 有 physics`)
+}
+
+/**
+ * 用最新表格原位替换 MEMORY.md 的「## 动画映射表」小节。
+ * 只动该小节（从标题行到紧随其后的 `---` 分隔符之前），文件其余内容原样保留。
+ * 找不到该小节或其后没有 `---` 时只告警、不写入，避免破坏文件。
+ */
+function syncMemoryDoc(tableLines, count) {
+  if (!existsSync(MEMORY_DOC_PATH)) {
+    console.warn(`⚠ 未找到 ${MEMORY_DOC_PATH}，跳过同步`)
+    return
+  }
+  const lines = readFileSync(MEMORY_DOC_PATH, 'utf-8').split(/\r?\n/)
+  const startIdx = lines.findIndex((l) => /^##\s*动画映射表\s*$/.test(l))
+  if (startIdx === -1) {
+    console.warn('⚠ MEMORY.md 中未找到「## 动画映射表」小节，跳过同步（请检查文件结构）')
+    return
+  }
+  const endIdx = lines.findIndex((l, i) => i > startIdx && /^---\s*$/.test(l))
+  if (endIdx === -1) {
+    console.warn('⚠ MEMORY.md 中「## 动画映射表」小节之后未找到 `---` 分隔符，跳过同步')
+    return
+  }
+
+  const d = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  const stamp = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+
+  const section = [
+    '## 动画映射表',
+    '',
+    `> **生成时间**：${stamp}`,
+    '> **生成命令**：`node scripts/gen-annotations.mjs`',
+    '> **数据来源**：`src/ANNOTATIONS.md`（自动生成，请勿手动编辑）',
+    '> **更新方式**：修改 `src/data/registries/*.ts` 后运行 `node scripts/gen-annotations.mjs` 重新生成',
+    '> **冲突仲裁**：当本表与 codebase-memory 图谱结果冲突时，以本表为准',
+    '',
+    ...tableLines,
+    '',
+    `共 ${count} 个动画条目。`,
+    '',
+  ]
+
+  const out = [
+    ...lines.slice(0, startIdx),
+    ...section,
+    ...lines.slice(endIdx),
+  ].map((l) =>
+    /^\*最后更新：/.test(l) ? `*最后更新：${stamp} | 生成命令：\`node scripts/gen-annotations.mjs\`*` : l,
+  )
+
+  writeFileSync(MEMORY_DOC_PATH, out.join('\n'), 'utf-8')
+  console.log(`✓ 已同步 ${MEMORY_DOC_PATH} 的「动画映射表」小节（${count} 条）`)
 }
 
 main()
