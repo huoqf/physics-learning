@@ -1,5 +1,5 @@
 import { PhysicsVectorArrow, SportsCar, PhysicsGround, VectorDefs, markerId } from '@/components/Physics'
-import { useAnimationViewport, useSceneScale } from '@/hooks'
+import { useAnimationViewport, useSceneScale, defaultMaxVectorLength } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -64,7 +64,9 @@ export default function UniformAccelerationAnimation() {
 
   // ── 矢量场景配置 ──
   // refMagnitude 固定：速度矢量随 v 伸缩（v=25→满长度），加速度矢量随 a 伸缩（a=8→满长度）
-  const sceneScale = useSceneScale({ vp: sceneVp, preset: CANVAS_PRESETS.splitV, anchor: 'viewport', physicsWidth: CANVAS_PRESETS.splitV.width, physicsHeight: CANVAS_PRESETS.splitV.height, refMagnitudes: { velocity: 25, acceleration: 8 } })
+  // 锚点用 'design' 而非 'viewport'：本页所有矢量起点都是 originDesign、几何全在屏幕像素里画，
+  // 不经过 worldToDesign，scaleX/scaleY 只用于「非等比缩放」判定。锚在 preset 上使 scaleX === scaleY === 1。
+  const sceneScale = useSceneScale({ vp: sceneVp, preset: CANVAS_PRESETS.splitV, anchor: 'design', physicsWidth: CANVAS_PRESETS.splitV.width, physicsHeight: CANVAS_PRESETS.splitV.height, maxVectorLength: defaultMaxVectorLength(sceneVp.designVisibleW, sceneVp.designVisibleH), refMagnitudes: { velocity: 25, acceleration: 8 } })
 
   // ── 物理计算 ──
   const { v, s } = calculateAcceleratedMotion(v0, a, time)

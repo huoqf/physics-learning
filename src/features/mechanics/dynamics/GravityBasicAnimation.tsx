@@ -1,6 +1,6 @@
 import { VectorDefs } from '@/components/Physics'
 import { FC, useEffect, useMemo, useRef } from 'react'
-import { useAnimationViewport, useSceneScale } from '@/hooks'
+import { useAnimationViewport, useSceneScale, defaultMaxVectorLength } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -45,7 +45,9 @@ export const GravityBasicAnimation: FC = () => {
   const cx = vp.centerX
   const cy = vp.centerY
 
-  const gravBasicSceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height })
+  // 锚点用 'design' 而非 'viewport'：本页所有矢量起点都是 originDesign、几何全在屏幕像素里画，
+  // 不经过 worldToDesign，scaleX/scaleY 只用于「非等比缩放」判定。锚在 preset 上使 scaleX === scaleY === 1。
+  const gravBasicSceneScale = useSceneScale({ vp, preset, anchor: 'design', physicsWidth: preset.width, physicsHeight: preset.height, maxVectorLength: defaultMaxVectorLength(vp.designVisibleW, vp.designVisibleH) })
 
   // ─── 物理引擎计算 ───
 

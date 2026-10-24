@@ -97,6 +97,9 @@ export default function ClapeyronAnimation() {
     anchor: 'viewport',
     physicsWidth: 3.0,
     physicsHeight: 5.0,
+    // 有意非等比（实测 140/130 ≈ 8%）：与气体定律页同源的 3.0 m × 5.0 m 气缸示意量程，
+    // 体积读数来自物理量面板；矢量只有竖直方向，非等比不改变方向。此标记仅关闭开发期告警。
+    intentionalNonUniformScale: true,
     originSource: 'custom',
     originX: visibleX + visibleWidth / 2,
     originY: visibleY + visibleHeight * 0.9,

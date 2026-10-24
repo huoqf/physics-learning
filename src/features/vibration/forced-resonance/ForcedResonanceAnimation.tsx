@@ -36,10 +36,16 @@ export default function ForcedResonanceAnimation() {
     showForces,
   })
 
+  // 锚点用 'design' 而非 'viewport'：本页物理舞台按 420×650（splitH）设计，
+  // 物理层注释即写明「1 m = 100 design units」—— 4.2 m / 6.5 m 正是除以 100 得来的。
+  // 用 'viewport' 时容器比 preset 高（实测可视区 420×736），scaleY 会变成 113 而非 100，
+  // 于是「轮盘半径 / 阻尼槽宽度」按 sceneScale.scale（=100）画的圆与矩形，
+  // 与曲柄销、槽高等 worldToDesign 的双轴换算脱节：销钉轨道被拉成 1.132 的椭圆、
+  // 槽的宽高用了两把尺。锚在 preset 上使 scaleX === scaleY === 100，全部回到作者设定的尺度。
   const sceneScale = useSceneScale({
     vp,
     preset: CANVAS_PRESETS.splitH,
-    anchor: 'viewport',
+    anchor: 'design',
     physicsWidth: 4.2,
     physicsHeight: 6.5,
     // 四个矢量（v / 驱动力 / 弹性力 / 阻尼力）的基准全部由稳态峰值反推：

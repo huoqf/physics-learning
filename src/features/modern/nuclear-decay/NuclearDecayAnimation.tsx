@@ -148,13 +148,26 @@ export default function NuclearDecayAnimation() {
   })
 
   // ── 5. SceneScale (无条件调用 hooks) ──
+  //
+  // 世界物理量程 10.0 m × 6.5 m（宽高比 1.54）塞进 splitV 的 840:325（2.58）分区：
+  // 直接赋字面值会让 scaleX = 84、scaleY = 50 —— 纵向拉伸 68%。
+  // 后果：原子核位置经 worldToDesign 换算后纵向间距被放大 1.68 倍（几个核的排布被明显拉长），
+  // 而库仑斥力箭头按数据向量归一化绘制 —— 箭头不再指向被拉伸后的邻核，斜向矢量与几何错位。
+  // 修法：按可视区宽高比反解统一比例尺（取「两个方向都装得下」的最小值），世界量程随之等比放大，
+  // 内容永不裁切，且 scaleX === scaleY。
+  const NUCLEUS_WORLD_W = 10.0
+  const NUCLEUS_WORLD_H = 6.5
+  const fitScale = Math.min(
+    vp.designVisibleW / NUCLEUS_WORLD_W,
+    vp.designVisibleH / NUCLEUS_WORLD_H,
+  )
   const sceneScale = useSceneScale({
     vp,
     preset: CANVAS_PRESETS.splitV,
     anchor: 'viewport',
     originSource: 'center',
-    physicsWidth: 10.0,
-    physicsHeight: 6.5,
+    physicsWidth: vp.designVisibleW / Math.max(fitScale, 1e-6),
+    physicsHeight: vp.designVisibleH / Math.max(fitScale, 1e-6),
     // 两质子间库仑斥力箭头的显示量级来自 coulombArrowMag（合成量级，非牛顿值），
     // 基准必须与它同源：峰值取 r = 1 时的量级，否则箭头恒为 minLength。
     refMagnitudes: { force: refFromPeak(COULOMB_REF_PEAK) },

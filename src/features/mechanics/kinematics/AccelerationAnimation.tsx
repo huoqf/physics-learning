@@ -1,5 +1,5 @@
 import { PhysicsVectorArrow, VectorDefs, SportsCar, PhysicsGround } from '@/components/Physics'
-import { useAnimationViewport, useSceneScale } from '@/hooks'
+import { useAnimationViewport, useSceneScale, defaultMaxVectorLength } from '@/hooks'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -65,7 +65,9 @@ export default function AccelerationAnimation() {
   // ── 矢量场景配置 ──
   // refMagnitude 固定：速度矢量随 vA 伸缩（vA=100→29%，vA=200→57%，vA=300→86%）
   // 加速度矢量随 aB 伸缩（aB=2→17%，aB=5→42%，aB=10→83%）
-  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes: { velocity: 350, acceleration: 12 } })
+  // 锚点用 'design' 而非 'viewport'：本页所有矢量起点都是 originDesign、几何全在屏幕像素里画，
+  // 不经过 worldToDesign，scaleX/scaleY 只用于「非等比缩放」判定。锚在 preset 上使 scaleX === scaleY === 1。
+  const sceneScale = useSceneScale({ vp, preset, anchor: 'design', physicsWidth: preset.width, physicsHeight: preset.height, maxVectorLength: defaultMaxVectorLength(vp.designVisibleW, vp.designVisibleH), refMagnitudes: { velocity: 350, acceleration: 12 } })
 
   const planeX = startX + result.sA * scale
   const carX = startX + result.sB * scale

@@ -35,6 +35,9 @@ export default function ElectrostaticShieldingAnimation() {
     anchor: 'viewport',
     physicsWidth: 10,
     physicsHeight: 8,
+    // 有意非等比（实测 84/81.25 ≈ 3%）：10 m × 8 m 量程用于让导体与场线铺满 full 画布，
+    // 场强箭头只有水平方向，导体与电荷标记用像素半径绘制（实测渲染圆 1.000），非等比无可见变形。
+    intentionalNonUniformScale: true,
     refMagnitudes: {
       // 参考量级取参数上限 E0 = 500 V/m，使箭头长度随外加场强线性变化
       electricField: 500,

@@ -87,6 +87,20 @@ export interface UseSceneScaleOptions {
   intentionalNonUniformScale?: boolean
 }
 
+// ─── 工具 ──────────────────────────────────────────────────────────────────
+
+/**
+ * 视口相关的矢量归一化上限默认值（设计像素）= 可视区短边 × 0.3。
+ *
+ * 单独导出，是为了给「本页物理量程只是占位、箭头长度靠这个上限定」的页面显式传参：
+ * `anchor: 'viewport'` 与 `'design'` 两个分支的默认值**不等价**
+ * （前者取可视区短边，后者取 preset 短边；中屏可视区比 preset 高时二者差 10%~120%），
+ * 切换锚点若不显式传入，箭头长度会整体缩放。
+ */
+export function defaultMaxVectorLength(visibleWidth: number, visibleHeight: number): number {
+  return Math.min(visibleWidth, visibleHeight) * 0.3
+}
+
 // ─── Hook ──────────────────────────────────────────────────────────────────
 
 export function useSceneScale(options: UseSceneScaleOptions): SceneScale {
@@ -134,7 +148,7 @@ export function useSceneScale(options: UseSceneScaleOptions): SceneScale {
     // maxVectorLength 默认值（layout-aware）
     const getDefaultMaxVL = (w: number, h: number): number => {
       if (centerLayout === 'splitH') return Math.min(w * 0.45, h * 0.3)
-      return Math.min(w, h) * 0.3
+      return defaultMaxVectorLength(w, h)
     }
 
     // ── anchor 分支 ────────────────────────────────────────

@@ -36,14 +36,21 @@ export default function DopplerAnimation() {
     time,
   })
 
-  // 物理坐标映射 (物理视野宽 48m，高 36m，原点在可视区几何正中心)
+  // 物理坐标映射 (水平量程 48 m，原点在可视区几何正中心)
+  //
+  // 竖直量程不能写死 36 m：波前圆半径是 `w.radius * sceneScale.scaleX`（单一比例尺 → 正圆），
+  // 而模式 2 的马赫锥切线走 worldToDesign（两轴分别缩放）。两个比例尺不等时，
+  // 物理上本应与每条波前圆严格相切的激波包络线会与圆脱节（实测最大偏差 4.5 px，且随容器宽高比变大）。
+  // 故按可视区宽高比反推 physicsHeight，使 scaleX === scaleY；physicsWidth 保持 48 m 不动，
+  // 因为声源与观测者都在 y = 0 水平轴上，水平比例尺决定观感。
+  const DOPPLER_WORLD_W = 48
   const sceneScale = useSceneScale({
     vp,
     preset: CANVAS_PRESETS.full,
     anchor: 'viewport',
     originSource: 'center',
-    physicsWidth: 48,
-    physicsHeight: 36,
+    physicsWidth: DOPPLER_WORLD_W,
+    physicsHeight: DOPPLER_WORLD_W * (vp.designVisibleH / Math.max(vp.designVisibleW, 1)),
     refMagnitudes: { velocity: Math.max(10, sourceSpeed * 0.1) },
   })
 

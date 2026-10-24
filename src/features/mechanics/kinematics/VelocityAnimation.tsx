@@ -1,5 +1,5 @@
 import { PhysicsVectorArrow, VectorDefs, PhysicsGround } from '@/components/Physics'
-import { useAnimationViewport, useSceneScale } from '@/hooks'
+import { useAnimationViewport, useSceneScale, defaultMaxVectorLength } from '@/hooks'
 import { useMemo, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -90,7 +90,9 @@ export default function VelocityAnimation() {
 
   // ── 矢量场景配置 ──
   // refMagnitude 固定为 15 m/s：速度矢量长度随 v 变化而伸缩（v=8→箭头约53%，v=16→满长度）
-  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes: { velocity: 15, averageVelocity: 15 } })
+  // 锚点用 'design' 而非 'viewport'：本页所有矢量起点都是 originDesign、几何全在屏幕像素里画，
+  // 不经过 worldToDesign，scaleX/scaleY 只用于「非等比缩放」判定。锚在 preset 上使 scaleX === scaleY === 1。
+  const sceneScale = useSceneScale({ vp, preset, anchor: 'design', physicsWidth: preset.width, physicsHeight: preset.height, maxVectorLength: defaultMaxVectorLength(vp.designVisibleW, vp.designVisibleH), refMagnitudes: { velocity: 15, averageVelocity: 15 } })
 
   // ── 矢量箭头实际像素长度（用于标签精确定位）──
   const velocityArrowLen = calculateVectorPixelLength(v, 'velocity', sceneScale.maxVectorLength, 15)

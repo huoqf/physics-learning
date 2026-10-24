@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { VectorDefs, VectorArrow, Block, Incline, DragHandle } from '@/components/Physics'
-import { useAnimationViewport, useSceneScale } from '@/hooks'
+import { useAnimationViewport, useSceneScale, defaultMaxVectorLength } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -51,9 +51,12 @@ export default function OrthogonalDecompositionAnimation() {
   const sceneScale = useSceneScale({
     vp,
     preset,
-    anchor: 'viewport',
+    // 锚点用 'design' 而非 'viewport'：本页所有矢量起点都是 originDesign、几何全在屏幕像素里画，
+    // 不经过 worldToDesign，scaleX/scaleY 只用于「非等比缩放」判定。锚在 preset 上使 scaleX === scaleY === 1。
+    anchor: 'design',
     physicsWidth: preset.width,
-    physicsHeight: preset.height
+    physicsHeight: preset.height,
+    maxVectorLength: defaultMaxVectorLength(vp.designVisibleW, vp.designVisibleH),
   })
 
   // 4. 计算正交分解物理数据 (使用设计尺寸确保坐标变换一致)

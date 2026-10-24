@@ -216,7 +216,9 @@ export function useConnectedBodiesPhysics(): ConnectedBodiesPhysicsResult {
   const cbSceneScale = useSceneScale({
     vp,
     preset,
-    anchor: 'viewport',
+    // 锚点用 'design' 而非 'viewport'：本页所有矢量起点都是 originDesign、几何全在屏幕像素里画，
+    // 不经过 worldToDesign，scaleX/scaleY 只用于「非等比缩放」判定。锚在 preset 上使 scaleX === scaleY === 1。
+    anchor: 'design',
     physicsWidth: preset.width,
     physicsHeight: preset.height,
     maxVectorLength: 85,

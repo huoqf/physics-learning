@@ -102,6 +102,11 @@ export default function GasLawsAnimation() {
     anchor: 'viewport',
     physicsWidth: 3.0,
     physicsHeight: 5.0,
+    // 有意非等比（实测 140/130 ≈ 8%）：气缸 3.0 m × 5.0 m 是「铺满 420×650 分区」的示意尺寸，
+    // 体积/压强读数来自物理量面板而不是画面比例尺；矢量只有竖直方向的压力与活塞推力，
+    // 非等比不会改变任何矢量方向（VectorArrow 按数据方向归一化绘制，与 scaleX/scaleY 无关）。
+    // 此标记仅用于关闭开发期告警。
+    intentionalNonUniformScale: true,
     originSource: 'custom',
     originX: visibleX + visibleWidth / 2,
     originY: visibleY + visibleHeight * 0.9,

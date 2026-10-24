@@ -1,5 +1,5 @@
 import { PhysicsVectorArrow, PhysicsGround } from '@/components/Physics'
-import { useAnimationViewport, useSceneScale } from '@/hooks'
+import { useAnimationViewport, useSceneScale, defaultMaxVectorLength } from '@/hooks'
 import { useMemo } from 'react'
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
 import { useAnimationStore } from '@/stores'
@@ -143,7 +143,9 @@ export default function WorkAnimation() {
     friction: advancedResult.f > 0 ? advancedResult.f : mu * advancedResult.weight,
   }), [F, advancedResult.weight, advancedResult.F_N, advancedResult.f, mu])
 
-  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes })
+  // 锚点用 'design' 而非 'viewport'：本页所有矢量起点都是 originDesign、几何全在屏幕像素里画，
+  // 不经过 worldToDesign，scaleX/scaleY 只用于「非等比缩放」判定。锚在 preset 上使 scaleX === scaleY === 1。
+  const sceneScale = useSceneScale({ vp, preset, anchor: 'design', physicsWidth: preset.width, physicsHeight: preset.height, maxVectorLength: defaultMaxVectorLength(vp.designVisibleW, vp.designVisibleH), refMagnitudes })
 
   // 估算箭头设计长度（用于辅助虚线与角度弧定位）
   const estFArrowLen = calculateVectorPixelLength(F, 'appliedForce', sceneScale.maxVectorLength, F)

@@ -28,6 +28,10 @@ export default function BrownianMotion() {
     anchor: 'viewport',
     physicsWidth: WORLD_WIDTH,
     physicsHeight: WORLD_HEIGHT,
+    // 有意非等比（实测 4.2/4.96 ≈ 18%）：物理域按可视区铺满映射，花粉与分子都用像素半径绘制
+    // （实测渲染圆 1.000）；F合 箭头方向取自合力的数据方向、并不沿轨迹，非等比不改变其语义。
+    // 轨迹本身是统计随机路径，没有可对照的几何基准。此标记仅关闭开发期告警。
+    intentionalNonUniformScale: true,
     originSource: 'bottomLeft',
     refMagnitudes: { force: 2.5 },
   })

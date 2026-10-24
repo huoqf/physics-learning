@@ -1,4 +1,4 @@
-import { useAnimationViewport, useSceneScale } from '@/hooks'
+import { useAnimationViewport, useSceneScale, defaultMaxVectorLength } from '@/hooks'
 import { clientToContainerPoint } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useState, useMemo, useRef } from 'react'
@@ -310,7 +310,9 @@ export default function EnergyConservationAnimation() {
     }
   }, [m, g, maxV])
 
-  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes })
+  // 锚点用 'design' 而非 'viewport'：本页所有矢量起点都是 originDesign、几何全在屏幕像素里画，
+  // 不经过 worldToDesign，scaleX/scaleY 只用于「非等比缩放」判定。锚在 preset 上使 scaleX === scaleY === 1。
+  const sceneScale = useSceneScale({ vp, preset, anchor: 'design', physicsWidth: preset.width, physicsHeight: preset.height, maxVectorLength: defaultMaxVectorLength(vp.designVisibleW, vp.designVisibleH), refMagnitudes })
 
   // 动态 Y 范围计算
   const chartYMin = Math.min(0, -E_offset) * 1.1

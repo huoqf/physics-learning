@@ -1,4 +1,4 @@
-import { useAnimationViewport, useSceneScale } from '@/hooks'
+import { useAnimationViewport, useSceneScale, defaultMaxVectorLength } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -125,7 +125,9 @@ export default function PotentialEnergyAnimation() {
         { label: 'W弹', value: `${state.W.toFixed(1)} J`, color: PHYSICS_COLORS.work },
       ]
 
-  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height })
+  // 锚点用 'design' 而非 'viewport'：本页所有矢量起点都是 originDesign、几何全在屏幕像素里画，
+  // 不经过 worldToDesign，scaleX/scaleY 只用于「非等比缩放」判定。锚在 preset 上使 scaleX === scaleY === 1。
+  const sceneScale = useSceneScale({ vp, preset, anchor: 'design', physicsWidth: preset.width, physicsHeight: preset.height, maxVectorLength: defaultMaxVectorLength(vp.designVisibleW, vp.designVisibleH) })
 
   return (
     <div ref={containerRef} className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">

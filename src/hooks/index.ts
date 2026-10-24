@@ -12,7 +12,7 @@ export type {
   CanvasPreset,
 } from './useAnimationViewport'
 
-export { useSceneScale } from './useSceneScale'
+export { useSceneScale, defaultMaxVectorLength } from './useSceneScale'
 export type { UseSceneScaleOptions } from './useSceneScale'
 
 export { useCanvasViewport } from './useCanvasViewport'
