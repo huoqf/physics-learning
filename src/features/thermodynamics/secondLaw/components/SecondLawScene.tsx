@@ -124,7 +124,9 @@ export function SecondLawScene({
 
   return (
     <>
-      {/* 过程流动方向标注箭头 */}
+      {/* 过程流动方向标注箭头：纯方向标注（120px 定长），用 pixelLength 显式声明，
+          不再借 `vector.x = 120 / scaleX` 把「像素长度」伪装成世界坐标长度按 ref 归一化 —— 
+          那样 ref 为 0 时会退化成恒定 14px，且长度会随 sceneScale 漂移 */}
       {(!isEquilibrium || isReversePump) && (
         <VectorArrow
           originDesign={{
@@ -132,11 +134,12 @@ export function SecondLawScene({
             y: cy - 14,
           }}
           vector={{
-            x: (isReversePump ? -120 : 120) / sceneScale.scaleX,
+            x: isReversePump ? -1 : 1,
             y: 0,
           }}
           type="velocity"
           arrowType="visual-only"
+          pixelLength={120}
           sceneScale={sceneScale}
           label={
             isReversePump

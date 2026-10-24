@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -8,8 +8,15 @@ import { VT_CHART_COLORS, AT_CHART_COLORS, CHART_COLORS } from '@/theme/physics'
 import { VelocityTimeChart, BasePhysicsChart, useChartContext } from '@/components/Chart'
 import { VectorDefs } from '@/components/Physics'
 import { AnimationSvgCanvas } from '@/components/Layout'
+import { calculateCuttingEMF } from '@/physics'
+import { refFromPeak } from '@/utils/vectorRefs'
 import { useCuttingEMFPhysics } from './hooks/useCuttingEMFPhysics'
 import { CuttingEMFScene } from './components/CuttingEMFScene'
+
+/** 滑杆默认值（与 registry defaultParams 一致；力矢量基准也以它为锚） */
+const CUTTING_EMF_DEFAULTS = { B: 1.5, L: 1.0, v: 2.0, R: 2.0, F_ext: 2.0 } as const
+/** 滑杆量程（与 registry paramMeta 一致） */
+const CUTTING_EMF_BOUNDS = { v: [-5, 5], F_ext: [0, 5] } as const
 
 interface ChartSVGProps {
   title: string
@@ -181,11 +188,11 @@ export default function CuttingEMF() {
 
   const {
     mode = 0,
-    B = 1.5,
-    L = 1.0,
-    v = 2.0,
-    R = 2.0,
-    F_ext = 2.0,
+    B = CUTTING_EMF_DEFAULTS.B,
+    L = CUTTING_EMF_DEFAULTS.L,
+    v = CUTTING_EMF_DEFAULTS.v,
+    R = CUTTING_EMF_DEFAULTS.R,
+    F_ext = CUTTING_EMF_DEFAULTS.F_ext,
     m = 0.2,
     showForceAnalysis = 1,
   } = params
@@ -195,6 +202,29 @@ export default function CuttingEMF() {
 
   // 场景独立的 viewport（基于 splitV 设计空间）
   const { containerRef: sceneRef, vp: sceneVp } = useAnimationViewport({ preset: CANVAS_PRESETS.splitV })
+
+  /**
+   * 力矢量基准（N）—— F_外 / F_安 / F_合 三个箭头共用。
+   *
+   * 恒速切割（mode 0）：F_安 = B²L²v/R。用「单滑杆极值扫描」只在**切割速度**这一条滑杆上取
+   * 量程上界（B、L、R 保持默认值）：
+   * - 全角点（B=3、L=2、R=0.5）是默认帧的 160 倍，据此定基准会把默认帧压成 0.6px 的亚像素点；
+   * - B、L 各带平方，即便按单滑杆扫描也各有 4 倍，四条滑杆一起扫仍是默认帧的 16 倍。
+   * 选 v 作扫描轴是因为它是本页的**主教学变量**（「改 v 看 F_安变化」），其余三条滑杆
+   * 的调节只会让箭头在 2.5 倍处撞上满量程截断，而数值标签始终给出精确值。
+   *
+   * 自由释放（mode 1）：F_安 从 0 单调趋近 F_外，峰值就是 F_外 的量程上界，无需扫描。
+   */
+  const forceRef = useMemo(() => {
+    if (mode === 0) {
+      const res = calculateCuttingEMF(
+        CUTTING_EMF_DEFAULTS.B, CUTTING_EMF_DEFAULTS.L, CUTTING_EMF_BOUNDS.v[1],
+        CUTTING_EMF_DEFAULTS.R, 90, 0, 0,
+      )
+      return refFromPeak(Math.abs(res.F_ampere))
+    }
+    return refFromPeak(CUTTING_EMF_BOUNDS.F_ext[1])
+  }, [mode])
 
   // 场景 sceneScale
   const sceneScale = useSceneScale({
@@ -209,6 +239,8 @@ export default function CuttingEMF() {
       velocity: 3.0,
       acceleration: 10.0,
       force: 5.0,
+      appliedForce: forceRef,
+      lorentzForce: forceRef,
     },
     intentionalNonUniformScale: true,
   })

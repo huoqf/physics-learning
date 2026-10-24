@@ -8,6 +8,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateCircularMotion } from '@/physics'
 import { useViewportPointer } from '@/utils'
+import { refFromPeak } from '@/utils/vectorRefs'
 
 import {
   PHYSICS_COLORS,
@@ -25,12 +26,23 @@ const CIRCULAR_MOTION_PARAM_BOUNDS = {
   omegaMin: 0.1, omegaMax: 5,
 } as const
 
-/** 从参数范围推导的物理量范围 */
-const CIRCULAR_MOTION_CHART_RANGE = {
-  /** 线速度最大值 v_max = r_max * omega_max (m/s) */
-  vMax: CIRCULAR_MOTION_PARAM_BOUNDS.rMax * CIRCULAR_MOTION_PARAM_BOUNDS.omegaMax,
-  /** 向心加速度最大值 a_max = r_max * omega_max² (m/s²) */
-  aMax: CIRCULAR_MOTION_PARAM_BOUNDS.rMax * CIRCULAR_MOTION_PARAM_BOUNDS.omegaMax ** 2,
+/** 默认参数（与 registry defaultParams 一致） */
+const CIRCULAR_MOTION_DEFAULTS = { r: 5, omega: 1 } as const
+
+/**
+ * 矢量基准的峰值：只按**半径**滑杆扫描，ω 固定在默认值。
+ *
+ * 不能直接沿用图表量程（vMax=50、aMax=250）：a_c = ω²r 对 ω 是二次的，全角点
+ * a_c(10, 5) = 250 是默认帧 a_c(5, 1) = 5 的 50 倍 —— 拿它当基准，默认帧的向心加速度
+ * 箭头只有 3.1px（本次审计实测），退化成一个点。
+ *
+ * 保留 ω 的理由：ω 的量程宽达 50 倍（0.1~5 rad/s），线性箭头不可能同时覆盖默认帧与
+ * ω=5 两端。半径是页面上的「几何主变量」，按它标定后默认帧可读、调 r 全程线性响应；
+ * 调 ω 到 2 倍时箭头撞满量程截断，而 ω² 关系由右侧曲线与数值面板给出精确值。
+ */
+const CIRCULAR_MOTION_VECTOR_PEAK = {
+  velocity: CIRCULAR_MOTION_PARAM_BOUNDS.rMax * CIRCULAR_MOTION_DEFAULTS.omega,
+  acceleration: CIRCULAR_MOTION_PARAM_BOUNDS.rMax * CIRCULAR_MOTION_DEFAULTS.omega ** 2,
 } as const
 
 /** 匀速圆周运动布局常量 */
@@ -96,8 +108,8 @@ export default function CircularMotionAnimation() {
     centerSource: 'design',
     physicsScaleDesign: (CANVAS_PRESETS.square.width / 2 - CIRCULAR_MOTION_LAYOUT.canvasPadding) / (2 * CIRCULAR_MOTION_LAYOUT.rMax),
     refMagnitudes: {
-      velocity: CIRCULAR_MOTION_CHART_RANGE.vMax,
-      acceleration: CIRCULAR_MOTION_CHART_RANGE.aMax,
+      velocity: refFromPeak(CIRCULAR_MOTION_VECTOR_PEAK.velocity),
+      acceleration: refFromPeak(CIRCULAR_MOTION_VECTOR_PEAK.acceleration),
     },
   })
 

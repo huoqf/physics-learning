@@ -1,4 +1,4 @@
-import { PhysicsVectorArrow } from '@/components/Physics'
+import { VectorArrow } from '@/components/Physics'
 import { useState, useRef, useMemo, useCallback, useEffect } from 'react'
 import { clientToContainerPoint } from '@/utils'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
@@ -16,6 +16,21 @@ import { LAYOUT, VTCARD } from './satelliteLayout'
 import { SatelliteSvg, RocketSvg, EarthSvg } from './SatelliteShapes'
 import { useLaunchPhysics, useVtSampling } from './useSatellitePhysics'
 import { useOrbitCurves } from './useOrbitCurves'
+
+/**
+ * 本页矢量是**方向标注**，长度恒定、不编码量值 —— 因此走 `pixelLength` 而不是 `refMagnitudes`。
+ *
+ * 三条来由，缺一都会画错：
+ * 1. 页面没有质量参数，`F引` 只能是「示意方向」。若用长度编码，唯一可用的量是 g = GM/r²，
+ *    而 g 在 r 取量程下界（6.37×10⁶ m，即近地）时满量程可达 maxVectorLength(≈210px) ——
+ *    轨道半径本身只有 ≈100px，箭头会直接穿透地球图形。
+ * 2. 传给 VectorArrow 的 vector 在两种模式下**不同量纲**：mode 0 的 v 是 {−y, x}（长度 ∝ r），
+ *    mode 1 的 velocityDir 是单位向量。共用一份 refMagnitude 时，单位向量会被 ratio 压到
+ *    亚像素，而 mode 0 又会被截断成满量程。
+ * 3. 页面真正编码量值的是右侧的 v‑r / T‑r 关系曲线与 v‑t 曲线，箭头只负责「力指向地心、
+ *    速度沿切线」这两个方向结论。
+ */
+const SATELLITE_VECTOR_LENGTH = { gravity: 26, velocity: 34 } as const
 
 export default function SatelliteAnimation() {
   const { params, updateParam, showVectors, time, isPlaying, setIsPlaying } = useAnimationStore(
@@ -223,18 +238,23 @@ export default function SatelliteAnimation() {
 
             {showVectors && (
               <g>
-                <PhysicsVectorArrow
+                {/* 矢量只表示方向，长度恒定（不编码量值）：见 SATELLITE_VECTOR_LENGTH 的说明 */}
+                <VectorArrow
                   origin={{ x: sat0PhysX, y: sat0PhysY }}
                   vector={{ x: -sat0PhysX, y: -sat0PhysY }}
                   type="gravity"
+                  pixelLength={SATELLITE_VECTOR_LENGTH.gravity}
+                  arrowType="physical-schematic"
                   sceneScale={sceneScale}
                   label="F引"
                   font={font}
                 />
-                <PhysicsVectorArrow
+                <VectorArrow
                   origin={{ x: sat0PhysX, y: sat0PhysY }}
                   vector={{ x: -sat0PhysY, y: sat0PhysX }}
                   type="velocity"
+                  pixelLength={SATELLITE_VECTOR_LENGTH.velocity}
+                  arrowType="physical-schematic"
                   sceneScale={sceneScale}
                   label="v"
                   font={font}
@@ -287,18 +307,22 @@ export default function SatelliteAnimation() {
 
             {showVectors && !launchData.crashed && isLaunched === 1 && !isRocket && (
               <g>
-                <PhysicsVectorArrow
+                <VectorArrow
                   origin={{ x: satLaunchPhysX, y: satLaunchPhysY }}
                   vector={{ x: -satLaunchPhysX, y: -satLaunchPhysY }}
                   type="gravity"
+                  pixelLength={SATELLITE_VECTOR_LENGTH.gravity}
+                  arrowType="physical-schematic"
                   sceneScale={sceneScale}
                   label="F引"
                   font={font}
                 />
-                <PhysicsVectorArrow
+                <VectorArrow
                   origin={{ x: satLaunchPhysX, y: satLaunchPhysY }}
                   vector={launchData.velocityDir ?? { x: 0, y: 1 }}
                   type="velocity"
+                  pixelLength={SATELLITE_VECTOR_LENGTH.velocity}
+                  arrowType="physical-schematic"
                   sceneScale={sceneScale}
                   label="v"
                   font={font}

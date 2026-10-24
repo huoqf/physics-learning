@@ -168,6 +168,11 @@ export function LightRodRopeScene({ physics, font: fontProp }: LightRodRopeScene
               originDesign={{ x: x_A, y: y_A }}
               vector={{ x: 0, y: -params.m1 * params.g * 5 }}
               type="gravity"
+              arrowType="visual-only"
+              // 本场景用 IDENTITY_SCENE_SCALE（maxVectorLength = 1），矢量本身就以
+              // 设计单位给出：m·g·5 就是要画的像素长度。不显式传 pixelLength 会走
+              // calculateVectorPixelLength 的 ref=0 回退 —— 两个球的重力箭头都恒为 14px。
+              pixelLength={params.m1 * params.g * 5}
               sceneScale={IDENTITY_SCENE_SCALE}
               label="G_A"
             />
@@ -175,6 +180,8 @@ export function LightRodRopeScene({ physics, font: fontProp }: LightRodRopeScene
               originDesign={{ x: x_B, y: y_B }}
               vector={{ x: 0, y: -params.m2 * params.g * 5 }}
               type="gravity"
+              arrowType="visual-only"
+              pixelLength={params.m2 * params.g * 5}
               sceneScale={IDENTITY_SCENE_SCALE}
               label="G_B"
             />

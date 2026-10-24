@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState, useEffect } from 'react'
+import { useRef, useCallback, useState, useEffect, useMemo } from 'react'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -9,6 +9,7 @@ import { PhysicsVectorArrow } from '@/components/Physics'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { worldToDesign } from '@/scene'
 import { solveClapeyron } from '@/physics/clapeyron'
+import { refFromWorldUnit } from '@/utils/vectorRefs'
 
 // ─── 物理与模拟常量 ─────────────────────────────────────────────────────────
 const N_DEFAULT = 1
@@ -90,7 +91,7 @@ export default function ClapeyronAnimation() {
   const visibleX = (vp.visibleX - vp.tx) / vp.scale
   const visibleY = (vp.visibleY - vp.ty) / vp.scale
 
-  const sceneScale = useSceneScale({
+  const baseScale = useSceneScale({
     vp,
     preset,
     anchor: 'viewport',
@@ -100,6 +101,19 @@ export default function ClapeyronAnimation() {
     originX: visibleX + visibleWidth / 2,
     originY: visibleY + visibleHeight * 0.9,
   })
+
+  // 缸内压力箭头传的是「世界坐标长度」arrowLength（同一个量还用于定位箭头尖端），
+  // 不是牛顿值：按 refFromWorldUnit 让箭头像素长度 = 这段世界长度的像素换算，
+  // 否则它会退化成恒定 minLength 的漂浮短箭头，尖端也和活塞底面对不上。
+  const sceneScale = useMemo(
+    () => ({
+      ...baseScale,
+      refMagnitudes: {
+        force: refFromWorldUnit(baseScale.maxVectorLength, baseScale.scaleY, 'force'),
+      },
+    }),
+    [baseScale],
+  )
 
   // 活塞物理高度 (y): 气缸底物理 y=0.5，活塞 y 随体积在 [0.5, 3.7] 区间变化
   const volumeRatio = (V - V_MIN) / (V_MAX - V_MIN)

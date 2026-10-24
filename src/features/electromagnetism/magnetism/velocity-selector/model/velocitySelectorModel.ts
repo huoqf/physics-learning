@@ -67,6 +67,14 @@ export const VELOCITY_SELECTOR_PHYSICS = {
   mass: 1.0,
 } as const
 
+/** 速度选择器滑杆量程（与 registry paramMeta 保持一致） */
+export const VELOCITY_SELECTOR_BOUNDS = {
+  v0: [2, 20],
+  B: [0.2, 4.0],
+  E: [0, 40],
+  qOverM: [0.2, 3.0],
+} as const
+
 export function normalizeVelocitySelectorParams(params: Record<string, number>): VelocitySelectorParams {
   return {
     mode: params.mode ?? 0,

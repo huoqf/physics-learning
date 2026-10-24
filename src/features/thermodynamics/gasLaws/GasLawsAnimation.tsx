@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState, useEffect } from 'react'
+import { useRef, useCallback, useState, useEffect, useMemo } from 'react'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -6,6 +6,7 @@ import { useAnimationFrame } from '@/utils/animation'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { THERMO_COLORS, PHYSICS_COLORS, STROKE, FONT, SCENE_COLORS } from '@/theme/physics'
 import { PhysicsVectorArrow } from '@/components/Physics'
+import { refFromWorldUnit } from '@/utils/vectorRefs'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { worldToDesign } from '@/scene'
 import {
@@ -95,7 +96,7 @@ export default function GasLawsAnimation() {
   const visibleX = (vp.visibleX - vp.tx) / vp.scale
   const visibleY = (vp.visibleY - vp.ty) / vp.scale
 
-  const sceneScale = useSceneScale({
+  const baseScale = useSceneScale({
     vp,
     preset,
     anchor: 'viewport',
@@ -105,6 +106,19 @@ export default function GasLawsAnimation() {
     originX: visibleX + visibleWidth / 2,
     originY: visibleY + visibleHeight * 0.9,
   })
+
+  // 缸内压力 / 大气压力箭头传的是「世界坐标长度」（arrowLength 同时用于定位箭头尖端），
+  // 不是牛顿值：按 refFromWorldUnit 让箭头像素长度 = 这段世界长度的像素换算，
+  // 否则两者都会退化成恒定 minLength 的漂浮短箭头，尖端与活塞/大气侧对不上。
+  const sceneScale = useMemo(
+    () => ({
+      ...baseScale,
+      refMagnitudes: {
+        force: refFromWorldUnit(baseScale.maxVectorLength, baseScale.scaleY, 'force'),
+      },
+    }),
+    [baseScale],
+  )
 
   // 等压基准压强 (在 T0=300K, V0=5e-3 下对应的平衡压强)
   const P_ISOBAR = computeBoylePressure(5e-3, 300, N_DEFAULT)

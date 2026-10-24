@@ -127,8 +127,12 @@ export function Model0ConnectedBodies({
           {/* 整体法：只画外力 */}
           {isSystemView && (
             <g>
+              {/* 外力 F 推在 m₂ 的**右侧面**（推力方向向右）。
+                  原先写成 origin={model0.ropeRight}（= m₂ 左边缘的绳连接点），
+                  箭头只有 14 px 真实长度时整根落在 m₂ 内部，标签也跟着落进方块，
+                  看起来像「力从方块里长出来」。与下方隔离 m₂ 视图保持同一端点。 */}
               <PhysicsVectorArrow
-                origin={model0.ropeRight}
+                origin={{ x: model0.m2_pos.x + model0.w2, y: groundY + model0.h2 / 2 }}
                 vector={{ x: F, y: 0 }}
                 type="appliedForce"
                 sceneScale={sceneScale}

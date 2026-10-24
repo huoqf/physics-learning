@@ -67,6 +67,9 @@ export interface KeplerPhysicsResult {
   fxA: number
   fyA: number
 
+  // ── 矢量量程峰值（供 refMagnitudes 校准）──
+  vectorPeaks: KeplerVectorPeaks
+
   // ── 第三定律图表 ──
   a3_1: number
   t2_1: number
@@ -114,6 +117,14 @@ export interface KeplerOrbitData {
 export interface KeplerVectors {
   vxA: number; vyA: number
   fxA: number; fyA: number
+}
+
+/** 一个周期内的矢量量程峰值（显示量级，供 refMagnitudes 校准） */
+export interface KeplerVectorPeaks {
+  /** 速度矢量在全轨道上的最大显示模长 */
+  speed: number
+  /** 引力矢量在全轨道上的最大显示模长（近拱点） */
+  gravity: number
 }
 
 /**
@@ -180,6 +191,22 @@ export function useKeplerPhysics(
   const planetX = orbitA.x
   const planetY = orbitA.y
 
+  // ── 矢量量程峰值：沿整条轨道采样，取速度/引力的最大模长 ──
+  // 不写死常数、也不复制 VECTOR_DISPLAY 的标定系数：采样点复用 computeKeplerVectors，
+  // 保证「峰值」与「逐帧渲染的矢量」出自同一套换算（单一真源）。
+  const vectorPeaks = useMemo<KeplerVectorPeaks>(() => {
+    const N = 64
+    let speed = 0
+    let gravity = 0
+    for (let i = 0; i < N; i++) {
+      const orbit = calculateKeplerOrbit(a1, b1, (i / N) * T1, T1)
+      const v = computeKeplerVectors(orbit, sunPhysX, sunPhysY)
+      speed = Math.max(speed, Math.hypot(v.vxA, v.vyA))
+      gravity = Math.max(gravity, Math.hypot(v.fxA, v.fyA))
+    }
+    return { speed, gravity }
+  }, [a1, b1, T1, sunPhysX, sunPhysY])
+
   // ── 行星 B ──
   const T2 = T1 * Math.sqrt(Math.pow(a2 / a1, 3))
 
@@ -245,6 +272,7 @@ export function useKeplerPhysics(
     sectorPoints,
     M_current, isInPerihelion, isInAphelion,
     vxA, vyA, fxA, fyA,
+    vectorPeaks,
     a3_1, t2_1, a3_2, t2_2, k_ratio, maxA3, maxT2, deltaTPercent,
   }
 }

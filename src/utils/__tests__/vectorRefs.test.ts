@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveVelocityRefs } from '../vectorRefs'
+import { resolveVelocityRefs, peakOverRays, refFromPeak } from '../vectorRefs'
 import { calculateVectorPixelLength } from '../vectorLength'
 import { VECTOR_VISUAL_WEIGHT } from '../../theme/physics/vectorStyle'
 
@@ -68,5 +68,51 @@ describe('resolveVelocityRefs', () => {
     expect(Number.isFinite(main)).toBe(true)
     expect(Number.isFinite(component)).toBe(true)
     expect(component).toBeCloseTo(12, 10)
+  })
+})
+
+describe('peakOverRays', () => {
+  // F = B²L²v/R：与 cutting-emf 同构，用来验证「角点 160 倍」的退化
+  const ampere = (p: Record<string, number>) => (p.B ** 2 * p.L ** 2 * p.v) / p.R
+  const base = { B: 1.5, L: 1.0, v: 2.0, R: 2.0 }
+
+  it('单滑杆扫描取各滑杆端点上的最大值，而不是全角点', () => {
+    // v=5 → 5.625；B=3 → 9；L=2 → 9；R=0.5 → 9
+    expect(peakOverRays(ampere, base, { v: [-5, 5], B: [-3, 3], L: [0.5, 2], R: [0.5, 5] })).toBeCloseTo(9, 10)
+    // 全角点（9·4·5/0.5=360）比单滑杆扫描大 40 倍，据此定基准会把默认帧压成亚像素
+    expect(ampere({ ...base, B: 3, L: 2, v: 5, R: 0.5 })).toBeCloseTo(360, 6)
+  })
+
+  it('基准点本身参与比较（滑杆中间位置可以是最大值）', () => {
+    const peakAtCenter = (p: Record<string, number>) => -((p.x - 5) ** 2) + 30
+    expect(peakOverRays(peakAtCenter, { x: 5 }, { x: [0, 10] })).toBeCloseTo(30, 10)
+  })
+
+  it('取绝对值：负向量值与正向量值等价', () => {
+    expect(peakOverRays((p) => p.x, { x: -1 }, { x: [-8, 2] })).toBeCloseTo(8, 10)
+  })
+
+  it('NaN / Infinity 采样被丢弃，不退化成 NaN 峰值', () => {
+    const peak = peakOverRays((p) => (p.x === 0 ? NaN : p.x), { x: 1 }, { x: [0, 4] })
+    expect(peak).toBeCloseTo(4, 10)
+    const inf = peakOverRays((p) => (p.x === 0 ? Number.POSITIVE_INFINITY : p.x), { x: 1 }, { x: [0, 4] })
+    expect(inf).toBeCloseTo(4, 10)
+  })
+
+  it('量程为空时返回基准点的量值', () => {
+    expect(peakOverRays((p) => p.x, { x: 3 }, {})).toBeCloseTo(3, 10)
+  })
+
+  it('refFromPeak 使峰值箭头恰好落在 0.9 满量程', () => {
+    const peak = peakOverRays(ampere, base, { v: [-5, 5] })
+    const ref = refFromPeak(peak)
+    expect(calculateVectorPixelLength(peak, 'appliedForce', 100, ref)).toBeCloseTo(
+      0.9 * 100 * VECTOR_VISUAL_WEIGHT.appliedForce,
+      10,
+    )
+    // 默认帧（基准点）留出可读余量：既不为 0，也不越界
+    const def = calculateVectorPixelLength(ampere(base), 'appliedForce', 100, ref)
+    expect(def).toBeGreaterThan(0.15 * 100 * VECTOR_VISUAL_WEIGHT.appliedForce)
+    expect(def).toBeLessThan(0.9 * 100 * VECTOR_VISUAL_WEIGHT.appliedForce)
   })
 })

@@ -40,6 +40,16 @@ export interface ForcedResonancePhysicsResult {
   wheelRadius: number
   /** 连杆长 (米) */
   rodLength: number
+  /**
+   * 各矢量在稳态下的量程峰值（与 state 同单位、同源）：
+   * 用于 refMagnitudes 校准，使峰值箭头 = 0.9·maxVectorLength·weight。
+   */
+  vectorPeaks: {
+    velocity: number
+    tension: number
+    friction: number
+    force: number
+  }
   /** 实时物理状态 */
   state: {
     x: number
@@ -90,6 +100,16 @@ export function useForcedResonancePhysics({
     // 偏心轮旋转角度 theta = 2*pi*f*t
     const rotAngle = 2 * Math.PI * f * time
 
+    // 各矢量稳态峰值：x_max 来自稳态解，其余由它按定义式派生（不引入新的拟合常数）
+    const omega = 2 * Math.PI * f
+    const vMax = Math.abs(omega * steady.maxAmplitude)
+    const vectorPeaks = {
+      velocity: vMax,
+      tension: Math.abs(k * steady.maxAmplitude), // 弹性恢复力 k·x
+      friction: Math.abs(gamma * vMax),           // 阻尼力 γ·v
+      force: Math.abs(F0),                        // 驱动力幅值
+    }
+
     // 曲柄销物理坐标 (在转盘上以偏心距 e 旋转)
     const pinX = centerX + crankEccentricity * Math.cos(rotAngle)
     const pinY = wheelCenterY + crankEccentricity * Math.sin(rotAngle)
@@ -126,6 +146,7 @@ export function useForcedResonancePhysics({
       rotAngle,
       wheelRadius: wheelDiskRadius,
       rodLength,
+      vectorPeaks,
       state,
     }
   }, [m, k, gamma, F0, f, mode, time])

@@ -9,6 +9,7 @@ import { useMemo, useCallback } from 'react'
 
 import { RelationChart } from '@/components/Chart'
 import { worldToDesign } from '@/scene'
+import { refFromPeak } from '@/utils/vectorRefs'
 import { useKeplerPhysics } from './hooks/useKeplerPhysics'
 
 function clamp(value: number, min: number, max: number): number {
@@ -50,6 +51,12 @@ export default function KeplerAnimation() {
     anchor: 'center',
     physicsScaleDesign: KEPLER_CONFIG.scaleBase,
     centerSource: 'design',
+    // 基准由轨道量程峰值反推（峰值箭头 = 0.9·maxVectorLength·weight）：
+    // 速度在近日点最大、引力 ∝ 1/r² 也在近日点最大，写死常数在参数拉满时会撞上限。
+    refMagnitudes: {
+      velocity: refFromPeak(kepler.vectorPeaks.speed),
+      gravity: refFromPeak(kepler.vectorPeaks.gravity),
+    },
   })
 
   // ── 物理坐标 → 设计坐标转换 ──

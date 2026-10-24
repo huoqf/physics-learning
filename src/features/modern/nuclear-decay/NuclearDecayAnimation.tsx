@@ -7,7 +7,9 @@ import { useShallow } from 'zustand/react/shallow'
 import { RelationChart } from '@/components/Chart'
 import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { useNuclearDecayPhysics, DECAY_CHARGES } from './hooks/useNuclearDecayPhysics'
+import { refFromPeak } from '@/utils/vectorRefs'
 import { NuclearDecayScene } from './components/NuclearDecayScene'
+import { COULOMB_REF_PEAK } from './model/coulombArrow'
 
 // 模式1专属：三种放射线穿透与电离本领的对比柱状图组件
 const IonizationPenetrationChart: React.FC<{ font: (size: number) => number }> = ({ font }) => {
@@ -153,6 +155,9 @@ export default function NuclearDecayAnimation() {
     originSource: 'center',
     physicsWidth: 10.0,
     physicsHeight: 6.5,
+    // 两质子间库仑斥力箭头的显示量级来自 coulombArrowMag（合成量级，非牛顿值），
+    // 基准必须与它同源：峰值取 r = 1 时的量级，否则箭头恒为 minLength。
+    refMagnitudes: { force: refFromPeak(COULOMB_REF_PEAK) },
   })
 
   // ── 6. 曲线生成 (用于 RelationChart) ──

@@ -18,7 +18,13 @@ export default function SecondLawAnimation() {
   )
 
   const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.splitV })
-  const sceneScale = useSceneScale({ vp, preset: CANVAS_PRESETS.splitV, anchor: 'viewport', physicsWidth: 10, physicsHeight: 3.87 })
+  // 竖直量程必须由「可视区宽高比」实时推出来，不能写常量。
+  // anchor='viewport' 下 scaleX = 可视宽/physicsWidth、scaleY = 可视高/physicsHeight，
+  // 两者之比一旦与可视区宽高比不等就是非等比缩放（拉变形 + 控制台告警）。
+  // 原值 3.87 是作者手算 10 × 325 / 840 = 3.869047… 的四舍五入结果，既差 0.025%，
+  // 又只在容器恰好等于 preset 宽高比时成立 —— 容器一变就重新失衡。
+  const physicsHeight = 10 * (vp.designVisibleH / Math.max(vp.designVisibleW, 1))
+  const sceneScale = useSceneScale({ vp, preset: CANVAS_PRESETS.splitV, anchor: 'viewport', physicsWidth: 10, physicsHeight })
 
   const scene = params.scene ?? 0
   const scenario: Scenario = scene === 0 ? 'heat-conduction' : 'gas-diffusion'

@@ -4,6 +4,7 @@ import { VectorArrow } from '@/components/Physics'
 import { worldToDesign } from '@/scene'
 import type { SceneScale } from '@/scene'
 import type { Nucleon, ParticlePoint, MagneticDecayModeData } from '../hooks/useNuclearDecayPhysics'
+import { coulombArrowMag } from '../model/coulombArrow'
 
 interface NuclearDecaySceneProps {
   mode: number
@@ -168,7 +169,7 @@ export const NuclearDecayScene: React.FC<NuclearDecaySceneProps> = ({
         const dy = p2.y - p1.y
         const dist = Math.sqrt(dx * dx + dy * dy)
         
-        const forceMag = Math.min(10, 1.2 / (dist * dist))
+        const forceMag = coulombArrowMag(dist)
         const dirX = dx / dist
         const dirY = dy / dist
 

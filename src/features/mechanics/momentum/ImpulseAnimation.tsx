@@ -20,6 +20,10 @@ import {
   CHART_COLORS,
 } from '@/theme/physics'
 import { RelationChart, ChartArea, useChartContext } from '@/components/Chart'
+import { refFromPeak } from '@/utils/vectorRefs'
+
+/** 力滑杆量程（与 registry paramMeta 一致：恒力 F 与力最大值 F_max 同为 1~20 N） */
+const IMPULSE_FORCE_BOUNDS = { fMax: 20 } as const
 
 /** 冲量动画布局常量（设计坐标） */
 const IMPULSE_LAYOUT = {
@@ -192,7 +196,7 @@ export default function ImpulseAnimation() {
     customOriginY: 0,
     customScaleX: 1,
     customScaleY: 1,
-    refMagnitudes: { appliedForce: 200 },
+    refMagnitudes: { appliedForce: refFromPeak(IMPULSE_FORCE_BOUNDS.fMax) },
     maxVectorLength: Math.min(preset.width, preset.height) * 0.3,
   })
 
@@ -434,7 +438,7 @@ export default function ImpulseAnimation() {
             {showVectors && currentFt > 0 && (
               <PhysicsVectorArrow
                 originDesign={{ x: sliderX_advanced - 5, y: sliderTrackY }}
-                vector={{ x: -currentFt * 2, y: 0 }}
+                vector={{ x: -currentFt, y: 0 }}
                 type="appliedForce"
                 sceneScale={sceneScale}
               />

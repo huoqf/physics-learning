@@ -54,7 +54,16 @@ export default function IntermolecularForcesAnimation() {
     physicsWidth: w,
     physicsHeight: h,
     originSource: 'topLeft',
-    refMagnitudes: { force: Math.max(fRep, fAtt, Math.abs(fNet), 0.5) * 1.5 },
+    /**
+     * 本页是「本帧归一化」的唯一合理场景：F_斥 = 1/r¹³、F_引 = 1/r⁷，r ∈ [0.5, 4]
+     * 使量值跨越 5 个数量级（r=0.5 时 F_斥=8192，r=4 时 F_斥=1.5×10⁻⁸），
+     * 任何固定线性基准都只能覆盖其中一小段。取本帧最大者作基准，保证三条箭头
+     * 在任何 r 下都可比（斥力 vs 引力 vs 合力），定量关系由右侧 F‑r 曲线承担。
+     *
+     * 旧实现的 `Math.max(…, 0.5)` 下限是缺陷来源：r 稍大时三个力的真实量值都远小于 0.5，
+     * 基准被下限撑住，箭头缩到 1px 以下（实测 0.8px）。这里只保留防 0 的极小值。
+     */
+    refMagnitudes: { force: Math.max(fRep, fAtt, Math.abs(fNet), 1e-12) * 1.5 },
   })
 
   const [dragging, setDragging] = useState(false)
