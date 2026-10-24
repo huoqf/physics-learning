@@ -142,6 +142,15 @@ export interface RelationChartProps {
   variant?: 'standard' | 'mini'
   /** 额外 className */
   className?: string
+  /**
+   * 图区内横向拖拽回调：给出指针处的**物理 X 值**（换算已在图表内部按真实绘图区完成）。
+   * 不传则图表不响应拖拽。
+   */
+  onScrubX?: (physX: number) => void
+  /** 拖拽开始（指针按在绘图区内时触发） */
+  onScrubStart?: () => void
+  /** 拖拽结束 */
+  onScrubEnd?: () => void
 }
 
 function buildPath(
@@ -517,6 +526,9 @@ export function RelationChart({
   fixedSize,
   variant,
   className = '',
+  onScrubX,
+  onScrubStart,
+  onScrubEnd,
 }: RelationChartProps) {
   const computedXDomain = useMemo((): [number, number] => {
     if (xDomain) return xDomain
@@ -556,6 +568,9 @@ export function RelationChart({
       showGrid={showGrid}
       initialSize={initialSize}
       className={className}
+      onScrubX={onScrubX}
+      onScrubStart={onScrubStart}
+      onScrubEnd={onScrubEnd}
     >
       <RCContent
         points={points}

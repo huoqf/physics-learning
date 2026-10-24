@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useCallback, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useCallback, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react';
 import { ChartContext, type ChartContextValue } from './ChartContext';
+import { pointerXToPhysX, type PhysXHit } from './pointerXToPhysX';
 import { CHART_COLORS, CHART_LAYOUT, FONT, STROKE, DASH } from '@/theme/physics';
 import { useCanvasSize, smartFormat } from '@/utils';
 
@@ -98,6 +99,18 @@ export interface BasePhysicsChartProps {
    * 额外的 CSS 类名。
    */
   className?: string;
+  /**
+   * 图区内横向拖拽/点击回调：给出指针位置对应的**物理 X 值**。
+   *
+   * 换算在组件内部完成（基于真实绘图区 `plotOrigin` / `plotSize`，已扣除坐标轴留白），
+   * 调用方不必再猜卡片内边距、也不必自己把 CSS 像素除以卡片宽度。
+   * 不传则图表不响应指针事件，行为与之前完全一致。
+   */
+  onScrubX?: (physX: number) => void;
+  /** 拖拽开始（指针按在绘图区内并成功捕获时触发） */
+  onScrubStart?: () => void;
+  /** 拖拽结束（含指针取消） */
+  onScrubEnd?: () => void;
 }
 
 /**
@@ -173,6 +186,9 @@ export function BasePhysicsChart({
   yLabel2,
   formatY2,
   yBaseline2,
+  onScrubX,
+  onScrubStart,
+  onScrubEnd,
 }: BasePhysicsChartProps) {
   const isMini = variant === 'mini';
   const initW = initialSize?.width ?? (isMini ? CHART_LAYOUT.miniWidth : CHART_LAYOUT.defaultWidth);
@@ -352,6 +368,69 @@ export function BasePhysicsChart({
       px,
     }),
     [toSvgX, toSvgY, toSvgY2, margin.left, margin.top, plotW, plotH, font, px]
+  );
+
+  // ── 图区横向拖拽（仅在传入 onScrubX 时启用）────────────────────────────
+  // 换算依赖真实绘图区（margin.left / plotW），而不是卡片内边距的经验常量；
+  // 指针按在轴留白/标签区时不接受拖拽，拖出绘图区则贴边（由 pointerXToPhysX 夹取）。
+  const scrubDraggingRef = useRef(false);
+
+  const scrubFromPointer = useCallback(
+    (clientX: number, svg: SVGSVGElement): PhysXHit | null => {
+      const rect = svg.getBoundingClientRect();
+      return pointerXToPhysX({
+        offsetX: clientX - rect.left,
+        rectWidth: rect.width,
+        viewWidth: width,
+        plotLeft: margin.left,
+        plotWidth: plotW,
+        domain: xDomain,
+      });
+    },
+    [width, margin.left, plotW, xDomain]
+  );
+
+  const handleSvgPointerDown = useCallback(
+    (e: ReactPointerEvent<SVGSVGElement>) => {
+      if (!onScrubX) return;
+      const hit = scrubFromPointer(e.clientX, e.currentTarget);
+      if (!hit || !hit.inside) return;
+      // 指针捕获失败不应中断拖拽：某些输入设备/合成事件拿不到有效 pointerId
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        /* 忽略：退化为「仅在图表内移动才更新」，不影响点击取值 */
+      }
+      scrubDraggingRef.current = true;
+      onScrubStart?.();
+      onScrubX(hit.x);
+    },
+    [onScrubX, onScrubStart, scrubFromPointer]
+  );
+
+  const handleSvgPointerMove = useCallback(
+    (e: ReactPointerEvent<SVGSVGElement>) => {
+      if (!onScrubX || !scrubDraggingRef.current) return;
+      const hit = scrubFromPointer(e.clientX, e.currentTarget);
+      if (hit) onScrubX(hit.x);
+    },
+    [onScrubX, scrubFromPointer]
+  );
+
+  const handleSvgPointerEnd = useCallback(
+    (e: ReactPointerEvent<SVGSVGElement>) => {
+      if (!scrubDraggingRef.current) return;
+      scrubDraggingRef.current = false;
+      try {
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+          e.currentTarget.releasePointerCapture(e.pointerId);
+        }
+      } catch {
+        /* 忽略：捕获本就不存在时释放会抛错 */
+      }
+      onScrubEnd?.();
+    },
+    [onScrubEnd]
   );
 
   const chartContent = (
@@ -589,7 +668,16 @@ export function BasePhysicsChart({
   return (
     <ChartContext.Provider value={ctx}>
       <div ref={containerRef} className={`w-full h-full min-h-0 ${className}`}>
-        <svg width={width} height={height} className='w-full h-full select-none'>
+        <svg
+          width={width}
+          height={height}
+          className='w-full h-full select-none'
+          style={onScrubX ? { cursor: 'ew-resize', touchAction: 'none' } : undefined}
+          onPointerDown={onScrubX ? handleSvgPointerDown : undefined}
+          onPointerMove={onScrubX ? handleSvgPointerMove : undefined}
+          onPointerUp={onScrubX ? handleSvgPointerEnd : undefined}
+          onPointerCancel={onScrubX ? handleSvgPointerEnd : undefined}
+        >
           {chartContent}
         </svg>
       </div>
