@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useRef } from 'react'
+import { useMemo, useCallback } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateCircularMotion, computeCentripetalFit } from '@/physics'
@@ -27,7 +27,6 @@ export const CENTRIPETAL_LAYOUT = {
   waveCardMinWidth: 260,
   waveCardMinHeight: 180,
   waveCardRightOffset: 20,
-  waveCardPadding: { left: 40, right: 15, top: 25, bottom: 25 },
   gridLayers: 4,
   gridAngleStep: 30,
   axisExtension: 30,
@@ -64,8 +63,6 @@ export interface CentripetalPhysicsResult {
   cardHeight: number
   cardX: number
   cardY: number
-  cardInnerPad: typeof CENTRIPETAL_LAYOUT.waveCardPadding
-  cardInnerW: number
 
   sceneScale: SceneScale
 
@@ -75,9 +72,11 @@ export interface CentripetalPhysicsResult {
   /** F–ω² 图层的全部数据（理论斜率 / 拟合斜率 / 采样点 / 对照组） */
   fit: CentripetalFitResult
 
-  handleContainerMouseMove: (e: React.MouseEvent<HTMLDivElement>) => void
-  handleContainerMouseUp: () => void
-  handleChartMouseDown: (e: React.MouseEvent) => void
+  /**
+   * 卡片拖拽回调：接收图表给的**物理 X 值**（模式 A 是 a，模式 B 是 ω²），反解出 v。
+   * 坐标换算由图表组件按真实绘图区完成，这里只做物理反解与范围夹取。
+   */
+  setVFromChartX: (chartX: number) => void
 }
 
 export function useCentripetalPhysics(
@@ -148,9 +147,6 @@ export function useCentripetalPhysics(
     })
   }, [v, a_c, F_c, designScale])
 
-  const cardInnerPad = CENTRIPETAL_LAYOUT.waveCardPadding
-  const cardInnerW = cardWidth - cardInnerPad.left - cardInnerPad.right
-
   const faPoints = useMemo(
     () => [
       { x: 0, y: 0 },
@@ -169,59 +165,21 @@ export function useCentripetalPhysics(
     [m, r],
   )
 
-  const isDraggingRef = useRef(false)
   /**
-   * 卡片自身的屏幕矩形（mousedown 时记录）。
-   *
-   * 卡片是**绝对定位的 HTML 元素**，宽高直接取设计像素（`cardWidth × cardHeight`），
-   * 并没有跟着画布的 `vp.transform` 一起缩放。所以"点落在卡片的百分之几处"必须
-   * 用卡片自己的 rect 来量；早先用 `(clientX - 容器left - vp.tx) / vp.scale` 换算，
-   * 等于把卡片当成画布内元素，容器宽 ≠ 设计宽时点击位置会整体平移出图区，
-   * 拖动因此从来没有生效过。
+   * 卡片拖拽：图表已把指针位置换算成物理 X（模式 A 为 a，模式 B 为 ω²），
+   * 这里只负责反解出 v —— 坐标换算不再由本 hook 用布局常量猜图区内边距。
    */
-  const cardRectRef = useRef<DOMRect | null>(null)
-
-  const handleDragTime = useCallback(
-    (clientX: number) => {
-      const cardRect = cardRectRef.current
-      if (!cardRect) return
-      // 图区左边界 ≈ 卡片左内边距；右边界 ≈ 卡片宽 - 右内边距
-      const clickX = clientX - cardRect.left - cardInnerPad.left
-      // 横轴随模式切换：模式 A 是 a，模式 B 是 ω²，反解 v 的式子不同
-      const xMax = fitMode === 1 ? fit.omegaSqMax : CENTRIPETAL_CHART_RANGE.aMax
-      const xClick = (clickX / cardInnerW) * xMax
-      if (xClick >= 0 && xClick <= xMax) {
-        const vTarget = fitMode === 1
-          ? r * Math.sqrt(xClick)          // ω = √(ω²)，v = ωr
-          : Math.sqrt(xClick * r)          // a = v²/r → v = √(ar)
-        const clampedV = Math.max(CENTRIPETAL_PARAM_BOUNDS.vMin, Math.min(CENTRIPETAL_PARAM_BOUNDS.vMax, vTarget))
-        updateParam('v', parseFloat(clampedV.toFixed(2)))
-        setIsPlaying(false)
-      }
+  const setVFromChartX = useCallback(
+    (chartX: number) => {
+      const x = Math.max(0, chartX)
+      const vTarget = fitMode === 1
+        ? r * Math.sqrt(x)          // ω = √(ω²)，v = ωr
+        : Math.sqrt(x * r)          // a = v²/r → v = √(ar)
+      const clampedV = Math.max(CENTRIPETAL_PARAM_BOUNDS.vMin, Math.min(CENTRIPETAL_PARAM_BOUNDS.vMax, vTarget))
+      updateParam('v', parseFloat(clampedV.toFixed(2)))
+      setIsPlaying(false)
     },
-    [cardInnerPad.left, cardInnerW, r, fitMode, fit.omegaSqMax, updateParam, setIsPlaying]
-  )
-
-  const handleContainerMouseMove = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!isDraggingRef.current) return
-      handleDragTime(e.clientX)
-    },
-    [handleDragTime]
-  )
-
-  const handleContainerMouseUp = useCallback(() => {
-    isDraggingRef.current = false
-    cardRectRef.current = null
-  }, [])
-
-  const handleChartMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      isDraggingRef.current = true
-      cardRectRef.current = e.currentTarget.getBoundingClientRect()
-      handleDragTime(e.clientX)
-    },
-    [handleDragTime]
+    [r, fitMode, updateParam, setIsPlaying]
   )
 
   return {
@@ -231,11 +189,11 @@ export function useCentripetalPhysics(
     omega, a_c, F_c, x, y,
     vp,
     centerX: DESIGN_CX, centerY: DESIGN_CY, scale: designScale, ballPos,
-    cardWidth, cardHeight, cardX, cardY, cardInnerPad, cardInnerW,
+    cardWidth, cardHeight, cardX, cardY,
     sceneScale,
     faPoints,
     fitMode,
     fit,
-    handleContainerMouseMove, handleContainerMouseUp, handleChartMouseDown,
+    setVFromChartX,
   }
 }

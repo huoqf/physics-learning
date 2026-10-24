@@ -49,11 +49,25 @@ describe('calculateVectorPixelLength', () => {
     expect(calculateVectorPixelLength(0, 'force', maxLength, refMag, 20)).toBe(20)
   })
 
-  it('clamps between minLength and maxLength', () => {
-    // Very small ratio should still be >= minLength
+  it('基准有效时不再有 14px 硬下限（小量值按比例缩短）', () => {
+    // mag=1, refMag=20, ratio=0.05, force weight=0.7 -> 3.5
     const result = calculateVectorPixelLength(1, 'force', maxLength, refMag)
-    expect(result).toBeGreaterThanOrEqual(minLength)
-    expect(result).toBeLessThanOrEqual(maxLength)
+    expect(result).toBeCloseTo(3.5, 10)
+    expect(result).toBeLessThan(minLength)
+  })
+
+  it('基准有效时长度与量值严格单调（旧的 14px 下限会压平 [0, 14] 段）', () => {
+    const magnitudes = [0.001, 0.05, 0.5, 2, 5, 10, 15, 20]
+    const lengths = magnitudes.map((m) => calculateVectorPixelLength(m, 'velocity', maxLength, refMag))
+    for (let i = 1; i < lengths.length; i++) {
+      expect(lengths[i]).toBeGreaterThan(lengths[i - 1])
+    }
+  })
+
+  it('浮点残差级别的量值不再被画成 14px（抛体最高点 v_y ≈ 1e-16）', () => {
+    const residual = calculateVectorPixelLength(1e-16, 'velocityY', 120, 14)
+    expect(residual).toBeGreaterThan(0)
+    expect(residual).toBeLessThan(1e-9)
   })
 
   it('warns when refMagnitude is 0', () => {

@@ -3,6 +3,7 @@ import { magnitude, normalize } from '../../physics/Vector2';
 import type { SceneScale } from '../../scene/SceneScale';
 import type { VectorType } from '../../theme/physics/vectorStyle';
 import { VECTOR_COLORS } from '../../theme/physics/vectorStyle';
+import { resolveArrowGeometry } from '../../utils/arrowGeometry';
 import { calculateVectorPixelLength } from '../../utils/vectorLength';
 
 /**
@@ -85,7 +86,8 @@ function perpendicular(v: Vector2): Vector2 {
  * 将物理矢量（物理坐标 y↑正方向）渲染为 SVG 箭头：
  * - 通过 SceneScale 将物理坐标转换为像素坐标
  * - 箭头长度通过 calculateVectorPixelLength 基于 refMagnitudes 归一化
- * - 箭头头部为三角形，线宽按箭头长度比例自适应
+ * - 箭头头部为三角形，头部长度/宽度与线宽均由 resolveArrowGeometry 按总长派生
+ *   （小箭头整体等比缩小，避免三角头与线宽撑满甚至超过箭杆）
  * - 零矢量返回 null，不渲染
  */
 export function VectorArrow({
@@ -139,9 +141,12 @@ export function VectorArrow({
     overrideLength ??
     calculateVectorPixelLength(magnitude(vector), type, sceneScale.maxVectorLength, refMag);
 
-  const headLen = Math.max(7, Math.min(16, totalLength * 0.28));
-  const lineLen = Math.max(0, totalLength - headLen);
-  const headWidth = headLen * 0.6;
+  // 头部/线宽随长度等比缩放：长度取消 14px 兜底后，短箭头必须连头部一起缩，
+  // 否则 7px 的三角头 + 3px 的线宽会把几像素的箭头画成一坨看不出方向的色块。
+  const { lineLen, headWidth, strokeWidth: stroke } = resolveArrowGeometry(
+    totalLength,
+    strokeWidth,
+  );
 
   // 支持两种起点：设计坐标（直接使用）或物理坐标（通过 sceneScale 转换）
   const x1 = resolvedOriginDesign ? resolvedOriginDesign.x : sceneScale.originX + (origin?.x ?? 0) * sceneScale.scaleX;
@@ -160,7 +165,6 @@ export function VectorArrow({
   const baseRightY = lineEndY + perp.y * (headWidth / 2);
 
   const fillColor = color ?? VECTOR_COLORS[type];
-  const stroke = strokeWidth ?? Math.max(3, totalLength * 0.04);
 
   const pxDirX = dir.x;
   const pxDirY = -dir.y;

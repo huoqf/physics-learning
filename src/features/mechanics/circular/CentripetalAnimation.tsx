@@ -69,6 +69,7 @@ export default function CentripetalAnimation() {
         cursorX={physics.omega * physics.omega}
         cursorLabel={(_x, f) => `F=${f.toFixed(1)}N`}
         markers={markers}
+        onScrubX={physics.setVFromChartX}
       />
     )
   })()
@@ -78,23 +79,19 @@ export default function CentripetalAnimation() {
       ref={containerRef}
       data-viewport
       className="w-full h-full relative bg-white rounded-lg shadow-inner"
-      onMouseMove={physics.handleContainerMouseMove}
-      onMouseUp={physics.handleContainerMouseUp}
-      onMouseLeave={physics.handleContainerMouseUp}
     >
       <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
         <CentripetalScene physics={physics} font={canvasSize.font} />
       </AnimationSvgCanvas>
       {physics.showFaCard && (
         <div
-          className="absolute cursor-ew-resize"
+          className="absolute"
           style={{
             right: DESIGN.width - physics.cardX - physics.cardWidth,
             top: physics.cardY,
             width: physics.cardWidth,
             height: physics.cardHeight,
           }}
-          onMouseDown={physics.handleChartMouseDown}
         >
           {isFitMode ? (
             fitChart
@@ -105,12 +102,13 @@ export default function CentripetalAnimation() {
               yDomain={[0, CENTRIPETAL_CHART_RANGE.fMax]}
               xLabel="a (m/s²)"
               yLabel="F (N)"
-              title={`动力学联动 (F_c = m · a_c)  m=${physics.params.m.toFixed(1)}kg`}
+              title={`动力学联动  m = ${physics.params.m.toFixed(1)} kg`}
               color={PHYSICS_COLORS.appliedForce}
               strokeWidth={1.5}
               cursorX={physics.a_c}
               cursorLabel={(_x, f) => `F=${f.toFixed(1)}N`}
               markers={[]}
+              onScrubX={physics.setVFromChartX}
             />
           )}
         </div>

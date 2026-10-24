@@ -5,7 +5,7 @@ import { VECTOR_VISUAL_WEIGHT } from '../../theme/physics/vectorStyle'
 
 /** 由 refMagnitude 反推「每 (m/s) 的像素长度」，用于验证两个矢量共用同一比例 */
 function pxPerUnit(refMagnitude: number, maxLength = 100): number {
-  // 取 ref 的一半作量值：既高于 minLength 下限，也不触发 ratio≤1 截断
+  // 取 ref 的一半作量值：落在 ratio<1 的线性段内，不触发 ratio≤1 截断
   const mag = refMagnitude * 0.5
   return calculateVectorPixelLength(mag, 'velocity', maxLength, refMagnitude) / mag
 }
