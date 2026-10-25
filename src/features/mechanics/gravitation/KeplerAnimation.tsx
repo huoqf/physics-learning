@@ -4,7 +4,7 @@ import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CANVAS_STYLE, KEPLER_CONFIG, INSET_CHART } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CANVAS_STYLE, KEPLER_CONFIG, INSET_CHART, VECTOR_VISUAL_WEIGHT } from '@/theme/physics'
 import { useMemo, useCallback } from 'react'
 
 import { RelationChart } from '@/components/Chart'
@@ -15,6 +15,11 @@ import { useKeplerPhysics } from './hooks/useKeplerPhysics'
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
 }
+
+/** 太阳图元半径（design unit）：光晕 / 本体。 */
+// 引力箭头的长度上限要落在「本体之外」，故与绘制同源，避免两处各写一个 14 / 28。
+const SUN_GLOW_R = 28
+const SUN_CORE_R = 14
 
 export default function KeplerAnimation() {
   const { params, time, showVectors, showFormulas } = useAnimationStore(
@@ -45,17 +50,48 @@ export default function KeplerAnimation() {
   } = kepler
 
   // ── sceneScale（物理坐标 → 设计坐标，anchor:'center' + centerSource:'design'）──
+  //
+  // 矢量上限必须与轨道用同一把尺（世界尺），不能吃 useSceneScale 的默认值：
+  //   · 默认 maxVectorLength = 可视区短边 × 0.3（画布尺），而本页几何由 physicsScaleDesign
+  //     = scaleBase(32 design-unit/m) 固定 —— 两把尺互不相干，于是峰值箭头
+  //     （恒为 0.9·maxVectorLength·weight）与轨道大小完全无关：
+  //       a₁ 从 2.5 拖到 5.5，半长轴 80 → 176 px，而箭头恒 198.7 px，
+  //       比值在 2.48 → 1.13 之间乱跳；换窗口还会再漂（实测 175.5 / 198.9 / 177.9 px，
+  //       同一时刻轨道恒为 288 × 192）。
+  //   · 改为 0.6 × 半长轴像素后，峰值 v = 0.54 × 半长轴，对 a₁ 与容器都恒定。
+  const maxVectorLength = KEPLER_CONFIG.scaleBase * a1 * 0.6
+
+  // ── 引力箭头的填充率按「几何距离」封顶，而不是取一个固定百分比 ──
+  // 约束：箭头尖必须停在太阳本体之外（否则箭尖与标签会埋进日面，读作"斥力/起点错位"）。
+  //   可用长度 = r_min·S − 太阳本体半径 − 2 px 余量
+  //   F 峰值 = fill · maxVectorLength · weight[gravity]
+  // 默认 a₁=4.5 / b₁=3.0（e≈0.745）：r_min≈1.15 m → 36.7 px，可用 20.7 px（≈0.56·r_min）。
+  // 这里不用固定的 45%（=0.45·86.4·0.7≈27 px）：那样箭尖会落到 9 px 处，正好埋在 14 px 的日面里。
+  // 也不取满 0.75·r_min：那同样是 27 px，箭尖同样入日。几何封顶在极端参数下还会自动收缩
+  // （a₁=5.5 / b₁=1.5 → e≈0.96，r_min 仅 6.7 px），固定百分比则会直接戳穿太阳。
+  // 代价：e 越大 F 越短（远日点只剩亚像素），这是 1/r² 在 e=0.75 下 47 倍量程的必然结果 ——
+  // 线性映射只能保一头，这里优先保「方向指向太阳、不产生斥力错觉」。
+  const rMinPx = rMin * KEPLER_CONFIG.scaleBase
+  // 下限 6 px：b₁ 拉到 1.5、a₁ 拉到 5.5 时 e≈0.96，近日点距日只剩 6.7 px —— 行星本身已压在日面上，
+  // 此时"箭头不进日面"已无解，与其让箭头塌成 0（画面上等同于矢量消失），不如保一个可见的短箭。
+  const gravityPeakPx = Math.max(6, Math.min(0.75 * rMinPx, rMinPx - SUN_CORE_R - 2))
+  const gravityFill = Math.max(
+    1e-3,
+    Math.min(1, gravityPeakPx / (maxVectorLength * VECTOR_VISUAL_WEIGHT.gravity)),
+  )
+
   const sceneScale = useSceneScale({
     vp,
     preset,
     anchor: 'center',
     physicsScaleDesign: KEPLER_CONFIG.scaleBase,
     centerSource: 'design',
-    // 基准由轨道量程峰值反推（峰值箭头 = 0.9·maxVectorLength·weight）：
+    maxVectorLength,
+    // 基准由轨道量程峰值反推（峰值箭头 = fill·maxVectorLength·weight）：
     // 速度在近日点最大、引力 ∝ 1/r² 也在近日点最大，写死常数在参数拉满时会撞上限。
     refMagnitudes: {
       velocity: refFromPeak(kepler.vectorPeaks.speed),
-      gravity: refFromPeak(kepler.vectorPeaks.gravity),
+      gravity: kepler.vectorPeaks.gravity / gravityFill,
     },
   })
 
@@ -326,8 +362,8 @@ export default function KeplerAnimation() {
       )}
 
       {/* ── 8. 恒星(太阳)渲染 ── */}
-      <circle cx={sunDx} cy={sunDy} r={28} fill="url(#sun-glow-grad)" className="animate-pulse" />
-      <circle cx={sunDx} cy={sunDy} r={14} fill={SCENE_COLORS.bulb.glowInner} stroke={SCENE_COLORS.bulb.glowOuter} strokeWidth={1} />
+      <circle cx={sunDx} cy={sunDy} r={SUN_GLOW_R} fill="url(#sun-glow-grad)" className="animate-pulse" />
+      <circle cx={sunDx} cy={sunDy} r={SUN_CORE_R} fill={SCENE_COLORS.bulb.glowInner} stroke={SCENE_COLORS.bulb.glowOuter} strokeWidth={1} />
       <text
         x={sunDx - 11}
         y={sunDy + 32}
@@ -351,14 +387,27 @@ export default function KeplerAnimation() {
             font={font}
           />
 
+          {/* F 的标签不走 VectorArrow 的默认锚点（箭尖外 10 px）：
+              近日点行星离太阳只有 36.7 px，箭尖本就贴在日面外 2 px，
+              标签必然落进太阳本体里，读起来像在给太阳贴 "F"。
+              这里把标签固定在箭尾（行星）一侧，任何轨道位置都不会压到太阳。 */}
           <PhysicsVectorArrow
             originDesign={{ x: planetDx, y: planetDy }}
             vector={{ x: fxA, y: fyA }}
             type="gravity"
             sceneScale={sceneScale}
-            label="F"
             font={font}
           />
+          <text
+            x={planetDx + 10}
+            y={planetDy + 15}
+            fill={PHYSICS_COLORS.gravity}
+            fontSize={font(11)}
+            fontWeight="bold"
+            className="select-none"
+          >
+            F
+          </text>
         </g>
       )}
 
