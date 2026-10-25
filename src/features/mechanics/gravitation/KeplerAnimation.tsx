@@ -604,14 +604,9 @@ export default function KeplerAnimation() {
             variant="mini"
             showGrid={false}
             markers={[
-              {
-                // 不放右上角顶点：那里是坐标轴尽头，标签会溢出绘图区
-                axis: 'point',
-                x: maxT2 * 0.68,
-                y: maxA3 * 0.68,
-                label: '斜率 k',
-                color: PHYSICS_COLORS.friction,
-              },
+              // 不再给斜率加标记点：point 标记的标签固定画在 (+6,−6)，而直线本身就是
+              // 上升的，"斜率 k" 会与直线叠在一起（3 倍放大实测压线）。
+              // 斜率含义已由标题「斜率 = k」与左上角公式行给出。
               {
                 axis: 'point',
                 x: t2_1,
