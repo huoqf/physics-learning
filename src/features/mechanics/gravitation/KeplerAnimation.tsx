@@ -10,6 +10,7 @@ import { useMemo, useCallback } from 'react'
 import { RelationChart } from '@/components/Chart'
 import { worldToDesign } from '@/scene'
 import { refFromPeak } from '@/utils/vectorRefs'
+import { calculateVectorPixelLength } from '@/utils/vectorLength'
 import { useKeplerPhysics } from './hooks/useKeplerPhysics'
 
 function clamp(value: number, min: number, max: number): number {
@@ -105,6 +106,25 @@ export default function KeplerAnimation() {
   const { px: foci2Dx, py: foci2Dy } = toDesign(foci2PhysX, foci2PhysY)
   const { px: planetDx, py: planetDy } = toDesign(planetX, planetY)
   const { px: planetBDx, py: planetBDy } = toDesign(planetBX, planetBY)
+
+  // ── 引力标签的落点：跟着箭杆走，画不出箭杆时不画标签 ──
+  // 固定偏移（行星右下 10/15 px）会在两种情形出问题：
+  //   ① 远日点 F 只剩零点几 px（e=0.75 时量程 47 倍），凭空留一个"悬空的 F"，有字无箭；
+  //   ② a₁ 较小时该点会压到第二定律的「近日面积 S₁」标注（实测 a₁=2.5 / b₁=2.4 命中）。
+  // 改为：沿箭杆 55% 处、向一侧垂直偏移 9 px；箭杆短到 8 px 以下则整个标签不画。
+  const fMag = Math.hypot(fxA, fyA)
+  const F_LABEL_MIN_LEN = 8
+  const fArrowLen = calculateVectorPixelLength(
+    fMag,
+    'gravity',
+    maxVectorLength,
+    sceneScale.refMagnitudes?.gravity ?? 0,
+  )
+  const fAngle = Math.atan2(fyA, fxA)
+  const fDirX = Math.cos(fAngle)
+  const fDirY = -Math.sin(fAngle) // 设计坐标 y 向上 → 屏幕 y 向下
+  const fLabelX = planetDx + fDirX * fArrowLen * 0.55 + fDirY * 9
+  const fLabelY = planetDy + fDirY * fArrowLen * 0.55 - fDirX * 9
 
   // ── 画中画图表尺寸（从设计坐标计算）──
   const chartW = useMemo(() => clamp(
@@ -364,12 +384,13 @@ export default function KeplerAnimation() {
       {/* ── 8. 恒星(太阳)渲染 ── */}
       <circle cx={sunDx} cy={sunDy} r={SUN_GLOW_R} fill="url(#sun-glow-grad)" className="animate-pulse" />
       <circle cx={sunDx} cy={sunDy} r={SUN_CORE_R} fill={SCENE_COLORS.bulb.glowInner} stroke={SCENE_COLORS.bulb.glowOuter} strokeWidth={1} />
-      {/* 太阳标题写在太阳**左侧**（右对齐）：原先居中偏右时，文字从 sunDx−11 一路铺到 sunDx+80，
+      {/* 太阳标题写在太阳**左下方**（右对齐）：原先居中偏右时，文字从 sunDx−11 一路铺到 sunDx+80，
           正好压住第二定律的「近日面积 S₁」标注（同一高度 y≈357），放大后是糊成一片的红黑字。
-          右侧空间已被近日点扇形、行星与 v 箭头占满，左侧（椭圆左半）是空的。 */}
+          下移到光晕以下（y = sunDy + SUN_GLOW_R + 22）再右对齐，是为了同时避开左侧的「远日面积 S₂」
+          —— 实测 a₁=2.5~3.0 时 S₂ 从 x≈345 铺到 408，与该高度上的文字会撞。 */}
       <text
-        x={sunDx - 32}
-        y={sunDy + 32}
+        x={sunDx - 10}
+        y={sunDy + SUN_GLOW_R + 22}
         textAnchor="end"
         fill={PHYSICS_COLORS.labelText}
         fontSize={font(11)}
@@ -394,7 +415,8 @@ export default function KeplerAnimation() {
           {/* F 的标签不走 VectorArrow 的默认锚点（箭尖外 10 px）：
               近日点行星离太阳只有 36.7 px，箭尖本就贴在日面外 2 px，
               标签必然落进太阳本体里，读起来像在给太阳贴 "F"。
-              这里把标签固定在箭尾（行星）一侧，任何轨道位置都不会压到太阳。 */}
+              落点见上方 fLabelX/fLabelY：沿箭杆 55% 处向侧面偏移 9 px，
+              箭杆短于 8 px 时整个标签不画（否则会出现"悬空的 F"）。 */}
           <PhysicsVectorArrow
             originDesign={{ x: planetDx, y: planetDy }}
             vector={{ x: fxA, y: fyA }}
@@ -402,16 +424,18 @@ export default function KeplerAnimation() {
             sceneScale={sceneScale}
             font={font}
           />
-          <text
-            x={planetDx + 10}
-            y={planetDy + 15}
-            fill={PHYSICS_COLORS.gravity}
-            fontSize={font(11)}
-            fontWeight="bold"
-            className="select-none"
-          >
-            F
-          </text>
+          {fArrowLen >= F_LABEL_MIN_LEN && (
+            <text
+              x={fLabelX}
+              y={fLabelY}
+              fill={PHYSICS_COLORS.gravity}
+              fontSize={font(11)}
+              fontWeight="bold"
+              className="select-none"
+            >
+              F
+            </text>
+          )}
         </g>
       )}
 
