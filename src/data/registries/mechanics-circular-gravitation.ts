@@ -139,13 +139,22 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     knowledgeId: 'mechanics-6-1',
     Component: lazy(() => import('@/features/mechanics/gravitation/KeplerAnimation')),
     controlsMode: 'timed',
-    defaultParams: { a: 4.5, b: 3.0, period: 10, mode: 0, a2: 7.5, b2: 6.0 } as const,
+    defaultParams: { a: 4.5, e: 0.75, mass: 36, mode: 0, a2: 7.5, e2: 0.6 } as const,
     paramMeta: [
       { key: 'a', label: '内轨半长轴 a₁', min: 2.5, max: 5.5, step: 0.1, unit: '' },
-      { key: 'b', label: '内轨半短轴 b₁', min: 1.5, max: 4.5, step: 0.1, unit: '' },
-      { key: 'period', label: '内轨周期 T₁', min: 5, max: 20, step: 0.5, unit: 's' },
+      {
+        key: 'e', label: '内轨偏心率 e₁', min: 0, max: 0.85, step: 0.05, unit: '',
+        description: 'e = c/a，越接近 1 轨道越扁；半短轴 b 由 b = a√(1−e²) 派生',
+      },
+      {
+        key: 'mass', label: '中心天体质量 M', min: 10, max: 80, step: 1, unit: '',
+        description: '归一化单位（取 G = 1）。周期由 T = 2π√(a³/GM) 决定',
+      },
       { key: 'a2', label: '外轨半长轴 a₂', min: 6.0, max: 10.0, step: 0.1, unit: '', showIf: 'mode', showIfValue: 2 },
-      { key: 'b2', label: '外轨半短轴 b₂', min: 4.5, max: 9.0, step: 0.1, unit: '', showIf: 'mode', showIfValue: 2 },
+      {
+        key: 'e2', label: '外轨偏心率 e₂', min: 0, max: 0.8, step: 0.05, unit: '',
+        showIf: 'mode', showIfValue: 2,
+      },
     ],
     controlMeta: [
       {
@@ -159,6 +168,11 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
           { value: 1, label: '第二定律' },
           { value: 2, label: '第三定律' },
         ],
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        content: '周期 T 不是独立旋钮：它由中心天体质量 M 决定。所以拖动 a₁ 只改变行星，k = a³/T² 保持不变；拖动 M 才换中心天体，k 才会变。',
       },
     ],
   },

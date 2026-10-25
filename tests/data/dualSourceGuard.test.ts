@@ -18,6 +18,7 @@ import {
 } from '@/physics'
 import { electromagnetismElectrostaticsAnimations } from '@/data/registries/electromagnetism-electrostatics'
 import { LAYOUT } from '@/features/mechanics/gravitation/satelliteLayout'
+import { orbitalPeriodFromMass } from '@/physics'
 
 const EPS = 1e-9
 const K = 9e9
@@ -265,6 +266,38 @@ describe('A 组 · 中屏与看板共用同一套常量/函数', () => {
     // 模式 A 不输出任何拟合读数（不能把两套斜率同时塞给同一张图）
     const theory = buildPhysicsQuantities('anim-centripetal', { ...params, fitMode: 0 }, 0)
     expect((theory.quantities ?? []).some((q) => q.label.includes('拟合'))).toBe(false)
+  })
+
+  // ── #14 开普勒第三定律：看板 k 必须等于中屏 k，且只随中心天体质量变化 ──────────
+  it('开普勒：看板 k = a³/T² 与 orbitalPeriodFromMass 同源，改 a 不变、改 M 才变', async () => {
+    await preloadQuantityBuilder('anim-kepler')
+    const panelOf = (a: number, mass: number) =>
+      buildPhysicsQuantities(
+        'anim-kepler',
+        { mode: 2, a, e: 0.75, mass, a2: 7.5, e2: 0.6 },
+        0,
+      )
+
+    const kExpected = (a: number, mass: number) =>
+      Math.pow(a, 3) / Math.pow(orbitalPeriodFromMass(a, mass), 2)
+
+    // 1. 看板 k 与物理层同源
+    expect(num(panelOf(4.5, 36), '内轨比值')).toBeCloseTo(kExpected(4.5, 36), 4)
+    // 2. 只改半长轴，k 不变（这正是教材要学生形成的认知）
+    expect(num(panelOf(2.5, 36), '内轨比值')).toBeCloseTo(num(panelOf(5.5, 36), '内轨比值'), 10)
+    // 3. 改中心天体质量，k 才变（且成正比）
+    expect(num(panelOf(4.5, 72), '内轨比值')).toBeCloseTo(2 * num(panelOf(4.5, 36), '内轨比值'), 4)
+    // 4. 内轨与外轨的比值必须相等
+    expect(num(panelOf(4.5, 36), '外轨比值')).toBeCloseTo(num(panelOf(4.5, 36), '内轨比值'), 10)
+  })
+
+  // ── #15 开普勒第一定律：看板焦半径之和必须是"实测"的 2a ────────────────────
+  it('开普勒：看板 r₁+r₂ 由副焦点实测得出，等于 2a 而不是靠 2a−r₁ 凑出', async () => {
+    await preloadQuantityBuilder('anim-kepler')
+    for (const e of [0, 0.4, 0.75, 0.9]) {
+      const panel = buildPhysicsQuantities('anim-kepler', { mode: 0, a: 4.5, e, mass: 36, a2: 7.5, e2: 0.6 }, 3.1)
+      expect(num(panel, '焦半径之和')).toBeCloseTo(9, 2)
+    }
   })
 })
 

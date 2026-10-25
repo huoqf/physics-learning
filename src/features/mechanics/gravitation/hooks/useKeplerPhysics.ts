@@ -4,16 +4,24 @@
  *
  * 零 JSX，纯数据计算，可独立单测
  * 所有位置以物理坐标返回（轨道中心为原点，y 轴向上）
+ *
+ * ── 参数模型的约定（2026-10 重构）─────────────────────────────────────
+ * 输入是 **(a, e, 中心天体质量 M)**，不是 (a, b, 周期 T)：
+ *   · e 取代 b —— `b > a` 在几何上不可表达，从源头消灭"竖直椭圆 + e=0"的假象；
+ *   · M 取代 T —— 周期由 T = 2π√(a³/GM) 派生。这样 T²–a³ 图像上的直线是
+ *     **动力学的结果**，而不是把第三定律再代回去得到的恒等式；
+ *   · 于是 k = a³/T² 只随 M 变化、与 a 无关，与教材结论一致。
  */
 import { useMemo } from 'react'
 import {
-  calculateKeplerOrbit,
+  ellipseFromEccentricity,
+  evaluateKeplerOrbit,
+  orbitalPeriodFromMass,
+  orbitLegality,
+  sampleSweptArea,
   solveKeplerEquation,
 } from '@/physics/celestial'
-import {
-  KEPLER_CONFIG,
-  VECTOR_DISPLAY,
-} from '@/theme/physics'
+import { KEPLER_CONFIG, VECTOR_DISPLAY } from '@/theme/physics'
 
 // ─── 类型定义 ─────────────────────────────────────────────────────
 
@@ -28,7 +36,10 @@ export interface KeplerPhysicsResult {
   e1: number
   rMin: number
   rMax: number
+  /** 内轨周期（由 M 派生） */
   T1: number
+  /** 中心天体质量参数（归一化，G = KEPLER_SIM_G） */
+  mass: number
 
   // ── 天体物理坐标（轨道中心为原点，y↑）──
   sunPhysX: number
@@ -39,15 +50,16 @@ export interface KeplerPhysicsResult {
   // ── 行星 A ──
   planetX: number
   planetY: number
-  orbitA: { x: number; y: number; vx: number; vy: number; r: number }
+  orbitA: KeplerOrbitData
 
   // ── 行星 B（第三定律模式） ──
   a2: number
   b2: number
+  e2: number
   T2: number
   planetBX: number
   planetBY: number
-  orbitB: { x: number; y: number; vx: number; vy: number; r: number }
+  orbitB: KeplerOrbitData
 
   // ── 尾迹（物理坐标）──
   trail: { x: number; y: number; opacity: number }[]
@@ -67,19 +79,53 @@ export interface KeplerPhysicsResult {
   fxA: number
   fyA: number
 
-  // ── 矢量量程峰值（供 refMagnitudes 校准）──
+  // ── 矢量量程峰值（供 refMagnitudes 校准） ──
   vectorPeaks: KeplerVectorPeaks
 
-  // ── 第三定律图表 ──
+  // ── 第二定律的守恒量 ──
+  /** 单位质量角动量 h（= r_min·v_近日 = r_max·v_远日） */
+  h: number
+  /** 面积速度 h/2 */
+  arealVelocity: number
+  vPeri: number
+  vApo: number
+
+  // ── 第三定律 ──
   a3_1: number
   t2_1: number
   a3_2: number
   t2_2: number
+  /** k = a₁³/T₁²，由实际驱动运动的周期算出（不另算一遍） */
   k_ratio: number
   maxA3: number
   maxT2: number
-  /** 扫过时间占周期比例（第二定律时间卡片） */
+  /** 与 T²–a³ 同斜率的参考行星族（同一中心天体，a 取一组示例值） */
+  referenceFamily: { a: number; a3: number; t2: number }[]
+
+  /** 扫过时间占周期比例（第二定律） */
   deltaTPercent: number
+  /** 一个周期内扫过面积的数值累积（t, area） */
+  sweptTrace: { t: number; area: number }[]
+
+  /** 轨道合法性（近日点是否已进入恒星本体等） */
+  legality: { ok: boolean; reason?: string }
+}
+
+/** 一个周期内的矢量量程峰值（显示量级，供 refMagnitudes 校准） */
+export interface KeplerVectorPeaks {
+  /** 速度矢量在全轨道上的最大显示模长 */
+  speed: number
+  /** 引力矢量在全轨道上的最大显示模长（近拱点） */
+  gravity: number
+}
+
+export interface KeplerOrbitData {
+  x: number; y: number; vx: number; vy: number; r: number
+}
+
+export interface KeplerVectors {
+  vxA: number; vyA: number
+  fxA: number; fyA: number
 }
 
 // ── 工具：扇形物理坐标点（渲染层转 canvas 坐标构建 SVG path）──
@@ -97,35 +143,12 @@ function buildSectorPoints(
 
   return [
     { x: a1 * e1, y: 0 },
-    {
-      x: a1 * Math.cos(E_start),
-      y: b1 * Math.sin(E_start),
-    },
-    {
-      x: a1 * Math.cos(E_end),
-      y: b1 * Math.sin(E_end),
-    },
+    { x: a1 * Math.cos(E_start), y: b1 * Math.sin(E_start) },
+    { x: a1 * Math.cos(E_end), y: b1 * Math.sin(E_end) },
   ]
 }
 
 // ── 矢量计算（纯函数，可独立测试）──
-
-export interface KeplerOrbitData {
-  x: number; y: number; vx: number; vy: number; r: number
-}
-
-export interface KeplerVectors {
-  vxA: number; vyA: number
-  fxA: number; fyA: number
-}
-
-/** 一个周期内的矢量量程峰值（显示量级，供 refMagnitudes 校准） */
-export interface KeplerVectorPeaks {
-  /** 速度矢量在全轨道上的最大显示模长 */
-  speed: number
-  /** 引力矢量在全轨道上的最大显示模长（近拱点） */
-  gravity: number
-}
 
 /**
  * 从轨道数据计算速度与引力矢量（物理坐标，y↑）。
@@ -152,31 +175,39 @@ export function computeKeplerVectors(
 
 // ─── 主 Hook ─────────────────────────────────────────────────────
 
+/** 第三定律参考行星族的示例半长轴（同一中心天体，仅用于把"直线"画成一条有多个点的线） */
+const REFERENCE_SEMI_MAJOR = [1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5] as const
+
 /**
  * 开普勒定律动画物理/视图模型 Hook
  *
- * @param params 动画参数
+ * @param params a / e / mass / a2 / e2 / mode
  * @param time 当前时间
  */
 export function useKeplerPhysics(
   params: Record<string, number>,
   time: number,
 ): KeplerPhysicsResult {
-
   // ── 轨道参数 ──
   const mode = params.mode ?? 0
   const a1 = params.a ?? 4.5
-  const b1 = params.b ?? 3.0
-  const T1 = params.period ?? 10
+  const e1 = params.e ?? 0.75
+  const mass = params.mass ?? 36
   const a2 = params.a2 ?? 7.5
-  const b2 = params.b2 ?? 6.0
+  const e2 = params.e2 ?? 0.6
 
-  const c1 = Math.sqrt(Math.max(0, a1 * a1 - b1 * b1))
-  const e1 = a1 > 0 ? c1 / a1 : 0
-  const rMin = a1 - c1
-  const rMax = a1 + c1
+  // 几何量一律由 (a, e) 派生，不再从 b 反解
+  const geo1 = ellipseFromEccentricity(a1, e1)
+  const { b: b1, c: c1, rMin, rMax } = geo1
+  const geo2 = ellipseFromEccentricity(a2, e2)
+  const { b: b2 } = geo2
+
+  // 周期由中心天体质量决定（第三定律的动力学来源）
+  const T1 = orbitalPeriodFromMass(a1, mass)
+  const T2 = orbitalPeriodFromMass(a2, mass)
 
   // ── 天体物理坐标（轨道中心为原点，y↑）──
+  // 太阳在右焦点；副焦点在左焦点（第一定律的"双焦点"正是靠这两个点撑起来的）
   const sunPhysX = c1
   const sunPhysY = 0
   const foci2PhysX = -c1
@@ -184,8 +215,8 @@ export function useKeplerPhysics(
 
   // ── 行星 A ──
   const orbitA = useMemo(
-    () => calculateKeplerOrbit(a1, b1, time, T1),
-    [a1, b1, time, T1],
+    () => evaluateKeplerOrbit(a1, e1, mass, time),
+    [a1, e1, mass, time],
   )
 
   const planetX = orbitA.x
@@ -199,20 +230,18 @@ export function useKeplerPhysics(
     let speed = 0
     let gravity = 0
     for (let i = 0; i < N; i++) {
-      const orbit = calculateKeplerOrbit(a1, b1, (i / N) * T1, T1)
+      const orbit = evaluateKeplerOrbit(a1, e1, mass, (i / N) * T1)
       const v = computeKeplerVectors(orbit, sunPhysX, sunPhysY)
       speed = Math.max(speed, Math.hypot(v.vxA, v.vyA))
       gravity = Math.max(gravity, Math.hypot(v.fxA, v.fyA))
     }
     return { speed, gravity }
-  }, [a1, b1, T1, sunPhysX, sunPhysY])
+  }, [a1, e1, mass, T1, sunPhysX, sunPhysY])
 
-  // ── 行星 B ──
-  const T2 = T1 * Math.sqrt(Math.pow(a2 / a1, 3))
-
+  // ── 行星 B ──（周期同样来自 M，不来自第三定律）
   const orbitB = useMemo(
-    () => calculateKeplerOrbit(a2, b2, time, T2),
-    [a2, b2, time, T2],
+    () => evaluateKeplerOrbit(a2, e2, mass, time),
+    [a2, e2, mass, time],
   )
 
   const planetBX = orbitB.x
@@ -225,11 +254,11 @@ export function useKeplerPhysics(
     const count = 7
     for (let i = 1; i <= count; i++) {
       const histTime = Math.max(0, time - i * step)
-      const histOrbit = calculateKeplerOrbit(a1, b1, histTime, T1)
+      const histOrbit = evaluateKeplerOrbit(a1, e1, mass, histTime)
       points.push({ x: histOrbit.x, y: histOrbit.y, opacity: 0.7 * (1 - i / (count + 1)) })
     }
     return points
-  }, [a1, b1, time, T1])
+  }, [a1, e1, mass, time])
 
   // ── 第二定律扇形 ──
   const deltaTPercent = KEPLER_CONFIG.sweepTimeRatio
@@ -237,10 +266,10 @@ export function useKeplerPhysics(
 
   const sectorPoints = useMemo(() => {
     return {
-      perihelion: buildSectorPoints(a1, b1, e1, deltaM, 0),
-      aphelion: buildSectorPoints(a1, b1, e1, deltaM, Math.PI),
+      perihelion: buildSectorPoints(a1, b1, geo1.e, deltaM, 0),
+      aphelion: buildSectorPoints(a1, b1, geo1.e, deltaM, Math.PI),
     }
-  }, [a1, b1, e1, deltaM])
+  }, [a1, b1, geo1.e, deltaM])
 
   const M_current = ((2 * Math.PI) / T1 * time) % (2 * Math.PI)
   const isInPerihelion =
@@ -248,31 +277,73 @@ export function useKeplerPhysics(
   const isInAphelion =
     M_current >= Math.PI - deltaM / 2 && M_current <= Math.PI + deltaM / 2
 
+  // ── 守恒量：h 与 v 的极值（在近/远日点分别取值，供"r·v 相等"的读数）──
+  const vPeri = useMemo(
+    () => evaluateKeplerOrbit(a1, e1, mass, 0).v,
+    [a1, e1, mass],
+  )
+  const vApo = useMemo(
+    () => evaluateKeplerOrbit(a1, e1, mass, T1 / 2).v,
+    [a1, e1, mass, T1],
+  )
+
+  // ── 面积–时间的数值累积（一个整周期）──
+  const sweptTrace = useMemo(
+    () => sampleSweptArea(a1, e1, mass, 48),
+    [a1, e1, mass],
+  )
+
+  // ── 合法性：近日点是否已进入恒星本体 ──
+  const legality = useMemo(
+    () => orbitLegality(a1, e1, KEPLER_CONFIG.sunCoreR / KEPLER_CONFIG.scaleBase),
+    [a1, e1],
+  )
+
   // ── 矢量大小（物理单位）──
   const { vxA, vyA, fxA, fyA } = computeKeplerVectors(orbitA, sunPhysX, sunPhysY)
 
   // ── 第三定律图表数据 ──
   const a3_1 = a1 * a1 * a1
   const t2_1 = T1 * T1
-  const k_ratio = t2_1 / a3_1
+  // k 取教材定义 a³/T²（= GM/4π²），且由"实际驱动运动的那条周期"算出：
+  // 一旦 T 的来源变了，k 立刻跟着变，不会两处各说一套。
+  const k_ratio = a3_1 / t2_1
 
   const a3_2 = a2 * a2 * a2
   const t2_2 = T2 * T2
 
-  const maxA3 = Math.max(a3_1, a3_2) * 1.15
-  const maxT2 = maxA3 * k_ratio
+  // 参考行星族：同一中心天体下 a 取一组示例，T 同样由 M 派生 → 全部落在 y = k x 上
+  const referenceFamily = useMemo(
+    () =>
+      REFERENCE_SEMI_MAJOR.map((a) => {
+        const T = orbitalPeriodFromMass(a, mass)
+        return { a, a3: a * a * a, t2: T * T }
+      }),
+    [mass],
+  )
+
+  const maxA3 = Math.max(a3_1, a3_2, ...referenceFamily.map((p) => p.a3)) * 1.12
+  // a³ = k·T² → T² = a³/k，故横轴（T²）的上限由纵轴上限换算而来
+  const maxT2 = maxA3 / k_ratio
 
   return {
     mode,
-    a1, b1, c1, e1, rMin, rMax, T1,
+    a1, b1, c1, e1, rMin, rMax, T1, mass,
     sunPhysX, sunPhysY, foci2PhysX, foci2PhysY,
     planetX, planetY, orbitA,
-    a2, b2, T2, planetBX, planetBY, orbitB,
+    a2, b2, e2, T2, planetBX, planetBY, orbitB,
     trail,
     sectorPoints,
     M_current, isInPerihelion, isInAphelion,
     vxA, vyA, fxA, fyA,
     vectorPeaks,
-    a3_1, t2_1, a3_2, t2_2, k_ratio, maxA3, maxT2, deltaTPercent,
+    h: orbitA.h,
+    arealVelocity: orbitA.arealVelocity,
+    vPeri, vApo,
+    a3_1, t2_1, a3_2, t2_2, k_ratio, maxA3, maxT2,
+    referenceFamily,
+    deltaTPercent,
+    sweptTrace,
+    legality,
   }
 }

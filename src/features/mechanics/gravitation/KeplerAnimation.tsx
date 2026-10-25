@@ -17,10 +17,13 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
 }
 
-/** 太阳图元半径（design unit）：光晕 / 本体。 */
-// 引力箭头的长度上限要落在「本体之外」，故与绘制同源，避免两处各写一个 14 / 28。
-const SUN_GLOW_R = 28
-const SUN_CORE_R = 14
+/** 太阳与行星图元半径（design unit）。
+ *
+ * 统一从 KEPLER_CONFIG 取：物理层判断"近日点是否已进入恒星本体"用的是同一个 sunCoreR，
+ * 渲染与校验不允许各写一个 14（否则改一处就会静默失配）。 */
+const SUN_GLOW_R = KEPLER_CONFIG.sunGlowR
+const SUN_CORE_R = KEPLER_CONFIG.sunCoreR
+const PLANET_R = KEPLER_CONFIG.planetR
 
 export default function KeplerAnimation() {
   const { params, time, showVectors, showFormulas } = useAnimationStore(
@@ -37,7 +40,7 @@ export default function KeplerAnimation() {
   const kepler = useKeplerPhysics(params, time)
 
   const {
-    mode, a1, b1, e1, rMin, rMax, T1,
+    mode, a1, b1, e1, rMin, rMax, T1, mass,
     a2, b2, T2,
     sunPhysX, sunPhysY, foci2PhysX, foci2PhysY,
     planetX, planetY, orbitA,
@@ -47,7 +50,9 @@ export default function KeplerAnimation() {
     isInPerihelion, isInAphelion,
     deltaTPercent,
     vxA, vyA, fxA, fyA,
-    a3_1, t2_1, a3_2, t2_2, maxA3, maxT2,
+    a3_1, t2_1, a3_2, t2_2, k_ratio, maxA3, maxT2, referenceFamily,
+    sweptTrace,
+    legality,
   } = kepler
 
   // ── sceneScale（物理坐标 → 设计坐标，anchor:'center' + centerSource:'design'）──
@@ -125,6 +130,20 @@ export default function KeplerAnimation() {
   const fDirY = -Math.sin(fAngle) // 设计坐标 y 向上 → 屏幕 y 向下
   const fLabelX = planetDx + fDirX * fArrowLen * 0.55 + fDirY * 9
   const fLabelY = planetDy + fDirY * fArrowLen * 0.55 - fDirX * 9
+
+  // ── 第一定律的实测验证：r₂ 用副焦点的真实坐标量 ──
+  // 旧实现 r₂ = 2a − r₁ 只是定义式的移项，r₁ + r₂ 恒等于 2a —— 椭圆画歪了这个数也不会动，
+  // 所以那张"验证卡"什么都没验证。改成 hypot(行星 − 副焦点) 之后，一旦几何出错（正交轴失配、
+  // b 反解错、焦点位置错）这个和会立刻偏离 2a，数字自己报警。
+  const r2Real = Math.hypot(planetX - foci2PhysX, planetY - foci2PhysY)
+  const rSumMeasured = orbitA.r + r2Real
+  const rSumExpected = 2 * a1
+  const rSumOk = Math.abs(rSumMeasured - rSumExpected) < Math.max(0.02, 0.002 * a1)
+
+  // ── 面积–时间图：一个整周期内扫过面积的数值累积 ──
+  const areaMax = sweptTrace.length > 0 ? sweptTrace[sweptTrace.length - 1].area : 1
+  const areaChartW = 200
+  const areaChartH = 132
 
   // ── 画中画图表尺寸（从设计坐标计算）──
   const chartW = useMemo(() => clamp(
@@ -217,7 +236,7 @@ export default function KeplerAnimation() {
             className="transition-all duration-200"
           />
           <text
-            x={sceneScale.originX + a1 * sceneScale.scaleX - 25}
+            x={sceneScale.originX + a1 * sceneScale.scaleX - 45}
             y={sceneScale.originY + b1 * sceneScale.scaleX * 0.32}
             fill={PHYSICS_COLORS.friction}
             fontSize={font(10)}
@@ -245,6 +264,48 @@ export default function KeplerAnimation() {
             className="select-none"
           >
             远日面积 S₂
+          </text>
+
+          {/* 近 / 远日距离：两条线段都以太阳为起点，在太阳处断开 —— 「a−c 与 a+c 拼成 2a」
+              这件事因此是画出来的，不是只在右屏印两个数字。标签放到椭圆外侧，避开扇形与 S₂。 */}
+          <line
+            x1={sunDx}
+            y1={sunDy}
+            x2={sceneScale.originX + a1 * sceneScale.scaleX}
+            y2={sceneScale.originY}
+            stroke={PHYSICS_COLORS.displacement}
+            strokeWidth={2}
+            strokeLinecap="round"
+          />
+          <line
+            x1={sunDx}
+            y1={sunDy}
+            x2={sceneScale.originX - a1 * sceneScale.scaleX}
+            y2={sceneScale.originY}
+            stroke={PHYSICS_COLORS.potentialEnergy}
+            strokeWidth={2}
+            strokeLinecap="round"
+          />
+          <text
+            x={sceneScale.originX + a1 * sceneScale.scaleX + 24}
+            y={sceneScale.originY + 4}
+            fill={PHYSICS_COLORS.displacement}
+            fontSize={font(10)}
+            fontWeight="bold"
+            className="select-none"
+          >
+            r_min={rMin.toFixed(2)}
+          </text>
+          <text
+            x={sceneScale.originX - a1 * sceneScale.scaleX - 24}
+            y={sceneScale.originY + 4}
+            textAnchor="end"
+            fill={PHYSICS_COLORS.potentialEnergy}
+            fontSize={font(10)}
+            fontWeight="bold"
+            className="select-none"
+          >
+            r_max={rMax.toFixed(2)}
           </text>
         </g>
       )}
@@ -274,6 +335,35 @@ export default function KeplerAnimation() {
         />
       )}
 
+      {/* ── 3.5 半长轴 a（mode === 0）──
+          高中最高频的错点是把 a 当成"行星到太阳的距离"。这里把 a 画成一条**固定**的线段
+          （椭圆中心 → 远日侧顶点），与本模式下实时变化的 r₁ 同屏对照：
+          a 不动、r 在变，"a ≠ r" 才看得见，而不是靠右屏一句文字。 */}
+      {mode === 0 && (
+        <g>
+          <line
+            x1={sceneScale.originX - a1 * sceneScale.scaleX}
+            y1={sceneScale.originY}
+            x2={sceneScale.originX}
+            y2={sceneScale.originY}
+            stroke={PHYSICS_COLORS.averageVelocity}
+            strokeWidth={3}
+            strokeLinecap="round"
+          />
+          <text
+            x={sceneScale.originX - (a1 * sceneScale.scaleX) / 2}
+            y={sceneScale.originY - 6}
+            textAnchor="middle"
+            fill={PHYSICS_COLORS.averageVelocity}
+            fontSize={font(11)}
+            fontWeight="bold"
+            className="select-none"
+          >
+            a
+          </text>
+        </g>
+      )}
+
       {/* ── 4. 第一定律两焦点和连线 (mode === 0) ── */}
       {mode === 0 && (
         <g>
@@ -298,8 +388,8 @@ export default function KeplerAnimation() {
             strokeDasharray="4,4"
           />
           <text
-            x={(planetDx + sunDx) / 2 + 10}
-            y={(planetDy + sunDy) / 2 - 8}
+            x={(planetDx + sunDx) / 2 + 22}
+            y={(planetDy + sunDy) / 2 + 14}
             fill={PHYSICS_COLORS.displacement}
             fontSize={font(11)}
             fontWeight="bold"
@@ -315,7 +405,7 @@ export default function KeplerAnimation() {
             fontWeight="bold"
             className="font-mono bg-white"
           >
-            r₂={(2 * a1 - orbitA.r).toFixed(2)}
+            r₂={r2Real.toFixed(2)}
           </text>
 
           <g transform={`translate(${foci2Dx}, ${foci2Dy})`}>
@@ -329,7 +419,12 @@ export default function KeplerAnimation() {
 
           <g transform={`translate(20, ${preset.height - 20})`}>
             <text fill={PHYSICS_COLORS.labelText} fontSize={font(11)} className="font-semibold select-none">
-              第一定律验证 (椭圆定义)：r₁ + r₂ = 2a = {(orbitA.r + (2 * a1 - orbitA.r)).toFixed(1)}（恒定值）
+              第一定律实测：r₁ + r₂ = <tspan fontWeight="bold">{rSumMeasured.toFixed(2)}</tspan>
+              （2a = {rSumExpected.toFixed(2)}
+              <tspan fill={rSumOk ? PHYSICS_COLORS.velocity : PHYSICS_COLORS.dangerText} fontWeight="bold">
+                {rSumOk ? ' ✓ 相符' : ' ✗ 不符'}
+              </tspan>
+              ）
             </text>
           </g>
         </g>
@@ -352,7 +447,7 @@ export default function KeplerAnimation() {
         })}
 
       {/* ── 6. 行星 A 渲染 ── */}
-      <circle cx={planetDx} cy={planetDy} r={10} fill="url(#planet-a-grad)" />
+      <circle cx={planetDx} cy={planetDy} r={PLANET_R} fill="url(#planet-a-grad)" />
       <text
         x={planetDx + 12}
         y={planetDy - 12}
@@ -367,7 +462,7 @@ export default function KeplerAnimation() {
       {/* ── 7. 行星 B 渲染 (仅 mode === 2) ── */}
       {mode === 2 && (
         <g>
-          <circle cx={planetBDx} cy={planetBDy} r={8} fill="url(#planet-b-grad)" />
+          <circle cx={planetBDx} cy={planetBDy} r={Math.round(PLANET_R * 0.8)} fill="url(#planet-b-grad)" />
           <text
             x={planetBDx + 12}
             y={planetBDy - 12}
@@ -439,81 +534,97 @@ export default function KeplerAnimation() {
         </g>
       )}
 
-      {/* ── 10. 第二定律模式下，面积扫过时间卡片 ── */}
-      {mode === 1 && (
-        <g transform={`translate(${preset.width - 160}, 25)`}>
-          <rect
-            width={140}
-            height={50}
-            rx={6}
-            fill={CANVAS_COLORS.white}
-            fillOpacity={0.9}
-            stroke={PHYSICS_COLORS.grid}
-            strokeWidth={1}
-          />
-          <text x={70} y={18} fill={PHYSICS_COLORS.labelTextLight} fontSize={font(9)} textAnchor="middle" className="select-none font-semibold">
-            扫过时间占周期百分比
-          </text>
+      {/* ── 9.5 参数合法性告警 ──
+          合法性由物理层 orbitLegality 给出（近日点是否已进入恒星本体），
+          渲染层只负责把它显示出来，不在这里另算一遍判据。 */}
+      {!legality.ok && (
+        <text
+          x={20}
+          y={preset.height - 44}
+          fill={PHYSICS_COLORS.dangerText}
+          fontSize={font(11)}
+          fontWeight="bold"
+          className="select-none"
+        >
+          参数非法：{legality.reason}
+        </text>
+      )}
+
+      {/* ── 10. 第二定律：面积–时间曲线（替换原来的"12% 恒定"文字卡）──
+          原卡片印的是 KEPLER_CONFIG.sweepTimeRatio 这个常量本身 —— 把结论写死再显示成测量值。
+          这里改成对整周期**数值累积**扫过面积（逐段三角形求和，不用 h/2 解析式）：
+          曲线是直线、斜率为常数，就是"等时间扫过等面积"的直接证据。 */}
+      {mode === 1 && sweptTrace.length > 1 && (
+        <g>
           <text
-            x={70}
-            y={40}
-            fill={(isInPerihelion || isInAphelion) ? CANVAS_COLORS.annotation : PHYSICS_COLORS.gravity}
-            fontSize={font(15)}
-            fontWeight="bold"
-            textAnchor="middle"
-            className="font-mono"
+            x={preset.width - 24}
+            y={preset.height - areaChartH - 44}
+            textAnchor="end"
+            fill={PHYSICS_COLORS.labelTextLight}
+            fontSize={font(10)}
+            className="select-none"
           >
-            {(deltaTPercent * 100).toFixed(0)}% (恒定)
+            两扇形各 Δt = {(deltaTPercent * 100).toFixed(0)}%T → 面积相同
           </text>
+          <g transform={`translate(${preset.width - areaChartW - 24}, ${preset.height - areaChartH - 20})`}>
+            <RelationChart
+              points={sweptTrace.map((p) => ({ x: p.t, y: p.area }))}
+              xDomain={[0, T1]}
+              yDomain={[0, areaMax * 1.04]}
+              xLabel="t / s"
+              yLabel="S"
+              title="扫过面积 S(t)"
+              series="primary"
+              fixedSize={{ width: areaChartW, height: areaChartH }}
+              variant="mini"
+              showGrid={false}
+              cursorX={time % T1}
+              cursorLabel={() => null}
+            />
+          </g>
         </g>
       )}
 
-      {/* ── 11. 第三定律模式下，T² - a³ 对角直线图像 (画中画) ── */}
+      {/* ── 11. 第三定律：a³ - T² 直线（斜率就是 k）──
+          轴方向与教材定义 a³/T² = k 对齐：纵轴 a³、横轴 T²，斜率才能直接读作 k。
+          （旧版画的是 T² 对 a³，斜率其实是 1/k，却把标记写成"斜率 k" —— 那是倒数。） */}
       {mode === 2 && (
         <g transform={`translate(${preset.width - chartW - chartPadding}, ${preset.height - chartH - chartPadding})`}>
+          {/* 主曲线 = 同一中心天体的参考行星族：A、B 与它共线才叫"共线"，
+              只有两个点时任何两点都能连成直线。 */}
           <RelationChart
-            points={[{ x: a3_1, y: t2_1 }, { x: a3_2, y: t2_2 }]}
-            xDomain={[0, maxA3]}
-            yDomain={[0, maxT2]}
-            xLabel="a³"
-            yLabel="T²"
-            title="T² - a³ 关系图像"
+            points={referenceFamily.map((p) => ({ x: p.t2, y: p.a3 }))}
+            xDomain={[0, maxT2]}
+            yDomain={[0, maxA3]}
+            xLabel="T²"
+            yLabel="a³"
+            title="a³ - T²（斜率 = k）"
             series="primary"
             fixedSize={{ width: chartW, height: chartH }}
             variant="mini"
             showGrid={false}
             markers={[
               {
+                // 不放右上角顶点：那里是坐标轴尽头，标签会溢出绘图区
                 axis: 'point',
-                x: maxA3,
-                y: maxT2,
+                x: maxT2 * 0.68,
+                y: maxA3 * 0.68,
                 label: '斜率 k',
                 color: PHYSICS_COLORS.friction,
               },
               {
                 axis: 'point',
-                x: a3_1,
-                y: t2_1,
+                x: t2_1,
+                y: a3_1,
                 label: 'A',
                 color: PHYSICS_COLORS.velocity,
               },
               {
                 axis: 'point',
-                x: a3_2,
-                y: t2_2,
+                x: t2_2,
+                y: a3_2,
                 label: 'B',
                 color: PHYSICS_COLORS.averageVelocity,
-              },
-            ]}
-            additionalSeries={[
-              {
-                points: [
-                  { x: 0, y: 0 },
-                  { x: maxA3, y: maxT2 },
-                ],
-                color: PHYSICS_COLORS.friction,
-                strokeDasharray: [4, 4],
-                strokeWidth: 1.5,
               },
             ]}
           />
@@ -543,9 +654,9 @@ export default function KeplerAnimation() {
               fontFamily={CANVAS_STYLE.font.family}
               className="select-none"
             >
-              {mode === 0 && `椭圆偏心率 e = ${e1.toFixed(2)}`}
+              {mode === 0 && `a = ${a1.toFixed(1)}（固定）· e = ${e1.toFixed(2)} · b = a√(1−e²) = ${b1.toFixed(2)}`}
               {mode === 1 && `近日点距日 r_min = ${rMin.toFixed(2)}`}
-              {mode === 2 && `内长半轴 a₁ = ${a1.toFixed(1)}, 周期 T₁ = ${T1.toFixed(1)}s`}
+              {mode === 2 && `内轨 a₁ = ${a1.toFixed(1)}, T₁ = ${T1.toFixed(2)}s（由 M 决定）`}
             </text>
             <text
               x={0}
@@ -555,10 +666,22 @@ export default function KeplerAnimation() {
               fontFamily={CANVAS_STYLE.font.family}
               className="select-none"
             >
-              {mode === 0 && `焦半径之和 r₁ + r₂ = 2a = ${(2 * a1).toFixed(1)}`}
+              {mode === 0 && `焦半径实测 r₁ + r₂ = ${rSumMeasured.toFixed(2)}（2a = ${rSumExpected.toFixed(1)}）`}
               {mode === 1 && `远日点距日 r_max = ${rMax.toFixed(2)}`}
-              {mode === 2 && `外长半轴 a₂ = ${a2.toFixed(1)}, 周期 T₂ = ${T2.toFixed(1)}s`}
+              {mode === 2 && `外轨 a₂ = ${a2.toFixed(1)}, T₂ = ${T2.toFixed(2)}s`}
             </text>
+            {mode === 2 && (
+              <text
+                x={0}
+                y={55}
+                fontSize={font(13)}
+                fill={PHYSICS_COLORS.labelTextLight}
+                fontFamily={CANVAS_STYLE.font.family}
+                className="select-none"
+              >
+                {`k = a³/T² = ${k_ratio.toFixed(3)}（中心天体 M = ${mass.toFixed(0)}，G = 1）`}
+              </text>
+            )}
           </g>
         </g>
       )}

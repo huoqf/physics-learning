@@ -3,7 +3,9 @@ import {
   EARTH_MASS,
   SATELLITE_LAUNCH_RADIUS_RATIO,
   calculateOrbitalSpeed,
-  calculateKeplerOrbit,
+  ellipseFromEccentricity,
+  evaluateKeplerOrbit,
+  orbitalPeriodFromMass,
   calculateLaunchTrajectory,
   calculateBinaryStars,
   calculateTripleStars,
@@ -26,39 +28,83 @@ export function buildGravitationQuantities(
     case 'anim-kepler': {
       const mode = params.mode ?? 0 // 0=第一定律, 1=第二定律, 2=第三定律
       const a1 = params.a ?? 4.5
-      const b1 = params.b ?? 3.0
-      const T1 = params.period ?? 10
-
-      const c1 = Math.sqrt(Math.max(0, a1 * a1 - b1 * b1))
-      const e1 = a1 > 0 ? c1 / a1 : 0
-      const rMin = a1 - c1
-      const rMax = a1 + c1
-
-      const orbitA = calculateKeplerOrbit(a1, b1, time, T1)
-
+      const e1 = params.e ?? 0.75
+      const mass = params.mass ?? 36
       const a2 = params.a2 ?? 7.5
-      const T2 = T1 * Math.sqrt(Math.pow(a2 / a1, 3))
+
+      // 与中屏共用同一套物理函数：几何量、周期、轨道状态都不在此处重算
+      const { c: c1, rMin, rMax } = ellipseFromEccentricity(a1, e1)
+      const orbitA = evaluateKeplerOrbit(a1, e1, mass, time)
+      const T1 = orbitalPeriodFromMass(a1, mass)
+      const T2 = orbitalPeriodFromMass(a2, mass)
+      const a3_1 = Math.pow(a1, 3)
+      const a3_2 = Math.pow(a2, 3)
+      const k1 = a3_1 / Math.pow(T1, 2)
+      const k2 = a3_2 / Math.pow(T2, 2)
+
+      // 近日 / 远日点的速度：由同一求解器在 t=0 与 t=T/2 处取值
+      const vPeri = evaluateKeplerOrbit(a1, e1, mass, 0).v
+      const vApo = evaluateKeplerOrbit(a1, e1, mass, T1 / 2).v
+
+      // 第一定律的实测焦半径之和：r₂ 用副焦点的真实坐标量，而不是 2a − r₁（后者是恒真式）
+      const rToSun = orbitA.r
+      const rToFoci2 = Math.hypot(orbitA.x + c1, orbitA.y)
 
       const quantities: PhysicsQuantity[] = []
       const formulas: Formula[] = []
       const gaokaoPoints: GaokaoPoint[] = []
 
-      if (mode !== 2) {
-        // 第一和第二定律
+      if (mode === 0) {
         quantities.push(
-          { label: '轨道几何 (a,b,e)', value: `a=${a1.toFixed(1)}, b=${b1.toFixed(1)}, e=${e1.toFixed(2)}`, unit: '' },
-          { label: '极值距离 (近/远)', value: `r_min=${rMin.toFixed(2)}, r_max=${rMax.toFixed(2)}`, unit: '' },
-          { label: '近日/远日速度比', value: (rMax / rMin).toFixed(2), unit: '' },
-          { label: '当前距日距离 r', value: orbitA.r.toFixed(2), unit: '' },
-          { label: '当前瞬时速度 v', value: orbitA.v.toFixed(2), unit: '(相对值)', highlight: 'positive' as const }
+          { label: '半长轴 / 偏心率', value: `${a1.toFixed(1)} / ${e1.toFixed(2)}`, unit: '' },
+          { label: '近日点距日 r_min', value: rMin.toFixed(2), unit: '' },
+          { label: '远日点距日 r_max', value: rMax.toFixed(2), unit: '' },
+          {
+            label: '焦半径之和(实测)',
+            value: (rToSun + rToFoci2).toFixed(3),
+            unit: '=2a',
+            highlight: 'positive' as const,
+          },
+          { label: '当前距日 r', value: rToSun.toFixed(2), unit: '' },
+          { label: '当前速度 v', value: orbitA.v.toFixed(2), unit: '(相对)', highlight: 'positive' as const },
+        )
+      } else if (mode === 1) {
+        quantities.push(
+          { label: '近日点距日 r_min', value: rMin.toFixed(2), unit: '' },
+          { label: '远日点距日 r_max', value: rMax.toFixed(2), unit: '' },
+          { label: '近日点速度 v_近', value: vPeri.toFixed(2), unit: '(相对)', highlight: 'extreme' as const },
+          { label: '远日点速度 v_远', value: vApo.toFixed(2), unit: '(相对)' },
+          {
+            label: 'r·v（近日点）',
+            value: (rMin * vPeri).toFixed(3),
+            unit: '',
+            highlight: 'positive' as const,
+          },
+          {
+            label: 'r·v（远日点）',
+            value: (rMax * vApo).toFixed(3),
+            unit: '（相等）',
+            highlight: 'positive' as const,
+          },
+          { label: '当前距日 r', value: rToSun.toFixed(2), unit: '' },
         )
       } else {
-        // 第三定律
         quantities.push(
-          { label: '内轨半径 & 周期 (A)', value: `a₁=${a1.toFixed(1)}, T₁=${T1.toFixed(1)}s`, unit: '' },
-          { label: '外轨半径 & 周期 (B)', value: `a₂=${a2.toFixed(1)}, T₂=${T2.toFixed(1)}s`, unit: '' },
-          { label: '内轨比值 a₁³/T₁²', value: (Math.pow(a1, 3) / Math.pow(T1, 2)).toFixed(4), unit: '', highlight: 'positive' as const },
-          { label: '外轨比值 a₂³/T₂²', value: (Math.pow(a2, 3) / Math.pow(T2, 2)).toFixed(4), unit: '', highlight: 'positive' as const }
+          { label: '中心天体质量 M', value: mass.toFixed(0), unit: '' },
+          { label: '内轨 a₁ / T₁', value: `${a1.toFixed(1)} / ${T1.toFixed(2)}`, unit: '' },
+          { label: '外轨 a₂ / T₂', value: `${a2.toFixed(1)} / ${T2.toFixed(2)}`, unit: '' },
+          {
+            label: '内轨比值 a₁³/T₁²',
+            value: k1.toFixed(4),
+            unit: '',
+            highlight: 'positive' as const,
+          },
+          {
+            label: '外轨比值 a₂³/T₂²',
+            value: k2.toFixed(4),
+            unit: '=内轨',
+            highlight: 'positive' as const,
+          },
         )
       }
 
@@ -68,24 +114,25 @@ export function buildGravitationQuantities(
           { name: '焦半径定义关系', latex: 'r_1 + r_2 = 2a \\quad (\\text{双焦点距离和恒定})', level: 'core' }
         )
         gaokaoPoints.push(
-          { text: '恒星（如太阳）必然处于行星椭圆轨道的其中一个焦点上。', importance: 'core' as const },
-          { text: '离心率 e=c/a 刻画椭圆轨道的扁平程度，0 <= e < 1，越接近 0 越圆。', importance: 'basic' as const },
-          { text: '近日点距离为 a-c，远日点距离为 a+c。', importance: 'gaokao' as const }
+          { text: '恒星（如太阳）必然处于行星椭圆轨道的其中一个焦点上，而不是椭圆的中心。', importance: 'core' as const },
+          { text: '偏心率 e = c/a 刻画椭圆轨道的扁平程度，0 ≤ e < 1，越接近 0 越圆。', importance: 'basic' as const },
+          { text: '近日点距离为 a − c，远日点距离为 a + c。', importance: 'gaokao' as const },
+          { text: '半长轴 a 是椭圆的固定几何量，与行星到太阳的距离 r 不是一回事 —— 椭圆轨道上不能用 r 代替 a。', importance: 'gaokao' as const }
         )
       } else if (mode === 1) {
         formulas.push(
           { name: '第二定律面积微分', latex: '\\Delta S = \\frac{1}{2} \\int r^2 d\\theta = \\text{常数}', level: 'important', condition: '同一轨道同一天体' },
-          { name: '近日点远日点守恒', latex: 'r_{\\text{近日}} \\cdot v_{\\text{近日}} = r_{\\text{远日}} \\cdot v_{\\text{远日}} \\quad (\\text{角动量守恒})', level: 'core', condition: '椭圆轨道' }
+          { name: '近日点远日点守恒', latex: 'r_{\\text{近日}} \\cdot v_{\\text{近日}} = r_{\\text{远日}} \\cdot v_{\\text{远日}} \\quad (\\text{角动量守恒})', level: 'core', condition: '仅在近、远日点 v ⊥ r' }
         )
         gaokaoPoints.push(
           { text: '近日点（距恒星最近）速度最大，远日点（距恒星最远）速度最小。', importance: 'gaokao' as const },
-          { text: '行星做椭圆轨道运动不是匀速运动，其线速度和角速度均在时刻变化。', importance: 'core' as const },
-          { text: '近日速度与远日速度之比与近日距离和远日距离成反比。', importance: 'hard' as const }
+          { text: '行星做椭圆轨道运动不是匀速运动，其线速度和角速度均在时刻变化。', importance: 'gaokao' as const },
+          { text: '近日速度与远日速度之比等于远日距离与近日距离之比，即 v_近 : v_远 = r_max : r_min。', importance: 'hard' as const }
         )
       } else {
         formulas.push(
           { name: '第三定律周期比值', latex: '\\frac{a_1^3}{T_1^2} = \\frac{a_2^3}{T_2^2} = k', level: 'core', condition: '同一中心天体' },
-          { name: '常数决定式', latex: 'k = \\frac{G M_{\\text{中心天体}}}{4\\pi^2}', level: 'derived' }
+          { name: '常数决定式', latex: 'k = \\frac{G M_{\\text{中心天体}}}{4\\pi^2}', level: 'derived', note: '拖动 M 改变中心天体时 k 才变；只改 a 时 k 不变' }
         )
         gaokaoPoints.push(
           { text: '比值常数 k 的大小仅与中心天体的质量有关，与环绕的行星质量无关。', importance: 'gaokao' as const },

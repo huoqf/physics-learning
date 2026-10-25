@@ -272,7 +272,14 @@ export const KEPLER_CONFIG = {
   referenceHeight: 450,
   // 面积扫过时间比例（教学演示参数）
   sweepTimeRatio: 0.12,
+  // 恒星图元半径（design unit）：光晕 / 本体。
+  // 与引力箭头的"不得入日"约束共用同一处定义，避免渲染与物理校验各写一个 14。
+  sunGlowR: 28,
+  sunCoreR: 14,
+  // 行星本体半径（design unit），合法性校验里用于判断"是否已贴在日面上"
+  planetR: 10,
 } as const;
+
 
 // ─── 矢量显示配置（按物理量类型）──────────────────────────────────────
 /** @deprecated 旧方案遗留，新 lesson 请使用 vectorStyle.ts + VectorArrow 组件。仅保留用于未迁移的 lesson 文件。 */
