@@ -364,9 +364,13 @@ export default function KeplerAnimation() {
       {/* ── 8. 恒星(太阳)渲染 ── */}
       <circle cx={sunDx} cy={sunDy} r={SUN_GLOW_R} fill="url(#sun-glow-grad)" className="animate-pulse" />
       <circle cx={sunDx} cy={sunDy} r={SUN_CORE_R} fill={SCENE_COLORS.bulb.glowInner} stroke={SCENE_COLORS.bulb.glowOuter} strokeWidth={1} />
+      {/* 太阳标题写在太阳**左侧**（右对齐）：原先居中偏右时，文字从 sunDx−11 一路铺到 sunDx+80，
+          正好压住第二定律的「近日面积 S₁」标注（同一高度 y≈357），放大后是糊成一片的红黑字。
+          右侧空间已被近日点扇形、行星与 v 箭头占满，左侧（椭圆左半）是空的。 */}
       <text
-        x={sunDx - 11}
+        x={sunDx - 32}
         y={sunDy + 32}
+        textAnchor="end"
         fill={PHYSICS_COLORS.labelText}
         fontSize={font(11)}
         fontWeight="bold"
