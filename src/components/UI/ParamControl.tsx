@@ -119,11 +119,20 @@ export const ParamControl: React.FC<ParamControlProps> = ({
   useEffect(() => {
     setLocalValues((prev) => {
       const newValues: Record<string, string> = {}
+      let changed = false
       params.forEach((p) => {
-        newValues[p.key] = editingKey === p.key && prev[p.key] != null
+        const next = editingKey === p.key && prev[p.key] != null
           ? prev[p.key]
           : formatByStep(p.value, p.step ?? 0.1)
+        newValues[p.key] = next
+        if (prev[p.key] !== next) changed = true
       })
+      // 值没变就**返回原引用**，让 React 跳过这次渲染。
+      // 调用方每次渲染都会传一个新的 params 数组（本 effect 因此每帧都会跑），
+      // 若每次都 setState 一个新对象，就会在父级重渲染后又多推一轮自身渲染；
+      // 连续动作（如按住方向键连击）叠起来会命中 Maximum update depth exceeded。
+      // 键集变化（增删参数）也要视为变化，否则会留下上一个模式的陈旧键。
+      if (!changed && Object.keys(prev).length === Object.keys(newValues).length) return prev
       return newValues
     })
   }, [params, paramsSignature, editingKey])
