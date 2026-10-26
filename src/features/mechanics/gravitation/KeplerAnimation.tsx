@@ -44,7 +44,7 @@ export default function KeplerAnimation() {
     a2, b2, T2,
     sunPhysX, sunPhysY, foci2PhysX, foci2PhysY,
     planetX, planetY, orbitA,
-    planetBX, planetBY,
+    orbitBCenterX, planetBX, planetBY, orbitSpanX,
     trail,
     sectorPoints,
     isInPerihelion, isInAphelion,
@@ -86,12 +86,20 @@ export default function KeplerAnimation() {
     Math.min(1, gravityPeakPx / (maxVectorLength * VECTOR_VISUAL_WEIGHT.gravity)),
   )
 
+  // ── 取景：让两轨并集的中心落在画布中心 ──
+  // 第三定律模式下外轨共焦之后左端会伸到 c1 − c2 − a2（默认 8.625、最坏 18.0 世界单位），
+  // 而画布半宽只有 13.125。把原点右移 `并集中点 × 比例尺` 之后，任何参数组合都留在画布内
+  // （实测并集最大半宽 376 px < 420 px）。模式 0/1 只有内轨，中点恒为 0 → 与原来完全等价。
+  const sceneCenterX = preset.width / 2 - orbitSpanX.center * KEPLER_CONFIG.scaleBase
+
   const sceneScale = useSceneScale({
     vp,
     preset,
     anchor: 'center',
     physicsScaleDesign: KEPLER_CONFIG.scaleBase,
-    centerSource: 'design',
+    centerSource: 'custom',
+    centerX: sceneCenterX,
+    centerY: preset.height / 2,
     maxVectorLength,
     // 基准由轨道量程峰值反推（峰值箭头 = fill·maxVectorLength·weight）：
     // 速度在近日点最大、引力 ∝ 1/r² 也在近日点最大，写死常数在参数拉满时会撞上限。
@@ -324,7 +332,7 @@ export default function KeplerAnimation() {
 
       {mode === 2 && (
         <ellipse
-          cx={sceneScale.originX}
+          cx={sceneScale.originX + orbitBCenterX * sceneScale.scaleX}
           cy={sceneScale.originY}
           rx={a2 * sceneScale.scaleX}
           ry={b2 * sceneScale.scaleX}
@@ -613,6 +621,9 @@ export default function KeplerAnimation() {
                 y: a3_1,
                 label: 'A',
                 color: PHYSICS_COLORS.velocity,
+                // A 在直线中段：默认的右上方位正是直线的延伸方向，字母会被曲线穿过；
+                // 右下是直线下侧空白区（点又离 Y 轴很近，不能用左侧）。
+                labelSide: 'bottom-right',
               },
               {
                 axis: 'point',

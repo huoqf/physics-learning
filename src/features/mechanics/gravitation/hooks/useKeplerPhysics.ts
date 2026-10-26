@@ -55,11 +55,27 @@ export interface KeplerPhysicsResult {
   // ── 行星 B（第三定律模式） ──
   a2: number
   b2: number
+  c2: number
   e2: number
   T2: number
+  /**
+   * 外轨椭圆的中心（世界坐标 x）。
+   *
+   * `evaluateKeplerOrbit` 返回的是「以椭圆中心为原点、右焦点在 +c」的坐标，
+   * 而本页的太阳在内轨右焦点 `c1` 上。两条轨道必须**共焦于太阳**（开普勒第一定律：
+   * 绕同一中心天体的所有轨道共用那个焦点），所以外轨中心不能放在 (0, 0)，
+   * 而要平移 `c1 − c2`，让它的右焦点正好落在太阳上。
+   */
+  orbitBCenterX: number
   planetBX: number
   planetBY: number
   orbitB: KeplerOrbitData
+
+  /**
+   * 画面里两条轨道在 x 方向的并集范围（世界坐标，含行星 B 只在该模式出现）。
+   * 供取景用：`center` 是并集中点，把它放到画布中心，任何参数组合都不会顶出画布。
+   */
+  orbitSpanX: { left: number; right: number; center: number }
 
   // ── 尾迹（物理坐标）──
   trail: { x: number; y: number; opacity: number }[]
@@ -200,7 +216,7 @@ export function useKeplerPhysics(
   const geo1 = ellipseFromEccentricity(a1, e1)
   const { b: b1, c: c1, rMin, rMax } = geo1
   const geo2 = ellipseFromEccentricity(a2, e2)
-  const { b: b2 } = geo2
+  const { b: b2, c: c2 } = geo2
 
   // 周期由中心天体质量决定（第三定律的动力学来源）
   const T1 = orbitalPeriodFromMass(a1, mass)
@@ -244,8 +260,22 @@ export function useKeplerPhysics(
     [a2, e2, mass, time],
   )
 
-  const planetBX = orbitB.x
+  // 外轨与内轨共焦点于太阳（开普勒第一定律）：把外轨中心从「自己的椭圆中心」平移到
+  // c1 − c2，使它的右焦点恰好落在太阳上。若留在 0，太阳就不在外轨焦点上，
+  // 行星 B 会绕太阳右侧 1.125（默认参数）处的"空气焦点"加减速 —— 画面直接违背本页要讲的第一定律。
+  const orbitBCenterX = c1 - c2
+
+  const planetBX = orbitB.x + orbitBCenterX
   const planetBY = orbitB.y
+
+  // ── 取景：两轨并集在 x 方向的跨度（太阳中心不动，只平移场景原点）──
+  // 共焦之后外轨左端伸到 c1 − c2 − a2（默认 8.625，最坏 18.0 世界单位 > 画布半宽 13.125），
+  // 所以必须让并集中点落在画布中心，否则行星 B 会在远日端跑出画布。
+  const orbitSpanX = useMemo(() => {
+    const left = mode === 2 ? Math.min(-a1, orbitBCenterX - a2) : -a1
+    const right = mode === 2 ? Math.max(a1, orbitBCenterX + a2) : a1
+    return { left, right, center: (left + right) / 2 }
+  }, [mode, a1, a2, orbitBCenterX])
 
   // ── 尾迹 ──
   const trail = useMemo(() => {
@@ -331,7 +361,7 @@ export function useKeplerPhysics(
     a1, b1, c1, e1, rMin, rMax, T1, mass,
     sunPhysX, sunPhysY, foci2PhysX, foci2PhysY,
     planetX, planetY, orbitA,
-    a2, b2, e2, T2, planetBX, planetBY, orbitB,
+    a2, b2, c2, e2, T2, orbitBCenterX, planetBX, planetBY, orbitB, orbitSpanX,
     trail,
     sectorPoints,
     M_current, isInPerihelion, isInAphelion,
