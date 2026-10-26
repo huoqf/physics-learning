@@ -80,6 +80,15 @@ export interface RelationMarker {
   label?: string
   /** 颜色，默认 equilibrium 色 */
   color?: string
+  /**
+   * 点标记（axis: 'point'）的标签方位，默认 `'top-right'`（点右上方）。
+   *
+   * 默认值对"下降曲线"和"位于曲线末端的点"都安全，但对**上升直线的中间点**不安全：
+   * 右上方正是直线的延伸方向，文字会被整条画上去的曲线穿过。
+   * 上升直线的中间点用 `'bottom-right'`（右下是直线下侧的空白区）；
+   * 点贴近 Y 轴时不要用左侧（`'top-left' / 'bottom-left'`），那会挤到坐标轴上。
+   */
+  labelSide?: 'top-right' | 'bottom-right' | 'top-left' | 'bottom-left'
   /** 垂直或水平参考线标签位置：'top' (绘图区顶部内侧) | 'bottom' (默认，坐标轴下方刻度区) */
   position?: 'top' | 'bottom'
 }
@@ -356,6 +365,12 @@ function RCContent({
         if (axis === 'point' && m.x != null && m.y != null) {
           const mx = toSvgX(m.x)
           const my = toSvgY(m.y)
+          const side = m.labelSide ?? 'top-right'
+          const isLeft = side.endsWith('left')
+          const isBottom = side.startsWith('bottom')
+          // 纵向沿用本组件既有的「文本行高」写法：上置基线抬 6 px，下置让出整行字高 + 2 px 间隙
+          const labelX = mx + (isLeft ? -6 : 6)
+          const labelY = isBottom ? my + font(FONT.small) + 2 : my - 6
           return (
             <g key={`marker-${i}`}>
               <circle
@@ -364,11 +379,11 @@ function RCContent({
               />
               {m.label && (
                 <text
-                  x={mx + 6}
-                  y={my - 6}
+                  x={labelX}
+                  y={labelY}
                   fontSize={font(FONT.small)}
                   fill={mColor}
-                  textAnchor="start"
+                  textAnchor={isLeft ? 'end' : 'start'}
                   fontWeight="bold"
                 >
                   {m.label}
