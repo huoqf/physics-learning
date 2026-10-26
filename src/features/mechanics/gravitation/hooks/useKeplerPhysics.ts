@@ -191,8 +191,14 @@ export function computeKeplerVectors(
 
 // ─── 主 Hook ─────────────────────────────────────────────────────
 
-/** 第三定律参考行星族的示例半长轴（同一中心天体，仅用于把"直线"画成一条有多个点的线） */
-const REFERENCE_SEMI_MAJOR = [1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5] as const
+/**
+ * 第三定律参考行星族的分段数（同一中心天体，仅用于把"直线"画成一条折线）。
+ *
+ * 族的半长轴范围**跟着参数走**（0 … max(a₁, a₂)），不能写死一组常数：
+ * 写死到 7.5 时，把 a₂ 拖到 10 会让 `maxA3` 撑到 1120，而折线仍在 a=7.5（37% 高度）处收尾，
+ * 点 B 就悬在线外的右上角 —— 图上"共线"这件事当场破功。
+ */
+const REFERENCE_FAMILY_STEPS = 8
 
 /**
  * 开普勒定律动画物理/视图模型 Hook
@@ -342,14 +348,18 @@ export function useKeplerPhysics(
   const a3_2 = a2 * a2 * a2
   const t2_2 = T2 * T2
 
-  // 参考行星族：同一中心天体下 a 取一组示例，T 同样由 M 派生 → 全部落在 y = k x 上
+  // 参考行星族：同一中心天体下 a 从 0 到 max(a₁, a₂) 均匀取值，T 同样由 M 派生
+  // → 全部落在 y = k x 上，且折线一定从原点起、到最远那颗行星止（A、B 都不会脱线）。
+  // a = 0 时 `orbitalPeriodFromMass` 返回 0，于是首点正是 (0, 0)，满足"正比例函数过原点"的读图习惯。
+  const aMax = Math.max(a1, a2)
   const referenceFamily = useMemo(
     () =>
-      REFERENCE_SEMI_MAJOR.map((a) => {
+      Array.from({ length: REFERENCE_FAMILY_STEPS + 1 }, (_, i) => {
+        const a = (i / REFERENCE_FAMILY_STEPS) * aMax
         const T = orbitalPeriodFromMass(a, mass)
         return { a, a3: a * a * a, t2: T * T }
       }),
-    [mass],
+    [aMax, mass],
   )
 
   const maxA3 = Math.max(a3_1, a3_2, ...referenceFamily.map((p) => p.a3)) * 1.12

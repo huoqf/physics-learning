@@ -211,7 +211,11 @@ export default function KeplerAnimation() {
         </radialGradient>
       </defs>
 
-      {/* ── 辅助坐标轴 ── */}
+      {/* ── 辅助坐标轴 ──
+          水平虚线 = y = 0，是内外两条椭圆**共有的长轴（拱线）**，三种模式都成立。
+          竖直虚线 = x = 0，其实是**内轨椭圆的短轴**（内轨中心），只在单轨模式有意义：
+          第三定律模式下外轨已平移 c₁−c₂，两条椭圆的短轴相差几十 px，
+          此时只画内轨那一条，会被读成"外轨画歪了"。所以 mode 2 不画竖线。 */}
       <line
         x1={10}
         y1={sceneScale.originY}
@@ -221,15 +225,17 @@ export default function KeplerAnimation() {
         strokeWidth={1}
         strokeDasharray="4,4"
       />
-      <line
-        x1={sceneScale.originX}
-        y1={10}
-        x2={sceneScale.originX}
-        y2={preset.height - 10}
-        stroke={PHYSICS_COLORS.axis}
-        strokeWidth={1}
-        strokeDasharray="4,4"
-      />
+      {mode !== 2 && (
+        <line
+          x1={sceneScale.originX}
+          y1={10}
+          x2={sceneScale.originX}
+          y2={preset.height - 10}
+          stroke={PHYSICS_COLORS.axis}
+          strokeWidth={1}
+          strokeDasharray="4,4"
+        />
+      )}
 
       {/* ── 2. 第二定律扫过面积扇形 (mode === 1) ── */}
       {mode === 1 && (
