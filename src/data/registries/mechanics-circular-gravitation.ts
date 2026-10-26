@@ -172,7 +172,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
       {
         type: 'tip',
         group: '教学提示',
-        content: '周期 T 不是独立旋钮：它由中心天体质量 M 决定。所以拖动 a₁ 只改变行星，k = a³/T² 保持不变；拖动 M 才换中心天体，k 才会变。',
+        content: '周期 T 不是独立旋钮：它由中心天体质量 M 决定。所以拖动 a₁ 只改变行星，k = a³/T² 保持不变；拖动 M 才换中心天体，k 才会变。偏心率 e 只改轨道扁平程度，T 与 k 完全不变。',
       },
     ],
   },

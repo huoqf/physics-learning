@@ -136,6 +136,8 @@ export function buildGravitationQuantities(
         )
         gaokaoPoints.push(
           { text: '比值常数 k 的大小仅与中心天体的质量有关，与环绕的行星质量无关。', importance: 'gaokao' as const },
+          // 左屏 e₁ / e₂ 两个旋钮"拖了周期不动"是本节最容易被当成 bug 的现象，它就是结论本身
+          { text: '同一中心天体的椭圆轨道，周期只由半长轴 a 决定，与偏心率 e 无关：把 e₁、e₂ 拖到 0.8，轨道越拖越扁，T₁、T₂ 与 k 却一动不动。', importance: 'gaokao' as const },
           { text: '第三定律适用于同一中心天体下的所有环绕星体（如八大行星绕日、所有卫星绕地）。', importance: 'core' as const },
           { text: '半长轴 a 是长轴的一半，对圆形轨道而言简化为轨道半径 R。', importance: 'basic' as const }
         )
