@@ -365,6 +365,6 @@ font(N)            // SVG 字号，禁止裸 fontSize={N}
 - [ ] 组件：Ball / Block / PhysicsGround / PhysicsVectorArrow / 图表组件均已复用
 - [ ] 颜色：PHYSICS_COLORS / SCENE_COLORS / CANVAS_COLORS 按语义使用；font(N) 包裹字号
 - [ ] Registry：5 个文件全部完成；`defaultParams as const`；controlsMode 正确
-- [ ] 预设与提示：若有预设，标签紧凑（≤15字）、不锁滑块、设 `restartOnApply: true`；观察指引与条件归于底部 Tip（遵循 08_THREE_PANEL_RULES.md §2.6）
+- [ ] 预设与提示：若有预设，标签仅「名称 ≤12 字 + 参数标注 ≤14 字」（合计 ≤22，禁卷别与「高考/真题/压轴」）、不锁滑块、设 `restartOnApply: true`；观察指引与条件归于底部 Tip，且符合 §2.6.5 三档边界（左屏只答"看哪里/怎么调"，不答"结果是多少"）；`preset` 必须声明在「模型选择」之后；跑 `npm run check:control-meta` 必须为绿
 - [ ] 公式与看板：PhysicsPanel / KatexFormula 统一从 `@/components/Formula` 导入
 - [ ] `tsc --noEmit` 通过

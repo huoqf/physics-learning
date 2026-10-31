@@ -167,12 +167,14 @@ export function handleInduction(
             name: '法拉第电磁感应定律',
             latex: 'E = n \\frac{\\Delta \\Phi}{\\Delta t}',
             level: 'core',
+            condition: '求得的是 Δt 内的平均电动势；感应电动势的方向由楞次定律另行判断',
             note: '感应电动势大小由磁通量变化率决定',
           },
           {
             name: '闭合电路欧姆定律',
             latex: 'I = \\frac{E}{R}',
             level: 'important',
+            condition: '外电路为纯电阻且忽略电源内阻；若内阻为 r，应写成 I = E/(R+r)',
             note: '感应电流与感应电动势成正比',
           },
         ],
@@ -303,8 +305,8 @@ export function handleInduction(
             { label: '电流计指针偏转', value: currentDirectionText, unit: '', color: PHYSICS_COLORS.kineticEnergy, highlight: Math.abs(theta) > 0.05 ? 'extreme' : 'zero' },
           ],
           formulas: [
-            { name: '法拉第电磁感应定律 (动生)', latex: 'E = BLv', level: 'core' },
-            { name: '闭合电路欧姆定律', latex: 'I = \\frac{E}{R}', level: 'core' },
+            { name: '法拉第电磁感应定律 (动生)', latex: 'E = BLv', level: 'core', condition: 'B、L、v 三者两两垂直；若 v 为瞬时速度得瞬时电动势，若 v 为平均速度得平均电动势' },
+            { name: '闭合电路欧姆定律', latex: 'I = \\frac{E}{R}', level: 'core', condition: '回路闭合、外电路为纯电阻且忽略内阻' },
           ],
           gaokaoPoints: [
             { text: '导体切割磁感线是产生感应电动势的经典动生形式，电动势大小由 E=BLv 决定。', importance: 'gaokao' },
@@ -379,7 +381,7 @@ export function handleInduction(
           ],
           formulas: [
             { name: '互感磁通量关系', latex: '\\Phi = M I_1', level: 'core', condition: 'M为互感系数' },
-            { name: '法拉第电磁感应定律', latex: 'E = -N \\frac{d\\Phi}{dt}', level: 'core' },
+            { name: '法拉第电磁感应定律', latex: 'E = -N \\frac{d\\Phi}{dt}', level: 'core', condition: '负号表示感应电动势的方向总是阻碍原磁通量的变化（楞次定律）' },
           ],
           gaokaoPoints: [
             { text: '双线圈互感：原回路中电阻变化或位置移动导致原线圈磁场变化，从而在副线圈中产生感应电流。', importance: 'gaokao' },

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Trophy, Search, Filter } from 'lucide-react'
-import { masterModels } from '@/data/masterModels'
+import { masterModels, MASTER_MODEL_SERIES_LABEL } from '@/data/masterModels'
 import { MasterModelCard } from '@/features/master-models/components/MasterModelCard'
 import { PageLayout } from '@/components/Layout'
 import { colors } from '@/theme/colors'
@@ -36,7 +36,7 @@ export default function MasterModelsPage() {
         <div className="flex items-center gap-3 mb-6">
           <Trophy className="w-8 h-8" style={{ color: colors.accent[600] }} />
           <div>
-            <h1 className="text-3xl font-bold text-neutral-900">高考 18 大 Master 压轴模型专区</h1>
+            <h1 className="text-3xl font-bold text-neutral-900">{MASTER_MODEL_SERIES_LABEL}专区</h1>
             <p className="text-neutral-600">击破一个模型，通晓一类真题 — 关联知识树、仿真动画与真题秒杀</p>
           </div>
         </div>

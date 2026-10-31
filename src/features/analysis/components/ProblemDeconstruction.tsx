@@ -4,13 +4,13 @@ import type { Problem, ProblemStep } from '@/data/types'
 import { ContentWithKatex } from './ContentWithKatex'
 import { Button, Badge } from '@/components/UI'
 import { colors } from '@/theme/colors'
-import { getProblemMasterModel } from '@/data/masterModels'
+import { getProblemMasterModel, MASTER_MODEL_COUNT } from '@/data/masterModels'
 
 interface ProblemDeconstructionProps {
   problem: Problem
   currentStepIndex: number
   onStepChange: (index: number) => void
-  onLaunchAnimation?: (animId: string, params?: Record<string, number>) => void
+  onLaunchAnimation?: (animId: string, params?: Record<string, number>, criticalT?: number) => void
 }
 
 /**
@@ -36,7 +36,8 @@ export const ProblemDeconstruction: React.FC<ProblemDeconstructionProps> = ({
     if (!problem.targetAnimation || !onLaunchAnimation) return
     onLaunchAnimation(
       problem.targetAnimation.animId,
-      presetParams || problem.targetAnimation.presetParams
+      presetParams || problem.targetAnimation.presetParams,
+      problem.targetAnimation.criticalT,
     )
   }
 
@@ -139,7 +140,7 @@ export const ProblemDeconstruction: React.FC<ProblemDeconstructionProps> = ({
               <div className="bg-primary-50/40 border border-primary-100 rounded-lg p-3 flex items-start gap-2.5">
                 <Zap className="w-4 h-4 shrink-0 mt-0.5" style={{ color: colors.accent[600] }} />
                 <div className="text-xs text-neutral-700">
-                  <span className="font-semibold text-primary-800">18大模型秒杀点拨：</span>
+                  <span className="font-semibold text-primary-800">{MASTER_MODEL_COUNT}大模型秒杀点拨：</span>
                   <span>{masterModel.quickFormula.explanation}</span>
                 </div>
               </div>
@@ -180,7 +181,11 @@ export const ProblemDeconstruction: React.FC<ProblemDeconstructionProps> = ({
                     onClick={() => handleLaunchTargetAnim()}
                   >
                     <Play className="w-3.5 h-3.5 fill-current" />
-                    <span>🎥 一键装载真题参数并运行动画</span>
+                    <span>
+                      {problem.targetAnimation.criticalT != null
+                        ? '🎥 一键装载真题参数并定格临界帧'
+                        : '🎥 一键装载真题参数并运行动画'}
+                    </span>
                   </Button>
                 </div>
               )}

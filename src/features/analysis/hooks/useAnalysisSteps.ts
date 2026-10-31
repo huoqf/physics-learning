@@ -18,6 +18,7 @@ export function useAnalysisSteps() {
   const addWrong = useWrongStore((s) => s.addWrong)
   const markViewed = useWrongStore((s) => s.markViewed)
   const markMastered = useWrongStore((s) => s.markMastered)
+  const setReasons = useWrongStore((s) => s.setReasons)
 
   useEffect(() => {
     void hydrateWrong()
@@ -100,6 +101,7 @@ export function useAnalysisSteps() {
     wrongRecord,
     addWrong,
     markMastered,
+    setReasons,
     expandedSteps,
     currentStepIndex,
     completedKnowledgeIds,

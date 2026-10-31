@@ -181,7 +181,7 @@ export default function SpringForceCutRopeScene() {
 
       {/* 拖拽提示 */}
       {!isPlaying && !isDragging && (
-        <text x={xLeft} y={60} fontSize={font(10)} fill={PHYSICS_COLORS.textMuted} textAnchor="middle">
+        <text x={xLeft} y={18} fontSize={font(10)} fill={PHYSICS_COLORS.textMuted} textAnchor="middle">
           按住小球拖拽扫查
         </text>
       )}
@@ -253,7 +253,8 @@ export default function SpringForceCutRopeScene() {
           <VectorArrow originDesign={{ x: xLeft, y: yA }} vector={{ x: 0, y: fA_spring * FORCE_ARROW_SCALE }}
             type="elasticForce" arrowType="visual-only" sceneScale={IDENTITY_SCENE_SCALE} strokeWidth={1.5}
             pixelLength={Math.abs(fA_spring * FORCE_ARROW_SCALE)} />
-          <text x={xLeft + 20} y={yA - 28} fontSize={font(11)} fontWeight="bold" fill={PHYSICS_COLORS.elasticForce}>
+          {/* x 偏移 26 而非 20：弹簧线圈半径 12 + 描边，文字从 +20 起排时首字压在线圈上 */}
+          <text x={xLeft + 26} y={yA - 28} fontSize={font(11)} fontWeight="bold" fill={PHYSICS_COLORS.elasticForce}>
             {`F弹=${fA_spring.toFixed(1)}N`}
           </text>
 
@@ -294,7 +295,11 @@ export default function SpringForceCutRopeScene() {
           <VectorArrow originDesign={{ x: xRight, y: yC }} vector={{ x: 0, y: fC_spring * FORCE_ARROW_SCALE }}
             type="elasticForce" arrowType="visual-only" sceneScale={IDENTITY_SCENE_SCALE} strokeWidth={1.5}
             pixelLength={Math.abs(fC_spring * FORCE_ARROW_SCALE)} />
-          <text x={xRight + 20} y={yC + 46} fontSize={font(11)} fontWeight="bold" fill={PHYSICS_COLORS.elasticForce}>
+          {/* C 球的 F弹 放弹簧左侧并右对齐：右侧位置（xRight+20, yC+46）正好压在
+              aC 矢量标签（aC=-19.6 指向下方，标签落在箭头尖端外 10px）上，实测重叠 43×14px，
+              两个读数糊成一团。左侧是同系统内的空白区，且不与弹簧线圈（xRight±12）相交。 */}
+          <text x={xRight - 16} y={yC + 46} fontSize={font(11)} fontWeight="bold"
+            fill={PHYSICS_COLORS.elasticForce} textAnchor="end">
             {`F弹=${Math.abs(fSpring2).toFixed(1)}N`}
           </text>
 
@@ -321,7 +326,11 @@ export default function SpringForceCutRopeScene() {
           <VectorArrow originDesign={{ x: xRight, y: yD }} vector={{ x: 0, y: fD_spring * FORCE_ARROW_SCALE }}
             type="elasticForce" arrowType="visual-only" sceneScale={IDENTITY_SCENE_SCALE} strokeWidth={1.5}
             pixelLength={Math.abs(fD_spring * FORCE_ARROW_SCALE)} />
-          <text x={xRight + 20} y={yD - 28} fontSize={font(11)} fontWeight="bold" fill={PHYSICS_COLORS.elasticForce}>
+          {/* D 球的 F弹 同样放弹簧左侧：原位置（xRight+20, yD-28）与 aC 矢量标签
+              （yC+70 恰好等于 yD-28）实测完全重合。弹簧的两个端点弹力标签统一放左侧，
+              C 端靠上、D 端靠下，读数不再互相遮挡。 */}
+          <text x={xRight - 16} y={yD - 28} fontSize={font(11)} fontWeight="bold"
+            fill={PHYSICS_COLORS.elasticForce} textAnchor="end">
             {`F弹=${Math.abs(fSpring2).toFixed(1)}N`}
           </text>
 

@@ -28,7 +28,10 @@ export function handleConveyor(
   const v0 = params.v0 ?? 0
   const mu = params.mu ?? 0.2
   const length = params.L ?? 6
-  const state = getConveyorFrame({ vBelt, v0, mu, L: length, mode, thetaRad: THETA_RAD }, time, MASS_KG)
+  // 初始位置只对倾斜带有定义（水平带恒从左端放上）；与中屏、图表共用同一取法，
+  // 否则右屏会把「从顶端释放」的题按「从底端释放」算出一整串对不上的数
+  const x0Ratio = mode === 'inclined' ? (params.x0Ratio ?? 0) : 0
+  const state = getConveyorFrame({ vBelt, v0, mu, L: length, mode, thetaRad: THETA_RAD, x0Ratio }, time, MASS_KG)
   const canStaticSync = canConveyorKeepSynchronous({ vBelt, v0, mu, L: length, mode, thetaRad: THETA_RAD })
 
   const quantities: PhysicsQuantity[] = [

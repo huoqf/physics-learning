@@ -1,5 +1,5 @@
 /**
- * 高考 18 大 Master 压轴模型数据类型定义
+ * 高考 Master 压轴模型数据类型定义
  * 深度复用与整合 knowledgeTree 节点、animId 与 problems 真题
  */
 
@@ -30,6 +30,11 @@ export interface MasterModel {
   secondaryAnimId?: string
   /** 一键装载参数 */
   presetParams?: Record<string, number>
+  /**
+   * 定格时刻（秒）：从模型卡片跳转动画后自动暂停在该临界帧。
+   * 与该动画 `criticalTimes` 声明的语义一致（如板块共速、传送带共速）。
+   */
+  criticalT?: number
   /** 辅助动画一键装载参数 */
   secondaryPresetParams?: Record<string, number>
   /** 秒杀速算公式与点拨 */

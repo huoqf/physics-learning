@@ -19,7 +19,7 @@
 - **Step 2: 临界状态定格分析**（动画播放至临界时刻自动暂停，高亮临界受力矢量与运动量）。
 - **Step 3: 阅卷采分点对齐**（右屏分步展现高考阅卷的标准步骤与表达式）。
 
-### 战略三：【高考 18 大 Master 压轴模型专题专区】（Gaokao Master Models Hub）
+### 战略三：【高考 Master 压轴模型专题专区】（Gaokao Master Models Hub）
 - 按高考常考大题模型归类（运动学图像与追及、板块与传送带演化、竖直圆与碰撞守恒、组合场与带电粒子、电磁感应切割与能量转化等 18 个压轴模型）。
 - 每个模型配备：`[模型动画仿真]` + `[极速破题口诀/秒杀公式]` + `[真题变式链]` + `[易错陷阱避坑指南]`。
 
@@ -70,10 +70,10 @@
 - [x] **M1.3 真题预设套件 (Exam Presets)**：为首批高考常考模型（板块模型、传送带、竖直圆、双杆切割）配置 `controlMeta` 中的真题预设参数。
 - [x] **M1.4 基础真题与动画双向跳转**：实现练习题中点击“🎥 一键装载真题参数并运行动画”直达三屏页面。
 
-### 里程碑 2 (M2)：高考 18 大 Master 压轴模型专区与导航重构
+### 里程碑 2 (M2)：高考 Master 压轴模型专区与导航重构
 - [ ] **M2.1 知识树高考属性增强**：在 `knowledgeTree.ts` 中标注 `gaokaoFrequency`（考频勋章）与真题关联数，更新 `KnowledgePage.tsx` 卡片。
-- [ ] **M2.2 主页提分工作台升级**：重构 `HomePage.tsx`，增加“高考 18 大压轴模型特训”与“高频易错打靶”快捷入口。
-- [ ] **M2.3 高考 18 大 Master 压轴模型专区 (`MasterModelsPage.tsx`)**：
+- [ ] **M2.2 主页提分工作台升级**：重构 `HomePage.tsx`，增加“高考 Master 压轴模型特训”与“高频易错打靶”快捷入口。
+- [ ] **M2.3 高考 Master 压轴模型专区 (`MasterModelsPage.tsx`)**：
   - 新建 `/master-models` 路由与页面。
   - 汇总 18 个压轴模型，提供“`[模型动画]` + `[秒杀公式]` + `[真题变式链]`”卡片。
 
@@ -99,6 +99,6 @@
 
 ## 🔍 4. 验收标准与测试规范
 
-1. **严格架构检查**：运行 `npm run check:architecture`（含 viewport、font-size、no-raf、no-marker 等校验）确保无违规。
-2. **完整构建与测试**：运行 `npm run check`，确保类型检查、单元测试及依赖审计通过。
+1. **严格架构检查**：运行 `npm run check:architecture`（含 viewport、font-size、no-raf、no-marker、`check:control-meta`、`check:formula-condition` 等 9 项校验）确保无违规。
+2. **完整构建与测试**：运行 `npm run check`（`build` → 全量单测 → 9 项架构守卫 → `check:seg-wrap` 真机折行实测）。依赖安全审计单独为 `npm run check:all`——它与代码正确性无关，且当前存在需评估升级的存量漏洞，混在一个命令里会让本地门禁长期为红。
 3. **高考原题精准度校验**：真题描述与表达逻辑必须与高考卷面 100% 一致。

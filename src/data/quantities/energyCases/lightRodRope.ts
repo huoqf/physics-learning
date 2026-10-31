@@ -61,7 +61,7 @@ export function buildLightRodRopeQuantities(
         { name: '初始瞬时张力', latex: 'T_0 = \\frac{g(1+\\cos\\theta_0)}{1/m_1 + 1/m_2}', note: '静止释放瞬时，绳中拉力大小', level: 'important' },
         { name: '初始瞬时加速度', latex: 'a_{A0} = g - \\frac{T_0}{m_1}, \\quad a_{Bt0} = g\\sin\\theta_0', note: 'A球竖直加速度，B球摆动切向加速度', level: 'important' },
         { name: '沿绳速度约束', latex: 'v_A = v_B\\cos\\phi = v_\\parallel', note: '由于绳不可伸长，两球沿绳分速度相等', level: 'core' },
-        { name: '系统机械能守恒', latex: '\\Delta E_{\\text{k增}} = \\Delta E_{\\text{p减}}', note: '第一运动阶段系统总机械能守恒', level: 'core' },
+        { name: '系统机械能守恒', latex: '\\Delta E_{\\text{k增}} = \\Delta E_{\\text{p减}}', condition: '只有重力做功：绳不可伸长，绳中张力对两球做功之和为零；不计空气阻力', note: '第一运动阶段系统总机械能守恒', level: 'core' },
       ],
       gaokaoPoints: [
         { text: '【初始瞬时】释放瞬时两球速度及向心加速度为0，但沿绳方向加速度大小相等。对两球分别列牛顿第二定律，可隔离解出初始拉力T_0与A、B球的加速度。', importance: 'gaokao' as const },

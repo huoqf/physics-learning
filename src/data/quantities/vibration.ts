@@ -113,7 +113,7 @@ export function buildVibrationQuantities(
 
     // 模式提示（替代恒定强警告）：指示可切换至高考实验模式
     const modeNotice: WarningItem = {
-      text: '【提示】当前为单摆原理演示。如需查看摆长 L = l + d/2 测量、全振动累积计时及 g 测定数据分析，请在左屏切换至「高考实验：单摆测 g」模式。',
+      text: '【提示】当前为单摆原理演示。如需查看摆长 L = l + d/2 测量、全振动累积计时及 g 测定数据分析，请在左屏切换至「实验：单摆测 g」模式。',
       level: 'info',
     }
 

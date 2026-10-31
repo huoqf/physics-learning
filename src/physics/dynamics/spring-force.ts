@@ -30,6 +30,15 @@ export const BALL_RADIUS = 18
 /** 滑块尺寸（设计像素） [px] */
 export const BOX_SIZE = 48
 
+/**
+ * 绳与弹簧切断场景的天花板 / 地面锚点（设计坐标，px）。
+ *
+ * 它们不只是画图用的：B 球的落地距离 = (groundY − R − yB_start) / PIXELS_PER_METER，
+ * 直接决定落体时长与后续各球的加速度。所以锚点定义在物理层，中屏渲染与右屏看板
+ * 引用同一份 —— 否则「画面里画的地面」和「算出来的落地时刻」会是两个地面。
+ */
+export const CUT_ROPE_ANCHORS = { ceilY: 39, groundY: 610 } as const
+
 // ─── 胡克定律 / 水平简谐振动 ────────────────────────────────────────────
 
 export interface HookeLawState {

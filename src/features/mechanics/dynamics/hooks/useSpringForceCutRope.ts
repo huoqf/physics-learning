@@ -13,6 +13,7 @@ import { useShallow } from 'zustand/react/shallow'
 import {
   precomputeCutRopeTrajectory,
   getCutRopeStateAtTime,
+  CUT_ROPE_ANCHORS,
 } from '@/physics/dynamics/spring-force'
 
 /** 胡克定律模式布局常量（splitV 840×325） */
@@ -30,10 +31,15 @@ export const HOOKE_DESIGN = {
 export const CUT_ROPE_DESIGN = {
   width: 420,
   height: 650,
-  ceilY: 39,
-  groundY: 610,
+  // 天花板/地面锚点参与物理计算（落体距离、弹簧平衡长度都按它算），
+  // 真源在物理层，这里只做展开，避免画面与算出来的时长各用一套坐标
+  ceilY: CUT_ROPE_ANCHORS.ceilY,
+  groundY: CUT_ROPE_ANCHORS.groundY,
   xLeft: 118,
-  xRight: 344,
+  // 系统二中心线。取 322 而非 344：右侧标注（G=mg=9.8N 宽 66、aD = 0 宽 38）从球心
+  // 右偏 20~40px 起排，画布仅 420 宽，344 时三处标注右缘越界到 430，实测被裁掉 11~13px
+  // （"N" 和 "0" 都看不见）。左移 22px 后右缘收进 408，且与分隔线（210）仍留 112px。
+  xRight: 322,
   dividerX: 210,
   bracketWidth: 100,
 } as const

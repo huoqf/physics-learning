@@ -3,7 +3,7 @@ import { masterModels } from './models'
 import type { MasterModel } from './types'
 
 /**
- * 根据知识树节点 ID 查询关联的 18 大 Master 模型 (软匹配，支持多对多)
+ * 根据知识树节点 ID 查询关联的 Master 模型 (软匹配，支持多对多)
  * 优先级：
  * 1. 匹配 model.knowledgeId === knowledgeId
  * 2. 匹配 model.knowledgeIds 包含 knowledgeId
@@ -20,7 +20,7 @@ export function getModelsByKnowledgeId(knowledgeId: string): MasterModel[] {
 }
 
 /**
- * 根据真题 Problem 查询关联的 18 大 Master 模型
+ * 根据真题 Problem 查询关联的 Master 模型
  * 软推断逻辑：
  * 1. 优先读取 problem.masterModelId
  * 2. 若无 masterModelId，则根据 problem.knowledgeIds 寻找有知识点交集的模型

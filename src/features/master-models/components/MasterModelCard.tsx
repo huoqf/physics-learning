@@ -16,11 +16,13 @@ export const MasterModelCard: React.FC<MasterModelCardProps> = ({ model }) => {
 
   const handleGoAnimation = (usePreset = false) => {
     if (usePreset && model.presetParams) {
-      const searchParams = new URLSearchParams()
-      Object.entries(model.presetParams).forEach(([k, v]) => {
-        searchParams.set(k, String(v))
+      // 必须走 `?params=<JSON>`：动画页只解析该形式，历史上这里写的是顶层键值
+      // （`?m=1&M=3`），导致「一键装载参数」静默失效。
+      const query = new URLSearchParams({
+        params: JSON.stringify(model.presetParams),
       })
-      navigate(`/animation/${model.animId}?${searchParams.toString()}`)
+      if (model.criticalT != null) query.set('t', String(model.criticalT))
+      navigate(`/animation/${model.animId}?${query.toString()}`)
     } else {
       navigate(`/animation/${model.animId}`)
     }
@@ -29,11 +31,10 @@ export const MasterModelCard: React.FC<MasterModelCardProps> = ({ model }) => {
   const handleGoSecondaryAnimation = (usePreset = false) => {
     if (!model.secondaryAnimId) return
     if (usePreset && model.secondaryPresetParams) {
-      const searchParams = new URLSearchParams()
-      Object.entries(model.secondaryPresetParams).forEach(([k, v]) => {
-        searchParams.set(k, String(v))
+      const query = new URLSearchParams({
+        params: JSON.stringify(model.secondaryPresetParams),
       })
-      navigate(`/animation/${model.secondaryAnimId}?${searchParams.toString()}`)
+      navigate(`/animation/${model.secondaryAnimId}?${query.toString()}`)
     } else {
       navigate(`/animation/${model.secondaryAnimId}`)
     }

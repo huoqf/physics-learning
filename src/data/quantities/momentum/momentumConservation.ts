@@ -115,6 +115,7 @@ export function handleMomentumConservation(
           name: '动量守恒定律',
           latex: 'm_1 v_1 + m_2 v_2 = m_1 v_1\' + m_2 v_2\'',
           level: 'core' as const,
+          condition: '系统所受合外力为零（气轨气垫已消除摩擦阻力）',
           note: '系统所受外力之和为零（气轨微孔气垫消除摩擦阻力）',
         },
         {
@@ -195,7 +196,7 @@ export function handleMomentumConservation(
         { label: '机械能损失', value: EkLoss.toFixed(2), unit: 'J', highlight: EkLoss > 0.01 ? 'extreme' : undefined },
       ],
       formulas: [
-        { name: '动量守恒', latex: 'm_1v_1 + m_2v_2 = m_1v_1\' + m_2v_2\'', level: 'core' as const },
+        { name: '动量守恒', latex: 'm_1v_1 + m_2v_2 = m_1v_1\' + m_2v_2\'', level: 'core' as const, condition: '碰撞瞬间系统所受合外力为零（水平方向无外力）' },
         { name: '恢复系数', latex: 'e = -\\frac{v_1\' - v_2\'}{v_1 - v_2}', level: 'important' as const },
       ],
       gaokaoPoints: [

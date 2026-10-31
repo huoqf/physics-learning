@@ -7,6 +7,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene/SceneScale'
 import { getConveyorFrame, type ConveyorMode } from '@/physics/conveyor'
+import { GRAVITY } from '@/physics/constants'
 
 const MASS_KG = 1
 const THETA_RAD = Math.PI / 12
@@ -58,10 +59,12 @@ export default function ConveyorAnimation() {
   const showScratch = (params.showScratch ?? 1) === 1
   const theta = mode === 'inclined' ? THETA_RAD : 0
   const angleDeg = mode === 'inclined' ? THETA_DEG : 0
+  // 水平带只有「从左端放上」，初始位置恒为 0，与物理层的取法保持一致
+  const x0Ratio = mode === 'inclined' ? (params.x0Ratio ?? 0) : 0
 
   const state = useMemo(
-    () => getConveyorFrame({ vBelt, v0, mu, L: length, mode, thetaRad: THETA_RAD }, time, MASS_KG),
-    [vBelt, v0, mu, length, mode, time],
+    () => getConveyorFrame({ vBelt, v0, mu, L: length, mode, thetaRad: THETA_RAD, x0Ratio }, time, MASS_KG),
+    [vBelt, v0, mu, length, mode, x0Ratio, time],
   )
 
   const geometry = useMemo(() => {
@@ -87,13 +90,13 @@ export default function ConveyorAnimation() {
   const frictionSign = state.friction === 0 ? 1 : Math.sign(state.friction)
   const isSliding = state.phase === 'sliding'
 
-  // 1. 物理跟随皮带平移及截断划痕计算 (沿皮带表面 Y = center - R - 3px 绘制)
-  // 真实划痕几何长度以物理划过区间 scratchLength 为准（反向滑动时为包络区间，避免虚长）
-  const scratchLen = state.scratchLength ?? state.relativeDistanceAbs
-  const isSlowerThanBelt = state.xObj <= vBelt * time
-  const xLeft_phy = clamp(isSlowerThanBelt ? state.xObj : state.xObj - scratchLen, 0, length)
-  const xRight_phy = clamp(isSlowerThanBelt ? state.xObj + scratchLen : state.xObj, 0, length)
-  const scratchActive = showScratch && (scratchLen > 0.05) && (state.phase !== 'exitLeft' && state.phase !== 'exitRight' || state.relativeDistanceAbs > 0.05)
+  // 1. 划痕区间直接取物理层的包络端点（沿带面、以低端为基准的地面坐标）
+  // 旧写法用 `xObj <= vBelt*time` 判断物块相对皮带是快是慢，再据此决定划痕画在
+  // 哪一侧。这个判断隐含「物块从 0 出发、皮带向正方向走」，倾斜带（皮带向下、
+  // 物块从顶端出发）会整个反过来。现在物理层直接给出 vBelt·t + 相对包络的两端，
+  // 不依赖任何场景假设。
+  const drawnScratch = state.scratchTo - state.scratchFrom
+  const scratchActive = showScratch && drawnScratch > 0.05
 
   const getSvgPos = (xPhy: number, offsetNormal = SCENE.rollerRadius + 3) => {
     const ratio = xPhy / length
@@ -105,19 +108,25 @@ export default function ConveyorAnimation() {
     }
   }
 
-  const scratchStart = getSvgPos(xLeft_phy)
-  const scratchEnd = getSvgPos(xRight_phy)
+  const scratchStart = getSvgPos(state.scratchFrom)
+  const scratchEnd = getSvgPos(state.scratchTo)
 
   // 2. 能量计算
   const energy = useMemo(() => {
     const m = MASS_KG
-    const g = 9.8
+    const g = GRAVITY
     const dEk = 0.5 * m * (state.vObj * state.vObj - v0 * v0)
-    const dEp = m * g * Math.sin(theta) * state.xObj
+    /*
+     * ΔEp 必须以**初始位置**为零点，不能拿 xObj 直接乘。
+     * 倾斜带从顶端释放时 xObj(0)=L，若按绝对高度算，第 0 帧就已经摆了
+     * mg·sinθ·L ≈ 20 J 的重力势能进去，而那一帧 v=0、Q=0，于是 W电 = 20 J，
+     * 学生看到「什么都没发生，电功已经做了 20 焦」。
+     */
+    const dEp = m * g * Math.sin(theta) * (state.xObj - x0Ratio * length)
     const Q = state.heat
     const W = dEk + dEp + Q
     return { dEk, dEp, Q, W }
-  }, [state.vObj, state.xObj, state.heat, v0, theta])
+  }, [state.vObj, state.xObj, state.heat, v0, theta, x0Ratio, length])
 
   return (
     <div className="w-full h-full relative overflow-hidden bg-white rounded-xl select-none">

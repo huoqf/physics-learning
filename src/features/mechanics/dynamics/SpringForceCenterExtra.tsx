@@ -350,13 +350,15 @@ function CutRopeAccelerationChart({
           )
         })}
 
-        {/* 理论分析标注 */}
+        {/* 理论分析标注 —— 必须放右上角：原先在 x=180 / y=300,320，正好压在
+            「A球/B球/C球/D球」列名（y = baseY + 145 = 315）上，两行字糊成一团，
+            而这恰恰是学生要读数的位置。右上角在正柱之外是整块空白。 */}
         {tCut < 0.5 && (
           <g>
-            <text x={180} y={300} fontSize={font(12)} fill={PHYSICS_COLORS.textMuted} textAnchor="middle">
-              理论值 (刚剪断):
+            <text x={345} y={46} fontSize={font(11)} fill={PHYSICS_COLORS.textMuted} textAnchor="end">
+              理论值 (刚剪断)
             </text>
-            <text x={180} y={320} fontSize={font(11)} fill={PHYSICS_COLORS.textMuted} textAnchor="middle">
+            <text x={345} y={62} fontSize={font(10)} fill={PHYSICS_COLORS.textMuted} textAnchor="end">
               aA=+g, aB=-g, aC=-2g, aD=0
             </text>
           </g>

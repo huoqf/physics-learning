@@ -309,3 +309,122 @@ describe('getConveyorFrame — 边界条件', () => {
     expect(frameNeg.vObj).toBeLessThan(0)
   })
 })
+
+// ── getConveyorFrame — 倾斜带初始位置（放顶端下滑） ─────────────────────
+
+/*
+ * 这一组守的是「倾斜带物理是死的」那类回退：
+ * 位置基准一律写 0 时，从顶端释放的题第一帧就判「左端离开」，
+ * 画面永远定格在 x=0、v=0，ΔEp 也恒为 0 —— 三个倾斜带预设演的都是静止图。
+ */
+describe('getConveyorFrame — 倾斜带 x0Ratio', () => {
+  const DOWN_BELT: ConveyorParam = {
+    vBelt: -2,
+    v0: 0,
+    mu: 0.15,
+    L: 8,
+    mode: 'inclined',
+    thetaRad: Math.PI / 12,
+  }
+
+  it('x0Ratio=1：t=0 站在顶端且不算离开', () => {
+    const frame = getConveyorFrame({ ...DOWN_BELT, x0Ratio: 1 }, 0)
+    expect(frame.xObj).toBeCloseTo(8, 6)
+    expect(frame.phase).toBe('sliding')
+    expect(frame.tExit).toBeNull()
+    expect(frame.scratchLength).toBe(0) // 还没滑，划痕为 0（不能一上来就满带）
+  })
+
+  it('x0Ratio=1：物块真的沿斜面下滑', () => {
+    const at0 = getConveyorFrame({ ...DOWN_BELT, x0Ratio: 1 }, 0)
+    const at05 = getConveyorFrame({ ...DOWN_BELT, x0Ratio: 1 }, 0.5)
+    expect(at05.xObj).toBeLessThan(at0.xObj)
+    expect(at05.vObj).toBeLessThan(0)
+    expect(at05.tExit).toBeNull()
+  })
+
+  it('μ < tanθ：共速瞬间之后摩擦反向、加速度绝对值变小（v-t 折点）', () => {
+    const preSync = getConveyorFrame({ ...DOWN_BELT, x0Ratio: 1 }, 0.4)
+    const postSync = getConveyorFrame({ ...DOWN_BELT, x0Ratio: 1 }, 0.8)
+    // tSync 只有在积分跨过共速点之后才会被写入，所以从前一帧读不到、从后一帧读到
+    expect(postSync.tSync).not.toBeNull()
+    expect(postSync.tSync!).toBeGreaterThan(0.4)
+    expect(postSync.hasSynced).toBe(true)
+    // 共速前：摩擦沿斜面向下（与重力同向）
+    expect(preSync.friction).toBeLessThan(0)
+    // 共速后：摩擦沿斜面向上（μ<tanθ 撑不住，只能减小下滑加速度）
+    expect(postSync.friction).toBeGreaterThan(0)
+    expect(postSync.aObj).toBeLessThan(0)
+    expect(Math.abs(postSync.aObj)).toBeLessThan(Math.abs(preSync.aObj))
+  })
+
+  it('μ ≥ tanθ：共速后转为静摩擦同步，随带向下匀速', () => {
+    const param: ConveyorParam = { ...DOWN_BELT, mu: 0.35, x0Ratio: 1 }
+    const frame = getConveyorFrame(param, 2)
+    expect(frame.phase).toBe('staticOnIncline')
+    expect(frame.vObj).toBeCloseTo(-2, 1)
+    expect(frame.aObj).toBe(0)
+    // 静摩擦沿斜面向上，大小恰为 mg·sinθ
+    expect(frame.friction).toBeCloseTo(1 * 9.8 * Math.sin(Math.PI / 12), 1)
+    expect(frame.tExit).toBeNull()
+  })
+
+  it('水平带忽略 x0Ratio（参数在水平模式下无定义，脏值不能把物块摆到右端）', () => {
+    const frame = getConveyorFrame({ ...HORIZONTAL_BASE, x0Ratio: 1 }, 0)
+    expect(frame.xObj).toBe(0)
+    expect(frame.phase).toBe('sliding')
+  })
+})
+
+// ── getConveyorFrame — 划痕区间 ────────────────────────────────────────
+
+/*
+ * scratchFrom/scratchTo 是划痕在场景里当前占的区间。
+ * 曾经由动画层用 `xObj <= vBelt*time` 猜「物块相对皮带是快是慢」再决定
+ * 往哪边加划痕长度，倾斜带（皮带向下跑、物块从顶端出发）会整个猜反。
+ */
+describe('getConveyorFrame — 划痕区间 scratchFrom / scratchTo', () => {
+  const CASES: ConveyorParam[] = [
+    { vBelt: 3, v0: 0, mu: 0.2, L: 6, mode: 'horizontal' },
+    { vBelt: 2, v0: 5, mu: 0.2, L: 6, mode: 'horizontal' },
+    { vBelt: -2, v0: 4, mu: 0.2, L: 6, mode: 'horizontal' },
+    { vBelt: -2, v0: 0, mu: 0.15, L: 8, mode: 'inclined', thetaRad: Math.PI / 12, x0Ratio: 1 },
+    { vBelt: -2, v0: 0, mu: 0.35, L: 8, mode: 'inclined', thetaRad: Math.PI / 12, x0Ratio: 1 },
+    { vBelt: 3, v0: 0, mu: 0.35, L: 8, mode: 'inclined', thetaRad: Math.PI / 12, x0Ratio: 0 },
+  ]
+
+  it('区间永远包住物块当前位置，且不宽于累计划痕长度', () => {
+    for (const param of CASES) {
+      for (const t of [0, 0.2, 0.5, 1, 2, 3, 5]) {
+        const frame = getConveyorFrame(param, t)
+        expect(frame.scratchFrom).toBeLessThanOrEqual(frame.xObj + 1e-9)
+        expect(frame.scratchTo).toBeGreaterThanOrEqual(frame.xObj - 1e-9)
+        expect(frame.scratchTo - frame.scratchFrom).toBeLessThanOrEqual(frame.scratchLength + 1e-9)
+        expect(frame.scratchFrom).toBeGreaterThanOrEqual(0)
+        expect(frame.scratchTo).toBeLessThanOrEqual(param.L)
+      }
+    }
+  })
+
+  it('水平带放上加速：划痕长在物块前方（皮带比物块快）', () => {
+    const param: ConveyorParam = { vBelt: 3, v0: 0, mu: 0.2, L: 6, mode: 'horizontal' }
+    const frame = getConveyorFrame(param, 1)
+    expect(frame.scratchFrom).toBeCloseTo(frame.xObj, 1)
+    expect(frame.scratchTo).toBeCloseTo(3 * 1, 1) // 皮带自身走过 3 m
+  })
+
+  it('倾斜带顶端下滑：划痕长在物块后侧（皮带比物块跑得快）', () => {
+    const param: ConveyorParam = {
+      vBelt: -2,
+      v0: 0,
+      mu: 0.15,
+      L: 8,
+      mode: 'inclined',
+      thetaRad: Math.PI / 12,
+      x0Ratio: 1,
+    }
+    const frame = getConveyorFrame(param, 0.4)
+    expect(frame.scratchTo).toBeCloseTo(frame.xObj, 1) // 物块在高端（后侧）
+    expect(frame.scratchFrom).toBeLessThan(frame.xObj)
+  })
+})

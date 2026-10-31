@@ -62,7 +62,7 @@ export function handleCurvedSlot(
     ],
     formulas: [
       { name: '水平动量关系', latex: isFixed ? 'F_{外x} \\neq 0 (不守恒)' : 'm v_x + M V_x = 0', level: 'core' as const },
-      { name: '系统机械能守恒', latex: 'mgR = \\frac{1}{2}m v_x^2 + \\frac{1}{2}M V_x^2', level: 'core' as const },
+      { name: '系统机械能守恒', latex: 'mgR = \\frac{1}{2}m v_x^2 + \\frac{1}{2}M V_x^2', level: 'core' as const, condition: isFixed ? '槽面光滑，仅重力做功（支持力与速度垂直不做功）' : '槽面与水平面均光滑，弹力对系统做功代数和为零，仅重力势能与动能转化' },
       { name: '位移守恒 (人船)', latex: isFixed ? 's_m = R' : 'm s_m = M s_M', level: 'important' as const },
       { name: '最低点弹力公式', latex: isFixed ? 'N = 3mg' : 'N = mg(3 + \\frac{2m}{M})', level: 'important' as const },
     ],

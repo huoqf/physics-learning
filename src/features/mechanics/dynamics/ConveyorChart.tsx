@@ -3,6 +3,7 @@ import { BasePhysicsChart, useChartContext } from '@/components/Chart'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
 import { getConveyorFrame, type ConveyorMode } from '@/physics/conveyor'
+import { GRAVITY } from '@/physics/constants'
 
 const THETA_RAD = Math.PI / 12
 const MASS_KG = 1
@@ -105,6 +106,9 @@ export default function ConveyorChart() {
   const showSyncLine = (params.showSyncLine ?? 1) === 1
 
   const theta = mode === 'inclined' ? THETA_RAD : 0
+  // 初始位置只对倾斜带有定义（水平带恒从左端放上），与物理层、动画层保持同一取法
+  const x0Ratio = mode === 'inclined' ? (params.x0Ratio ?? 0) : 0
+  const x0 = x0Ratio * length
 
   // 1. 采样物理全过程数据
   const data = useMemo(() => {
@@ -114,10 +118,11 @@ export default function ConveyorChart() {
 
     for (let idx = 0; idx <= SAMPLE_COUNT; idx += 1) {
       const t = (T_MAX * idx) / SAMPLE_COUNT
-      const frame = getConveyorFrame({ vBelt, v0, mu, L: length, mode, thetaRad: THETA_RAD }, t, MASS_KG)
-      
+      const frame = getConveyorFrame({ vBelt, v0, mu, L: length, mode, thetaRad: THETA_RAD, x0Ratio }, t, MASS_KG)
+
       const dEk = 0.5 * MASS_KG * (frame.vObj * frame.vObj - v0 * v0)
-      const dEp = MASS_KG * 9.8 * Math.sin(theta) * frame.xObj
+      // ΔEp 以初始位置为零点：从顶端释放的倾斜带，第 0 帧的重力势能变化必须是 0
+      const dEp = MASS_KG * GRAVITY * Math.sin(theta) * (frame.xObj - x0)
       const Q = frame.heat
       const W = dEk + dEp + Q
 
@@ -130,17 +135,17 @@ export default function ConveyorChart() {
       }
     }
     return { framesData, syncTime, exitTime }
-  }, [vBelt, v0, mu, length, mode, theta])
+  }, [vBelt, v0, mu, length, mode, theta, x0Ratio, x0])
 
   // 2. 计算当前时刻的数据
   const current = useMemo(() => {
-    const frame = getConveyorFrame({ vBelt, v0, mu, L: length, mode, thetaRad: THETA_RAD }, time, MASS_KG)
+    const frame = getConveyorFrame({ vBelt, v0, mu, L: length, mode, thetaRad: THETA_RAD, x0Ratio }, time, MASS_KG)
     const dEk = 0.5 * MASS_KG * (frame.vObj * frame.vObj - v0 * v0)
-    const dEp = MASS_KG * 9.8 * Math.sin(theta) * frame.xObj
+    const dEp = MASS_KG * GRAVITY * Math.sin(theta) * (frame.xObj - x0)
     const Q = frame.heat
     const W = dEk + dEp + Q
     return { frame, dEk, dEp, Q, W }
-  }, [vBelt, v0, mu, length, mode, time, theta])
+  }, [vBelt, v0, mu, length, mode, time, theta, x0Ratio, x0])
 
   // 3. 多曲线提取
   const vPoints = useMemo(() => data.framesData.map(f => ({ x: f.t, y: f.vObj })), [data])
@@ -154,7 +159,7 @@ export default function ConveyorChart() {
   const vMin = Math.min(-1, ...vPoints.map(p => p.y), vBelt, v0) - 0.6
   const vMax = Math.max(1, ...vPoints.map(p => p.y), vBelt, v0) + 0.6
 
-  const fMaxLimit = mu * MASS_KG * 9.8 * Math.cos(theta)
+  const fMaxLimit = mu * MASS_KG * GRAVITY * Math.cos(theta)
   const fMin = Math.min(-0.8, -fMaxLimit, ...fPoints.map(p => p.y)) - 0.5
   const fMax = Math.max(0.8, fMaxLimit, ...fPoints.map(p => p.y)) + 0.5
 

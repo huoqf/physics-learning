@@ -64,7 +64,7 @@ export function handleCollision(
         { label: '机械能守恒', value: Math.abs(EkInitial - EkFinal) < 0.1 ? '✓ 守恒' : `损失 ${(EkInitial - EkFinal).toFixed(1)} J`, unit: '' },
       ],
       formulas: [
-        { name: '动量守恒定律', latex: 'm_1v_1 + m_2v_2 = m_1v_1\' + m_2v_2\'', level: 'core' as const },
+        { name: '动量守恒定律', latex: 'm_1v_1 + m_2v_2 = m_1v_1\' + m_2v_2\'', level: 'core' as const, condition: '碰撞过程中系统所受合外力可忽略；或某方向合外力为零，则该方向动量守恒' },
         { name: '弹性碰撞末速 v₁\'', latex: 'v_1\' = \\frac{(m_1 - m_2)v_1 + 2m_2v_2}{m_1 + m_2}', level: 'important' as const },
         { name: '弹性碰撞末速 v₂\'', latex: 'v_2\' = \\frac{2m_1v_1 + (m_2 - m_1)v_2}{m_1 + m_2}', level: 'important' as const },
         { name: '恢复系数 e', latex: 'e = -\\frac{v_1\' - v_2\'}{v_1 - v_2}', level: 'important' as const },

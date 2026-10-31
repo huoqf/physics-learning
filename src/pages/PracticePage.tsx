@@ -2,10 +2,12 @@ import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ClipboardList, GraduationCap, Timer, History, Trash2, Trophy } from 'lucide-react'
 import { allProblems } from '@/data/problems'
+import { MASTER_MODEL_COUNT } from '@/data/masterModels'
 import { usePracticeStore, type PracticeMode } from '@/stores'
 import { PracticeSession } from '@/features/practice'
 import { colors } from '@/theme/colors'
-import { MODULE_LABELS, moduleOf, formatDate, toggle, chip } from '@/utils/moduleHelpers'
+import { moduleOf, formatDate, toggle, chip } from '@/utils/moduleHelpers'
+import { MODULE_LABELS } from '@/data/knowledge/modules'
 import { PageLayout } from '@/components/Layout'
 
 export default function PracticePage() {
@@ -95,7 +97,7 @@ export default function PracticePage() {
             className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl shadow-md transition-all active:scale-[0.98] text-xs md:text-sm shrink-0"
           >
             <Trophy className="w-4 h-4 fill-slate-950" />
-            <span>高考18大模型专区</span>
+            <span>高考{MASTER_MODEL_COUNT}大模型专区</span>
           </button>
         </div>
 

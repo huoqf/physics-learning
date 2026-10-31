@@ -3,6 +3,7 @@ import { BookOpen, BookOpenCheck, ClipboardList, Trophy } from 'lucide-react'
 import { useProgressStore } from '../stores'
 import { knowledgeTree } from '../data/knowledgeTree'
 import { ANIMATION_COUNT } from '../data/animationRegistry'
+import { MASTER_MODEL_COUNT } from '../data/masterModels'
 import { colors } from '@/theme/colors'
 import { useEffect } from 'react'
 import { PageLayout } from '@/components/Layout'
@@ -19,7 +20,7 @@ export default function HomePage() {
 
   const quickActions = [
     {
-      title: '高考18大模型',
+      title: `高考${MASTER_MODEL_COUNT}大模型`,
       description: '压轴模型、秒杀公式与仿真',
       icon: <Trophy className="w-6 h-6" style={{ color: colors.warning[600] }} />,
       route: '/master-models',

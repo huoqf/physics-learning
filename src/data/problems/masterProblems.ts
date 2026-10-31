@@ -1,7 +1,7 @@
 import type { Problem } from '../types'
 
 /**
- * 高考 18 大 Master 压轴模型专属高考真题库
+ * 高考 Master 压轴模型专属高考真题库
  *
  * Provenance（溯源）治理约定：
  * - `verified: true` 仅授予「已由人工对照高考原卷扫描件逐字核验题干与设问」的题目。

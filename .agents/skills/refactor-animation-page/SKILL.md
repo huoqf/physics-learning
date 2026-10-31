@@ -178,6 +178,6 @@ useSceneScale({ vp, preset, anchor: 'custom',
 - [ ] 物理计算遵循单一可信源（SSOT），数值与单位符合高考课标（已核对对应 references）
 - [ ] 字号 `font(N)`，颜色 PHYSICS/SCENE/CANVAS_COLORS 按语义
 - [ ] 涉及电路时遵循 `CIRCUIT_RULES.md`：组件复用 `variant="symbolic"`、端子直角接合、红进黑出、零文本/元件撞车
-- [ ] 左屏控制纯净：无长篇题解，预设紧凑（≤15字）不锁滑块，观察指引归于底部 Tip（遵循 08_THREE_PANEL_RULES.md §2.6）
+- [ ] 左屏控制纯净：无长篇题解/考点/公式搬运；预设标签「名称 ≤12 字 + 参数标注 ≤14 字，合计 ≤22，禁卷别与「高考/真题/压轴」」不锁滑块；`preset` 声明在「模型选择」之后；观察指引归于底部 Tip（遵循 08_THREE_PANEL_RULES.md §2.6，`npm run check:control-meta` 为绿）
 - [ ] `tsc --noEmit` 通过，动画播放/暂停/重置正常
 - [ ] 未改动本次任务无关文件

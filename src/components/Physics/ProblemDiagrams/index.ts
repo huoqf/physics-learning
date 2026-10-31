@@ -36,7 +36,7 @@ export interface ProblemDiagramProps {
 export const problemDiagramRegistry: Record<string, React.FC<ProblemDiagramProps>> = {
   // 实验专题：2022全国甲卷气垫导轨碰撞与动量守恒
   'prob-2022-quanguo-exp-momentum': Prob2022QuanguoExpMomentumDiagram,
-  // 18 大 Master 模型第 1~3 号的专属题干示意图
+  // Master 模型第 1~3 号的专属题干示意图
   // （对应题目已按 provenance 铁律转为「模型演练题」verified: false，键名跟随题目 id 改名）
   'prob-block-board-model': Prob2024Quanguo21Diagram,
   'prob-model-single-rod': Prob2023Quanguo19Diagram,
