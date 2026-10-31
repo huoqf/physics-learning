@@ -13,7 +13,7 @@ pre-commit:
     test:
       run: npx vitest --run
     guards:
-      # 6 个守门脚本（字号 / 大文件 / rAF / marker / 组件复用 / viewport 遗留），
-      # 全仓扫描、不接受文件参数，实测约 4.5s。改动源码时触发。
+      # 守门脚本合集（字号 / viewport 遗留 / 大文件 / rAF / marker / 组件复用 /
+      # 物理量标签 / controlMeta / 公式适用条件），全仓扫描、不接受文件参数，实测约 5s。改动源码时触发。
       glob: "{**/,}*.{ts,tsx}"
       run: npm run check:architecture

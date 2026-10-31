@@ -91,12 +91,23 @@ export default [
   },
 
   // 2-b) Node 脚本（ESM .mjs）
+  // ecmaVersion 必须 ≥ 2022：`audit-seg-wrap.mjs` 等质检脚本用顶层 await 起 Playwright 浏览器，
+  // 2020 下解析直接失败（"Cannot use keyword 'await' outside an async function"）。
   {
     files: ['scripts/**/*.mjs'],
     languageOptions: {
-      ecmaVersion: 2020,
+      ecmaVersion: 2022,
       sourceType: 'module',
       globals: { ...globals.node },
+    },
+  },
+
+  // 2-c) Playwright 质检脚本：`page.evaluate()` 的回调体在**浏览器上下文**里执行，
+  // 里面的 `document` / `getComputedStyle` 是合法的浏览器全局，不是 Node 全局。
+  {
+    files: ['scripts/audit-seg-wrap.mjs'],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.browser },
     },
   },
 

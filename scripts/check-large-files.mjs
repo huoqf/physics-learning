@@ -19,6 +19,14 @@ const ALLOWLIST = new Set([
   'src/features/electromagnetism/magnetism/VelocitySelector.tsx',
   'src/features/optics/thin-lens/ThinLensAnimation.tsx',
   'src/features/modern/bohr-theory/components/ExcitationSim.tsx',
+  /*
+   * 纯数据注册表：20+ 个动画的 title / 参数 / 预设 / 控件声明，没有逻辑可拆。
+   * 行数随动画数线性增长，且「一个学科模块一份注册表」是本项目的检索约定，
+   * 拆成多份会打散 mechanics 动力学模块的索引。
+   * ⚠ 仍是技术债：按 ARCHITECTURE_RULES「>500 行须拆分」，后续应把预设与
+   *   控件声明外提到独立数据模块，而不是继续往里堆。
+   */
+  'src/data/registries/mechanics-dynamics.ts',
 ])
 
 function walk(dir) {

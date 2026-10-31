@@ -290,14 +290,12 @@ tests/
 | 字段 | 渲染器 | 用途 | 适用内容 |
 |------|--------|------|----------|
 | `paramMeta` | `ParamControl` | 连续数值型物理参数 | 力、速度、角度、质量、电阻等，可声明 `group/description/marks/importance/resetOnChange`（`resetOnChange: true` 效果：参数值变化时自动触发 `setTime(0) + setIsPlaying(false)`，即重置到初始静止状态） |
-| `controlMeta` | `ControlPanel` | 非数值或低频控制 | `number / segmented / toggle / preset / tip`，用于模式切换、显示开关、快捷预设、教学提示 |
-| `SidebarExtra` | 自定义 React 组件 | 复杂页面专属控制 | 仅当声明式协议无法表达时保留，内部必须复用 `LeftPanelSection` |
+| `controlMeta` | `ControlPanel` | 非数值或低频控制 | `number / segmented / toggle / preset / tip / action / storeToggle / modeGrid`，用于模式切换、显示开关、快捷预设、教学提示 |
 
 **迁移原则**：
-1. 简单模式切换、开关、提示和预设不得新写 `SidebarExtra`，必须进入 `controlMeta`。
-2. 连续物理参数不得手写 `Slider`，优先进入 `paramMeta`。
-3. `SidebarExtra` 不得直接访问 store；仍通过 `SidebarExtraProps` 接收 `params/updateParam/setParams/animationActions`。
-4. 左屏声明式优先级的完整执行规范（含判断标准与组件使用边界）见 `08_THREE_PANEL_RULES.md §2`，本节仅定义数据接口。
+1. 所有左屏控件必须走 `paramMeta` 或 `controlMeta`。历史上的 `SidebarExtra`（页面自带自定义左屏组件）已于 2026-07-13 全量清零，**不得恢复**；现有两类协议表达不了时，扩 `controlMeta` 的类型与 `ControlPanel` 的渲染分支。
+2. 连续物理参数不得手写 `Slider`，必须进入 `paramMeta`（声明式单值可用 `controlMeta.number`）。
+3. 左屏声明式优先级的完整执行规范（含判断标准、组件使用边界、预设/tip 内容边界）见 `08_THREE_PANEL_RULES.md §2`，本节仅定义数据接口。
 
 ### 8.1.4 底部播放控制器协议（controlsMode）
 
