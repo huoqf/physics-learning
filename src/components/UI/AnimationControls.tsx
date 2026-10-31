@@ -1,8 +1,41 @@
 import React from 'react'
-import { Play, Pause, RotateCcw, RefreshCw, StepBack, StepForward } from 'lucide-react'
+import { Play, Pause, RotateCcw, RefreshCw, StepBack, StepForward, Pin } from 'lucide-react'
 import { colors } from '@/theme/colors'
 import { duration } from '@/theme/motion'
 import type { CriticalTimePoint } from '@/data/types'
+import type { DeepLinkFreezeHint } from '@/utils/animationDeepLink'
+
+/**
+ * 定格提示条 —— 「你停在哪一帧、这一帧该看什么」。
+ *
+ * 学生从错因打靶台 / 错题本点「直达定格帧」进来时，页面把时间停到某一刻并暂停。
+ * 那是一个**不动的画面**：没有这行字，他只会以为页面卡住了，或者以为自己点错了。
+ *
+ * 提示的消失不在这里处理，也不靠 URL 清理 —— 由父级按「时间是否仍停在这一帧 +
+ * 是否在播放」派生（见 AnimationPage 的 visibleDeepLinkHint），学生一拖进度条
+ * 或点播放，传进来的 hint 就变成 null。
+ */
+const DeepLinkHintRow: React.FC<{ hint: DeepLinkFreezeHint }> = ({ hint }) => (
+  <div className="mb-1.5 pb-1.5 border-b border-neutral-100">
+    <div className="flex items-start gap-1.5 text-xs">
+      <span
+        className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-medium"
+        style={{ color: colors.secondary[700], backgroundColor: colors.secondary[100] }}
+      >
+        <Pin className="w-3 h-3" />
+        已定格 {hint.time.toFixed(2)}s
+      </span>
+      {hint.note && (
+        <span className="min-w-0 text-neutral-600 leading-relaxed" title={hint.note}>
+          {hint.note}
+        </span>
+      )}
+    </div>
+    <div className="mt-1 text-xs text-neutral-400">
+      拖动进度条或点播放即可继续，看这一刻前后怎么变
+    </div>
+  </div>
+)
 
 interface AnimationControlsProps {
   isPlaying: boolean
@@ -21,6 +54,8 @@ interface AnimationControlsProps {
   enableFrameStep?: boolean
   /** 微步步进大小（秒），默认 0.05s */
   stepSize?: number
+  /** 深链定格提示；非空时在控制条顶部显示「已定格到哪一帧 + 该看什么」 */
+  deepLinkHint?: DeepLinkFreezeHint | null
 }
 
 export const AnimationControls: React.FC<AnimationControlsProps> = ({
@@ -36,6 +71,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
   criticalTimes,
   enableFrameStep = false,
   stepSize = 0.05,
+  deepLinkHint,
 }) => {
   const speedOptions = [0.25, 0.5, 1, 2]
   const percentage = maxTime > 0 ? (time / maxTime) * 100 : 0
@@ -68,6 +104,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
 
     return (
       <div className="w-full bg-white rounded-lg shadow-sm border border-neutral-200 px-4 py-2">
+        {deepLinkHint && <DeepLinkHintRow hint={deepLinkHint} />}
         <div className="flex items-center justify-center">
           <button
             onClick={onPlayPause}
@@ -143,6 +180,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
   // ── timed 型：完整控制栏（默认）──
   return (
     <div className="w-full bg-white rounded-lg shadow-sm border border-neutral-200 px-4 py-2">
+      {deepLinkHint && <DeepLinkHintRow hint={deepLinkHint} />}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           {enableFrameStep && (

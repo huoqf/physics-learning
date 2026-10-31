@@ -7,6 +7,7 @@ import { useAnimationStore, useProgressStore, type PhysicsState } from '@/stores
 import { useAppStore } from '@/stores/useAppStore'
 import type { DiscoveryStepData } from '@/components/UI'
 import { useAnimationFrame } from '@/utils/animation'
+import { parseUrlParamOverrides } from '@/utils/animationDeepLink'
 import { duration } from '@/theme/motion'
 import type { AnimationConfig } from '@/data/types'
 
@@ -84,13 +85,11 @@ function useAnimationConfig() {
     if (config && (config.id !== prevConfigIdRef.current || location.search !== prevSearchRef.current)) {
       prevConfigIdRef.current = config.id
       prevSearchRef.current = location.search
-      // 读取 URL search params，覆盖 defaultParams 中的同名参数
-      const searchParams = new URLSearchParams(location.search)
-      const urlOverrides: Record<string, number> = {}
-      searchParams.forEach((value, key) => {
-        const num = Number(value)
-        if (!Number.isNaN(num)) urlOverrides[key] = num
-      })
+      // 读取 URL search params，覆盖 defaultParams 中的同名参数。
+      // 走 parseUrlParamOverrides 这个唯一真源：它会跳过 `t` / `critical` / `params`
+      // 等保留键，并只接受该动画声明过的参数（否则 `?t=1.84` 会被当成参数 `t`）。
+      const defaultParams = config.defaultParams as Record<string, number>
+      const urlOverrides = parseUrlParamOverrides(location.search, defaultParams)
       setAnimationType(config.id)
       setParams({ ...config.defaultParams, ...urlOverrides })
       setTime(0)

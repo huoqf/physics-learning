@@ -22,7 +22,7 @@ export interface KnowledgeNode {
   coverageNote?: string
   /** 高考考频勋章，如 '5年12考' / '高考压轴' */
   gaokaoFrequency?: string
-  /** 关联的高考 18 大 Master 模型 ID */
+  /** 关联的高考 Master 模型 ID */
   masterModelId?: string
 }
 
@@ -253,6 +253,11 @@ export interface TargetAnimationPreset {
   animId: string
   presetParams: Record<string, number>
   presetDescription?: string
+  /**
+   * 定格时刻（秒）：跳转后自动暂停在该帧。
+   * 用于「真题 → 动画」直达临界瞬态（如共速、脱轨、碰撞后瞬间）。
+   */
+  criticalT?: number
 }
 
 export interface Problem {
@@ -272,7 +277,7 @@ export interface Problem {
   images?: string[]
   /** 题干矢量 SVG 标记（方案 A 纯净题干示意图） */
   svgContent?: string
-  /** 关联的高考 18 大 Master 模型 ID */
+  /** 关联的高考 Master 模型 ID */
   masterModelId?: string
   /** 标签 (高考压轴、板块模型等) */
   tags?: string[]

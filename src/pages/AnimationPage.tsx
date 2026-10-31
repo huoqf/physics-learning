@@ -23,6 +23,10 @@ import { LAYOUT } from '@/theme'
 import { duration, easing } from '@/theme/motion'
 import { ThreePanel } from '@/components/Layout'
 import { useAnimationLifecycle } from '@/hooks/useAnimationLifecycle'
+import { resolveDeepLinkTime, resolveDeepLinkHint, shouldShowFreezeHint, parseUrlParamOverrides } from '@/utils/animationDeepLink'
+import type { DeepLinkFreezeHint } from '@/utils/animationDeepLink'
+import { WRONG_REASONS } from '@/data/wrongReasons'
+
 import { AnimationLayoutContext } from '@/context/AnimationLayoutContext'
 import type { AnimationConfig } from '@/data/types'
 
@@ -35,12 +39,14 @@ function AnimationCenter({
   canvasDimmed,
   handleReset,
   effectiveControlsMode,
+  deepLinkHint,
 }: {
   config: AnimationConfig
   isDiscoveryMode: boolean
   canvasDimmed: boolean
   handleReset: () => void
   effectiveControlsMode: 'timed' | 'loop' | 'param' | 'pause-only'
+  deepLinkHint: DeepLinkFreezeHint | null
 }) {
   const { time, isPlaying, speed, params } = useAnimationStore(
     useShallow((s) => ({
@@ -74,6 +80,14 @@ function AnimationCenter({
     return typeof config.criticalTimes === 'function' ? config.criticalTimes(params) : config.criticalTimes
   }, [config, params])
 
+  /**
+   * 定格提示的显示条件由 `shouldShowFreezeHint` 统一裁定（纯函数，已单测覆盖）：
+   * 播放中 → 收起；时间偏离这一帧 → 收起。用派生值而不是 effect 清除，
+   * 既覆盖了拖滑块/点临界刻度/点重置全部路径，也避开父子 effect 的执行顺序陷阱
+   * （子先跑时 time 还是上一帧的值，首帧就把刚到手的提示误清掉）。
+   */
+  const visibleDeepLinkHint = shouldShowFreezeHint(deepLinkHint, time, isPlaying)
+
   const controlBar = (wrapperClassName: string) => (
     <div className={wrapperClassName}>
       <AnimationControls
@@ -88,6 +102,7 @@ function AnimationCenter({
         controlsMode={effectiveControlsMode}
         criticalTimes={criticalTimes}
         enableFrameStep={config.enableFrameStep}
+        deepLinkHint={visibleDeepLinkHint}
       />
     </div>
   )
@@ -285,6 +300,15 @@ export default function AnimationPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const customParamsStr = searchParams.get('params')
+  const tParam = searchParams.get('t')
+  const criticalParam = searchParams.get('critical')
+  /** 错因 id：从「错因打靶台」进来时携带，用于在定格条上说明「这一帧该看什么」 */
+  const reasonParam = searchParams.get('reason')
+  /** 供 effect 依赖：URL 查询串变化时才重新注入参数 */
+  const searchParamsKey = searchParams.toString()
+
+  /** 深链定格提示（null = 不是从定格帧进来的，控制条不显示提示行） */
+  const [deepLinkHint, setDeepLinkHint] = useState<DeepLinkFreezeHint | null>(null)
 
   const {
     config,
@@ -300,19 +324,55 @@ export default function AnimationPage() {
     prevDiscoveryStep,
   } = useAnimationLifecycle()
 
-  // 当 URL 带有真题预设参数时，自动注入当前动画的 params Store 中
+  // 当 URL 带有真题预设参数 / 定格帧参数时，自动注入当前动画的 params Store 中
   useEffect(() => {
-    if (customParamsStr && config) {
+    if (!config) return
+    const defaultParams = config.defaultParams as Record<string, number>
+
+    // ① 顶层键值写法：`?m=1&M=3` —— Master 模型卡片与知识树 animationParams 遗留形式。
+    //    兼容它是因为旧链接可能还在学生书签里；解析规则走 parseUrlParamOverrides 唯一真源。
+    const flatParams = parseUrlParamOverrides(searchParamsKey, defaultParams)
+
+    // ② JSON 写法：`?params={"m":1}` —— 真题「一键复现初态」使用此形式（优先级更高）
+    let jsonParams: Record<string, number> = {}
+    if (customParamsStr) {
       try {
         const parsed = JSON.parse(decodeURIComponent(customParamsStr))
-        if (parsed && typeof parsed === 'object') {
-          useAnimationStore.getState().setParams({ ...config.defaultParams, ...parsed })
-        }
+        if (parsed && typeof parsed === 'object') jsonParams = parsed
       } catch (e) {
         console.error('Failed to parse preset params from URL', e)
       }
     }
-  }, [customParamsStr, config])
+
+    const mergedParams: Record<string, number> = { ...defaultParams, ...flatParams, ...jsonParams }
+    if (Object.keys(flatParams).length > 0 || Object.keys(jsonParams).length > 0) {
+      useAnimationStore.getState().setParams(mergedParams)
+    }
+
+    // ③ 定格帧：?critical=first|last|index 或 ?t=秒（见 utils/animationDeepLink）
+    const duration =
+      typeof config.maxTime === 'function'
+        ? config.maxTime(mergedParams)
+        : (config.maxTime ?? 30)
+    const target = resolveDeepLinkTime({
+      tParam,
+      criticalParam,
+      criticalTimes: config.criticalTimes,
+      params: mergedParams,
+      maxTime: duration,
+    })
+    if (target) {
+      useAnimationStore.getState().setTime(target.time)
+      useAnimationStore.getState().setIsPlaying(false)
+    }
+    // ④ 定格提示：说清「你停在哪一帧、这一帧该看什么」。
+    //    错因标杆的 highlight 优先（它讲的是这一帧的物理瞬态），没有就退回临界点自带 label。
+    //    文案按 id 现查而非随 URL 传字符串，保证改了 highlight 旧链接也跟着变。
+    const reasonNote = reasonParam
+      ? WRONG_REASONS.find((r) => r.id === reasonParam)?.benchmark.highlight
+      : undefined
+    setDeepLinkHint(resolveDeepLinkHint(target, reasonNote))
+  }, [customParamsStr, tParam, criticalParam, reasonParam, searchParamsKey, config])
 
   // 查找同属一个知识点的关联动画列表 (高考同考点经典模型切换)
   const siblingAnimations = useMemo(() => {
@@ -560,6 +620,7 @@ export default function AnimationPage() {
               canvasDimmed={canvasDimmed}
               handleReset={handleReset}
               effectiveControlsMode={effectiveControlsMode}
+              deepLinkHint={deepLinkHint}
             />
           </div>
         }
