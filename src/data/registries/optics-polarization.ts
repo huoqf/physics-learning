@@ -38,7 +38,7 @@ export const opticsPolarizationAnimations = defineAnimations({
       },
       {
         type: 'tip',
-        content: '3D眼镜原理：左右眼镜片的透振方向互相正交 (分别为 45° 和 -45°)，用于过滤两个画面的偏振光。旋转头部会导致偏振方向错开而漏光产生 3D 重影。',
+        content: '左右镜片的透振方向互相正交 (±45°)，各滤掉一个画面；方向一旦错开就漏光、重影随之出现。',
         showIf: 'mode',
         showIfValue: 1,
       },

@@ -53,7 +53,7 @@ export const mechanicsExperimentAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 0,
         marks: [
-          { value: 50, label: '高考标准 50Hz', variant: 'critical' },
+          { value: 50, label: '50 Hz', variant: 'critical' },
         ],
       },
       {
@@ -98,54 +98,56 @@ export const mechanicsExperimentAnimations = defineAnimations({
       {
         type: 'segmented',
         key: 'mode',
-        group: '高考实验模型',
+        group: '典型实验情境',
         resetOnChange: true,
         options: [
-          { label: '① 打点纸带分析', value: 0 },
-          { label: '② 光电门测速', value: 1 },
-          { label: '③ 胡克定律探究', value: 2 },
+          { label: '①纸带分析', value: 0 },
+          { label: '②光电门测速', value: 1 },
+          { label: '③胡克定律', value: 2 },
         ],
       },
       {
         type: 'preset',
-        label: '📋 2024新课标卷：逐差法求加速度 a',
-        description: '装载高考打点纸带逐差法真题参数 (f=50Hz, a=2.0m/s²)',
+        label: '📐 逐差法求 a（a=2.0m/s²）',
+        description: '典型的逐差法打点纸带：f=50Hz，纸带相邻间距逐段变大',
         params: { mode: 0, v0: 0.5, a: 2.0, freq: 50 },
         restartOnApply: true,
       },
       {
         type: 'preset',
-        label: '📋 探究牛顿第二定律：平衡摩擦力与 a-F 图像',
-        description: '装载平衡摩擦力合格条件下的纸带匀加速运动 (a=1.2m/s², f=50Hz)',
+        label: '📈 牛二定律 a-F 图（a=1.2m/s²）',
+        description: '摩擦力已平衡的理想工况：a 与 F 成正比，图像过原点',
         params: { mode: 0, v0: 0.2, a: 1.2, freq: 50 },
         restartOnApply: true,
       },
       {
         type: 'preset',
-        label: '📋 验证机械能守恒：重物下落打点纸带',
-        description: '装载自由落体初速度为零打点纸带验证 mgh = mv²/2 (a=9.8m/s², v0=0)',
+        label: '🎯 验证机械能守恒（a=9.8m/s²）',
+        description: '自由落体打点纸带：初速为零，逐点比较重力势能减少与动能增加',
         params: { mode: 0, v0: 0, a: 9.8, freq: 50 },
         restartOnApply: true,
       },
       {
         type: 'preset',
-        label: '📋 2023全国甲卷：光电门瞬时速度测定',
-        description: '装载光电门遮光测速真题参数 (d=0.01m, a=1.5m/s²)',
+        label: '🚪 光电门测速（d=0.01m）',
+        description: '窄遮光片通过光电门：d 越小，平均速度越接近瞬时速度',
         params: { mode: 1, v0: 0.8, a: 1.5, d: 0.01 },
         restartOnApply: true,
       },
       {
         type: 'preset',
-        label: '📋 2022全国乙卷：胡克定律测劲度系数 k',
-        description: '装载弹簧测力与伸长量真题参数 (k=120N/m, m=0.3kg)',
+        label: '🪝 胡克定律测 k（k=120N/m）',
+        description: '逐次增挂钩码记录伸长量，F-x 图像斜率即劲度系数',
         params: { mode: 2, k: 120, m: 0.3 },
         restartOnApply: true,
       },
       {
+        // 原 184 字「高考要点提示」已删除：逐差法公式、T 与打点周期的区别、平衡摩擦力、
+        // 验证机械能守恒选点——右屏公式体系（含 condition/note 易错警示）与 gaokaoPoints 已完整覆盖，
+        // 左屏重复讲解违反 §2.6.5 C2/C3 档。左屏只解释"这个模式的参数在调什么"。
         type: 'tip',
-        group: '高考要点提示',
-        content:
-          '① 逐差法：a = [(x₆−x₃)−(x₃−x₀)] / 9T²，式中 T 是计数周期（每 5 个打点取 1 个计数点，T = 5T₀ = 0.1 s），切勿代入打点周期 0.02 s；② 探究 a 与 F 关系必须先平衡摩擦力（轻推小车匀速穿过打点计时器）；③ 验证机械能守恒需选第 1、2 点间距约 2 mm（即 0.5·g·T₀² ≈ 1.96 mm）的纸带。',
+        group: '操作提示',
+        content: '先选模式，再看纸带：点数决定 T 与测量精度，加速度和初速直接决定纸带上相邻间距的疏密。',
       },
     ],
   },
@@ -202,7 +204,7 @@ export const mechanicsExperimentAnimations = defineAnimations({
         group: '电路方案',
         resetOnChange: false,
         options: [
-          { label: '电流表外接法 (推荐)', value: 0 },
+          { label: '电流表外接', value: 0 },
           { label: '电流表内接法', value: 1 },
         ],
       },
@@ -294,8 +296,8 @@ export const mechanicsExperimentAnimations = defineAnimations({
         resetOnChange: false,
         options: [
           { label: '定值电阻', value: 0 },
-          { label: '二极管(黑笔接正)', value: 1 },
-          { label: '二极管(黑笔接负)', value: 2 },
+          { label: '二极管·黑正', value: 1 },
+          { label: '二极管·黑负', value: 2 },
           { label: '未知黑箱', value: 3 },
         ],
       },
@@ -332,7 +334,7 @@ export const mechanicsExperimentAnimations = defineAnimations({
       {
         type: 'tip',
         group: '操作指引',
-        content: '欧姆挡测量需注意：换挡必须重新欧姆调零；指针偏角过小说明待测阻值过大，应换更大倍率挡。',
+        content: '黑表笔接内部电池正极：接二极管正极导通呈低阻、接负极截止呈高阻。指针偏角过小说明阻值偏大，换更大倍率挡后要重新欧姆调零。',
       },
     ],
   },
@@ -415,8 +417,8 @@ export const mechanicsExperimentAnimations = defineAnimations({
         group: '电路拓扑选型',
         resetOnChange: false,
         options: [
-          { value: 0, label: '分压式接法 (0~E连续可调)' },
-          { value: 1, label: '限流式接法 (无法从0起调)' },
+          { value: 0, label: '分压式接法' },
+          { value: 1, label: '限流式接法' },
         ],
       },
       {
@@ -426,15 +428,15 @@ export const mechanicsExperimentAnimations = defineAnimations({
         group: '电表接法决策',
         resetOnChange: false,
         options: [
-          { value: 0, label: '外接法 (适合小电阻·误差小)' },
-          { value: 1, label: '内接法 (电流表分压·偏大)' },
+          { value: 0, label: '电流表外接' },
+          { value: 1, label: '电流表内接' },
         ],
       },
       {
         type: 'toggle',
         key: 'showLoadLine',
         label: '叠加电源外特性负载线 (求工作点)',
-        group: '高考压轴能力',
+        group: '进阶探究',
       },
       {
         type: 'preset',
@@ -463,7 +465,7 @@ export const mechanicsExperimentAnimations = defineAnimations({
       {
         type: 'tip',
         group: '操作指引',
-        content: '描绘伏安特性要求电压从 0 连续可调，必须采用分压接法；小灯泡属于小电阻，宜采用电流表外接法。',
+        content: '电压要从 0 连续可调就选分压式；小灯泡电阻小，选电流表外接。点「误选内接法对比」，看 R 读数往哪边偏。',
       },
     ],
   },
@@ -538,11 +540,11 @@ export const mechanicsExperimentAnimations = defineAnimations({
         key: 'step',
         group: '实验步骤向导',
         options: [
-          { label: '① 界面画线', value: 0 },
-          { label: '② 插P1P2', value: 1 },
-          { label: '③ 视线对齐P3P4', value: 2 },
-          { label: '④ 移砖连线', value: 3 },
-          { label: '⑤ 测定数据', value: 4 },
+          { label: '①界面画线', value: 0 },
+          { label: '②插P1P2', value: 1 },
+          { label: '③对齐P3P4', value: 2 },
+          { label: '④移砖连线', value: 3 },
+          { label: '⑤测定数据', value: 4 },
         ],
       },
       {

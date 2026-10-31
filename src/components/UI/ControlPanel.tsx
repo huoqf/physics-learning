@@ -316,15 +316,21 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
   return (
     <>
-      {groups.map((group) => (
-        <LeftPanelSection
-          key={group.label}
-          title={group.controls.length > 1 ? group.label : undefined}
-          bodyClassName="flex flex-col gap-3"
-        >
-          {renderControls(group.controls)}
-        </LeftPanelSection>
-      ))}
+      {groups.map((group) => {
+        // §2.6.3：tip 分组必须保留标题——单条提示若丢掉「教学提示 / 操作提示」的头，
+        // 就成了一张无归属的浮卡，学生看不出它是"针对上面控件的说明"。
+        // 其余分组维持"单控件不显示标题"，避免 273 处单开关分组各带一条标题噪音。
+        const isTipGroup = group.controls.every((c) => c.type === 'tip')
+        return (
+          <LeftPanelSection
+            key={group.label}
+            title={isTipGroup || group.controls.length > 1 ? group.label : undefined}
+            bodyClassName="flex flex-col gap-2"
+          >
+            {renderControls(group.controls)}
+          </LeftPanelSection>
+        )
+      })}
     </>
   )
 }

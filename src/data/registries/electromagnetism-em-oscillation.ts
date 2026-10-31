@@ -1,6 +1,7 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
 import { calculateLCConstants, calculateCapacitanceWithGap, LC_DEFAULT_PARAMS } from '@/physics'
+import { alignCriticalTime } from '@/utils/criticalTime'
 import type { ControlMeta, ParamMeta } from '../types'
 
 /**
@@ -33,7 +34,13 @@ function lcMaxTime(params: Record<string, number>): number {
   return 2 * calculateLCConstants({ L, C, Q0: 1 }).T
 }
 
-/** 4 个相位关键点，供进度条标记与一键吸附定格 */
+/**
+ * 4 个相位关键点，供进度条标记与一键吸附定格。
+ *
+ * 这些是**读数点**（看 t=T/4 时 i 最大、q=0），不是相变点也不是离场点，
+ * 所以对齐到播放条刻度时取「就近」：两侧是同一状态的邻域，取最近一格标签最准。
+ * 未对齐时 T/4 = 0.6283… 会落在两格之间，点标记与拖滑块得到两个不同的帧。
+ */
 function lcCriticalTimes(params: Record<string, number>) {
   if (params.scene !== 0 && params.scene !== undefined) return []
   const L = params.L ?? LC_L_DEFAULT
@@ -43,11 +50,11 @@ function lcCriticalTimes(params: Record<string, number>) {
   if (!(L > 0) || !(C > 0)) return []
   const { T } = calculateLCConstants({ L, C, Q0: 1 })
   return [
-    { time: T / 4, label: '电荷为零·电流最大', variant: 'critical' as const },
-    { time: T / 2, label: '电荷反向最大·电流为零', variant: 'info' as const },
-    { time: (3 * T) / 4, label: '电荷为零·电流反向最大', variant: 'critical' as const },
-    { time: T, label: '回到初始状态（一个周期）', variant: 'info' as const },
-    { time: 2 * T, label: '第二个周期结束', variant: 'info' as const },
+    { time: alignCriticalTime(T / 4, 'nearest'), label: '电荷为零·电流最大', variant: 'critical' as const },
+    { time: alignCriticalTime(T / 2, 'nearest'), label: '电荷反向最大·电流为零', variant: 'info' as const },
+    { time: alignCriticalTime((3 * T) / 4, 'nearest'), label: '电荷为零·电流反向最大', variant: 'critical' as const },
+    { time: alignCriticalTime(T, 'nearest'), label: '回到初始状态（一个周期）', variant: 'info' as const },
+    { time: alignCriticalTime(2 * T, 'nearest'), label: '第二个周期结束', variant: 'info' as const },
   ]
 }
 
@@ -278,7 +285,7 @@ const sharedControlMeta: ControlMeta[] = [
     hideIf: 'radioMode',
     hideIfValue: 0,
     content:
-      '高考调谐模型：旋转可变电容器使接收端 LC 回路固有频率等于发射电台频率（f₀ = 1/(2π√(LC))），回路发生电谐振，感应电流最大，完成选台。',
+      '旋转可变电容 C，只盯感应电流表的读数：读数最大的那一刻，接收回路的固有频率就与电台频率相等。',
   },
 ]
 

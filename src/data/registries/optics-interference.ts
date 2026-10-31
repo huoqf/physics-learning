@@ -16,8 +16,8 @@ export const opticsInterferenceAnimations = defineAnimations({
         group: '实验模式',
         resetOnChange: false,
         options: [
-          { value: 0, label: '理论演示：相干波前与光强分布' },
-          { value: 1, label: '高考实验：光具座装配与测微目镜' },
+          { value: 0, label: '理论演示' },
+          { value: 1, label: '实验操作' },
         ],
       },
       {
@@ -27,8 +27,8 @@ export const opticsInterferenceAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 1,
         options: [
-          { value: 1, label: '对准第 1 条亮纹 (读出 x₁)' },
-          { value: 4, label: '对准第 4 条亮纹 (读出 x₄)' },
+          { value: 1, label: '第1条亮纹' },
+          { value: 4, label: '第4条亮纹' },
         ],
       },
       {
@@ -123,8 +123,8 @@ export const opticsInterferenceAnimations = defineAnimations({
         showIfValue: 1,
         options: [
           { value: 0, label: '表面平整' },
-          { value: 1, label: '局部凹坑（向薄端弯）' },
-          { value: 2, label: '局部凸起（向厚端弯）' },
+          { value: 1, label: '凹坑·向薄弯' },
+          { value: 2, label: '凸起·向厚弯' },
         ],
       },
       {

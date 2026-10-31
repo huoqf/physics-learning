@@ -56,14 +56,16 @@ export const vibrationOscillationAnimations = defineAnimations({
       {
         type: 'tip',
         group: '教学提示',
-        content: '简谐运动周期 $T = 2\\pi \\sqrt{m/k}$，调节质量 m 或劲度系数 k 探究周期变化规律。',
+        // 原「T = 2π√(m/k)」为公式搬运（§2.6.5 C2），右屏 FormulaSection 已给出
+        content: '只改 m、再只改 k，各测一次周期：两次变化幅度一样吗？想把周期加倍，改哪个量更省事？',
       },
       {
         type: 'tip',
         group: '教学提示',
         showIf: 'mode',
         showIfValue: 1,
-        content: '竖直振子中，平衡位置 $O$ 偏离弹簧原长 $L_0$ 处（$\\Delta x_0 = mg/k$）。重力与弹力的合外力作为回复力。',
+        // 原「Δx₀ = mg/k」为公式搬运（§2.6.5 C2），右屏 FormulaSection 已给出
+        content: '先关掉振动让它静止：平衡位置是不是落在弹簧原长下方？再从这个位置拉开放手，看它绕哪里对称往复。',
       },
       {
         type: 'tip',
@@ -112,29 +114,29 @@ export const vibrationOscillationAnimations = defineAnimations({
         group: '模型选择',
         resetOnChange: true,
         options: [
-          { value: 0, label: '简谐运动（小角近似）' },
-          { value: 1, label: '大角对比（简谐 vs 真实）' },
-          { value: 2, label: '能量守恒分析' },
-          { value: 3, label: '高考实验：单摆测 g' },
+          { value: 0, label: '小角简谐' },
+          { value: 1, label: '大角对比' },
+          { value: 2, label: '能量守恒' },
+          { value: 3, label: '单摆测 g' },
         ],
       },
       {
         type: 'preset',
-        label: '📋 高考标准：有效摆长约 1m 与 40 次全振动',
+        label: '⏱️ 标准摆长测 g（l=0.985m）',
         description: '标准单摆实验 (l=0.985m, d=20mm, N=40, θ₀=4°)',
         params: { mode: 3, l_line: 0.985, d_mm: 20.0, n_cycles: 40, timing_err: 0, theta0_exp: 4, theta0: 4, g: 9.8 },
         restartOnApply: true,
       },
       {
         type: 'preset',
-        label: '📋 误差探究：秒表滞后停表偏差 (+0.4s)',
+        label: '⌛ 停表滞后（+0.4s）',
         description: '模拟人工反应慢停 0.4s 导致测得周期偏大、g 偏小',
         params: { mode: 3, l_line: 0.985, d_mm: 20.0, n_cycles: 40, timing_err: 0.4, theta0_exp: 4, theta0: 4, g: 9.8 },
         restartOnApply: true,
       },
       {
         type: 'preset',
-        label: '📋 摆长对比：短摆长 0.7m 测 g',
+        label: '📏 短摆长测 g（l=0.69m）',
         description: '测量不同摆长数据 (l=0.690m, d=20mm, N=40)',
         params: { mode: 3, l_line: 0.69, d_mm: 20.0, n_cycles: 40, timing_err: 0, theta0_exp: 4, theta0: 4, g: 9.8 },
         restartOnApply: true,
@@ -171,7 +173,8 @@ export const vibrationOscillationAnimations = defineAnimations({
         group: '教学提示',
         showIf: 'mode',
         showIfValue: 0,
-        content: '简谐运动要求摆角 $\\theta \\le 10^\\circ$，在此范围内，重力的切向分力 $F_t = -mg\\sin\\theta \\approx -mg\\theta$ 提供线性回复力。',
+        // 原 F_t = −mg sinθ ≈ −mgθ 属公式搬运（§2.6.5 C2），右屏 FormulaSection 已给出
+        content: '把起始摆角从 5° 慢慢加到 30°：盯周期读数，它在哪个角度之后开始明显偏离小角值？',
       },
       {
         type: 'tip',
@@ -185,14 +188,18 @@ export const vibrationOscillationAnimations = defineAnimations({
         group: '教学提示',
         showIf: 'mode',
         showIfValue: 2,
-        content: '在摆动过程中系统总机械能守恒。高考高频结论：从 $\\theta_0$ 释放，经过最低点时绳子拉力最大且 $F_{拉,max} = mg(3-2\\cos\\theta_0)$。',
+        // 原「高考高频结论 + F_拉,max 公式」属考点结论与公式搬运（§2.6.5 C2/C3），
+        // 右屏 quantities/vibration.ts 的 F_拉,max 公式已给出同一结论
+        content: '盯两条曲线：动能与势能此消彼长、总和是不是一条水平线？再把拉力读数与最低点对齐，看它是否出现峰值。',
       },
       {
         type: 'tip',
-        group: '高考要点提示',
+        group: '操作提示',
         showIf: 'mode',
         showIfValue: 3,
-        content: '高考实验要点：① 摆长 $L = l + d/2$ 必须算至球心；② 从平衡位置（速度最大）开始计时并累积 30~50 次全振动，大幅稀释秒表反应误差；③ 摆角 $\\theta \\le 5^\\circ$ 确保小角单摆近似。',
+        // 原「高考实验要点」三条（摆长算至球心、累积计时、小角近似）属实验考点（§2.6.5 C3），
+        // 右屏 gaokaoPoints 已有累积计时与摆长测量要点；左屏只留这一模式的操作顺序。
+        content: '按顺序走一遍：量摆长到球心 → 从最低点开始计时、数够 30 次以上 → 再故意让秒表晚停 0.4s，看 g 偏大还是偏小。',
       },
     ],
   },
@@ -439,9 +446,9 @@ export const vibrationOscillationAnimations = defineAnimations({
         group: '相对运动模型',
         resetOnChange: true,
         options: [
-          { value: 0, label: '波源运动 (观察者静止)' },
-          { value: 1, label: '观察者运动 (波源静止)' },
-          { value: 2, label: '超音速激波 (拓展)' },
+          { value: 0, label: '波源运动' },
+          { value: 1, label: '观察者运动' },
+          { value: 2, label: '超音速激波' },
         ],
       },
       {
@@ -503,9 +510,9 @@ export const vibrationOscillationAnimations = defineAnimations({
         group: '模型选择',
         resetOnChange: true,
         options: [
-          { value: 0, label: '自由衰减至受迫稳定' },
-          { value: 1, label: '共振曲线与频率探究' },
-          { value: 2, label: '不同阻力下的共振对比' },
+          { value: 0, label: '衰减到稳定' },
+          { value: 1, label: '共振曲线' },
+          { value: 2, label: '不同阻尼' },
         ],
       },
       // 2. 显示选项（辅助矢量开关）
@@ -544,12 +551,13 @@ export const vibrationOscillationAnimations = defineAnimations({
         restartOnApply: true,
         params: () => ({ mode: 1, m: 1.6, k: 39.5, gamma: 0.45, F0: 2.4, f: 0.79, showForces: 1 }),
       },
-      // 4. 探究指引与工况说明（统一收拢条件、物理机制与探究问题）
+      // 4. 探究指引（原 196 字「工况条件与观察重点」四条结论表已压缩：
+      //    f 与 f₀ 的大小关系预设标签本身已写明，振幅峰/谷属结论（§2.6.5 C1/C3），右屏共振曲线给出）
       {
         type: 'tip',
         group: '实验探究指引',
         content:
-          '【工况条件与观察重点】：\n• ⚡ 强烈共振：条件 f = f₀，速度与驱动力同向做正功，振幅达到峰值。\n• 🔄 低频随动：条件 f < f₀，外力变化慢，振子位移与驱动滑块同向同步。\n• 🛡️ 高频避振：条件 f >> f₀，外力快速交变，振子受惯性滞后振幅极小。\n• 🏭 共振筛模型：加料增重使 m 增大 -> f₀ 降低 -> 必须降低转速以维持共振。\n💡 说明：点击预设仅注入典型初态，未锁定参数，可自由拖动下方滑块深入探索。',
+          '三个预设只差驱动频率 f：等于 f₀、低于 f₀、远高于 f₀ 各放一次，只盯振幅读数与相位差的变化。改 m 会挪动 f₀，注意共振条件是否还成立。',
       },
     ],
     paramMeta: [

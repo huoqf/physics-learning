@@ -1,6 +1,7 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
 import { GRAVITY } from '@/physics/constants'
+import { alignCriticalTime } from '@/utils/criticalTime'
 
 export const mechanicsKinematicsAnimations = defineAnimations({
   'anim-velocity': {
@@ -37,7 +38,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
         showIf: 'advancedMode', showIfValue: 0 },
       { type: 'segmented', key: 'modelIdx', label: '运动模型', group: '子模式',
         options: [
-          { label: '变加速（F递增）', value: 0 },
+          { label: '变加速·F↑', value: 0 },
           { label: '简谐振动', value: 1 },
           { label: '往返多阶段', value: 2 },
         ],
@@ -69,7 +70,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
           { label: '0.5s', value: 0.5 },
           { label: '0.1s', value: 0.1 },
         ] },
-      { type: 'preset', label: '经典对比：vₐ=300, aᵦ=10', group: '快捷预设',
+      { type: 'preset', label: '🚀 经典对比（vₐ=300, aᵦ=10）', group: '快捷预设',
         params: { vA: 300, aB: 10 }, restartOnApply: true },
       { type: 'tip', group: '教学提示', content: '调小 Δt 观察速度变化的精细程度' },
     ],
@@ -108,17 +109,17 @@ export const mechanicsKinematicsAnimations = defineAnimations({
       { type: 'segmented', key: 'chaseMode', group: '模型选择', resetOnChange: true,
         options: [{ label: '追及模式', value: 0 }, { label: '相遇模式', value: 1 }] },
       // 追及模式预设
-      { type: 'preset', label: '高速追击：vₐ=35, Δx₀=80', group: '快捷预设',
+      { type: 'preset', label: '🏎️ 高速追击（vₐ=35, Δx₀=80）', group: '快捷预设',
         params: { vA: 35, deltaX0: 80, t0: 1, aB: 6, vMax: 50 }, restartOnApply: true,
         showIf: 'chaseMode', showIfValue: 0 },
-      { type: 'preset', label: '近距离反应：vₐ=20, Δx₀=30', group: '快捷预设',
+      { type: 'preset', label: '⚠️ 近距离反应（vₐ=20, Δx₀=30）', group: '快捷预设',
         params: { vA: 20, deltaX0: 30, t0: 0.5, aB: 5, vMax: 40 }, restartOnApply: true,
         showIf: 'chaseMode', showIfValue: 0 },
       // 相遇模式预设
-      { type: 'preset', label: '经典相遇：vₐ=20, L=200', group: '快捷预设',
+      { type: 'preset', label: '🤝 经典相遇（vₐ=20, L=200）', group: '快捷预设',
         params: { vA: 20, vL: 200, aB_meet: 2 }, restartOnApply: true,
         showIf: 'chaseMode', showIfValue: 1 },
-      { type: 'preset', label: '高速对开：vₐ=30, L=300', group: '快捷预设',
+      { type: 'preset', label: '↔️ 高速对开（vₐ=30, L=300）', group: '快捷预设',
         params: { vA: 30, vL: 300, aB_meet: 3 }, restartOnApply: true,
         showIf: 'chaseMode', showIfValue: 1 },
       // 教学提示
@@ -303,7 +304,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
         showIfValue: 2,
         marks: [
           { value: 30, label: '30°' },
-          { value: 37, label: '37°高考常考', variant: 'critical' },
+          { value: 37, label: '37°(特殊角)', variant: 'critical' },
           { value: 45, label: '45°' },
         ],
       },
@@ -339,24 +340,24 @@ export const mechanicsKinematicsAnimations = defineAnimations({
       {
         type: 'segmented',
         key: 'modelMode',
-        group: '高考场景模型',
+        group: '典型工况',
         resetOnChange: true,
         options: [
           { label: '基础平抛', value: 0 },
-          { label: '偏角推论 (tanθ=2tanα)', value: 1 },
-          { label: '斜面平抛模型', value: 2 },
+          { label: '偏角推论', value: 1 },
+          { label: '斜面平抛', value: 2 },
         ],
       },
       {
         type: 'preset',
-        label: '📋 2023高考新课标：落地速度偏角 60°',
+        label: '📐 落地速度偏角（60°）',
         description: 'v₀=10m/s, 探究落地时刻 vy = √3 v₀',
         params: { v0x: 10, modelMode: 1, showTangentMidpoint: 1 },
         restartOnApply: true,
       },
       {
         type: 'preset',
-        label: '📋 高考压轴：垂直击中 37° 斜面',
+        label: '🎯 垂直击中斜面（37°）',
         description: 'φ=37°, v0=10m/s, 探究垂直落点时刻与位移',
         params: { v0x: 10, modelMode: 2, inclineAngle: 37 },
         restartOnApply: true,
@@ -388,23 +389,13 @@ export const mechanicsKinematicsAnimations = defineAnimations({
         showIfValue: 1,
         variant: 'primary',
         title: '📷 频闪照片：一张图读出两个方向',
+        // 只给读图方法，不给 Δy = gT² 与逐差公式：这两条右屏公式区已有
+        // （quantities/kinematics/projectile.ts L98 看板、L130「频闪：逐差求 g」）。
         content:
-          '水平方向相邻打点等距 → 匀速；竖直方向相邻打点间距成 1:3:5 → 初速为零的匀加速；相邻两段之差恒为 gT²，用逐差即可求当地重力加速度。开启空气阻力后该图层自动关闭，因为此时竖直方向不再匀加速。',
+          '看竖直方向相邻打点间距是否逐段变大、水平方向是否始终等距——两条就足以分辨"水平匀速 + 竖直加速"。',
       },
-      {
-        type: 'tip',
-        group: '教学提示',
-        title: '💡 高考考点与二级结论提示',
-        content: (p) => {
-          if (p.modelMode === 1) {
-            return '【中点定理与偏角倍数】速度偏角的正切值恒等于位移偏角正切值的 2 倍 (tanθ = 2tanα)！将速度矢量反向延长，必交于水平位移的中点 (x/2, 0)。'
-          }
-          if (p.modelMode === 2) {
-            return '【斜面平抛临界】① 物体落到斜面上时，位移偏角等于斜面倾角 (tanα = tanφ)；② 当瞬时速度方向与斜面平行时，物体距离斜面最远 (此时 vy/vx = tanφ，t = v₀tanφ/g)。'
-          }
-          return '【独立性与等时性】平抛运动在水平方向做匀速直线运动，竖直方向做自由落体运动。飞行时间仅由竖直高度决定 (t = √(2h/g))，水平射程等于 v₀t。'
-        },
-      },
+      // 原「💡 高考考点与二级结论提示」tip 已删除：中点定理、斜面平抛最远点、独立性与等时性
+      // 三条在右屏 gaokaoPoints 里已逐条给出（projectile.ts L143-144 等），左屏重复即 §2.6.5 C3 档。
     ],
   },
   'anim-oblique-throw': {
@@ -429,10 +420,12 @@ export const mechanicsKinematicsAnimations = defineAnimations({
       const v0y = v0 * Math.sin(angleRad)
       const topTime = g > 0 ? v0y / g : 0
       const groundTime = g > 0 ? (2 * v0y) / g : 0
+      // 最高点是相变点（vy 由正转负）→ 向右对齐，定格才能看到 vy=0；
+      // 落地是离场点 → 向左对齐，定格时小球还必须在空中。
       return [
-        { time: Number(topTime.toFixed(2)), label: '⚡ 最高点: vy=0', variant: 'critical' },
-        { time: Number(groundTime.toFixed(2)), label: '🎯 落地时刻: y=0', variant: 'info' },
-      ]
+        { time: alignCriticalTime(topTime, 'after'), label: '⚡ 最高点: vy=0', variant: 'critical' as const },
+        { time: alignCriticalTime(groundTime, 'before'), label: '🎯 落地时刻: y=0', variant: 'info' as const },
+      ].filter((point) => point.time > 0)
     },
     defaultParams: { v0: 20, angle: 45, g: GRAVITY, t: 0, advancedMode: 0, viewMode: 0, showPrevTrajectory: 1, airResistance: 0, showVacuumCompare: 1 } as const,
     paramMeta: [
@@ -447,9 +440,9 @@ export const mechanicsKinematicsAnimations = defineAnimations({
         group: '运动参数',
         marks: [
           { value: 30, label: '30°(互余)' },
-          { value: 37, label: '37°(高考)' },
+          { value: 37, label: '37°(特殊角)' },
           { value: 45, label: '45°(最大射程)', variant: 'critical' },
-          { value: 53, label: '53°(高考)' },
+          { value: 53, label: '53°(特殊角)' },
           { value: 60, label: '60°(互余)' },
         ],
       },
@@ -467,7 +460,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
         type: 'segmented',
         key: 'viewMode',
         group: '视口缩放模式',
-        options: [{ label: '动态数值刻度', value: 0 }, { label: '固定 100m 量程对比', value: 1 }],
+        options: [{ label: '动态刻度', value: 0 }, { label: '固定 100m', value: 1 }],
       },
       { type: 'toggle', key: 'showPrevTrajectory', label: '保留上一轨迹留痕对比', group: '显示辅助' },
       {
@@ -486,8 +479,8 @@ export const mechanicsKinematicsAnimations = defineAnimations({
       },
       {
         type: 'preset',
-        label: '🎯 2023新课标真题模型',
-        description: 'v₀ = 15m/s, θ = 37°',
+        label: '🎯 斜抛射程（v₀=15m/s）',
+        description: 'v₀=15m/s、θ=37°：与 53° 抛射水平射程相近，可对照验证互余角规律',
         params: { v0: 15, angle: 37, g: 9.8, advancedMode: 0 },
         restartOnApply: true,
       },
@@ -513,13 +506,9 @@ export const mechanicsKinematicsAnimations = defineAnimations({
         restartOnApply: true,
       },
       { type: 'toggle', key: 'showVacuumCompare', label: '对比真空参考轨迹', group: '显示辅助', showIf: 'advancedMode', showIfValue: 1 },
-      {
-        type: 'tip',
-        group: '高考秒杀要点',
-        // 注意：tanθ=2tanα 只在平抛（v₀y=0）成立，斜抛的普遍关系是 tanθ = 2tanα − tanθ₀，
-        // 其中 θ₀ 为抛射角。旧文案把它写成斜抛通用结论，属概念性错误。
-        content: '💡 高考秒杀结论：抛射角 θ = 45° 时水平射程最大；互余角（如 30° 与 60°）射程相等；偏角关系为 tanθ = 2tanα − tanθ₀（θ₀ 为抛射角）——只有当 v₀y = 0（平抛）时才退化为 tanθ = 2tanα，"速度反向延长线过 x/2"同样只对平抛成立。',
-      },
+      // 原「高考秒杀要点」tip 已删除：tanθ = 2tanα − tanθ₀、互余角射程相等这两条结论
+      // 在右屏 gaokaoPoints 里已逐条给出（quantities/kinematics/obliqueThrow.ts L91-92），
+      // 左屏重复一遍只是把知识板复制成第二份，且违反 §2.6.5 第 C2/C3 档。
     ],
   },
   'anim-kinematics-advanced': {

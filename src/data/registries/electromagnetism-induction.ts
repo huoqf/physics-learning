@@ -81,7 +81,7 @@ export const electromagnetismInductionAnimations = defineAnimations({
         variant: 'info',
         showIf: 'mode',
         showIfValue: 0,
-        content: '请在左侧画布上直接左右拖拽金属棒。金属棒向右移动切割时，感应电流向上（指针右偏）；向左移动切割时，感应电流向下（指针左偏）；静止时无感应电流。',
+        content: '拖金属棒左右移动，只盯电流表指针：向右与向左时偏转方向是否相反？松手让它停下，指针又回到哪里？',
       },
       {
         type: 'tip',
@@ -222,13 +222,16 @@ export const electromagnetismInductionAnimations = defineAnimations({
         type: 'tip',
         group: '教学提示',
         variant: 'info',
+        // 原「楞次定律四步法」逐条讲解已改写为观察任务：增反减同 / 右手定则 / 来拒去留
+        // 三条判据右屏 gaokaoPoints 已给（quantities/electromagnetism/induction.ts L181-194），
+        // 左屏只保留"这一步该看画布上的什么"（§2.6.5 C3/C4）。
         content: (params) => {
           const step = params.currentStep ?? 0
-          if (step === 0) return '楞次定律是判断感应电流方向的普遍规律。选择分步探究，可逐步推导感应电流的方向及其能量转化。'
-          if (step === 1) return '【第一步：确定原磁场方向 B原】条形磁铁的外部磁场由N极指向S极。请观察当前磁铁极性，确定在磁铁与线圈之间，原磁场方向是向上还是向下。'
-          if (step === 2) return '【第二步：确定磁通量变化 ΔΦ】根据磁铁运动状态，靠近线圈时穿过线圈的磁通量增加，远离时减少。可在画布上观察穿过线圈的磁感线条数变化。'
-          if (step === 3) return '【第三步：确定感应磁场方向 B感】根据楞次定律"增反减同"原则：磁通量增加，感应磁场与原磁场相反以阻碍其增加；磁通量减少，感应磁场与原磁场相同以阻碍其减少。'
-          return '【第四步：确定电流方向 I感 及相对运动阻碍】安培定则：右手大拇指指向感应磁场方向，四指弯曲方向即为电流方向。来拒去留：感应电流阻碍相对运动，靠近排斥，远离吸引。能量守恒：克服安培力做功，机械能转化为电能。'
+          if (step === 0) return '选「分步探究」跟着四步走：每步先看清画布上刚高亮的是什么，再自己判断电流怎么绕。'
+          if (step === 1) return '第一步：看背景磁感线的箭头——条形磁铁的磁感线从哪一极出来、进哪一极？穿过线圈前是朝上还是朝下？'
+          if (step === 2) return '第二步：拖动磁铁靠近再远离，盯穿过线圈的磁感线条数——变密就是磁通量在增加，变疏就是在减少。'
+          if (step === 3) return '第三步：打开「等效磁极」开关，来回拖磁铁，看感应磁场的箭头什么时候与原磁场同向、什么时候反向。'
+          return '第四步：开「右手定则」把手势对上电流方向；再看靠近时线圈上端是不是 N 极朝磁铁——这就是"来拒去留"。'
         },
       },
     ],
@@ -258,8 +261,8 @@ export const electromagnetismInductionAnimations = defineAnimations({
         group: '模型选择',
         resetOnChange: true,
         options: [
-          { value: 0, label: '基础: 恒速切割' },
-          { value: 1, label: '进阶: 自由释放(变加速)' },
+          { value: 0, label: '基础·恒速切割' },
+          { value: 1, label: '进阶·自由释放' },
         ],
       },
       {
@@ -296,21 +299,8 @@ export const electromagnetismInductionAnimations = defineAnimations({
       railSpacing: 0.8,
       enableChargeSlot: 1,
     } as const,
+    // 分组顺序即渲染顺序（ControlPanel 只把 tip 下沉、其余保持声明序），故「模型选择」必须先于「快捷预设」
     controlMeta: [
-      {
-        type: 'preset',
-        label: '📋 2023全国甲卷（单杆恒力收尾）',
-        description: 'F=1.2N, B=1.0T, R=1.5Ω, m=0.2kg, L=0.8m',
-        params: { startMechanism: 0, driveForce: 1.2, magneticB: 1.0, resistance: 1.5, rodMass: 0.2, railSpacing: 0.8 },
-        restartOnApply: true,
-      },
-      {
-        type: 'preset',
-        label: '📋 高考临界预设（阻尼切割）',
-        description: 'v₀=5m/s, B=1.2T, R=1.0Ω, m=0.2kg, L=0.8m',
-        params: { startMechanism: 1, initialVelocity: 5.0, magneticB: 1.2, resistance: 1.0, rodMass: 0.2, railSpacing: 0.8 },
-        restartOnApply: true,
-      },
       {
         type: 'segmented',
         key: 'startMechanism',
@@ -322,11 +312,25 @@ export const electromagnetismInductionAnimations = defineAnimations({
           { value: 1, label: '初速度释放' },
         ],
       },
+      {
+        type: 'preset',
+        label: '⚡ 恒力收尾（F=1.2N）',
+        description: '推进力 1.2N、B=1.0T、R=1.5Ω、m=0.2kg、L=0.8m：v 增大到收尾速度后匀速',
+        params: { startMechanism: 0, driveForce: 1.2, magneticB: 1.0, resistance: 1.5, rodMass: 0.2, railSpacing: 0.8 },
+        restartOnApply: true,
+      },
+      {
+        type: 'preset',
+        label: '⏱ 初速释放（v₀=5m/s）',
+        description: '无外力、只给初速 5m/s：B=1.2T、R=1.0Ω、m=0.2kg、L=0.8m，速度按指数衰减',
+        params: { startMechanism: 1, initialVelocity: 5.0, magneticB: 1.2, resistance: 1.0, rodMass: 0.2, railSpacing: 0.8 },
+        restartOnApply: true,
+      },
       { type: 'toggle', key: 'enableChargeSlot', label: '显示电荷积累槽', group: '显示辅助' },
       {
         type: 'tip',
         group: '教学提示',
-        content: '动力链：v 改变 → E=BLv 改变 → I=E/R 改变 → F_A=BIL 改变。单杆不是匀变速运动，优先抓收尾速度与电荷量公式。',
+        content: '两个预设来回切一次，只盯电流表：指针还在动，速度就一定还在变；指针不动了，才进入收尾。',
         variant: 'primary',
       },
     ],
@@ -374,14 +378,8 @@ export const electromagnetismInductionAnimations = defineAnimations({
       initialV0: 6.0,
       appliedForce: 2.0,
     } as const,
+    // 分组顺序即渲染顺序（ControlPanel 只把 tip 下沉、其余保持声明序），故「模型选择」必须先于「快捷预设」
     controlMeta: [
-      {
-        type: 'preset',
-        label: '📋 2022全国乙卷（双杆动量守恒）',
-        description: 'ma=0.2kg, mb=0.4kg, B=1.0T, L=0.5m, v0=6m/s',
-        params: { scenario: 0, massA: 0.2, massB: 0.4, fieldB: 1.0, railL: 0.5, resSum: 1.0, initialV0: 6.0 },
-        restartOnApply: true,
-      },
       {
         type: 'segmented',
         key: 'scenario',
@@ -389,9 +387,16 @@ export const electromagnetismInductionAnimations = defineAnimations({
         group: '模型选择',
         resetOnChange: true,
         options: [
-          { value: 0, label: '自由双杆 (动量守恒)' },
-          { value: 1, label: '恒力驱动 (加速等差)' },
+          { value: 0, label: '自由双杆·守恒' },
+          { value: 1, label: '恒力驱动·等差' },
         ],
+      },
+      {
+        type: 'preset',
+        label: '⚖ 动量守恒基准（v₀=6m/s）',
+        description: 'm_a=0.2kg、m_b=0.4kg、B=1.0T、L=0.5m：等大反向的安培力让两杆动量互相转移',
+        params: { scenario: 0, massA: 0.2, massB: 0.4, fieldB: 1.0, railL: 0.5, resSum: 1.0, initialV0: 6.0 },
+        restartOnApply: true,
       },
     ],
     paramMeta: [
@@ -419,7 +424,7 @@ export const electromagnetismInductionAnimations = defineAnimations({
         group: '动力激励',
         showIf: 'scenario',
         showIfValue: 0,
-        marks: [{ value: 6.0, label: '高考预设 6m/s', variant: 'recommended' }],
+        marks: [{ value: 6.0, label: '6 m/s 基准', variant: 'recommended' }],
       },
       { key: 'appliedForce', label: '恒拉外力 F_a', min: 0.5, max: 5.0, step: 0.2, unit: 'N', group: '动力激励', showIf: 'scenario', showIfValue: 1 },
     ],
@@ -492,9 +497,9 @@ export const electromagnetismInductionAnimations = defineAnimations({
         group: '模型选择',
         resetOnChange: true,
         options: [
-          { value: 0, label: '通电自感 (延时发光)' },
-          { value: 1, label: '断电自感 (闪亮探究)' },
-          { value: 2, label: '电磁阻尼 (摆动减幅)' },
+          { value: 0, label: '通电自感' },
+          { value: 1, label: '断电自感' },
+          { value: 2, label: '电磁阻尼' },
         ],
       },
       {

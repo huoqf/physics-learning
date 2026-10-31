@@ -38,7 +38,7 @@ export const electromagnetismDcCircuitsAnimations = defineAnimations({
     ],
     controlMeta: [
       { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
-        options: [{ value: 0, label: '基础：串/并联分配' }, { value: 1, label: '进阶：混联动态电路' }] },
+        options: [{ value: 0, label: '串联/并联分配' }, { value: 1, label: '混联动态电路' }] },
       { type: 'segmented', key: 'subMode', label: '连接方式', group: '模型选择', resetOnChange: true, showIf: 'mode', showIfValue: 0,
         options: [{ value: 0, label: '串联电路' }, { value: 1, label: '并联电路' }] },
       { type: 'toggle', key: 'showChart', label: '显示分配对比柱状图', group: '显示辅助' },
@@ -67,7 +67,7 @@ export const electromagnetismDcCircuitsAnimations = defineAnimations({
     ],
     controlMeta: [
       { type: 'segmented', key: 'mode', group: '看板图像模式', resetOnChange: true,
-        options: [{ value: 0, label: 'U - I 关系图线' }, { value: 1, label: '输出功率与效率' }, { value: 2, label: '全电路电势分布' }] },
+        options: [{ value: 0, label: 'U-I 图线' }, { value: 1, label: '功率与效率' }, { value: 2, label: '电势分布' }] },
       { type: 'toggle', key: 'highlightLoss', label: '内阻热耗视觉高亮', group: '显示辅助' },
     ],
     defaultParams: { EMF: 6, r: 2, R: 10, mode: 1, highlightLoss: 0 } as const,
@@ -80,7 +80,7 @@ export const electromagnetismDcCircuitsAnimations = defineAnimations({
     controlsMode: 'param' as const,
     controlMeta: [
       { type: 'segmented', key: 'opMode', group: '欧姆表状态', resetOnChange: true,
-        options: [{ value: 0, label: '表笔短接 (欧姆调零)' }, { value: 1, label: '接入测量 (阻值测量)' }] },
+        options: [{ value: 0, label: '表笔短接' }, { value: 1, label: '接入测量' }] },
       { type: 'segmented', key: 'multiplier', group: '挡位选择', resetOnChange: true,
         options: [{ value: 1, label: '×1 挡' }, { value: 10, label: '×10 挡' }, { value: 100, label: '×100 挡' }] },
       { type: 'preset', label: '一键调零', group: '操作',
@@ -114,14 +114,14 @@ export const electromagnetismDcCircuitsAnimations = defineAnimations({
     controlMeta: [
       { type: 'toggle', key: 'switchClosed', label: '电键 S (闭合工作)', group: '实验核心操作' },
       { type: 'segmented', key: 'wiring', group: '电路接线方式', resetOnChange: true,
-        options: [{ value: 0, label: '电路甲：电流表外接法' }, { value: 1, label: '电路乙：电流表内接法' }] },
+        options: [{ value: 0, label: '甲·电流表外接' }, { value: 1, label: '乙·电流表内接' }] },
       { type: 'toggle', key: 'showReal', label: '显示真实 U-I 图线', group: '分析辅助工具' },
       { type: 'toggle', key: 'showEquivalent', label: '显示等效电源虚线框', group: '分析辅助工具' },
-      { type: 'preset', label: '① 经典外接法（推荐测法）', group: '高考典型情境一键配置',
+      { type: 'preset', label: '① 经典外接法（推荐测法）', group: '典型实验情境',
         params: { switchClosed: 1, wiring: 0, showReal: 1, showEquivalent: 1, R_slider: 10 } },
-      { type: 'preset', label: '② 内接法误差对比（E等r偏大）', group: '高考典型情境一键配置',
+      { type: 'preset', label: '② 内接法误差对比（E等r偏大）', group: '典型实验情境',
         params: { switchClosed: 1, wiring: 1, showReal: 1, showEquivalent: 1, R_slider: 10 } },
-      { type: 'preset', label: '③ 仿真打点拟合探究', group: '高考典型情境一键配置',
+      { type: 'preset', label: '③ 仿真打点拟合探究', group: '典型实验情境',
         params: { switchClosed: 1, wiring: 0, showReal: 0, showEquivalent: 0, R_slider: 20 } },
     ],
     paramMeta: [

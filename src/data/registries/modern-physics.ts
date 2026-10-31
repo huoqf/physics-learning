@@ -42,8 +42,8 @@ export const modernPhysicsAnimations = defineAnimations({
         key: 'modelType',
         group: '原子模型假设',
         options: [
-          { value: 0, label: '汤姆孙“枣糕模型”' },
-          { value: 1, label: '卢瑟福“核式结构模型”' },
+          { value: 0, label: '汤姆孙枣糕模型' },
+          { value: 1, label: '卢瑟福核式模型' },
         ],
       },
       {
@@ -97,7 +97,7 @@ export const modernPhysicsAnimations = defineAnimations({
         unit: 'px',
         group: '碰撞几何',
         marks: [
-          { value: 0, label: '正对对心 (180°)', variant: 'critical' },
+          { value: 0, label: '对心正碰 (180°)', variant: 'critical' },
           { value: 4, label: '恰好偏转 90°', variant: 'recommended' },
           { value: 20, label: '明显偏转', variant: 'recommended' },
           { value: 100, label: '接近直穿', variant: 'zero' },
@@ -130,9 +130,9 @@ export const modernPhysicsAnimations = defineAnimations({
         key: 'mode',
         group: '学习模式',
         options: [
-          { value: 0, label: '① 玻尔定态能级' },
-          { value: 1, label: '② 跃迁与激发机制' },
-          { value: 2, label: '③ 高考综合应用' },
+          { value: 0, label: '①玻尔定态' },
+          { value: 1, label: '②跃迁激发' },
+          { value: 2, label: '③辐射光电' },
         ],
       },
       // 模式 0 控制
@@ -145,7 +145,7 @@ export const modernPhysicsAnimations = defineAnimations({
         showIfValue: 0,
         options: [
           { value: 0, label: '视觉示意比例' },
-          { value: 1, label: '真实物理比例 (n²)' },
+          { value: 1, label: '真实 n² 比例' },
         ],
       },
       // 模式 1 控制
@@ -157,8 +157,8 @@ export const modernPhysicsAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 1,
         options: [
-          { value: 0, label: '一群氢原子 C(n,2)' },
-          { value: 1, label: '单个氢原子 (n-1)' },
+          { value: 0, label: '一群 C(n,2)' },
+          { value: 1, label: '单个 n-1' },
         ],
       },
       {
@@ -169,8 +169,8 @@ export const modernPhysicsAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 1,
         options: [
-          { value: 0, label: '光子照射 (严格共振)' },
-          { value: 1, label: '实物电子碰撞 (超差即可)' },
+          { value: 0, label: '光子照射' },
+          { value: 1, label: '实物电子碰撞' },
         ],
       },
       {
@@ -200,12 +200,12 @@ export const modernPhysicsAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 2,
         options: [
-          { value: 2, label: '4→1 (12.75 eV)' },
-          { value: 4, label: '3→1 (12.09 eV)' },
-          { value: 5, label: '2→1 (10.20 eV)' },
-          { value: 1, label: '4→2 (2.55 eV)' },
-          { value: 3, label: '3→2 (1.89 eV)' },
-          { value: 0, label: '4→3 (0.66 eV)' },
+          { value: 2, label: '4→1 12.75eV' },
+          { value: 4, label: '3→1 12.09eV' },
+          { value: 5, label: '2→1 10.20eV' },
+          { value: 1, label: '4→2 2.55eV' },
+          { value: 3, label: '3→2 1.89eV' },
+          { value: 0, label: '4→3 0.66eV' },
         ],
       },
       {
@@ -223,6 +223,14 @@ export const modernPhysicsAnimations = defineAnimations({
           return { stoppingVoltage: parseFloat(Uc.toFixed(2)) }
         },
         resetOnApply: false,
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        showIf: 'mode',
+        showIfValue: 1,
+        content:
+          '光子激发要求 hν 恰好等于两能级能量差：光子被整份吸收，多余能量无处可去；实物电子碰撞只需入射动能不小于能级差，剩余动能仍由电子带走，所以“超差”也能激发。',
       },
     ],
     paramMeta: [
@@ -303,9 +311,9 @@ export const modernPhysicsAnimations = defineAnimations({
         key: 'mode',
         group: '学习模式',
         options: [
-          { value: 0, label: '初学 · 光子激发入门' },
-          { value: 1, label: '通关 · 伏安特性与遏止电压' },
-          { value: 2, label: '进阶 · 康普顿效应与光子动量' },
+          { value: 0, label: '①光子激发' },
+          { value: 1, label: '②遏止电压' },
+          { value: 2, label: '③康普顿' },
         ],
       },
       {
@@ -426,9 +434,9 @@ export const modernPhysicsAnimations = defineAnimations({
         group: '学习模式',
         resetOnChange: true,
         options: [
-          { value: 0, label: '① 组成与核力' },
-          { value: 1, label: '② 放射线偏转' },
-          { value: 2, label: '③ 磁场衰变径迹' },
+          { value: 0, label: '①原子核组成' },
+          { value: 1, label: '②放射线偏转' },
+          { value: 2, label: '③衰变径迹' },
         ],
       },
       // 模式0专属控制
@@ -446,7 +454,7 @@ export const modernPhysicsAnimations = defineAnimations({
           { value: 3, label: '氦核 (⁴₂He)' },
           { value: 4, label: '碳-12 (¹²₆C)' },
           { value: 5, label: '碳-14 (¹⁴₆C)' },
-          { value: 6, label: '铀-238 (²³⁸₉₂U)' },
+          { value: 6, label: '铀-238' },
         ],
       },
       // 模式1专属控制
@@ -478,7 +486,7 @@ export const modernPhysicsAnimations = defineAnimations({
         type: 'segmented',
         key: 'decayType',
         label: '衰变模型',
-        group: '高考压轴模型',
+        group: '模型选择',
         showIf: 'mode',
         showIfValue: 2,
         resetOnChange: true,
@@ -503,7 +511,7 @@ export const modernPhysicsAnimations = defineAnimations({
       },
       {
         type: 'tip',
-        content: '静止核衰变动量守恒 p₁=p₂。半径 R = p/(qB) ∝ 1/q。α 衰变同种正电荷向相反侧弯曲成外切圆；β 衰变异种电荷向同侧弯曲成内切圆。',
+        content: '两种衰变各放一次：一个外切、一个内切。盯弯曲方向与半径——方向由新生粒子的电荷正负决定，半径差异留到右屏公式去算。',
         group: '教学提示',
         showIf: 'mode',
         showIfValue: 2,
@@ -598,9 +606,9 @@ export const modernPhysicsAnimations = defineAnimations({
         label: '初始核数 N₀',
         group: '模拟参数',
         options: [
-          { value: 50, label: '50 个 (波动大)' },
-          { value: 100, label: '100 个 (适中)' },
-          { value: 200, label: '200 个 (较平滑)' },
+          { value: 50, label: '50 个·波动' },
+          { value: 100, label: '100 个·适中' },
+          { value: 200, label: '200 个·平滑' },
         ],
       },
       {
@@ -662,8 +670,8 @@ export const modernPhysicsAnimations = defineAnimations({
         group: '学习模式',
         resetOnChange: true,
         options: [
-          { value: 0, label: '① 结合能与质量亏损' },
-          { value: 1, label: '② 聚变与裂变反应' },
+          { value: 0, label: '①结合能·亏损' },
+          { value: 1, label: '②聚变·裂变' },
         ],
       },
       // 模式0控制
@@ -681,7 +689,7 @@ export const modernPhysicsAnimations = defineAnimations({
           { value: 3, label: '氦核 (⁴₂He)' },
           { value: 4, label: '碳-12 (¹²₆C)' },
           { value: 5, label: '铁-56 (⁵⁶₂₆Fe)' },
-          { value: 6, label: '铀-238 (²³⁸₉₂U)' },
+          { value: 6, label: '铀-238' },
         ],
       },
       {
@@ -704,8 +712,8 @@ export const modernPhysicsAnimations = defineAnimations({
         showIfValue: 1,
         resetOnChange: true,
         options: [
-          { value: 0, label: '轻核聚变 (²H+³H)' },
-          { value: 1, label: '单次裂变 (n+²³⁵U)' },
+          { value: 0, label: '轻核聚变' },
+          { value: 1, label: '单次裂变' },
           { value: 2, label: '铀核链式反应' },
         ],
       },

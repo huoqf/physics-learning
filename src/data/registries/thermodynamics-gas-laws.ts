@@ -112,7 +112,7 @@ export const thermodynamicsGasLawsAnimations = defineAnimations({
         options: [
           { value: 0, label: '晶体与非晶体' },
           { value: 1, label: '表面张力' },
-          { value: 2, label: '浸润与毛细现象' },
+          { value: 2, label: '浸润与毛细' },
         ],
       },
       {
@@ -123,9 +123,9 @@ export const thermodynamicsGasLawsAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 0,
         options: [
-          { value: 0, label: '单晶体 (规则点阵)' },
-          { value: 1, label: '多晶体 (各向同性)' },
-          { value: 2, label: '非晶体 (无序软化)' },
+          { value: 0, label: '单晶体' },
+          { value: 1, label: '多晶体' },
+          { value: 2, label: '非晶体' },
         ],
       },
       {
@@ -136,8 +136,8 @@ export const thermodynamicsGasLawsAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 2,
         options: [
-          { value: 0, label: '水 (浸润上升)' },
-          { value: 1, label: '水银 (不浸润下降)' },
+          { value: 0, label: '水·浸润' },
+          { value: 1, label: '水银·不浸润' },
         ],
       },
       {
@@ -145,6 +145,12 @@ export const thermodynamicsGasLawsAnimations = defineAnimations({
         label: '🧼 肥皂液膜表面张力',
         group: '快捷预设',
         params: () => ({ mode: 1, solidType: 0, gamma: 0.05, capillaryRadius: 0.5, isMercury: 0 }),
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        content:
+          '单晶体内部粒子按规则点阵排列，物理性质各向异性、有确定熔点；多晶体由大量小晶粒杂乱堆积而成，宏观表现为各向同性；非晶体无规则点阵、无确定熔点，受热逐渐软化。',
       },
     ],
     paramMeta: [

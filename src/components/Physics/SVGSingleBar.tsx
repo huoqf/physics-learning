@@ -32,8 +32,15 @@ export interface SVGSingleBarProps {
  * 设计意图：
  * 1. 统一项目中所有 SVG 内嵌能量柱的渲染风格（轨道背景、圆角柱体、数值标注、标签）。
  * 2. 支持正值（向上生长）和负值（向下生长），以零线为基准双向渲染。
- * 3. 圆角方向自适应：正柱上圆角，负柱下圆角。
- * 4. 数值标签位置自适应：正柱标签在柱顶上方，负柱标签在柱底下方。
+ * 3. 数值标签位置自适应：正柱标签在柱顶上方，负柱标签在柱底下方。
+ *
+ * 圆角说明（曾经的 Bug）：旧实现想按"正柱圆上两角、负柱圆下两角"来做，于是把
+ * `${rx} ${rx} 0 0` 直接喂给了 `<rect rx>` —— 但 **SVG 的 rx 只接受单个长度**，
+ * 四值语法是 CSS `border-radius` 的。浏览器遇到 `rx="5 5 0 0"` 会整条丢弃
+ * （控制台报 `<rect> attribute rx: Expected length`），结果是四角全直角，
+ * 与注释宣称的"圆角方向自适应"正好相反。SVG `<rect>` 无法只圆两个角，
+ * 而柱宽 30px、rx 1.5~5px 的差异在投影上不可见，故统一用单值 rx。
+ * 若将来确实需要"只圆上沿"，必须改用 `<path>` 画圆角，不能回到多值 rx。
  */
 export const SVGSingleBar: FC<SVGSingleBarProps> = ({
   x,
@@ -53,11 +60,6 @@ export const SVGSingleBar: FC<SVGSingleBarProps> = ({
 
   // 柱体 Y 坐标：正值从 baseY 向上，负值从 baseY 向下
   const barY = isPositive ? baseY - absH : baseY
-
-  // 圆角：正值上圆角，负值下圆角
-  const rxAttr = isPositive
-    ? `${rx} ${rx} 0 0`
-    : `0 0 ${rx} ${rx}`
 
   // 数值标签位置：正值在柱顶上方，负值在柱底下方
   const valueY = isPositive ? barY - font(3.5) : barY + absH + font(10)
@@ -80,7 +82,8 @@ export const SVGSingleBar: FC<SVGSingleBarProps> = ({
         />
       )}
 
-      {/* 柱体 */}
+      {/* 柱体：rx 必须是单个长度；浏览器会按 min(rx, width/2, height/2) 自动收敛，
+          所以极矮柱子（电荷槽刚起步时的 0.5px）也不会画出畸形图形 */}
       <rect
         x={x}
         y={barY}
@@ -88,7 +91,7 @@ export const SVGSingleBar: FC<SVGSingleBarProps> = ({
         height={Math.max(0.5, absH)}
         fill={color}
         opacity={0.85}
-        rx={rxAttr}
+        rx={rx}
       />
 
       {/* 数值标注 */}

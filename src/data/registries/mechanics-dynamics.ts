@@ -1,6 +1,9 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
 import { GRAVITY } from '@/physics/constants'
+import { getBoardTimeline } from '@/physics/blockBoard'
+import { getConveyorCriticalTimes } from '@/physics/conveyor'
+import { alignCriticalTime } from '@/utils/criticalTime'
 
 export const mechanicsDynamicsAnimations = defineAnimations({
   'anim-spring-force': {
@@ -23,9 +26,9 @@ export const mechanicsDynamicsAnimations = defineAnimations({
         group: '模型选择',
         resetOnChange: true,
         options: [
-          { value: 0, label: '弹簧与胡克定律' },
-          { value: 1, label: '支持力与桌面形变' },
-          { value: 2, label: '绳子拉力与拉伸量' },
+          { value: 0, label: '胡克定律' },
+          { value: 1, label: '桌面支持力' },
+          { value: 2, label: '绳子拉力' },
         ],
       },
       {
@@ -64,17 +67,16 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     ],
     controlMeta: [
       {
+        // 只留判据，不给答案：四球加速度的具体数值由右屏公式体系逐条给出，
+        // 左屏若先写出来，学生就不必看动画了（§2.6.5 第 C1/C2 档）。
         type: 'tip',
         group: '核心结论',
-        content: '【剪断瞬间受力与加速度精炼解析】\n' +
-          '1. 细绳拉力可突变为 0（绳断裂）；弹簧形变无法瞬间恢复，其弹力保持不变。\n' +
-          '2. 左侧悬挂：剪绳瞬时，B球仅受重力，a_B = g ↓；A球受弹簧拉力 2mg↑ 与重力 mg↓，合力为 mg↑，a_A = g ↑。\n' +
-          '3. 右侧悬挂：剪绳瞬时，C球受重力 mg↓ 与弹簧拉力 mg↓，合力为 2mg↓，a_C = 2g ↓；D球受重力 mg↓ 与弹簧拉力 mg↑ 平衡，合力为 0，a_D = 0。',
+        content: '剪断瞬间：绳的拉力可突变为 0，弹簧的弹力因形变来不及恢复而不突变。',
       },
       {
         type: 'tip',
         group: '操作说明',
-        content: '动画默认展示剪断后的运动过程。可点击播放/暂停按钮控制动画，也可按住场景中的小球拖拽，手动扫查不同时刻的受力与加速度状态。右侧屏实时同步加速度对比图。',
+        content: '先看哪根绳的拉力瞬间归零，再看弹簧下挂的球为什么仍有加速度；旁侧加速度对比图同步刷新。',
       },
     ],
     CenterExtra: lazy(() => import('@/features/mechanics/dynamics/SpringForceCenterExtra')),
@@ -109,7 +111,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
         group: '模型选择',
         resetOnChange: true,
         options: [
-          { value: 0, label: '地球自转重力分解' },
+          { value: 0, label: '自转重力分解' },
           { value: 1, label: '悬挂法重心实验' },
         ],
       },
@@ -264,51 +266,17 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     Component: lazy(() => import('@/features/mechanics/dynamics/ConveyorAnimation')),
     CenterExtra: lazy(() => import('@/features/mechanics/dynamics/ConveyorChart')),
     controlsMode: 'timed' as const,
-    maxTime: 12,
-    defaultParams: { conveyorMode: 0, vBelt: 3.0, v0: 0, mu: 0.2, L: 6, showSyncLine: 1, showScratch: 1 } as const,
+    maxTime: 12, // 观察窗口，须与 ConveyorAnimation 取景时长一致
+    criticalTimes: (p) => getConveyorCriticalTimes(p, 12), // 共速/离开，见 physics/conveyor.ts
+    defaultParams: { conveyorMode: 0, vBelt: 3.0, v0: 0, mu: 0.2, L: 6, x0Ratio: 0, showSyncLine: 1, showScratch: 1 } as const,
     paramMeta: [
       { key: 'vBelt', label: '传送带速度 v带', min: -5, max: 5, step: 0.5, unit: 'm/s', importance: 'core' },
       { key: 'v0', label: '物块初速度 v₀', min: -2, max: 6, step: 0.5, unit: 'm/s', importance: 'core' },
       { key: 'mu', label: '摩擦因数 μ', min: 0.1, max: 0.6, step: 0.05, unit: '' },
       { key: 'L', label: '传送带长度 L', min: 4, max: 10, step: 0.5, unit: 'm' },
     ],
+    // 分组顺序即渲染顺序（ControlPanel 只把 tip 下沉、其余保持声明序），故「模型选择」必须先于「快捷预设」
     controlMeta: [
-      {
-        type: 'preset',
-        label: '水平带-放上加速',
-        group: '高考经典场景',
-        params: { conveyorMode: 0, vBelt: 3.0, v0: 0.0, mu: 0.2, L: 6.0 },
-      },
-      {
-        type: 'preset',
-        label: '水平带-减速共速',
-        group: '高考经典场景',
-        params: { conveyorMode: 0, vBelt: 2.0, v0: 5.0, mu: 0.2, L: 6.0 },
-      },
-      {
-        type: 'preset',
-        label: '水平带-反向折返',
-        group: '高考经典场景',
-        params: { conveyorMode: 0, vBelt: -2.0, v0: 4.0, mu: 0.2, L: 6.0 },
-      },
-      {
-        type: 'preset',
-        label: '倾斜带-下滑加速(折点)',
-        group: '高考经典场景',
-        params: { conveyorMode: 1, vBelt: 2.0, v0: 0.0, mu: 0.15, L: 8.0 },
-      },
-      {
-        type: 'preset',
-        label: '倾斜带-下滑同步',
-        group: '高考经典场景',
-        params: { conveyorMode: 1, vBelt: 2.0, v0: 0.0, mu: 0.35, L: 8.0 },
-      },
-      {
-        type: 'preset',
-        label: '倾斜带-上滑加速',
-        group: '高考经典场景',
-        params: { conveyorMode: 1, vBelt: 3.0, v0: 0.0, mu: 0.35, L: 8.0 },
-      },
       {
         type: 'segmented',
         key: 'conveyorMode',
@@ -318,6 +286,70 @@ export const mechanicsDynamicsAnimations = defineAnimations({
           { value: 0, label: '水平传送带' },
           { value: 1, label: '倾斜传送带' },
         ],
+        /*
+         * 切模型＝换场景，必须同时换上该场景跑得起来的标准初态：水平带的
+         * v带=3、μ=0.2 搬到 15° 斜面，μg·cosθ < g·sinθ，物块第一帧就判离场。
+         */
+        onChangeSideEffect: (value: number) =>
+          value === 1
+            ? { setParams: { vBelt: -2.0, v0: 0.0, mu: 0.15, L: 8.0, x0Ratio: 1 } }
+            : { setParams: { vBelt: 3.0, v0: 0.0, mu: 0.2, L: 6.0, x0Ratio: 0 } },
+      },
+      {
+        // 初始位置只对倾斜带有定义（水平带恒从左端放上）。高考只考两个端点，
+        // 故用两档分段：滑杆的中间值会造出「物块停在半截」这种没法算的伪场景。
+        type: 'segmented',
+        key: 'x0Ratio',
+        label: '物块放置位置',
+        group: '模型选择',
+        resetOnChange: true,
+        showIf: 'conveyorMode',
+        showIfValue: 1,
+        options: [
+          { value: 1, label: '顶端（下滑）' },
+          { value: 0, label: '底端（上滑）' },
+        ],
+      },
+      {
+        type: 'preset',
+        label: '水平带-放上加速',
+        group: '典型工况',
+        params: { conveyorMode: 0, vBelt: 3.0, v0: 0.0, mu: 0.2, L: 6.0, x0Ratio: 0 },
+      },
+      {
+        type: 'preset',
+        label: '水平带-减速共速',
+        group: '典型工况',
+        params: { conveyorMode: 0, vBelt: 2.0, v0: 5.0, mu: 0.2, L: 6.0, x0Ratio: 0 },
+      },
+      {
+        type: 'preset',
+        label: '水平带-反向折返',
+        group: '典型工况',
+        params: { conveyorMode: 0, vBelt: -2.0, v0: 4.0, mu: 0.2, L: 6.0, x0Ratio: 0 },
+      },
+      /*
+       * 倾斜带的 v带 **负值 = 皮带沿斜面向下运行**（x 正方向沿斜面向上）。
+       * 「下滑」类题的皮带必须向下走，否则摩擦方向反了，既不会有 v-t 折点，
+       * 也不可能共速；放顶端（x0Ratio=1）同样是题设：物块从静止释放下滑。
+       */
+      {
+        type: 'preset',
+        label: '倾斜带-下滑加速(折点)',
+        group: '典型工况',
+        params: { conveyorMode: 1, vBelt: -2.0, v0: 0.0, mu: 0.15, L: 8.0, x0Ratio: 1 },
+      },
+      {
+        type: 'preset',
+        label: '倾斜带-下滑同步',
+        group: '典型工况',
+        params: { conveyorMode: 1, vBelt: -2.0, v0: 0.0, mu: 0.35, L: 8.0, x0Ratio: 1 },
+      },
+      {
+        type: 'preset',
+        label: '倾斜带-上滑加速',
+        group: '典型工况',
+        params: { conveyorMode: 1, vBelt: 3.0, v0: 0.0, mu: 0.35, L: 8.0, x0Ratio: 0 },
       },
       { type: 'toggle', key: 'showSyncLine', label: '显示共速分段线', group: '显示辅助' },
       { type: 'toggle', key: 'showScratch', label: '显示相对划痕与生热', group: '显示辅助' },
@@ -332,7 +364,8 @@ export const mechanicsDynamicsAnimations = defineAnimations({
         group: '倾斜带提示',
         showIf: 'conveyorMode',
         showIfValue: 1,
-        content: '倾角固定 15°。共速后能否保持同步要看 μ ≥ tan15°，否则会继续相对滑动。',
+        content:
+          '倾角固定 15°，tan15°≈0.27：μ<0.27 共速后仍会相对滑动（v-t 图出现折点），μ≥0.27 才能随带同步。v带 为负表示皮带向下运行。',
         variant: 'warning',
       },
     ],
@@ -422,8 +455,8 @@ export const mechanicsDynamicsAnimations = defineAnimations({
         group: '模型选择',
         resetOnChange: true,
         options: [
-          { value: 0, label: '多力合成与建系优化' },
-          { value: 1, label: '斜面平衡建系对比' },
+          { value: 0, label: '多力合成与建系' },
+          { value: 1, label: '斜面平衡建系' },
         ],
       },
       {
@@ -434,8 +467,8 @@ export const mechanicsDynamicsAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 1,
         options: [
-          { value: 0, label: '方案A：沿斜面/垂直斜面建系' },
-          { value: 1, label: '方案B：水平/竖直方向建系' },
+          { value: 0, label: '沿斜面建系' },
+          { value: 1, label: '水平竖直建系' },
         ],
       },
       {
@@ -540,8 +573,9 @@ export const mechanicsDynamicsAnimations = defineAnimations({
         type: 'segmented', key: 'modelIdx', label: '变力模型', group: '模型选择', resetOnChange: true,
         showIf: 'advancedMode', showIfValue: 1,
         options: [
-          { value: 0, label: '线性递增力 F=k·t' },
-          { value: 1, label: '正弦周期力 F=F₀sin(ωt)' },
+          // 只留模型名，F=k·t 与 F=F₀sin(ωt) 由右屏公式体系给出
+          { value: 0, label: '线性递增力' },
+          { value: 1, label: '正弦周期力' },
         ]
       },
       {
@@ -578,8 +612,8 @@ export const mechanicsDynamicsAnimations = defineAnimations({
         type: 'segmented', key: 'modelIdx', label: '电梯运行情景', group: '模型选择', resetOnChange: true,
         showIf: 'advancedMode', showIfValue: 1,
         options: [
-          { value: 0, label: '升降变速电梯 (启动-匀速-制动)' },
-          { value: 1, label: '钢索突然断裂 (静止-坠落-缓冲)' },
+          { value: 0, label: '升降变速电梯' },
+          { value: 1, label: '钢索突然断裂' },
         ]
       },
     ],
@@ -609,10 +643,10 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       {
         type: 'segmented', key: 'analysisView', label: '受力分析视图', group: '显示辅助',
         options: [
-          { value: 0, label: '普通受力视图' },
-          { value: 1, label: '整体法分析系统' },
-          { value: 2, label: '隔离法分析物体 m₁' },
-          { value: 3, label: '隔离法分析物体 m₂' },
+          { value: 0, label: '普通受力' },
+          { value: 1, label: '整体法' },
+          { value: 2, label: '隔离 m₁' },
+          { value: 3, label: '隔离 m₂' },
         ]
       },
     ],
@@ -633,11 +667,11 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     ],
     controlMeta: [
       {
-        type: 'segmented', key: 'modelType', label: '高考物理模型', group: '模型选择', resetOnChange: true,
+        type: 'segmented', key: 'modelType', label: '模型类型', group: '模型选择', resetOnChange: true,
         options: [
-          { value: 0, label: '同加速连接体 (拉车)' },
-          { value: 1, label: '叠放静力学平衡 (推斜面)' },
-          { value: 2, label: '系统牛二定律 (斜面下滑)' },
+          { value: 0, label: '同加速连接体' },
+          { value: 1, label: '叠放静力学' },
+          { value: 2, label: '系统牛二定律' },
         ]
       },
       {
@@ -651,8 +685,8 @@ export const mechanicsDynamicsAnimations = defineAnimations({
         type: 'segmented', key: 'activeObject', label: '隔离研究对象', group: '分析视角',
         showIf: 'analysisView', showIfValue: 1,
         options: [
-          { value: 0, label: '滑块 (m₁/m)' },
-          { value: 1, label: '滑块/斜面 (m₂/M)' },
+          { value: 0, label: '滑块 (m₁)' },
+          { value: 1, label: '斜面 (M)' },
         ]
       },
     ],
@@ -696,8 +730,8 @@ export const mechanicsDynamicsAnimations = defineAnimations({
         options: [
           { value: 1, label: '地月系统' },
           { value: 2, label: '太阳-地球' },
-          { value: 3, label: '同步卫星-地球' },
-          { value: 4, label: '宇航员-空间站' },
+          { value: 3, label: '同步卫星' },
+          { value: 4, label: '空间站' },
         ]
       },
     ],
@@ -715,26 +749,28 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     controlsMode: 'timed',
     maxTime: 8,
     criticalTimes: (p) => {
-      const g = 9.8
-      const a1 = p.mu1 * g
-      const a2 = (p.mu1 * p.m * g - p.mu2 * (p.m + p.M) * g) / p.M
-      const effA2 = a2 > 0 ? a2 : 0
-      const relA = a1 + effA2 // 相对减速度
-      // ① 共速时刻：v₀ − relA·t = 0
-      const tCo = relA > 1e-9 ? p.v0 / relA : Infinity
-      // ② 滑离时刻：相对位移 v₀t − ½·relA·t² = L（取小根）
-      const disc = p.v0 * p.v0 - 2 * relA * p.L
-      const tFall = disc >= 0 && relA > 1e-9 ? (p.v0 - Math.sqrt(disc)) / relA : Infinity
-      // 谁先发生谁才是真正的临界事件：默认参数下 tFall≈0.6 s 远早于 tCo≈1.7 s，
-      // 旧实现无条件标注"恰好滑动共速"，等于给了一个永远到不了的时刻。
+      /*
+       * 时刻只留一个真源：直接取物理层的阶段分界（getBoardTimeline）。
+       * 这里曾经自己重写了一遍 a1/a2/tSync/tFall 的解析解，还顺手把 g 写成 9.8 ——
+       * 与 physics/blockBoard.ts 是两份实现，改一处漏一处就会让标记落在动画里
+       * 根本不存在的事件时刻上。
+       */
+      const timeline = getBoardTimeline({ m: p.m, M: p.M, mu1: p.mu1, mu2: p.mu2, v0: p.v0, L: p.L })
+      // 谁先发生谁才是真正的临界事件：默认参数下 tFall≈0.6 s 远早于 tSync≈1.7 s，
+      // 旧实现无条件标注「恰好滑动共速」，等于给了一个永远到不了的时刻。
+      // 对齐方向随事件性质走：共速是相变点（定格要在之后），滑离是离场点（要在之前）。
       const events = [
-        { time: tCo, label: '恰好滑动共速' },
-        { time: tFall, label: '滑块滑离木板' },
+        { time: timeline.tSync, label: '恰好滑动共速', align: 'after' as const },
+        { time: timeline.tFall, label: '滑块滑离木板', align: 'before' as const },
       ]
         .filter((e) => Number.isFinite(e.time) && e.time > 0)
         .sort((a, b) => a.time - b.time)
-      if (events.length === 0) return []
-      return [{ time: Number(events[0].time.toFixed(2)), label: events[0].label, variant: 'critical' as const, autoPause: true }]
+      const first = events[0]
+      if (!first) return []
+      const time = alignCriticalTime(first.time, first.align)
+      // 对齐后落到 0 或超出观察窗口就没有定格价值，宁可不出标记
+      if (time <= 0 || time > 8 /* = maxTime */) return []
+      return [{ time, label: first.label, variant: 'critical' as const, autoPause: true }]
     },
     defaultParams: {
       m: 1,
@@ -767,14 +803,8 @@ export const mechanicsDynamicsAnimations = defineAnimations({
         ],
       },
     ],
+    // 分组顺序即渲染顺序（ControlPanel 只把 tip 下沉、其余保持声明序），故「场景配置」必须先于「快捷预设」
     controlMeta: [
-      {
-        type: 'preset',
-        label: '📋 2024全国新课标卷（板块滑动）',
-        description: 'm=1kg, M=3kg, μ₁=0.3, μ₂=0.05, v₀=5m/s',
-        params: { m: 1, M: 3, mu1: 0.3, mu2: 0.05, v0: 5, L: 2.5 },
-        restartOnApply: true,
-      },
       {
         type: 'segmented',
         key: 'L',
@@ -788,10 +818,14 @@ export const mechanicsDynamicsAnimations = defineAnimations({
         ],
       },
       {
-        type: 'tip',
-        group: '高考考点',
-        content: '板块模型是高考力学压轴题的常客。核心在于判断两物体何时达到速度相等（共速），以及在共速前相对位移是否超过木板长度。解题关键：分别求出滑块和木板的加速度 a₁、a₂，利用 v-t 图判断能否共速。',
+        type: 'preset',
+        label: '🧱 板块滑动（v₀=5m/s）',
+        description: 'm=1kg、M=3kg、μ₁=0.3、μ₂=0.05、L=2.5m：恰滑至右端的临界工况',
+        params: { m: 1, M: 3, mu1: 0.3, mu2: 0.05, v0: 5, L: 2.5 },
+        restartOnApply: true,
       },
+      // 原「高考考点」tip 已删除：共速判断、解题三步、临界条件、共速后行为
+      // 四条右屏 gaokaoPoints 已逐条给出（quantities/dynamics/blockBoard.ts L84-87）。
     ],
   },
 })

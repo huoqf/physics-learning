@@ -1,6 +1,7 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
 import { rcTauFromParams, rcWindowFromParams } from '@/physics'
+import { alignCriticalTime } from '@/utils/criticalTime'
 
 // ===== 电磁学 · 静电场（[M4-1]）=====
 export const electromagnetismElectrostaticsAnimations = defineAnimations({
@@ -107,10 +108,32 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
     criticalTimes: (params: Record<string, number>) => {
       if (params.mode !== 1) return []
       const tau = rcTauFromParams(params)
+      /*
+       * 充放电的读数完全相反，标签不能共用：
+       *   充电 u_C = E(1−e^{−t/τ})：τ 时到 63.2%，5τ 时基本充满；
+       *   放电 u_C = E·e^{−t/τ}  ：τ 时只剩 36.8%，5τ 时基本放完。
+       * 曾经两种情况都写「u_C 达 63.2%」，放电模式下这条标记是错的。
+       *
+       * 对齐：τ、3τ 是窗口内部的读数点，取最近一格；5τ 恰好是观察窗口末端
+       * （maxTime = 5τ），只能向前对齐，否则标记会落到进度条外面。
+       */
+      const discharging = (params.phase ?? 0) === 1
       return [
-        { time: tau, label: 't = τ（u_C 达 63.2%）', variant: 'info' as const },
-        { time: 3 * tau, label: 't = 3τ（95%）', variant: 'info' as const },
-        { time: 5 * tau, label: 't = 5τ（≈充满）', variant: 'critical' as const },
+        {
+          time: alignCriticalTime(tau, 'nearest'),
+          label: discharging ? 't = τ（u_C 剩 36.8%）' : 't = τ（u_C 达 63.2%）',
+          variant: 'info' as const,
+        },
+        {
+          time: alignCriticalTime(3 * tau, 'nearest'),
+          label: discharging ? 't = 3τ（剩 5%）' : 't = 3τ（95%）',
+          variant: 'info' as const,
+        },
+        {
+          time: alignCriticalTime(5 * tau, 'before'),
+          label: discharging ? 't = 5τ（≈放完）' : 't = 5τ（≈充满）',
+          variant: 'critical' as const,
+        },
       ]
     },
     defaultParams: {
@@ -154,8 +177,8 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 0,
         options: [
-          { value: 1, label: '连接电源 (U不变)' },
-          { value: 0, label: '断开电源 (Q不变)' },
+          { value: 1, label: '通电·U不变' },
+          { value: 0, label: '断电·Q不变' },
         ],
       },
       {
@@ -263,7 +286,7 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
       { type: 'toggle', key: 'drawMode', label: '锁定A-B点并激活自由手绘路径', group: '显示辅助',
         onChangeSideEffect: { setParams: { runTime: 0 } } },
       // §6 教学提示
-      { type: 'tip', group: '教学提示', title: '高考考点探究指导',
+      { type: 'tip', group: '教学提示', title: '探究任务',
         content: '1. 路径无关性验证：开启手写模式，用鼠标在下方的动画区域任意绘制出一条弯曲轨迹。2. 零势选择的相对性：切换零势参考模式，观察 A、B 点的绝对电势发生显著平移。' },
     ],
   },
@@ -287,7 +310,7 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
         group: '实验模型',
         resetOnChange: true,
         options: [
-          { value: 0, label: '静电平衡与内部零场' },
+          { value: 0, label: '静电平衡' },
           { value: 1, label: '尖端放电' },
           { value: 2, label: '空腔静电屏蔽' },
         ],
@@ -326,7 +349,7 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
       },
       {
         type: 'tip',
-        group: '核心考点',
+        group: '教学提示',
         variant: 'primary',
         content: '【静电平衡判定】：自由电子停止定向移动时，内部感应电场 E\' 与外电场 E0 严格等大反向，导体内合场强处处为零，整个导体为等势体。',
       },

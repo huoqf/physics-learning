@@ -15,7 +15,7 @@ export const opticsRefractionAnimations = defineAnimations({
     } as const,
     controlMeta: [
       { type: 'segmented', key: 'advancedMode', resetOnChange: true,
-        options: [{ value: 0, label: '基础折射' }, { value: 1, label: '双界面并进与侧移' }] },
+        options: [{ value: 0, label: '基础折射' }, { value: 1, label: '双界面并进侧移' }] },
       { type: 'tip', content: '增大入射角，观察折射角随之增大' },
       { type: 'tip', content: '折射率越大，光线偏折越明显' },
     ],

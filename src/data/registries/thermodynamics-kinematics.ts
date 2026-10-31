@@ -28,8 +28,8 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
         group: '模型选择',
         resetOnChange: true,
         options: [
-          { value: 0, label: '宏观追踪：花粉折线' },
-          { value: 1, label: '微观机制：分子撞击与合力' },
+          { value: 0, label: '宏观·花粉折线' },
+          { value: 1, label: '微观·分子撞击' },
         ],
       },
       { type: 'toggle', key: 'showTrajectory', label: '显示微粒轨迹追踪', group: '显示辅助' },
@@ -44,13 +44,13 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
       {
         type: 'preset',
         label: '常温大微粒（较平稳）',
-        group: '高考典型情境',
+        group: '典型工况',
         params: { temperature: 293, particleD: 8 },
       },
       {
         type: 'preset',
         label: '高温微小颗粒（极剧烈）',
-        group: '高考典型情境',
+        group: '典型工况',
         params: { temperature: 360, particleD: 1.5 },
       },
       {
@@ -96,8 +96,8 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
         label: '量纲模式',
         group: '测量维度',
         options: [
-          { value: 0, label: '宏观质量模式 (g)' },
-          { value: 1, label: '宏观体积模式 (cm³)' },
+          { value: 0, label: '质量 (g)' },
+          { value: 1, label: '体积 (cm³)' },
         ],
       },
       {
@@ -202,7 +202,7 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
       },
       {
         type: 'tip',
-        group: '高考规律',
+        group: '教学提示',
         content: '“中间多、两头少”；温度升高时，峰值右移、峰高降低、曲线展宽平坦，总面积严格恒为 1。',
       },
     ],
@@ -231,10 +231,10 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
         label: '实验步骤流程',
         group: '实验阶段',
         options: [
-          { value: 0, label: '步骤1: 溶液配制' },
-          { value: 1, label: '步骤2: 滴管滴液' },
-          { value: 2, label: '步骤3: 油膜铺展' },
-          { value: 3, label: '步骤4: 方格描摹计算' },
+          { value: 0, label: '①溶液配制' },
+          { value: 1, label: '②滴管滴液' },
+          { value: 2, label: '③油膜铺展' },
+          { value: 3, label: '④方格计数' },
         ],
       },
       {
@@ -244,8 +244,8 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
         group: '操作细节与误差',
         options: [
           { value: 0, label: '正常均匀' },
-          { value: 1, label: '偏厚 (阻碍扩散, d偏大)' },
-          { value: 2, label: '偏薄 (利于充分展开)' },
+          { value: 1, label: '偏厚·d偏大' },
+          { value: 2, label: '偏薄·易展开' },
         ],
       },
       {

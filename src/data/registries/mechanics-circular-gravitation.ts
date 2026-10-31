@@ -68,16 +68,17 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
         showIfValue: 1,
         variant: 'primary',
         title: '🧪 探究向心力与角速度的关系',
+        // 只给操作与观察顺序；斜率 k = m·r、控制变量翻倍、拟合偏差这些结论
+        // 右屏看板与公式区已实时给出（quantities/circular.ts 「理论斜率 k = m·r」等）。
         content:
-          '保持 m、r 不变，只改变 ω：F–ω² 图线是一条过原点的直线，斜率 k = m·r。5 个圆点是模拟测量值（±1.5% 误差），淡虚线是理论线 k = m·r —— 两者几乎重合。打开「质量加倍」对照，斜率正好翻倍，这就是控制变量法。',
+          '保持 m、r 不变，只拖动 ω，看数据点是否落在一条过原点的直线上；再打开「质量加倍」对照，比较两条线的陡峭程度。',
       },
       {
         type: 'tip',
         group: '教学提示',
         showIf: 'fitMode',
         showIfValue: 0,
-        content:
-          'F–a 图线斜率恒等于质量 m：改变质量 m，直线的倾斜程度随之改变，说明「质量是惯性大小的量度」。',
+        content: '分别拖动 a 与 m，比较直线倾斜程度与截距的变化。',
       },
     ],
   },
@@ -172,7 +173,9 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
       {
         type: 'tip',
         group: '教学提示',
-        content: '周期 T 不是独立旋钮：它由中心天体质量 M 决定。所以拖动 a₁ 只改变行星，k = a³/T² 保持不变；拖动 M 才换中心天体，k 才会变。偏心率 e 只改轨道扁平程度，T 与 k 完全不变。',
+        // 保留"哪个旋钮改什么"的操作语义（学生不看就不知道拖 e 是做什么的），
+        // 但把 k = a³/T² 这条式子交回右屏公式区。
+        content: '拖 a₁ 只换行星、k 值不变；拖 M 才是换中心天体、k 才会变；偏心率 e 只改轨道形状，不影响周期。',
       },
     ],
   },
@@ -230,25 +233,20 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
         resetOnChange: true,
         options: [
           { value: 0, label: '双星系统' },
-          { value: 1, label: '三星系统 (等边三角形)' },
+          { value: 1, label: '三星系统' },
         ],
       },
       { type: 'storeToggle', label: '显示受力与速度矢量', storeKey: 'toggleVectors', stateKey: 'showVectors', group: '显示辅助' },
-      {
-        type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 0,
-        content: '【双星系统易错点】\n1. 万有引力公式中的距离是双星间距 L，而向心力公式中的半径是各自的轨道半径 r₁ 或 r₂，二者绝不能混淆。\n2. 双星做匀速圆周运动的角速度 ω 和周期 T 绝对相等。\n3. 轨道半径、线速度、向心加速度均与质量成反比：质量大的星轨道半径小、速度慢。'
-      },
+      // 原「教学提示」双星/三星两条已删除：L 与 r 的混淆、ω/T 相等、半径与质量成反比、
+      // 合力指向质心——这些右屏 gaokaoPoints 已逐条给出（quantities/gravitation.ts 双星 3 条 / 三星 2 条）。
+      // 「图表解读」保留但只做读图引导：投影相位关系是右屏没有的图表素养，属于"看哪里"。
       {
         type: 'tip', group: '图表解读', showIf: 'mode', showIfValue: 0,
-        content: '【投影规律与相位分析】\n1. 反相位置：两星位移波形相位恒定相反（相差 180°），反映连线恒过质心。\n2. 振幅成反比：位置与速度正弦投影的振幅，均实时与天体质量成反比。\n3. 简谐相位差：位置（余弦）与速度（正弦）有 90° 相位差。位移最大时速度为零，过质心时速度最大。'
-      },
-      {
-        type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 1,
-        content: '【三星系统要点】\n1. 三颗等质量星体位于等边三角形顶点，绕质心做匀速圆周运动。\n2. 每颗星受另外两颗星的引力，其合力指向正三角形中心（质心）。\n3. 三颗星的角速度 ω、周期 T 和轨道半径 r 完全相等。'
+        content: '看两条位移波形的相位：始终一正一负相差 180°，振幅与质量成反比——说明连线恒过质心。',
       },
       {
         type: 'tip', group: '图表解读', showIf: 'mode', showIfValue: 1,
-        content: '【三星运动与投影规律】\n1. 三相正弦波：三颗天体在 X 轴的位移与速度投影，相位互差 120°，构成稳定的对称运转。\n2. 对称等幅值：由于轨道半径和线速度大小完全恒等，三条波形曲线的幅值完全一致。\n3. 速度极值对齐：当天体经过 X 轴端点（位移极值）时，其 X 方向瞬时速度刚好过零，遵循简谐投影法则。'
+        content: '看三条波形的相位互差 120°、幅值完全一致；位移到极值时对应的速度刚过零。',
       },
     ],
   },
@@ -410,9 +408,9 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
         group: '观测效应',
         resetOnChange: false,
         options: [
-          { value: 0, label: '光钟与动钟变慢' },
-          { value: 1, label: '动尺收缩效应' },
-          { value: 2, label: '质能关系与质速' },
+          { value: 0, label: '动钟变慢' },
+          { value: 1, label: '动尺收缩' },
+          { value: 2, label: '质能关系' },
         ],
       },
       {
@@ -425,31 +423,31 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
       },
       {
         type: 'preset',
-        label: '教材典例 (β = 0.60, γ = 1.25)',
-        group: '高考经典考境预设',
+        label: '📚 教材典例（β=0.60）',
+        group: '典型工况',
         params: { beta: 0.6, m0: 1.0, mode: 0, showGeometry: 1 },
       },
       {
         type: 'preset',
-        label: '高速航行 (β = 0.80, γ = 1.67)',
-        group: '高考经典考境预设',
+        label: '🚀 高速航行（β=0.80）',
+        group: '典型工况',
         params: { beta: 0.8, m0: 1.0, mode: 0, showGeometry: 1 },
       },
       {
         type: 'preset',
-        label: '尺缩效应直观对比 (β = 0.866, γ = 2.00)',
-        group: '高考经典考境预设',
+        label: '📏 尺缩对比（β=0.866）',
+        group: '典型工况',
         params: { beta: 0.866, m0: 1.0, mode: 1, showGeometry: 0 },
       },
       {
         type: 'preset',
-        label: '质能关系与动能构成 (β = 0.80)',
-        group: '高考经典考境预设',
+        label: '⚡ 质能关系（β=0.80）',
+        group: '典型工况',
         params: { beta: 0.8, m0: 1.0, mode: 2, showGeometry: 0 },
       },
       {
         type: 'tip',
-        group: '高考核心结论',
+        group: '教学提示',
         content:
           '固有时间最短（两事件同地发生的参考系测得时间最小）；尺缩仅发生在运动速度平行方向，垂直方向几何尺寸完全不变。',
       },

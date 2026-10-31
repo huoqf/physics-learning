@@ -69,7 +69,7 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
     controlMeta: [
       // §1 模型选择
       { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
-        options: [{ value: 0, label: '基础：单粒子偏转' }, { value: 1, label: '进阶：速度选择器' }] },
+        options: [{ value: 0, label: '单粒子偏转' }, { value: 1, label: '速度选择器' }] },
       // §2 子模式
       { type: 'segmented', key: 'q', label: '电荷极性', group: '子模式',
         options: [
@@ -105,13 +105,13 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
     maxTime: 8,
     controlMeta: [
       { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
-        options: [{ value: 0, label: '基础：定性边界偏转' }, { value: 1, label: '进阶：高考动态圆族' }] },
+        options: [{ value: 0, label: '定性边界偏转' }, { value: 1, label: '动态圆族' }] },
       { type: 'segmented', key: 'boundaryType', label: '磁场边界类型', group: '子模式', resetOnChange: true,
         showIf: 'mode', showIfValue: 0,
         options: [{ value: 0, label: '单边界' }, { value: 1, label: '平行双边界' }, { value: 2, label: '圆形边界' }] },
       { type: 'segmented', key: 'dynamicType', label: '动态圆极值类型', group: '子模式', resetOnChange: true,
         showIf: 'mode', showIfValue: 1,
-        options: [{ value: 0, label: '旋转圆 (方向变)' }, { value: 1, label: '缩放圆 (大小变)' }, { value: 2, label: '平移圆 (位置变)' }] },
+        options: [{ value: 0, label: '旋转圆·方向' }, { value: 1, label: '缩放圆·大小' }, { value: 2, label: '平移圆·位置' }] },
       { type: 'toggle', key: 'showGeometry', label: '显示几何辅助线', group: '显示辅助' },
       { type: 'segmented', key: 'bDirection', label: '磁场方向', group: '显示辅助',
         options: [{ value: 1, label: '向里 ⊗' }, { value: -1, label: '向外 ⊙' }] },
@@ -122,7 +122,8 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
       { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 0,
         content: '调节速度和磁场大小可改变半径。选择平行双边界时，调节速度找到恰好切于上边界的穿透临界半径。' },
       { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 1,
-        content: '高考压轴核心：旋转圆轨迹圆心在圆弧上移动，无边界包络为 2R 的圆。' },
+        // 原「高考压轴核心：…包络为 2R 的圆」属考点结论（§2.6.5 C3），改写为观察任务
+        content: '切到「旋转圆」打开包络区开关，慢慢改方向角：看圆心是不是沿一段圆弧移动、轨迹边界停在多大的圆上。' },
     ],
     defaultParams: {
       mode: 0,
@@ -166,7 +167,8 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
       { type: 'action', label: '发射粒子', variant: 'primary', action: 'restart', group: '控制轴' },
       { type: 'action', label: '重置轨迹', variant: 'secondary', action: 'reset', group: '控制轴' },
       { type: 'tip', group: '教学提示',
-        content: '物理高考核心方法：先用速度垂线交点锁定圆心 O，再高亮紫色特征直角三角形进行几何代数计算。' },
+        // 原「物理高考核心方法：…进行几何代数计算」属方法总结（§2.6.5 C3），改写为三步开关的操作引导
+        content: '依次点亮 1→2→3：先画速度垂线，交点就是圆心；再让半径、弦长与边界角都落进那个紫色直角三角形。' },
     ],
     defaultParams: {
       boundaryType: 0,

@@ -73,7 +73,7 @@
 
 | 组件 | 用途 | 必需 props | 最小调用 |
 |------|------|-----------|---------|
-| `LeftPanel` / `LeftPanelSection` | 左屏控制台 | — | `<LeftPanel><LeftPanelScrollArea><LeftPanelSection title="参数">...</LeftPanelSection></LeftPanelScrollArea></LeftPanel>` |
+| `LeftPanel` / `LeftPanelSection` | 左屏控制台 | — | `<LeftPanel><LeftPanelSection title="参数">...</LeftPanelSection></LeftPanel>` |
 | `ParamControl` | 参数滑块 | `params`, `onParamChange` | `<ParamControl params={[{ key:'m', label:'质量', value:params.m, min:0.1, max:10, step:0.1, unit:'kg' }]} onParamChange={updateParam} />` |
 | `ControlPanel` | 声明式控件 | `controls`, `params`, `updateParam`, `setParams`, `resetAnimation`, `restartAnimation` | `<ControlPanel controls={mc} params={params} updateParam={updateParam} setParams={setParams} resetAnimation={handleReset} restartAnimation={handleRestart} />` |
 | `AnimationControls` | 播放控制条（支持微步逐帧 ±0.05s 与 criticalTimes 高考临界吸附定格） | `isPlaying`, `speed`, `time`, `maxTime`, `onPlayPause`, `onReset`, `onSpeedChange`, `onTimeChange` | `<AnimationControls isPlaying={p} speed={s} time={t} maxTime={tMax} onPlayPause={toggle} onReset={reset} onSpeedChange={setSpeed} onTimeChange={setTime} criticalTimes={cts} />` |

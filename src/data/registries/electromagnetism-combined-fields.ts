@@ -36,7 +36,7 @@ export const combinedFieldsAnimations = defineAnimations({
 
       // 模式 1: 回旋加速器参数
       { key: 'magneticB2', label: '回旋磁场 B₂', min: 0.5, max: 3.0, step: 0.05, unit: 'T', showIf: 'mode', showIfValue: 1 },
-      { key: 'acFrequency', label: '高频频率 f', min: 10, max: 100, step: 0.1, unit: 'kHz', showIf: 'mode', showIfValue: 1 },
+      { key: 'acFrequency', label: '交变电压频率 f', min: 10, max: 100, step: 0.1, unit: 'kHz', showIf: 'mode', showIfValue: 1 },
       { key: 'acVoltage', label: '加速电压 U', min: 1.0, max: 10.0, step: 0.2, unit: 'kV', showIf: 'mode', showIfValue: 1 },
 
       // 模式 2: 电偏转+磁偏转级联参数
@@ -52,7 +52,7 @@ export const combinedFieldsAnimations = defineAnimations({
         options: [
           { value: 0, label: '质谱仪级联' },
           { value: 1, label: '回旋加速器' },
-          { value: 2, label: '电偏转与磁偏转' },
+          { value: 2, label: '电偏转磁偏转' },
         ],
       },
       // 粒子选择仅在模式 0 和 模式 2 展示
@@ -63,9 +63,9 @@ export const combinedFieldsAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 0,
         options: [
-          { value: 0, label: '质子 (¹H⁺)' },
-          { value: 1, label: '氘核 (²H⁺)' },
-          { value: 2, label: 'α 粒子 (⁴He²⁺)' },
+          { value: 0, label: '质子' },
+          { value: 1, label: '氘核' },
+          { value: 2, label: 'α 粒子' },
         ],
       },
       {
@@ -75,9 +75,9 @@ export const combinedFieldsAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 2,
         options: [
-          { value: 0, label: '质子 (¹H⁺)' },
-          { value: 1, label: '氘核 (²H⁺)' },
-          { value: 2, label: 'α 粒子 (⁴He²⁺)' },
+          { value: 0, label: '质子' },
+          { value: 1, label: '氘核' },
+          { value: 2, label: 'α 粒子' },
         ],
       },
       // 共振锁定仅在模式 1 展示

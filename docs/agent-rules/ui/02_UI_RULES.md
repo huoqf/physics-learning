@@ -40,6 +40,18 @@
 
 Tailwind 配置从 `src/theme/colors.ts` 导入，不在 `tailwind.config.*` 中重复定义颜色值。
 
+### 2.1 「禁止硬编码」的执行口径（2026-10 明确）
+
+铁律 1-1 禁的是**绕过比例尺的裸值**，不是 Tailwind 类名本身。三者界限：
+
+| 写法 | 判定 | 说明 |
+|------|------|------|
+| `p-3` / `gap-2` / `rounded-lg` | ✅ 合法 | 类名即比例尺索引，`spacing.ts` 的 `spacing` 表就是它的数值投影（`3: '12px'`）。改了主题值这条读不到，但 Tailwind 比例尺是项目级固定基准 |
+| `LEFT_PANEL_PADDING.panel` / `SEGMENTED.minCell` | ✅ 优先 | 语义 token。**同一几何量被多处依赖时（尤其被脚本/计算引用）必须提成 token**，否则渲染与预算会静默分叉 |
+| `style={{ padding: 12 }}`、`padding: '12px'`、`#2563eb` | ❌ 违规 | 裸值：不受比例尺与主题变更约束，也无法被静态守卫校验 |
+
+推论：`src/theme/spacing.ts` 的 `spacing` 比例尺**全库 0 引用是正常的**——它是比例尺的数值投影，供 SVG 属性、Canvas 绘制、`ResizeObserver` 计算与质检脚本取字面值，不是给 JSX 写内联样式的。
+
 ---
 
 ## 3. 物理量颜色语义（不可更改）
@@ -329,7 +341,6 @@ Primary（primary-600）/ Secondary（white + primary边框）/ Ghost（transpar
 | `AnimationControls` | 播放/暂停/重置控制条 |
 | `LeftPanel` | 动画页左屏控制台顶层容器 |
 | `LeftPanelSection` | 左屏控制台分区卡片（模型选择/显示辅助/预设/提示等） |
-| `LeftPanelScrollArea` | 左屏长内容滚动区域 |
 | `ParamControl` | 参数滑块控件（由 `paramMeta` 生成左屏数值参数区） |
 | `ControlPanel` | 声明式左屏控件渲染器（由 `controlMeta` 生成模式/开关/预设/提示） |
 | `Slider` | 通用滑条 |

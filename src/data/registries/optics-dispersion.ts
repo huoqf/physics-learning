@@ -22,8 +22,8 @@ export const opticsDispersionAnimations = defineAnimations({
         group: '模式选择',
         resetOnChange: true,
         options: [
-          { label: '白光连续色散（彩带）', value: 0 },
-          { label: '红-紫双色光路对比', value: 1 },
+          { label: '白光色散', value: 0 },
+          { label: '红紫双色光路', value: 1 },
         ],
       },
       {
@@ -57,13 +57,15 @@ export const opticsDispersionAnimations = defineAnimations({
       },
       {
         type: 'tip',
+        // 原「λ→ν→n→v→C→Δx→E」七连因果链属考点总结（§2.6.5 C3），右屏 gaokaoPoints 已给；
+        // 左屏改为可观察的对比任务，只留一句"差别都源于折射率"的判据（B 档）。
         content:
-          '同一介质中 λ 越小 → 频率 ν 越大 → 折射率 n 越大 → 光速 v 越小 → 临界角 C 越小 → 双缝条纹间距 Δx 越小 → 光子能量 E 越大。',
+          '锁定一束单色光，从红换到紫：看它在棱镜里偏折多少、出射后的条纹间距怎么变——差别都源于折射率不同。',
       },
       {
         type: 'tip',
-        content:
-          '偏向角 δ 随入射角 i 先减小后增大。光路左右对称时 δ 最小：δ_min = 2arcsin(n·sin(A/2)) − A，此时 i = (A + δ_min)/2。',
+        // 原 δ_min 公式与对称条件属公式搬运（§2.6.5 C2），右屏 FormulaSection 已给出
+        content: '慢慢改入射角：偏向角先变小后变大，在光路左右对称的那一刻取到最小值——找到那个位置再看两侧角度。',
       },
     ],
     paramMeta: [

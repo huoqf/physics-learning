@@ -34,11 +34,12 @@ export const electromagnetismAcAnimations = defineAnimations({
       },
       {
         type: 'tip', group: '教学提示', variant: 'info', showIf: 'mode', showIfValue: 0,
-        content: '线圈在匀强磁场中匀速旋转，磁通量 Φ = BS·cos(ωt)，感应电动势 e = NBSω·sin(ωt)。',
+        // 原「Φ = BS·cos(ωt)，e = NBSω·sin(ωt)」为公式搬运（§2.6.5 C2），右屏 FormulaSection 已给出
+        content: '匀速转动时只盯两件事：磁通量最大时电动势多大、电动势最大时磁通量多大——两者从不同时发生。',
       },
       {
         type: 'tip', group: '教学提示', variant: 'info', showIf: 'mode', showIfValue: 1,
-        content: '调节初始倾角 θ₀ 改变起始位置：θ₀=0° 为中性面起始（e=0），θ₀=90° 为最大电动势面起始。',
+        content: '把初始倾角分别拖到 0° 与 90° 各放一次，比较 φ–t 与 e–t 两条曲线在起点处的形状差异。',
       },
     ],
     paramMeta: [
@@ -108,7 +109,7 @@ export const electromagnetismAcAnimations = defineAnimations({
     controlsMode: 'param' as const,
     controlMeta: [
       { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
-        options: [{ value: 0, label: '基础：变压变流' }, { value: 1, label: '进阶：负载因果链' }] },
+        options: [{ value: 0, label: '变压变流' }, { value: 1, label: '负载因果链' }] },
       { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 0,
         content: '调节 U₁、n₁、n₂，观察四只电表读数与变压变流规律 U₂/U₁ = n₂/n₁。' },
       { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 1, variant: 'warning',
@@ -141,8 +142,8 @@ export const electromagnetismAcAnimations = defineAnimations({
       {
         type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [
-          { value: 0, label: '基础：高压输电优越性' },
-          { value: 1, label: '进阶：动态负载与稳压' },
+          { value: 0, label: '基础·高压输电' },
+          { value: 1, label: '进阶·动态负载' },
         ],
       },
       {
@@ -159,7 +160,7 @@ export const electromagnetismAcAnimations = defineAnimations({
       },
       {
         type: 'tip', group: '教学提示', variant: 'warning', showIf: 'mode', showIfValue: 1,
-        content: '动态负载与稳压：在输电电压 U₂ 恒定时，增加用户户数 N 会使负载总电阻减小，导致输电线电流和线路电压损失 ΔU 增大、用户电压 U₄ 降低（灯泡变暗）。此时需调节变比 k 补偿。',
+        content: '把用户户数 N 拖大，只盯用户电压 U₄ 和线路损失 ΔU 的变化方向；再用变比 k 把 U₄ 拉回额定值。',
       },
     ],
     paramMeta: [
@@ -191,9 +192,9 @@ export const electromagnetismAcAnimations = defineAnimations({
         group: '实验回路对比',
         resetOnChange: true,
         options: [
-          { value: 0, label: '纯电阻 vs 电感 (通直阻交/阻高频)' },
-          { value: 1, label: '纯电阻 vs 电容 (通交隔直/阻低频)' },
-          { value: 2, label: '电感 vs 电容 (高低频对比)' },
+          { value: 0, label: '电阻 vs 电感' },
+          { value: 1, label: '电阻 vs 电容' },
+          { value: 2, label: '电感 vs 电容' },
         ],
       },
       {
@@ -225,7 +226,7 @@ export const electromagnetismAcAnimations = defineAnimations({
         variant: 'info',
         showIf: 'mode',
         showIfValue: 1,
-        content: '电容器隔直流阻低频；通高频阻低频。切换为直流时，电容器支路断路灯泡完全熄灭；提高频率 f，容抗 X_C 减小，灯泡 L₂ 变亮。',
+        content: '电容器通交流隔直流；通高频阻低频。切换为直流时，电容器支路断路灯泡完全熄灭；提高频率 f，容抗 X_C 减小，灯泡 L₂ 变亮。',
       },
     ],
     paramMeta: [

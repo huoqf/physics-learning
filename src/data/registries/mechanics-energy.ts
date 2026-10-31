@@ -40,8 +40,8 @@ export const mechanicsEnergyAnimations = defineAnimations({
         group: '模型选择',
         resetOnChange: true,
         options: [
-          { value: 0, label: '基础模式 (μ=0)' },
-          { value: 1, label: '进阶模式 (含摩擦)' },
+          { value: 0, label: '基础·μ=0' },
+          { value: 1, label: '进阶·含摩擦' },
         ],
       },
       {
@@ -92,16 +92,16 @@ export const mechanicsEnergyAnimations = defineAnimations({
     controlMeta: [
       { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '恒定功率' }, { value: 1, label: '恒定加速度' }] },
-      { type: 'preset', label: '🏎️ 超跑起动', group: '高考经典预设',
+      { type: 'preset', label: '🏎️ 超跑起动', group: '典型工况',
         params: { P: 120000, m: 1500, f: 2000, a: 3.0, carType: 1 },
         showIf: 'mode', showIfValue: 1 },
-      { type: 'preset', label: '🚛 重卡满载', group: '高考经典预设',
+      { type: 'preset', label: '🚛 重卡满载', group: '典型工况',
         params: { P: 160000, m: 8000, f: 4000, a: 0.8, carType: 2 },
         showIf: 'mode', showIfValue: 1 },
-      { type: 'preset', label: '❄️ 雪地起动', group: '高考经典预设',
+      { type: 'preset', label: '❄️ 雪地起动', group: '典型工况',
         params: { P: 60000, m: 2000, f: 1000, a: 1.0, carType: 0 },
         showIf: 'mode', showIfValue: 1 },
-      { type: 'preset', label: '⛰️ 爬坡起动', group: '高考经典预设',
+      { type: 'preset', label: '⛰️ 爬坡起动', group: '典型工况',
         params: { P: 80000, m: 2000, f: 5000, a: 1.2, carType: 0 },
         showIf: 'mode', showIfValue: 1 },
       { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 0,
@@ -162,10 +162,10 @@ export const mechanicsEnergyAnimations = defineAnimations({
     controlMeta: [
       { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '恒力做功' }, { value: 1, label: '变力做功' }] },
-      { type: 'preset', label: '🎢 光滑下滑', group: '高考经典预设',
+      { type: 'preset', label: '🎢 光滑下滑', group: '典型工况',
         params: { m: 2.0, v0: 0, R: 5.0, mu: 0.00, mode: 1 },
         showIf: 'mode', showIfValue: 1 },
-      { type: 'preset', label: '🍂 粗糙下滑', group: '高考经典预设',
+      { type: 'preset', label: '🍂 粗糙下滑', group: '典型工况',
         params: { m: 2.0, v0: 0, R: 5.0, mu: 0.35, mode: 1 },
         showIf: 'mode', showIfValue: 1 },
       { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 0,
@@ -369,16 +369,18 @@ export const mechanicsEnergyAnimations = defineAnimations({
       { type: 'segmented', key: 'viewMode', group: '图像视图',
         options: [
           { value: 0, label: '直观对齐 (y-E)' },
-          { value: 1, label: '高考标准 (E-x)' },
+          { value: 1, label: '能量曲线 (E-x)' },
         ] },
       // §4 显示辅助
       { type: 'toggle', key: 'showVectors', label: '显示物理矢量', group: '显示辅助' },
       { type: 'toggle', key: 'autoPause', label: '平衡位置自动暂停高亮', group: '显示辅助' },
       // §6 教学提示
+      // 点位说明保留（学生不知道 A/B/C/D 是哪一点就没法看动画），
+      // 但 mg=kx、x_D=2mg/k 这些式子交回右屏 gaokaoPoints（quantities/energyCases/verticalSpring.ts）。
       { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 0,
-        content: 'A点：释放位置，小球从高度h处自由下落；B点：弹簧原长位置，小球刚接触弹簧；C点：平衡位置（mg=kx），合外力为零，速度与动能最大；D点：最低点，速度为零，弹簧压缩最大。' },
+        content: 'A 释放点 → B 弹簧原长、刚接触 → C 平衡位置（合力为零、速度最大）→ D 最低点（速度为零）。' },
       { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 1,
-        content: 'B点：弹簧原长位置（释放点）；C点：平衡位置（mg=kx），合外力为零，速度与动能最大；D点：最低点，速度为零，弹簧伸长最大，满足x_D=2mg/k。' },
+        content: 'B 原长释放点 → C 平衡位置（合力为零、速度最大）→ D 最低点（速度为零、伸长最大）。' },
     ],
   },
   'anim-light-rod-rope': {

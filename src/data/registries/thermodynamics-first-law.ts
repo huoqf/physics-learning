@@ -30,7 +30,7 @@ export const thermodynamicsFirstLawAnimations = defineAnimations({
       {
         type: 'preset',
         label: '📋 典型工况·等压吸热做功',
-        group: '高考典型情境',
+        group: '典型工况',
         hideIf: 'mode',
         hideIfValue: 1,
         description: '等压吸热做功模型 (1:10等比缩放演示)：吸热 500J→50J，膨胀对外做功 240J→24J (W=-24J)，内能净增加 260J→26J。',
@@ -42,7 +42,8 @@ export const thermodynamicsFirstLawAnimations = defineAnimations({
         onChangeSideEffect: { setParams: { Q: 0 } } },
       // §6 教学提示
       { type: 'tip', group: '教学提示',
-        content: '沙箱探索：W、Q 先按等容换热、再按绝热做功依次施加。气缸热容 nC_V = 0.5 J/K，故 ±50 J 即为物理可行范围。' },
+        // 原「nC_V = 0.5 J/K」为热容公式搬运（§2.6.5 C2），右屏已给出；左屏只讲解操作顺序
+        content: '沙箱探索：先只改 Q（等容换热）、再只改 W（绝热做功），看 ΔU 一栏怎么跟着变；超出可行范围会提示。' },
       { type: 'tip', group: '教学提示',
         content: '绝热气缸 Q ≡ 0，此时 ΔU = W：压缩则升温、膨胀则降温，绝热不等于等温！' },
       { type: 'tip', group: '教学提示',
