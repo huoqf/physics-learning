@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { storage } from '@/utils/storage'
+import { normalizeReasons, type WrongReasonId } from '@/data/wrongReasons'
 
 /** 错题四态（见 ui/05_WRONGBOOK_RULES §1） */
 export type WrongStatus = 'new' | 'viewed' | 'retrying' | 'mastered'
@@ -23,6 +24,12 @@ export interface WrongRecord {
   masteredAt?: number
   /** 用户笔记（≤200字） */
   note?: string
+  /**
+   * 学生自评的错因（7 大典型错因，见 `data/wrongReasons.ts`）。
+   * 可选：老记录没有该字段，视同「未归因」，不做数据迁移。
+   * 存的是**认知缺陷**而非题目特征，所以同一题可以挂多个错因。
+   */
+  reasons?: WrongReasonId[]
 }
 
 /** 连续答对达到此值判定为已掌握 */
@@ -40,8 +47,10 @@ interface WrongState {
 
   /** 从 IndexedDB 加载（应用启动/页面进入时调用一次） */
   hydrate: () => Promise<void>
-  /** 收录错题：已存在则累计错误次数并重置连对、回到未复习 */
-  addWrong: (problemId: string, knowledgeIds: string[]) => void
+  /** 收录错题：已存在则累计错误次数并重置连对、回到未复习；`reasons` 与原记录取并集 */
+  addWrong: (problemId: string, knowledgeIds: string[], reasons?: WrongReasonId[]) => void
+  /** 覆盖设置错因（用户手动改归因时用，传空数组即清空） */
+  setReasons: (problemId: string, reasons: WrongReasonId[]) => void
   /** 标记已查看解析 */
   markViewed: (problemId: string) => void
   /** 记录一次答对：连对+1，达阈值则已掌握，否则重练中 */
@@ -86,6 +95,23 @@ export function registerBeforeUnload(): () => void {
   return () => window.removeEventListener('beforeunload', handler)
 }
 
+/**
+ * 合并错因：新错因并入旧集合（并集）。
+ *
+ * 为什么不是「覆盖」——收录错题有两条路径：练习自评（可能不选错因，传 undefined）
+ * 与错题本手动归因。若覆盖，一次不带错因的自评就会把学生前面积累的归因全部抹掉，
+ * 而学生完全无从察觉。所以：`undefined`/空数组 = 不修改，非空 = 并集；
+ * 真正要清空必须显式调用 `setReasons(problemId, [])`。
+ */
+function mergeReasons(
+  prev: WrongReasonId[] | undefined,
+  incoming: WrongReasonId[],
+): WrongReasonId[] | undefined {
+  if (incoming.length === 0) return prev
+  const merged = normalizeReasons([...(prev ?? []), ...incoming])
+  return merged.length > 0 ? merged : undefined
+}
+
 export const useWrongStore = create<WrongState>((set, get) => ({
   records: [],
   hydrated: false,
@@ -96,9 +122,10 @@ export const useWrongStore = create<WrongState>((set, get) => ({
     set({ records: Array.isArray(saved) ? saved : [], hydrated: true })
   },
 
-  addWrong: (problemId, knowledgeIds) =>
+  addWrong: (problemId, knowledgeIds, reasons) =>
     set((state) => {
       const now = Date.now()
+      const incoming = normalizeReasons(reasons)
       const existing = state.records.find((r) => r.problemId === problemId)
       let records: WrongRecord[]
       if (existing) {
@@ -111,6 +138,7 @@ export const useWrongStore = create<WrongState>((set, get) => ({
                 status: 'new',
                 masteredAt: undefined,
                 lastAttemptTime: now,
+                reasons: mergeReasons(r.reasons, incoming),
               }
             : r
         )
@@ -125,9 +153,22 @@ export const useWrongStore = create<WrongState>((set, get) => ({
             status: 'new',
             createdAt: now,
             lastAttemptTime: now,
+            reasons: incoming.length > 0 ? incoming : undefined,
           },
         ]
       }
+      persistDebounced(records)
+      return { records }
+    }),
+
+  setReasons: (problemId, reasons) =>
+    set((state) => {
+      const normalized = normalizeReasons(reasons)
+      const records = state.records.map((r) =>
+        r.problemId === problemId
+          ? { ...r, reasons: normalized.length > 0 ? normalized : undefined }
+          : r
+      )
       persistDebounced(records)
       return { records }
     }),

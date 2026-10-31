@@ -1,10 +1,11 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Trash2, CheckCircle2, StickyNote } from 'lucide-react'
+import { Trash2, CheckCircle2, StickyNote, Tag } from 'lucide-react'
 import { getProblemById } from '@/data/problems'
 import { getKnowledgeNode } from '@/data/knowledgeTree'
 import { colors } from '@/theme/colors'
 import { formatDateShort } from '@/utils/moduleHelpers'
+import { WRONG_REASON_LABELS } from '@/data/wrongReasons'
 import { STATUS_META } from '../constants/statusMeta'
 import type { WrongRecord } from '@/stores'
 
@@ -14,6 +15,7 @@ interface WrongCardProps {
   onToggleMenu: (problemId: string) => void
   onMarkMastered: (problemId: string) => void
   onEditNote: (problemId: string, note: string) => void
+  onEditReasons: (problemId: string) => void
   onDelete: (problemId: string) => void
 }
 
@@ -23,6 +25,7 @@ export const WrongCard = React.memo(function WrongCard({
   onToggleMenu,
   onMarkMastered,
   onEditNote,
+  onEditReasons,
   onDelete,
 }: WrongCardProps) {
   const navigate = useNavigate()
@@ -36,6 +39,8 @@ export const WrongCard = React.memo(function WrongCard({
   const knowledgeTags = r.knowledgeIds
     .map((k) => getKnowledgeNode(k)?.title)
     .filter(Boolean) as string[]
+  const reasons = r.reasons ?? []
+  const goAnalysis = () => navigate(`/analysis/${r.problemId}`)
 
   return (
     <div
@@ -51,7 +56,18 @@ export const WrongCard = React.memo(function WrongCard({
           {r.errorCount}
         </span>
       )}
-      <button onClick={() => navigate(`/analysis/${r.problemId}`)} className="text-left w-full p-5 active:scale-[0.99]">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={goAnalysis}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            goAnalysis()
+          }
+        }}
+        className="text-left w-full p-5 active:scale-[0.99] cursor-pointer"
+      >
         <div className="flex items-center gap-2 mb-2 flex-wrap pr-6">
           {problem && (
             <>
@@ -74,12 +90,27 @@ export const WrongCard = React.memo(function WrongCard({
             {knowledgeTags.length > 2 && <span className="text-xs text-neutral-400">+{knowledgeTags.length - 2}</span>}
           </div>
         )}
+        <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+          {reasons.map((id) => (
+            <span key={id} className="text-xs px-2 py-0.5 rounded-full bg-warning-100 text-warning-700">
+              {WRONG_REASON_LABELS[id] ?? id}
+            </span>
+          ))}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onEditReasons(r.problemId) }}
+            className="text-xs flex items-center gap-1 text-primary-600 hover:text-primary-700 active:scale-[0.97]"
+          >
+            <Tag className="w-3 h-3" />
+            {reasons.length > 0 ? '改错因' : '标记错因'}
+          </button>
+        </div>
         <div className="border-t border-neutral-100 pt-2 text-xs text-neutral-500 flex items-center justify-between">
           <span>最近作答：{formatDateShort(r.lastAttemptTime)}</span>
           <span>错 {r.errorCount} 次</span>
         </div>
         {r.note && <p className="mt-2 text-xs text-neutral-600 bg-warning-50 rounded px-2 py-1 line-clamp-2">📝 {r.note}</p>}
-      </button>
+      </div>
 
       {menuFor === r.problemId && (
         <>
@@ -91,6 +122,10 @@ export const WrongCard = React.memo(function WrongCard({
                 <CheckCircle2 className="w-4 h-4" /> 标记已掌握
               </button>
             )}
+            <button onClick={() => { onEditReasons(r.problemId); onToggleMenu(r.problemId) }}
+              className="w-full text-left px-3 py-2 hover:bg-neutral-50 flex items-center gap-2 text-neutral-700">
+              <Tag className="w-4 h-4" /> 标记错因
+            </button>
             <button onClick={() => { onEditNote(r.problemId, r.note ?? ''); onToggleMenu(r.problemId) }}
               className="w-full text-left px-3 py-2 hover:bg-neutral-50 flex items-center gap-2 text-neutral-700">
               <StickyNote className="w-4 h-4" /> {r.note ? '编辑笔记' : '添加笔记'}

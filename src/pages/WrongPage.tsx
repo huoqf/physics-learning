@@ -4,8 +4,20 @@ import { BookOpenCheck, Trash2, X, CheckCircle2 } from 'lucide-react'
 import { useWrongStore } from '@/stores'
 import { NOTE_MAX_LENGTH } from '@/stores/useWrongStore'
 import { colors } from '@/theme/colors'
-import { MODULE_LABELS, moduleOf, toggle, chip } from '@/utils/moduleHelpers'
-import { WrongCard, STATUS_META, useWrongBookFilter } from '@/features/wrongbook'
+import { moduleOf, toggle, chip } from '@/utils/moduleHelpers'
+import { MODULE_LABELS } from '@/data/knowledge/modules'
+import { WRONG_REASONS } from '@/data/wrongReasons'
+import { getProblemById } from '@/data/problems'
+import {
+  WrongCard,
+  STATUS_META,
+  useWrongBookFilter,
+  UNATTRIBUTED_REASON,
+  filterKeepingSelected,
+  ReasonPickerModal,
+  ReasonBenchmarkStrip,
+} from '@/features/wrongbook'
+import type { ReasonFilterKey } from '@/features/wrongbook'
 import type { WrongStatus } from '@/stores'
 import { PageLayout } from '@/components/Layout'
 
@@ -15,6 +27,7 @@ export default function WrongPage() {
   const hydrate = useWrongStore((s) => s.hydrate)
   const markMastered = useWrongStore((s) => s.markMastered)
   const addNote = useWrongStore((s) => s.addNote)
+  const setReasons = useWrongStore((s) => s.setReasons)
   const removeWrong = useWrongStore((s) => s.removeWrong)
   const clearAll = useWrongStore((s) => s.clearAll)
 
@@ -22,6 +35,7 @@ export default function WrongPage() {
     moduleFilter, setModuleFilter,
     difficultyFilter, setDifficultyFilter,
     statusFilter, setStatusFilter,
+    reasonFilter, setReasonFilter,
     sortKey, setSortKey,
     showMastered, setShowMastered,
     stats, activeRecords, masteredRecords,
@@ -35,10 +49,42 @@ export default function WrongPage() {
   const [confirmDelete, setConfirmDelete] = useState<string | 'all' | null>(null)
   const [noteEditing, setNoteEditing] = useState<string | null>(null)
   const [noteDraft, setNoteDraft] = useState('')
+  const [reasonEditing, setReasonEditing] = useState<string | null>(null)
   const [menuFor, setMenuFor] = useState<string | null>(null)
 
   const hasAny = records.length > 0
   const noFilterResult = hasAny && activeRecords.length === 0 && masteredRecords.length === 0
+
+  // 筛选项只列「真的出现过」的错因，避免一排永远点不出结果的死胶囊；
+  // 但已选中的 key 由 filterKeepingSelected 保底保留 —— 否则删掉最后一道带该错因的题后，
+  // chip 凭空消失、选中态却还死死生效，界面恒空且无从取消（交互死锁）。
+  const presentReasons = filterKeepingSelected(
+    WRONG_REASONS,
+    (r) => records.some((rec) => rec.reasons?.includes(r.id)),
+    reasonFilter as ReadonlySet<string>,
+    (r) => r.id as string,
+  )
+  const presentModules = filterKeepingSelected(
+    Object.keys(MODULE_LABELS),
+    (m) => records.some((r) => moduleOf(r.knowledgeIds) === m),
+    moduleFilter,
+    (m) => m,
+  )
+  const showUnattributedChip =
+    reasonFilter.has(UNATTRIBUTED_REASON) ||
+    records.some((rec) => !rec.reasons || rec.reasons.length === 0)
+
+  const clearFilters = () => {
+    setModuleFilter(new Set<string>())
+    setDifficultyFilter(new Set<number>())
+    setStatusFilter(new Set<WrongStatus>())
+    setReasonFilter(new Set<ReasonFilterKey>())
+  }
+  const hasActiveFilter =
+    moduleFilter.size > 0 || difficultyFilter.size > 0 || statusFilter.size > 0 || reasonFilter.size > 0
+  const editingRecord = reasonEditing
+    ? records.find((r) => r.problemId === reasonEditing)
+    : undefined
 
   const renderCard = (r: typeof records[0]) => (
     <WrongCard
@@ -48,6 +94,7 @@ export default function WrongPage() {
       onToggleMenu={(id) => setMenuFor(menuFor === id ? null : id)}
       onMarkMastered={markMastered}
       onEditNote={(id, note) => { setNoteDraft(note); setNoteEditing(id) }}
+      onEditReasons={(id) => setReasonEditing(id)}
       onDelete={(id) => setConfirmDelete(id)}
     />
   )
@@ -69,6 +116,8 @@ export default function WrongPage() {
           )}
         </div>
 
+        <ReasonBenchmarkStrip />
+
         {!hasAny ? (
           <div className="flex flex-col items-center justify-center text-center py-24 gap-3">
             <BookOpenCheck className="w-14 h-14 text-neutral-200" />
@@ -89,8 +138,8 @@ export default function WrongPage() {
             <div className="space-y-2 mb-6">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm text-neutral-400 w-12">模块</span>
-                {Object.entries(MODULE_LABELS).filter(([m]) => records.some((r) => moduleOf(r.knowledgeIds) === m))
-                  .map(([m, label]) => chip(moduleFilter.has(m), label, () => setModuleFilter(toggle(moduleFilter, m)), m))}
+                {/* 模块 chip 同样由 records 动态派生，同样要并上已选 key（否则同一处死锁换个维度再来一遍） */}
+                {presentModules.map((m) => chip(moduleFilter.has(m), MODULE_LABELS[m], () => setModuleFilter(toggle(moduleFilter, m)), m))}
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm text-neutral-400 w-12">难度</span>
@@ -99,6 +148,16 @@ export default function WrongPage() {
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm text-neutral-400 w-12">状态</span>
                 {(['new', 'viewed', 'retrying', 'mastered'] as WrongStatus[]).map((s) => chip(statusFilter.has(s), STATUS_META[s].label, () => setStatusFilter(toggle(statusFilter, s)), s))}
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm text-neutral-400 w-12">错因</span>
+                {presentReasons.map((r) => chip(reasonFilter.has(r.id), r.label, () => setReasonFilter(toggle(reasonFilter, r.id)), r.id))}
+                {showUnattributedChip && chip(reasonFilter.has(UNATTRIBUTED_REASON), '未归因', () => setReasonFilter(toggle(reasonFilter, UNATTRIBUTED_REASON)), UNATTRIBUTED_REASON)}
+                {presentReasons.length === 0 && !showUnattributedChip && (
+                  <span className="text-sm text-neutral-400">
+                    还没有错题被归因 —— 点卡片上的「标记错因」先打标，再回来按错因聚合
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm text-neutral-400 w-12">排序</span>
@@ -112,7 +171,17 @@ export default function WrongPage() {
             </div>
 
             {noFilterResult ? (
-              <div className="text-center text-neutral-400 py-16">没有符合筛选条件的错题</div>
+              <div className="flex flex-col items-center justify-center gap-3 text-center text-neutral-400 py-16">
+                <span>没有符合筛选条件的错题</span>
+                {/* 兜底出口：任何筛选维度（含将来新增的动态维度）把结果清空时，
+                    学生不必逐个去找「自己点过哪几个胶囊」才能退出 */}
+                {hasActiveFilter && (
+                  <button onClick={clearFilters}
+                    className="px-4 py-1.5 rounded-lg text-sm bg-neutral-100 text-neutral-600 hover:bg-neutral-200 active:scale-[0.97]">
+                    清除全部筛选
+                  </button>
+                )}
+              </div>
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{activeRecords.map(renderCard)}</div>
@@ -167,6 +236,19 @@ export default function WrongPage() {
             </div>
           </div>
         </div>
+      )}
+      {/* 错因归因 Modal */}
+      {reasonEditing && (
+        <ReasonPickerModal
+          key={reasonEditing}
+          problemTitle={editingRecord ? getProblemById(editingRecord.problemId)?.title : undefined}
+          initial={editingRecord?.reasons ?? []}
+          onClose={() => setReasonEditing(null)}
+          onSave={(next) => {
+            setReasons(reasonEditing, next)
+            setReasonEditing(null)
+          }}
+        />
       )}
     </div>
   )

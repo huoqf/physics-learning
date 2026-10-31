@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Eye, EyeOff, Zap, Award } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Eye, EyeOff, Zap, Award, Tag } from 'lucide-react'
 import { FormattedProblemContent, StepCard, KnowledgeChain, ProblemDeconstruction, useAnalysisSteps } from '@/features/analysis'
+import { ReasonPickerModal } from '@/features/wrongbook'
+import type { WrongReasonId } from '@/data/wrongReasons'
 import { getKnowledgeNode } from '@/data/knowledgeTree'
 import { getProblemDiagram } from '@/components/Physics/ProblemDiagrams'
 import { Button, Badge } from '@/components/UI'
@@ -19,9 +21,11 @@ const difficultyColors: Record<number, string> = {
 export default function AnalysisPage() {
   const navigate = useNavigate()
   const [isAnalysisUnlocked, setIsAnalysisUnlocked] = useState(false)
+  /** 错因归因弹窗：收录错题后立即弹出，这是学生最清楚「为什么错」的时刻 */
+  const [reasonFor, setReasonFor] = useState<{ problemId: string; initial: WrongReasonId[] } | null>(null)
   const {
     id, problem, analysisEntry, wrongRecord,
-    addWrong, markMastered,
+    addWrong, markMastered, setReasons,
     expandedSteps, currentStepIndex,
     completedKnowledgeIds, currentStepKnowledgeId,
     toggleStep, goToPrevStep, goToNextStep,
@@ -91,11 +95,30 @@ export default function AnalysisPage() {
               {wrongRecord && wrongRecord.status === 'mastered' ? (
                 <span className="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-success-100 text-success-700 font-medium">✓ 已掌握</span>
               ) : wrongRecord ? (
-                <Button variant="secondary" size="sm" className="shrink-0" onClick={() => markMastered(wrongRecord.problemId)}>
-                  标记已掌握
-                </Button>
+                <>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="shrink-0 flex items-center gap-1"
+                    onClick={() => setReasonFor({ problemId: wrongRecord.problemId, initial: wrongRecord.reasons ?? [] })}
+                  >
+                    <Tag className="w-3.5 h-3.5" />
+                    {wrongRecord.reasons?.length ? '改错因' : '标记错因'}
+                  </Button>
+                  <Button variant="secondary" size="sm" className="shrink-0" onClick={() => markMastered(wrongRecord.problemId)}>
+                    标记已掌握
+                  </Button>
+                </>
               ) : (
-                <Button variant="secondary" size="sm" className="shrink-0" onClick={() => addWrong(problem.id, analysisEntry.knowledgeIds)}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => {
+                    addWrong(problem.id, analysisEntry.knowledgeIds)
+                    setReasonFor({ problemId: problem.id, initial: [] })
+                  }}
+                >
                   加入错题本
                 </Button>
               )}
@@ -175,14 +198,16 @@ export default function AnalysisPage() {
                 if (idx > currentStepIndex) goToNextStep()
                 else if (idx < currentStepIndex) goToPrevStep()
               }}
-              onLaunchAnimation={(animId, params) => {
+              onLaunchAnimation={(animId, params, criticalT) => {
+                const searchParams = new URLSearchParams()
                 if (params) {
-                  const searchParams = new URLSearchParams()
-                  Object.entries(params).forEach(([k, v]) => searchParams.set(k, String(v)))
-                  navigate(`/animation/${animId}?${searchParams.toString()}`)
-                } else {
-                  navigate(`/animation/${animId}`)
+                  searchParams.set('params', JSON.stringify(params))
                 }
+                // 真题配置了 criticalT 时，装载参数后直接定格在临界瞬间，
+                // 而不是把学生丢在 t=0 的初始态自己拖时间轴
+                if (criticalT != null) searchParams.set('t', String(criticalT))
+                const qs = searchParams.toString()
+                navigate(`/animation/${animId}${qs ? `?${qs}` : ''}`)
               }}
             />
 
@@ -238,6 +263,19 @@ export default function AnalysisPage() {
           </div>
         )}
       </PageLayout>
+
+      {reasonFor && (
+        <ReasonPickerModal
+          key={reasonFor.problemId}
+          problemTitle={problem.title}
+          initial={reasonFor.initial}
+          onClose={() => setReasonFor(null)}
+          onSave={(next) => {
+            setReasons(reasonFor.problemId, next)
+            setReasonFor(null)
+          }}
+        />
+      )}
     </div>
   )
 }
