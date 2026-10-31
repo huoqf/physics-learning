@@ -24,7 +24,7 @@ export default function KnowledgePage() {
             <div>
               <h1 className="text-3xl font-bold text-neutral-900">知识树</h1>
               <p className="text-neutral-600">
-                探索高中物理知识点，系统学习力学知识
+                按学科模块梳理高中物理知识网络，逐章查看知识点、动画与真题
               </p>
             </div>
           </div>

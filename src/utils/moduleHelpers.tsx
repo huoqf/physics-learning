@@ -1,13 +1,10 @@
 import { getKnowledgeNode } from '@/data/knowledgeTree'
 
-export const MODULE_LABELS: Record<string, string> = {
-  mechanics: '力学',
-  electricity: '电磁学',
-  thermodynamics: '热学',
-  optics: '光学',
-  atomic: '原子物理',
-}
-
+/**
+ * 模块 id → 中文名的真源在 `src/data/knowledge/modules.ts`（MODULE_META）。
+ * 本文件不再转发该表：它会引入非字面量导出，触发 react-refresh/only-export-components，
+ * 使 `lint --max-warnings 0` 失败。需要模块名请直接 `import { MODULE_LABELS } from '@/data/knowledge/modules'`。
+ */
 export function moduleOf(knowledgeIds: string[]): string {
   const node = knowledgeIds.map((k) => getKnowledgeNode(k)).find(Boolean)
   return node?.module ?? knowledgeIds[0]?.split('-')[0] ?? 'other'

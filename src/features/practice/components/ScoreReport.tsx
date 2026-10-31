@@ -4,7 +4,7 @@ import type { ScoreRecord } from '@/stores'
 import { getKnowledgeNode } from '@/data/knowledgeTree'
 import { getProblemById } from '@/data/problems'
 import { colors } from '@/theme/colors'
-import { MODULE_LABELS } from '@/utils/moduleHelpers'
+import { MODULE_LABELS } from '@/data/knowledge/modules'
 
 interface ScoreReportProps {
   record: Omit<ScoreRecord, 'id' | 'timestamp'>
