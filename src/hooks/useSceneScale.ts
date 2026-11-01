@@ -77,6 +77,22 @@ export interface UseSceneScaleOptions {
   /** originSource === 'custom' 时的原点 Y（设计坐标） */
   originY?: number
 
+  /**
+   * 内容安全边距（设计坐标，viewport / design 模式专用）。
+   *
+   * 物理映射只在「可视区 − 边距」的矩形内进行，原点随之落到安全区的角上。
+   *
+   * 为什么必须有：`originSource: 'bottomLeft'` 把物理原点放在**可视区底边**，
+   * 而主刻度数字（基线 `origin + 16`）、地面线（`origin + 10`）、射程标注
+   * 这些「按惯例画在原点外侧」的元素就整排落到可视区之外——画了但看不见，
+   * 压字守卫也查不出来（它们和谁都不重叠，只是不存在）。
+   * 每个场景自己去挪元素坐标是本末倒置：原点位置才是根因。
+   *
+   * 注意是**参与比例计算**的，不是裁切：`scale = (可视区 − 边距) / 物理量程`，
+   * 所以留出边距后量程仍恰好铺满安全区，不会出现"物理量跑到画面外"。
+   */
+  contentInset?: { top?: number; right?: number; bottom?: number; left?: number }
+
   // ── 公共 ──
   refMagnitudes?: Partial<Record<VectorType, number>>
   /** 矢量归一化上限（设计坐标单位），不传则自动计算 */
@@ -112,8 +128,14 @@ export function useSceneScale(options: UseSceneScaleOptions): SceneScale {
     customScaleX, customScaleY, customOriginX, customOriginY,
     originX: modeOriginX, originY: modeOriginY,
     physicsWidth, physicsHeight, refMagnitudes, maxVectorLength,
-    centerLayout, intentionalNonUniformScale,
+    centerLayout, intentionalNonUniformScale, contentInset,
   } = options
+
+  // 拆成原始值参与依赖：调用方普遍内联字面量 `{ bottom: 34 }`，直接依赖对象会每次渲染都重建
+  const insTop = contentInset?.top ?? 0
+  const insRight = contentInset?.right ?? 0
+  const insBottom = contentInset?.bottom ?? 0
+  const insLeft = contentInset?.left ?? 0
 
   return useMemo(() => {
     // ── 参数校验 ──────────────────────────────────────────
@@ -145,6 +167,16 @@ export function useSceneScale(options: UseSceneScaleOptions): SceneScale {
       dy: (vp.centerY - vp.ty) / vp.scale,
     }
 
+    // 安全区 = 可视区（或 preset）扣掉内容边距。物理量程铺满的是安全区，
+    // 不是整个可视区——这样画在原点外侧的刻度/轴名/地面线才有地方待。
+    const insetRect = (base: { x: number; y: number; width: number; height: number }) => ({
+      x: base.x + insLeft,
+      y: base.y + insTop,
+      // 极端窄面板下别让边距把安全区吃成 0 或负数（会让 scale 变成 0/NaN）
+      width: Math.max(1, base.width - insLeft - insRight),
+      height: Math.max(1, base.height - insTop - insBottom),
+    })
+
     // maxVectorLength 默认值（layout-aware）
     const getDefaultMaxVL = (w: number, h: number): number => {
       if (centerLayout === 'splitH') return Math.min(w * 0.45, h * 0.3)
@@ -154,12 +186,13 @@ export function useSceneScale(options: UseSceneScaleOptions): SceneScale {
     // ── anchor 分支 ────────────────────────────────────────
     switch (anchor) {
       case 'viewport': {
-        const scaleX = visibleDesign.width / physicsWidth!
-        const scaleY = visibleDesign.height / physicsHeight!
+        const safe = insetRect(visibleDesign)
+        const scaleX = safe.width / physicsWidth!
+        const scaleY = safe.height / physicsHeight!
         let ox: number, oy: number
         if (originSource === 'topLeft') {
-          ox = visibleDesign.x
-          oy = visibleDesign.y
+          ox = safe.x
+          oy = safe.y
         } else if (originSource === 'center') {
           ox = viewportCenterDesign.dx
           oy = viewportCenterDesign.dy
@@ -168,8 +201,8 @@ export function useSceneScale(options: UseSceneScaleOptions): SceneScale {
           oy = modeOriginY!
         } else {
           // bottomLeft（默认）
-          ox = visibleDesign.x
-          oy = visibleDesign.y + visibleDesign.height
+          ox = safe.x
+          oy = safe.y + safe.height
         }
         return {
           scaleX, scaleY,
@@ -201,18 +234,19 @@ export function useSceneScale(options: UseSceneScaleOptions): SceneScale {
       }
 
       case 'design': {
-        const scaleX = preset.width / physicsWidth!
-        const scaleY = preset.height / physicsHeight!
+        const safe = insetRect({ x: 0, y: 0, width: preset.width, height: preset.height })
+        const scaleX = safe.width / physicsWidth!
+        const scaleY = safe.height / physicsHeight!
         let ox: number, oy: number
         if (originSource === 'topLeft') {
-          ox = 0; oy = 0
+          ox = safe.x; oy = safe.y
         } else if (originSource === 'center') {
           ox = preset.width / 2; oy = preset.height / 2
         } else if (originSource === 'custom') {
           ox = modeOriginX!; oy = modeOriginY!
         } else {
           // bottomLeft（默认）
-          ox = 0; oy = preset.height
+          ox = safe.x; oy = safe.y + safe.height
         }
         return {
           scaleX, scaleY,
@@ -248,5 +282,6 @@ export function useSceneScale(options: UseSceneScaleOptions): SceneScale {
     modeOriginX, modeOriginY,
     physicsWidth, physicsHeight, refMagnitudes, maxVectorLength,
     centerLayout, intentionalNonUniformScale,
+    insTop, insRight, insBottom, insLeft,
   ])
 }

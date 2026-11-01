@@ -28,6 +28,8 @@ interface PhysicsVectorArrowProps {
   refMagnitude?: number
   /** 矢量符号名称标签 */
   label?: string
+  /** 标签摆放：`tip`（默认，箭尖外）/ `side`（箭杆侧面，避开同向箭头的标签叠字） */
+  labelPlacement?: 'tip' | 'side'
   /** 是否使用虚线箭头 */
   dashed?: boolean
   /** 是否在箭头外侧增加发光阴影，提高对比度 */
@@ -53,6 +55,7 @@ export function PhysicsVectorArrow({
   strokeWidth,
   refMagnitude,
   label,
+  labelPlacement,
   dashed,
   glow,
   font,
@@ -68,6 +71,7 @@ export function PhysicsVectorArrow({
       strokeWidth={strokeWidth}
       refMagnitude={refMagnitude}
       label={label}
+      labelPlacement={labelPlacement}
       dashed={dashed}
       glow={glow}
       font={font}

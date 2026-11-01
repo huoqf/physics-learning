@@ -3,6 +3,7 @@ import { useUniqueSvgId } from '@/hooks';
 import { CANVAS_STYLE, SCENE_COLORS, CHART_COLORS, PHYSICS_COLORS } from '@/theme/physics';
 import { colors } from '@/theme/colors';
 import { calculateNiceStep } from '@/utils/ruler';
+import { sparsifyTickLabels } from '@/utils/tickLayout';
 import { createRulerTicks, type TickMark } from './physicsGroundUtils';
 
 export type { TickMark };
@@ -364,6 +365,34 @@ export function PhysicsGround({
     const elementColor = ruler.axisOffset ? CHART_COLORS.axisLine : strokeColor;
     const textColor = ruler.axisOffset ? CHART_COLORS.labelText : strokeColor;
 
+    // === 刻度标签抽稀 ===
+    // 主刻度在屏幕上的像素间距 = 物理步长 × 每单位像素，跟 `width / domain` 直接成正比；
+    // 面板一窄或量程一大，相邻两位数字就会叠在一起（典型：`0 1 2 3` 挤成一条黑杠）。
+    // 刻度线由物理决定不能动，**只能决定哪些刻度出数字**。这里统一交给
+    // `sparsifyTickLabels` 按文字实际宽度做轴对齐矩形相交，避免"凭感觉隔一个跳一个"
+    // 导致的稀疏不均：宽度够就全留，不够就只留能放下的。
+    const majorTicks = ticks
+      .map((t, idx) => ({
+        t,
+        idx,
+        // 增加 1e-4 的容差，避免末尾刻度被浮点误差过滤掉
+        tx: x + (t.value - ruler.domain[0]) * pxPerUnit,
+      }))
+      .filter(({ tx }) => tx >= x - 1e-4 && tx <= x + width + 1e-4);
+
+    const labelY = axisY + (8 + 14) * tickDir + (isBottom ? 0 : 4);
+    const keptLabelIdx = new Set(
+      sparsifyTickLabels(
+        majorTicks.map(({ t, tx }) => ({
+          // 单位是刻度的组成部分，宽度要一起算，否则带单位的标签会被低估
+          label: `${t.label}${ruler.unit ?? ''}`,
+          x: tx,
+          y: labelY,
+          fontSize: CANVAS_STYLE.font.small,
+        })),
+      ).map((i) => majorTicks[i].idx),
+    );
+
     return (
       <g className="physics-ruler">
         {showLine && (
@@ -408,7 +437,7 @@ export function PhysicsGround({
                 stroke={elementColor}
                 strokeWidth={t.isMinor ? 1 : CANVAS_STYLE.stroke.tickBold}
               />
-              {!t.isMinor && (
+              {!t.isMinor && keptLabelIdx.has(idx) && (
                 <text
                   x={tx}
                   y={axisY + (tickLen + 14) * tickDir + (isBottom ? 0 : 4)}

@@ -111,6 +111,17 @@ export interface BasePhysicsChartProps {
   onScrubStart?: () => void;
   /** 拖拽结束（含指针取消） */
   onScrubEnd?: () => void;
+  /**
+   * 绘图区下方为「标注行」额外预留的行数，默认 0。
+   *
+   * 底部区原本只有两行：刻度行 + X 轴标题行。参考线标注（`markers` 的 vertical
+   * 变体）没有第三行可用，只能挤进刻度行，于是与同位置的刻度数字必然重叠——
+   * `anim-inclined-plane` 的 `θc = 16.7°` 压住刻度 `18.0` 即属此类。
+   *
+   * 预留后，子组件通过 `useChartContext().annotationY(row)` 拿到每行的基线 y，
+   * `autoBottom` 与 X 轴标题同步下移。**为 0 时布局与旧版逐像素一致**。
+   */
+  extraBottomRows?: number;
 }
 
 /**
@@ -189,6 +200,7 @@ export function BasePhysicsChart({
   onScrubX,
   onScrubStart,
   onScrubEnd,
+  extraBottomRows = 0,
 }: BasePhysicsChartProps) {
   const isMini = variant === 'mini';
   const initW = initialSize?.width ?? (isMini ? CHART_LAYOUT.miniWidth : CHART_LAYOUT.defaultWidth);
@@ -223,6 +235,15 @@ export function BasePhysicsChart({
   const rawLeft = px(isMini ? CHART_LAYOUT.miniMarginLeft : CHART_LAYOUT.marginLeft);
   const rawRight = px(isMini ? CHART_LAYOUT.miniMarginRight : CHART_LAYOUT.marginRight);
   const rawBottom = px(marginBottomVal);
+
+  /** 标注行数（夹到 0~3：再多就会把小于 130px 高的 MiniChart 绘图区压没） */
+  const annRows = Math.max(0, Math.min(3, Math.round(extraBottomRows)));
+  /**
+   * 行距：刻度行 → 标注行 → X 轴标题行，相邻两行的基线间距。
+   * 取 `字号 + 4` 是为了让"基线差"（15px@11号字）大于文字行高（约 13px），
+   * 相邻两行才算真正错开而不是"紧行距"。
+   */
+  const bottomRowPitch = axisFontSize + px(4);
 
   const xRange = Math.max(Number.EPSILON, xDomain[1] - xDomain[0]);
   const yRange = Math.max(Number.EPSILON, yDomain[1] - yDomain[0]);
@@ -275,7 +296,8 @@ export function BasePhysicsChart({
       )
     : rawRight;
   // 底部：X 轴刻度文字高度 + 间距 + X 轴标签高度 + 底部留白（防止刻度与标签重叠）
-  const autoBottom = Math.max(rawBottom, 2 * axisFontSize + px(8));
+  // 标注行按行距逐行追加；`annRows === 0` 时与旧公式完全一致（不多占 1px）。
+  const autoBottom = Math.max(rawBottom, 2 * axisFontSize + px(8) + annRows * bottomRowPitch);
 
   const margin = {
     left: autoLeft,
@@ -289,6 +311,19 @@ export function BasePhysicsChart({
 
   const xScale = plotW / xRange;
   const yScale = plotH / yRange;
+
+  /** X 轴刻度文字的基线 y（绘制刻度时用它，下面排标注行也从这里起算） */
+  const xTickRowY = margin.top + plotH + axisFontSize + px(3);
+  /**
+   * 标注行基线：`row = 0` 就是"刻度行下面第一行"。
+   * 图表子组件（参考线标注、特殊点说明）通过 context 取用，不必再自己猜 margin。
+   */
+  const annotationRowY = useCallback(
+    (row: number) => xTickRowY + (row + 1) * bottomRowPitch,
+    [xTickRowY, bottomRowPitch],
+  );
+  /** X 轴标题始终排在所有标注行之下，保证"刻度 → 标注 → 轴标题"的阅读顺序 */
+  const xTitleY = xTickRowY + (annRows + 1) * bottomRowPitch;
 
   /** 旋转 Y 轴标签中心横坐标：始终贴在刻度文字外侧，保证永不压字 */
   const yLabelX = Math.max(
@@ -366,8 +401,10 @@ export function BasePhysicsChart({
       plotSize: { width: plotW, height: plotH },
       font,
       px,
+      annotationY: annotationRowY,
     }),
-    [toSvgX, toSvgY, toSvgY2, margin.left, margin.top, plotW, plotH, font, px]
+    // annotationRowY 是纯函数派生自 plotH/axisFontSize/bottomRowPitch，闭包随下面依赖一起重建
+    [toSvgX, toSvgY, toSvgY2, margin.left, margin.top, plotW, plotH, font, px, annotationRowY]
   );
 
   // ── 图区横向拖拽（仅在传入 onScrubX 时启用）────────────────────────────
@@ -531,7 +568,7 @@ export function BasePhysicsChart({
             />
             <text
               x={x}
-              y={margin.top + plotH + font(isMini ? FONT.small : FONT.axis) + px(3)}
+              y={xTickRowY}
               fontSize={font(isMini ? FONT.small : FONT.axis)}
               fill={CHART_COLORS.tickLabel}
               textAnchor='middle'
@@ -574,7 +611,7 @@ export function BasePhysicsChart({
       {/* X 轴标签（y 偏移需容纳刻度数字高度 + 间距 + 标签自身高度，避免重叠） */}
       <text
         x={margin.left + plotW / 2}
-        y={margin.top + plotH + 2 * font(isMini ? FONT.small : FONT.axis) + px(7)}
+        y={xTitleY}
         fontSize={font(isMini ? FONT.small : FONT.axis)}
         fill={CHART_COLORS.labelText}
         textAnchor='middle'

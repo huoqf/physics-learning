@@ -25,6 +25,12 @@ export interface DialMeterProps {
   showLabel?: boolean
   /** 读数文本标签位置：'bottom' (默认下方) | 'top' (表盘上方) | 'right' (表盘右侧) | 'left' (表盘左侧) | 'none' (不显示) */
   labelPosition?: 'top' | 'bottom' | 'right' | 'left' | 'none'
+  /**
+   * 是否在盘面上画类型字母（`V` / `A`），默认 true。
+   * 置 false 用于"盘面已被外部语义占用"的场合：`anim-multimeter-ohm` 的灵敏表头
+   * 是 `G`，盘面再印一个 `A` 就是同一块表两个符号，且两者纵向只差 8px 会叠字。
+   */
+  showType?: boolean
 }
 
 /**
@@ -43,6 +49,7 @@ export const DialMeter: React.FC<DialMeterProps> = ({
   variant = 'realistic',
   showLabel = true,
   labelPosition = 'bottom',
+  showType = true,
 }) => {
   const uniqueId = useUniqueSvgId()
   const ringGradId = `dial-ring-${type}-${uniqueId}`
@@ -160,21 +167,25 @@ export const DialMeter: React.FC<DialMeterProps> = ({
         strokeDasharray="1,1.5"
       />
 
-      {/* 刻度值文本 */}
-      <text x={-15} y={11} fontSize={font(6)} fill={textLight} textAnchor="middle" fontFamily="monospace">
+      {/* 刻度值文本。
+          ⚠️ 基线从 11 收到 10：盘面只有 50px，下面紧接着就是正负接线柱符号，
+          原来 11 与符号的 12.3 只差 1.3px（见下方注释），挤不出空隙。 */}
+      <text x={-15} y={10} fontSize={font(6)} fill={textLight} textAnchor="middle" fontFamily="monospace">
         {minText}
       </text>
       <text x={0} y={-14} fontSize={font(6)} fill={textLight} textAnchor="middle" fontFamily="monospace">
         {midText}
       </text>
-      <text x={15} y={11} fontSize={font(6)} fill={textLight} textAnchor="middle" fontFamily="monospace">
+      <text x={15} y={10} fontSize={font(6)} fill={textLight} textAnchor="middle" fontFamily="monospace">
         {maxText}
       </text>
 
       {/* 仪表类型标识 "V" 或 "A" */}
-      <text x={0} y={16} fontSize={font(10)} fill={themeColor} fontWeight="bold" textAnchor="middle">
-        {type}
-      </text>
+      {showType && (
+        <text x={0} y={16} fontSize={font(10)} fill={themeColor} fontWeight="bold" textAnchor="middle">
+          {type}
+        </text>
+      )}
 
       {/* 指针（带阻尼过渡动画） */}
       <MeterPointer
@@ -190,15 +201,22 @@ export const DialMeter: React.FC<DialMeterProps> = ({
       {/* 指针轴心 */}
       <circle cx={0} cy={0} r={3} fill={SCENE_COLORS.materials.structStrokeDark} />
 
-      {/* 正负接线柱端子（高中规范：电流从+进−出，内嵌于表盘下方） */}
-      {/* 正极接线柱 "+" — 右侧 */}
-      <circle cx={r * 0.45} cy={r * 0.62} r={r * 0.11} fill={SCENE_COLORS.circuit.batteryPos} stroke={SCENE_COLORS.circuit.batteryPos} strokeWidth={1} />
-      <circle cx={r * 0.45} cy={r * 0.62} r={r * 0.04} fill={SCENE_COLORS.circuit.meterScale} />
-      <text x={r * 0.45} y={r * 0.44} fontSize={font(7.5)} fill={SCENE_COLORS.circuit.batteryPos} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>+</text>
+      {/* 正负接线柱端子（高中规范：电流从+进−出，内嵌于表盘下方）
+          ⚠️ 符号放进接线柱圆点内部，不再作为独立文字摆在盘面上。
+          原因：盘面只有 50px，刻度值 `(15, 10)`、类型字母 `(0, 16)`、接线柱
+          `(±12.6, 17.4)` 已经占满，符号无论放在刻度行上方还是圆点旁边，
+          与邻居的墨迹间距都只剩 1~3px（实测与末位刻度咬合 7×11px）。
+          圆点半径放大到 0.16r 后内部正好容得下 7px 白字，既保住"红正黑负"
+          这一高考规范，又不再和任何文字抢位置。 */}
+      {/* 正极接线柱 "+" — 右侧
+          ⚠️ 坐标必须是 28 空间的固定值，不能写成 `r * 0.45`：整个 <g> 已经带
+          `scale(r / 28)`，再用 prop 的 r 乘系数就被缩放了两次，r=32 的表盘
+          两个符号会被推到盘面外沿。 */}
+      <circle cx={12.6} cy={17.4} r={4.5} fill={SCENE_COLORS.circuit.batteryPos} stroke={SCENE_COLORS.circuit.batteryPos} strokeWidth={1} />
+      <text x={12.6} y={19.8} fontSize={font(7)} fill={CANVAS_COLORS.white} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>+</text>
       {/* 负极接线柱 "−" — 左侧 */}
-      <circle cx={-r * 0.45} cy={r * 0.62} r={r * 0.11} fill={SCENE_COLORS.circuit.batteryNeg} stroke={SCENE_COLORS.circuit.batteryNeg} strokeWidth={1} />
-      <circle cx={-r * 0.45} cy={r * 0.62} r={r * 0.04} fill={SCENE_COLORS.circuit.meterScale} />
-      <text x={-r * 0.45} y={r * 0.44} fontSize={font(7.5)} fill={SCENE_COLORS.circuit.batteryNeg} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>−</text>
+      <circle cx={-12.6} cy={17.4} r={4.5} fill={SCENE_COLORS.circuit.batteryNeg} stroke={SCENE_COLORS.circuit.batteryNeg} strokeWidth={1} />
+      <text x={-12.6} y={19.8} fontSize={font(7)} fill={CANVAS_COLORS.white} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>−</text>
     </g>
   )
 }

@@ -176,6 +176,71 @@ function buildPath(
   )
 }
 
+/**
+ * 标签估算宽度（px）：拉丁字符 0.6em、CJK 1em。等宽估算够用，判"能不能放下/会不会咬合"
+ * 不需要精确到像素，宁可多算一点。
+ */
+function labelWidth(label: string, fontSize: number): number {
+  return [...label].reduce(
+    (w, ch) => w + (/[\u2E80-\u9FFF\uFF00-\uFFEF]/.test(ch) ? fontSize : fontSize * 0.6),
+    0,
+  )
+}
+
+/**
+ * 行规划只能在"还没有绘图区"的阶段跑，字号也只能按标称 11 估。
+ * ⚠️ 一旦拿得到 `ctx.font(FONT.small)`（设计坐标系里的真实字号，可能 7~16），
+ * 就必须改用真实字号重算——两处坐标空间不同，混用会漏判咬合。
+ */
+const EST_FONT = 11
+const estimateLabelWidth = (label: string) => labelWidth(label, EST_FONT)
+
+/** 估算绘图区宽度：只在行规划里当分母用 */
+const EST_PLOT_W = 320
+/** 标签窄于这个宽度就不值得独占一行——它塞得进相邻两根刻度之间 */
+const MIN_ANNOTATION_W = 56
+
+/**
+ * 给 vertical 参考线标注分配行号。
+ *
+ * 【要解决的问题】底部只有"刻度行 + X 轴标题行"两行，参考线标注原先画在刻度行里，
+ * 于是与同位置的刻度数字必然重叠：`anim-inclined-plane` 的 `θc = 16.7°` 压住刻度
+ * `18.0`、`anim-nuclear-decay` 的 `强相互作用力平衡点 (r ≈ 0.8 fm)` 一条压住 2~3 根刻度。
+ *
+ * 【怎么分配】按标注在 X 域里的相对位置和估算宽度占一个横向区间，与已占用的区间
+ * 相交就下沉一行。行数上限 3（再多会把 130px 高的 MiniChart 绘图区压没）。
+ *
+ * 返回 markerIndex → 行号；不在表里的 marker 仍按旧位置画（短标签如 `s`、`R`、`P额`
+ * 塞得进刻度之间，不动它们，避免为了"看起来整齐"把 15px 绘图区从 46 张图里切掉）。
+ */
+function planMarkerRows(
+  markers: RelationMarker[] | undefined,
+  xDomain: [number, number],
+): { rows: Map<number, number>; count: number } {
+  const rows = new Map<number, number>()
+  if (!markers?.length) return { rows, count: 0 }
+  const span = xDomain[1] - xDomain[0] || 1
+  const occupied: Array<Array<[number, number]>> = []
+  let count = 0
+  markers.forEach((m, i) => {
+    const axis = m.axis ?? (m.x != null && m.y != null ? 'point' : m.x != null ? 'vertical' : 'horizontal')
+    if (axis !== 'vertical' || m.x == null || !m.label) return
+    const w = estimateLabelWidth(m.label)
+    if (w < MIN_ANNOTATION_W) return
+    const half = w / EST_PLOT_W / 2
+    const center = (m.x - xDomain[0]) / span
+    const lo = center - half
+    const hi = center + half
+    let row = 0
+    while (row < 3 && (occupied[row] ?? []).some(([a, b]) => lo < b && hi > a)) row++
+    if (row >= 3) return
+    ;(occupied[row] ??= []).push([lo, hi])
+    rows.set(i, row)
+    count = Math.max(count, row + 1)
+  })
+  return { rows, count }
+}
+
 function RCContent({
   points,
   additionalSeries,
@@ -183,13 +248,14 @@ function RCContent({
   cursorLabel,
   cursorVariant,
   markers,
+  markerRows,
   series,
   color,
   strokeWidth,
   mainLabel,
   underlay,
   children,
-}: RelationChartProps) {
+}: RelationChartProps & { markerRows?: Map<number, number> }) {
   const plotClipId = useId()
   const ctx = useChartContext()
   const mainColor = color ?? SERIES_MAP[series ?? 'primary']
@@ -230,8 +296,68 @@ function RCContent({
     return out
   }, [cursorX, points, additionalSeries, mainColor])
 
+  /**
+   * point 型参考点的标签落位。
+   *
+   * 两处硬伤在这里修掉：
+   *  ① **叠点**——实时状态点与参考点重合是常态（`anim-first-law` 在 t=0 时
+   *    「初态 A (300K)」与「(1.00L, 100kPa)」落在同一像素上，标签直接对穿 47×9px）。
+   *    与游标标签同一套规则：横向有交集且纵向不足一行就继续让行。
+   *  ② **越界**——标签默认向右伸展，点靠近右沿时会压到右轴刻度上
+   *    （`anim-experiment-bulb-va` 的测点标签压住右轴 `0.20`）。放不下就翻到点左侧。
+   */
+  const pointLabels = useMemo(() => {
+    const out = new Map<number, { x: number; y: number; anchor: 'start' | 'end' }>()
+    if (!ctx || !markers?.length) return out
+    const small = ctx.font(FONT.small)
+    /**
+     * 让行间距。文字外框高度约 1.3 倍字号，判定"压字"的门槛是垂直重叠 ≥ 0.5 倍字号，
+     * 所以基线间距必须大于 1.3 - 0.5 = 0.8 倍字号才算真正错开；取 1.5 倍留余量
+     * （1.3 倍时实测仍有 9px 重叠——`anim-combined-fields` 的核素标签就是这么露的）。
+     */
+    const lineH = small * 1.5
+    const rightEdge = ctx.plotOrigin.x + ctx.plotSize.width
+    const bottomEdge = ctx.plotOrigin.y + ctx.plotSize.height - small * 0.2
+    const placed: Array<{ left: number; right: number; y: number }> = []
+    markers.forEach((m, i) => {
+      const axis =
+        m.axis ?? (m.x != null && m.y != null ? 'point' : m.x != null ? 'vertical' : 'horizontal')
+      if (axis !== 'point' || m.x == null || m.y == null || !m.label) return
+      const mx = ctx.toSvgX(m.x)
+      const my = ctx.toSvgY(m.y)
+      // 用设计坐标系里的真实字号算宽度：小图字号 7、大图 15，差一倍，按 11 硬估会漏判
+      const w = labelWidth(m.label, small)
+      const side = m.labelSide ?? 'top-right'
+      const preferLeft = side.endsWith('left') || mx + 6 + w > rightEdge
+      const anchor: 'start' | 'end' = preferLeft ? 'end' : 'start'
+      const lx = mx + (preferLeft ? -6 : 6)
+      /**
+       * 判定咬合用**实际横向占位**（左/右边缘），不能用锚点位置。
+       * `textAnchor` 一换，锚点没动而文字整体翻到另一侧——
+       * `anim-combined-fields` 的 `α 粒子 (⁴He²⁺)` 正因为靠右沿被翻到左侧，
+       * 锚点离邻居 173px 看着"很远"，实际左边缘已压到 `氘核 (²H⁺)` 上 7px。
+       */
+      const left = anchor === 'start' ? lx : lx - w
+      const right = anchor === 'start' ? lx + w : lx
+      let ly = side.startsWith('bottom') ? my + small + 2 : my - 6
+      for (let guard = 0; guard < 3; guard++) {
+        const hit = placed.find(
+          (p) => Math.abs(p.y - ly) < lineH && left < p.right + 4 && right > p.left - 4,
+        )
+        if (!hit) break
+        // 向下让行；已经顶到绘图区底边时改为向上——否则会被下面的夹取压回原位，等于没让
+        const down = hit.y + lineH
+        ly = down <= bottomEdge ? down : hit.y - lineH
+      }
+      ly = Math.min(ly, bottomEdge)
+      placed.push({ left, right, y: ly })
+      out.set(i, { x: lx, y: ly, anchor })
+    })
+    return out
+  }, [ctx, markers])
+
   if (!ctx) return null
-  const { toSvgX, toSvgY, plotOrigin, plotSize, font } = ctx
+  const { toSvgX, toSvgY, plotOrigin, plotSize, font, annotationY } = ctx
   const cursorColor = REFERENCE_MAP[cursorVariant ?? 'highlight']
 
   return (
@@ -292,9 +418,18 @@ function RCContent({
         if (axis === 'vertical' && m.x != null) {
           const mx = toSvgX(m.x)
           const isTop = m.position === 'top'
+          /**
+           * 标注落在哪一行：
+           *  - `top` 由调用方显式指定，画在绘图区上沿内侧；
+           *  - 排进 `planMarkerRows` 的，画在父图表预留的标注行（刻度行之下、X 轴标题之上）；
+           *  - 其余（短标签）沿用旧位置，紧贴刻度行下方——它们塞得进刻度之间。
+           */
+          const annRow = markerRows?.get(i)
           const labelY = isTop
             ? plotOrigin.y + 14
-            : plotOrigin.y + plotSize.height + font(FONT.small) + 6
+            : annRow !== undefined && annotationY
+              ? annotationY(annRow)
+              : plotOrigin.y + plotSize.height + font(FONT.small) + 6
           return (
             <g key={`marker-${i}`}>
               <line
@@ -366,11 +501,11 @@ function RCContent({
           const mx = toSvgX(m.x)
           const my = toSvgY(m.y)
           const side = m.labelSide ?? 'top-right'
-          const isLeft = side.endsWith('left')
-          const isBottom = side.startsWith('bottom')
-          // 纵向沿用本组件既有的「文本行高」写法：上置基线抬 6 px，下置让出整行字高 + 2 px 间隙
-          const labelX = mx + (isLeft ? -6 : 6)
-          const labelY = isBottom ? my + font(FONT.small) + 2 : my - 6
+          // 落位由 pointLabels 统一算好（叠点让行 + 右沿翻边），这里只取结果
+          const pos = pointLabels.get(i)
+          const labelX = pos?.x ?? mx + (side.endsWith('left') ? -6 : 6)
+          const labelY = pos?.y ?? (side.startsWith('bottom') ? my + font(FONT.small) + 2 : my - 6)
+          const labelAnchor = pos?.anchor ?? (side.endsWith('left') ? 'end' : 'start')
           return (
             <g key={`marker-${i}`}>
               <circle
@@ -383,7 +518,7 @@ function RCContent({
                   y={labelY}
                   fontSize={font(FONT.small)}
                   fill={mColor}
-                  textAnchor={isLeft ? 'end' : 'start'}
+                  textAnchor={labelAnchor}
                   fontWeight="bold"
                 >
                   {m.label}
@@ -447,14 +582,39 @@ function RCContent({
                   cx={toSvgX(cursorX)} cy={cy} r={font(FONT.small) * 0.45}
                   fill={cp.color} stroke={CHART_COLORS.highlight} strokeWidth={1.5}
                 />
-                {cursorLabel && (() => {
+                {(() => {
+                  /**
+                   * **只有主曲线画读数，附加系列只画点。**
+                   *
+                   * 【为什么】`cursorLabel` 是单个函数，签名只有 `(x, y)`，拿不到
+                   * "这是第几条曲线"。原实现对每个游标点都调它，于是
+                   * `anim-intermolecular-forces` 的 F_引 / F_斥 两条附加曲线被标成
+                   * 「F_合=0.00」——三个同样的前缀叠在同一个点上，既压字又标错量。
+                   * 若改用附加系列自己的 `label` 拼数值，又会拼出
+                   * 「模拟实际核数 (剩余: 100个)=100.00」这种没有价值的重话。
+                   * 读数本来就是"一个游标一个数"，附加曲线的数值请走右屏物理量区。
+                   */
+                  if (i !== 0 || !cursorLabel) return null
                   const txt = cursorLabel(cp.x, cp.y)
                   if (txt == null) return null
+                  /**
+                   * 标签默认贴在数据点右上角。但初值点（t=0）几乎都落在绘图区上沿，
+                   * 这个位置正好钻进图表标题带——实测 `anim-nuclear-half-life` 的
+                   * 游标标签与「放射性元素衰变规律 (N-t 理论与实际对比)」重叠 98×11px，
+                   * 白描边把标题啃掉一块。故靠近上沿时翻到点的下方，并整体夹在绘图区内。
+                   */
+                  const small = font(FONT.small)
+                  const topLimit = plotOrigin.y + small * 0.95
+                  const bottomLimit = plotOrigin.y + plotSize.height - small * 0.2
+                  const labelY = Math.min(
+                    Math.max(cy - small * 0.4 < topLimit ? cy + small * 1.15 : cy - small * 0.4, topLimit),
+                    bottomLimit,
+                  )
                   return (
                     <text
-                      x={toSvgX(cursorX) + font(FONT.small) * 0.6}
-                      y={cy - font(FONT.small) * 0.4}
-                      fontSize={font(FONT.small)}
+                      x={toSvgX(cursorX) + small * 0.6}
+                      y={labelY}
+                      fontSize={small}
                       fill={cp.color}
                       stroke={CANVAS_COLORS.white}
                       strokeWidth={3}
@@ -570,6 +730,12 @@ export function RelationChart({
   // 自动判断是否需要零线：Y 跨越 0 时默认开启
   const effectiveZeroLine = showZeroLine ?? (computedYDomain[0] < 0 && computedYDomain[1] > 0)
 
+  // 参考线标注的行规划：必须在渲染 BasePhysicsChart 之前算好，底边留白要按行数扩
+  const markerPlan = useMemo(
+    () => planMarkerRows(markers, computedXDomain),
+    [markers, computedXDomain],
+  )
+
   return (
     <BasePhysicsChart
       xDomain={computedXDomain}
@@ -586,6 +752,7 @@ export function RelationChart({
       onScrubX={onScrubX}
       onScrubStart={onScrubStart}
       onScrubEnd={onScrubEnd}
+      extraBottomRows={markerPlan.count}
     >
       <RCContent
         points={points}
@@ -594,6 +761,7 @@ export function RelationChart({
         cursorLabel={cursorLabel}
         cursorVariant={cursorVariant}
         markers={markers}
+        markerRows={markerPlan.rows}
         series={series}
         color={color}
         strokeWidth={strokeWidth}

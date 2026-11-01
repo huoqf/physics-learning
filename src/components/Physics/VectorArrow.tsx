@@ -68,6 +68,14 @@ interface VectorArrowProps {
   refMagnitude?: number
   /** 矢量符号名称标签 */
   label?: string
+  /**
+   * 标签摆放位置。
+   * - `tip`（默认）：箭尖外 10px，沿箭头方向。绝大多数场合都对。
+   * - `side`：箭杆 3/4 长度处的侧面。**同起点、同方向、像素长度又相近的多支箭头**
+   *   （典型：竖直圆周最低点的 `F_T` 与 `a_合`，两者都沿半径向内、箭尖只差 3px）
+   *   若都用 `tip`，两枚标签必然叠字；`side` 把其中一枚挪到箭杆侧面。
+   */
+  labelPlacement?: 'tip' | 'side'
   /** 是否使用虚线箭头 */
   dashed?: boolean
   /** 是否在箭头外侧增加发光阴影，提高对比度 */
@@ -102,6 +110,7 @@ export function VectorArrow({
   pixelLength: overrideLength,
   refMagnitude: overrideRefMag,
   label,
+  labelPlacement = 'tip',
   dashed,
   glow,
   font = (n: number) => n,
@@ -183,8 +192,19 @@ export function VectorArrow({
     dy = '-0.3em';
   }
 
-  const textX = tipX + pxDirX * 10;
-  const textY = tipY + pxDirY * 10;
+  // 屏幕系（y↓）里"行进方向的右手法线"：向上 (0,-1) → (1,0)。侧面标签一律往这一侧放。
+  const sideNX = -pxDirY;
+  const sideNY = pxDirX;
+
+  let textX = tipX + pxDirX * 10;
+  let textY = tipY + pxDirY * 10;
+  if (labelPlacement === 'side') {
+    textX = x1 + pxDirX * totalLength * 0.75 + sideNX * 12;
+    textY = y1 + pxDirY * totalLength * 0.75 + sideNY * 12;
+    // 向外的法线朝左就把字画在左端（end），朝右就从左端起笔（start）——字总是往远离箭杆的方向排
+    textAnchor = sideNX >= 0 ? 'start' : 'end';
+    dy = '0.35em';
+  }
 
   const filterStyle = glow ? { filter: `drop-shadow(0px 0px 3.5px ${fillColor})` } : undefined;
 
