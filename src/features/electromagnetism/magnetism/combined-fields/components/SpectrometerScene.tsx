@@ -164,8 +164,10 @@ export function SpectrometerScene({
         </g>
       )}
 
-      {/* 文字标注 */}
-      <text x={260} y={45} fontSize={smallFs} fill={colors.neutral[600]} fontFamily={CANVAS_STYLE.FONT.family}>
+      {/* 文字标注。左极板的 `+` 号在 `(xMid-plateHalf-12, y0+20) = (300.5, 40)`，
+          原来的 `x=260, y=45` 从 260 一直写到 320，正好把 `+` 包进去。
+          往左挪到 190 之后仍与极板同高、都属"选择器入口区域"，不与任何元素相交。 */}
+      <text x={190} y={45} fontSize={smallFs} fill={colors.neutral[600]} fontFamily={CANVAS_STYLE.FONT.family}>
         速度选择器
       </text>
       <text x={120} y={118} fontSize={smallFs} fill={colors.neutral[500]} fontWeight="bold">

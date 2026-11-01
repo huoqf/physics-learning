@@ -91,7 +91,9 @@ export default function BulletBlockAnimation() {
             showDeltaX={showDeltaX}
             time={time}
             timeScale={physics.timeScale}
-            groundWidth={vp.designVisibleW}
+            /* 给轴端标注 `x` 留位置：`PhysicsGround` 把轴名画在 `地面右端 + 6px`，
+               地面铺满整个可视宽度时这枚轴名就被推出面板（实测右溢出 10px）。 */
+            groundWidth={vp.designVisibleW - 18}
             groundX={vp.designLeft}
             highlightType={highlightType}
           />

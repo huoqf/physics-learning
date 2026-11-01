@@ -129,10 +129,11 @@ export default function BlockBoardAnimation() {
         <line x1={boardX + boardWPx} y1={groundY + L.rulerOffsetY - L.rulerTickH / 2}
               x2={boardX + boardWPx} y2={groundY + L.rulerOffsetY + L.rulerTickH / 2}
               stroke={CANVAS_COLORS.annotation} strokeWidth={1} />
+        {/* 量尺标签放**左端**：板心也要走木板重力 Mg 的竖直箭头，居中标签必被劈断。 */}
         <text
-          x={boardX + boardWPx / 2} y={groundY + L.rulerOffsetY + 16}
+          x={boardX + 6} y={groundY + L.rulerOffsetY + 16}
           fontSize={font(FONT.annotation)} fill={CANVAS_COLORS.annotation}
-          textAnchor="middle"
+          textAnchor="start"
         >
           L = {boardLen}m
         </text>
@@ -142,10 +143,23 @@ export default function BlockBoardAnimation() {
       <Block
         x={boardX} y={boardY}
         width={boardWPx} height={L.boardH}
-        type="wood" label={`M = ${M}kg`}
+        type="wood"
         stroke={SCENE_COLORS.materials.woodSphereGrad[1]}
         strokeWidth={1.5} font={font}
       />
+      {/* 木板质量标签：放**地面以下、标尺标注列的第二行**，与 `L = 2.5m` 同列。
+          板内任何一个位置都不能放——滑块从板左端一路滑到板右端，板内整条带都被它
+          和 `FN1'`/`Ff1'`（跟随滑块）、`FN2`/`Ff2`（板心）占满；左端赔上 `mg`、
+          右端赔上滑块滑到位，两种板内摆法都会压字（实测左端 18×13px、右端同样复发）。
+          板外下方这条标注列只跟 `L = 2.5m` 共用，两者都锚在板的左端、随板一起平移，
+          相对位置恒定，`Mg` 的箭尖标签在板心正下方（横向差 150px）也不会撞上。 */}
+      <text
+        x={boardX + 6} y={groundY + L.rulerOffsetY + 36}
+        fontSize={font(12)} fill={SCENE_COLORS.materials.labWoodGrad[3]}
+        fontWeight="bold" textAnchor="start"
+      >
+        M = {M}kg
+      </text>
 
       {/* ═══ 滑块 ═══ */}
       <Block
@@ -167,8 +181,12 @@ export default function BlockBoardAnimation() {
             label="mg" font={font}
           />
           {/* 支持力 FN1 ↑（在板上时向上，跌落后在地面上） */}
+          {/* 起点用滑块**重心**而不是接触面：共用量程后 FN1 的箭头只有 17px，
+              从接触面（块底）往上画时箭尖还在块内，标签（箭尖外 10px）正好落在
+              块心的 `m = 1kg` 上。从重心起画同样是教材口径（各力作用于重心），
+              且与同为重心起点的 `mg` 一致。 */}
           <PhysicsVectorArrow
-            originDesign={{ x: blkCx, y: blockOnBoard ? boardY : groundY }}
+            originDesign={{ x: blkCx, y: blkCy }}
             vector={{ x: 0, y: FN1 }}
             type="normalForce" sceneScale={vectorSceneScale}
             label="FN1" font={font}

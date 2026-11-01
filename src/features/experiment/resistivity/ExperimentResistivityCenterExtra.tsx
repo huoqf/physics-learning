@@ -98,6 +98,8 @@ export const ExperimentResistivityCenterExtra: FC = () => {
               additionalSeries={additionalSeries}
               markers={markers}
               cursorX={physics.L}
+              /* 测点坐标已由 marker 标签给出，游标只留圆点——否则读数会压在测点标签上 */
+              cursorLabel={() => null}
             />
           </div>
         </div>

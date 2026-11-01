@@ -118,6 +118,7 @@ export default function FaradayLaw() {
       chartPoints={physics.chartPoints}
       currentState={physics.currentState}
       dashLeft={dashLeft} dashRight={dashRight} dashW={dashW} H={H}
+      overlayTransform={{ scale: vp.scale, tx: vp.tx, ty: vp.ty }}
       chartPadTop={physics.chartPadTop} chartH={physics.chartH}
       yPhiMid={physics.yPhiMid} yEmfMid={physics.yEmfMid} chartHalfH={physics.chartHalfH}
       phiMinVal={physics.phiMinVal} phiMaxVal={physics.phiMaxVal}

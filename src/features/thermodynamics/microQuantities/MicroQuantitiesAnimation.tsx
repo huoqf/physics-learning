@@ -19,7 +19,7 @@ export default function MicroQuantitiesAnimation() {
   const inputModeStr = inputMode === 0 ? 'mass' : 'volume'
   const estimation = estimateMicroQuantities(substance, inputModeStr, inputValue)
 
-  const { containerRef, canvasSize, vp } = useAnimationViewport({
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({
     preset: CANVAS_PRESETS.full,
   })
 
@@ -30,8 +30,13 @@ export default function MicroQuantitiesAnimation() {
         estimation={estimation}
         inputMode={inputMode}
         inputValue={inputValue}
-        width={vp.visibleW}
-        height={vp.visibleH}
+        /* ⚠️ 这里必须是**设计稿尺寸**，不能传 `vp.visibleW/H`：
+           MicroScene 里的坐标全部落在 `<g transform={vp.transform}>` 内，量的是设计单位；
+           而 vp.visible* 是容器像素（= 设计尺寸 × 缩放比）。面板比设计稿高一点时
+           （缩放 1.07），场景被按 1.07 倍的"设计高度"排版，底部那行桥梁公式
+           直接掉到面板下方 29px。 */
+        width={preset.width}
+        height={preset.height}
         font={canvasSize.font}
       />
     </AnimationSvgCanvas>

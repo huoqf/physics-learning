@@ -357,6 +357,9 @@ export default function AccelerationCenterExtra() {
       {/* ══════════ 下层：公路动画 ══════════ */}
       <div className="flex-1 relative">
         <svg viewBox={`0 0 ${width} ${animHeight}`} width={width} height={animHeight} className="absolute inset-0">
+          {/* 标尺刻度只写数值、单位交给轴名：本页 2000 m 量程上排了 20 个刻度，
+              每个再带「m」标签就宽到 30~36px，而刻度间距只有 34px——整排糊成一片数字。
+              去掉单位后单标签约 24px，间距留出 10px 才读得开。 */}
           <PhysicsGround
             x={roadLeft} y={roadY} width={roadWidth}
             appearance={{ color: PHYSICS_COLORS.labelText }}
@@ -364,21 +367,24 @@ export default function AccelerationCenterExtra() {
               domain: [0, maxDist],
               pixelPerUnit: scale,
               tickInterval: chaseMode === 0 ? 100 : Math.ceil(vL / 5),
-              unit: 'm',
             }}
           />
+          <text x={roadLeft + roadWidth - 4} y={roadY + 44} fontSize={font(13)}
+            fill={PHYSICS_COLORS.labelText} textAnchor="end" fontWeight="bold">x / m</text>
 
-          {/* 起始参考线 */}
+          {/* 起始参考线。注意行位：地面标尺的数字排在 roadY+22（PhysicsGround 内 tickLen+14），
+              这里原来写 +28，与标尺数字只差 6px，「0」正好砸在标尺的「100m」上。
+              故下移到标尺行之下。 */}
           <line x1={startX} y1={roadY - 40} x2={startX} y2={roadY + 15}
             stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axisBold} strokeDasharray={DASH.boundary.join(' ')} />
-          <text x={startX} y={roadY + 28} fontSize={font(13)} fill={PHYSICS_COLORS.axis} textAnchor="middle" fontWeight="bold">0</text>
+          <text x={startX} y={roadY + 44} fontSize={font(13)} fill={PHYSICS_COLORS.axis} textAnchor="middle" fontWeight="bold">0</text>
 
           {/* 相遇模式：终点参考线 */}
           {chaseMode === 1 && (
             <>
               <line x1={startX + vL * scale} y1={roadY - 40} x2={startX + vL * scale} y2={roadY + 15}
                 stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axisBold} strokeDasharray={DASH.boundary.join(' ')} />
-              <text x={startX + vL * scale} y={roadY + 28} fontSize={font(13)} fill={PHYSICS_COLORS.axis} textAnchor="middle" fontWeight="bold">{vL}m</text>
+              <text x={startX + vL * scale} y={roadY + 44} fontSize={font(13)} fill={PHYSICS_COLORS.axis} textAnchor="middle" fontWeight="bold">{vL}m</text>
             </>
           )}
 

@@ -254,7 +254,10 @@ export default function BasicMode({
           <text x={x1} y={centerY + 6} fontSize={chargeR * 0.9} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">
             {q1 > 0 ? '+' : q1 < 0 ? '−' : '0'}
           </text>
-          <text x={x1} y={centerY - chargeR - 8} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
+          {/* 电荷量标签与上面的 `F` 力标签各占一行。
+              小球的 `F` 标在力箭头上方 `centerY-12`，而力箭头从球心水平射出，
+              所以球心正上方那一小段（`-chargeR-8` 起）同时属于两者，按构造必然咬合。 */}
+          <text x={x1} y={centerY - chargeR - 26} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
             q₁ = {q1.toFixed(2)} μC
           </text>
 
@@ -268,7 +271,7 @@ export default function BasicMode({
           <text x={x2} y={centerY + 6} fontSize={chargeR * 0.9} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">
             {q2 > 0 ? '+' : q2 < 0 ? '−' : '0'}
           </text>
-          <text x={x2} y={centerY - chargeR - 8} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
+          <text x={x2} y={centerY - chargeR - 26} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
             q₂ = {q2.toFixed(2)} μC
           </text>
           {contactStep === 'idle' && (

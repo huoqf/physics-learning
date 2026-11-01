@@ -412,13 +412,23 @@ export default function CircularModelsAnimation() {
       )}
 
       {/* ─── 底部物理量图例说明 ─── */}
+      {/* 图例单行放不下：整串在 11 号字下 423px，而画布只有 410px 宽（右溢出 28px）。
+          拆成两行、左对齐同一列，阅读顺序不变。 */}
       <text
         x={18}
-        y={626}
+        y={612}
         fontSize={canvasSize.font(11)}
         fill={PHYSICS_COLORS.labelTextLight}
       >
-        蓝：速度 v / 绿：重力 mg / 紫：拉力 FT / 天蓝：支持力 FN / 褐：摩擦力 f / 橙：合力 F合
+        蓝：速度 v / 绿：重力 mg / 紫：拉力 FT
+      </text>
+      <text
+        x={18}
+        y={628}
+        fontSize={canvasSize.font(11)}
+        fill={PHYSICS_COLORS.labelTextLight}
+      >
+        天蓝：支持力 FN / 褐：摩擦力 f / 橙：合力 F合
       </text>
     </AnimationSvgCanvas>
   )

@@ -333,7 +333,10 @@ export function SensorScene({
           showLabel={false}
           font={font}
         />
-        <text x={0} y={-16} textAnchor="middle" fontSize={font(9.5)} fill={CANVAS_COLORS.labelText} fontWeight={600}>
+        {/* 标签抬到 -30：`Rheostat` 的滑片触头标号 `P` 画在 `sliderY - 4`，而滑片就在
+            器件正上方，原来 -16 的位置正好被 `P` 压住 6×6px。改字号/挪滑片都会连带影响
+            其它复用该组件的页面，这里只让标签让开一行。 */}
+        <text x={0} y={-30} textAnchor="middle" fontSize={font(9.5)} fill={CANVAS_COLORS.labelText} fontWeight={600}>
           变阻器 R₀
         </text>
       </g>

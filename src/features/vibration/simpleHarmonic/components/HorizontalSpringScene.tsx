@@ -162,7 +162,15 @@ export function HorizontalSpringScene({
       {/* 矢量力学分析 */}
       {showVectors && (
         <g>
-          {renderSceneVector(equilibriumX, axisY, Math.sign(x), 0, Math.abs(x) * offsetScaleH, PHYSICS_COLORS.displacement, 'displacement', font, 'x')}
+          {/* 位移矢量不标字。这支箭头从平衡位置画到**滑块球心**，
+              箭尖恒落在块心，而标签固定打在箭尖外 10px —— 无论位移多大都会压在
+              块中央的 `m = 0.5kg` 上（实测 8×9px，长度阈值救不了）。
+              位移的量与身份由滑块正上方那行紫色读数 `x = ? cm` 承担（同色 = 同一量），
+              符合「一量一标」。 */}
+          {renderSceneVector(
+            equilibriumX, axisY, Math.sign(x), 0, Math.abs(x) * offsetScaleH,
+            PHYSICS_COLORS.displacement, 'displacement', font,
+          )}
           {renderSceneVector(massCenterX, axisY - massSize * 0.65, Math.sign(v), 0, vRatio * refLen, PHYSICS_COLORS.velocity, 'velocity', font, 'v')}
           {renderSceneVector(massCenterX, axisY + massSize * 0.65, Math.sign(a), 0, aRatio * refLen, PHYSICS_COLORS.acceleration, 'acceleration', font, 'F_回')}
         </g>

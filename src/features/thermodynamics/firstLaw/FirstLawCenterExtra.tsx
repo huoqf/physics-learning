@@ -240,9 +240,11 @@ export default function FirstLawCenterExtra() {
                 x1="20" y1={zeroY} x2="360" y2={zeroY}
                 stroke={SCENE_COLORS.charts.gridLine} strokeWidth={STROKE.grid} strokeDasharray="3 2"
               />
-              <text x="15" y={zeroY + 3} fontSize={8} fill={SCENE_COLORS.charts.tickLabel} textAnchor="end">0</text>
-              <text x="15" y={zeroY - maxBarHeight + 3} fontSize={8} fill={SCENE_COLORS.charts.tickLabel} textAnchor="end">+{maxAbsVal}J</text>
-              <text x="15" y={zeroY + maxBarHeight + 3} fontSize={8} fill={SCENE_COLORS.charts.tickLabel} textAnchor="end">-{maxAbsVal}J</text>
+              {/* 刻度值右对齐基准 x=24：`+100J` 在 8 号字下约 22 个单位宽，
+                  原来右对齐在 x=15 时左边半截被 viewBox 左边界裁掉（实测 4~6px）。 */}
+              <text x="24" y={zeroY + 3} fontSize={8} fill={SCENE_COLORS.charts.tickLabel} textAnchor="end">0</text>
+              <text x="24" y={zeroY - maxBarHeight + 3} fontSize={8} fill={SCENE_COLORS.charts.tickLabel} textAnchor="end">+{maxAbsVal}J</text>
+              <text x="24" y={zeroY + maxBarHeight + 3} fontSize={8} fill={SCENE_COLORS.charts.tickLabel} textAnchor="end">-{maxAbsVal}J</text>
 
               {/* 渲染能量柱 */}
               {barData.map((bar, i) => {

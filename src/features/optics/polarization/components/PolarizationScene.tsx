@@ -213,13 +213,17 @@ export function PolarizationScene({
           {/* 轴向箭头 */}
           <path d={`M ${chartOrgX + chartW + 8} ${chartOrgY - 3} L ${chartOrgX + chartW + 12} ${chartOrgY} L ${chartOrgX + chartW + 8} ${chartOrgY + 3}`} fill="none" stroke={CANVAS_COLORS.axis} strokeWidth={1.2} />
           <path d={`M ${chartOrgX - 3} ${chartOrgY - chartH - 8} L ${chartOrgX} ${chartOrgY - chartH - 12} L ${chartOrgX + 3} ${chartOrgY - chartH - 8}`} fill="none" stroke={CANVAS_COLORS.axis} strokeWidth={1.2} />
-          <text x={chartOrgX + chartW + 8} y={chartOrgY + 14} fontSize={font(10)} fill={CANVAS_COLORS.labelTextLight} textAnchor="end">Δθ</text>
+          {/* 轴名带单位，刻度只写数值：
+              原来轴名 `Δθ` 与末位刻度 `90°` 都排在 chartOrgY+14 同一行，
+              一个右对齐到 chartW+8、一个居中在 chartW，必然咬合 8×9px。
+              现在轴名排到刻度行的下一行居中——放到箭头右侧会溢出图表面板右缘 21px。 */}
+          <text x={chartOrgX + chartW / 2} y={chartOrgY + 30} fontSize={font(10)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle">Δθ (°)</text>
           <text x={chartOrgX - 6} y={chartOrgY - chartH - 4} fontSize={font(10)} fill={CANVAS_COLORS.labelTextLight}>I/I₀</text>
 
           {/* 轴刻度 */}
-          <text x={chartOrgX} y={chartOrgY + 14} fontSize={font(9)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle">-90°</text>
-          <text x={chartOrgX + chartW / 2} y={chartOrgY + 14} fontSize={font(9)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle">0°</text>
-          <text x={chartOrgX + chartW} y={chartOrgY + 14} fontSize={font(9)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle">90°</text>
+          <text x={chartOrgX} y={chartOrgY + 14} fontSize={font(9)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle">-90</text>
+          <text x={chartOrgX + chartW / 2} y={chartOrgY + 14} fontSize={font(9)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle">0</text>
+          <text x={chartOrgX + chartW} y={chartOrgY + 14} fontSize={font(9)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle">90</text>
           <text x={chartOrgX - 6} y={chartOrgY + 3} fontSize={font(9)} fill={CANVAS_COLORS.labelTextLight} textAnchor="end">0</text>
           <text x={chartOrgX - 6} y={chartOrgY - chartH / 2 + 3} fontSize={font(9)} fill={CANVAS_COLORS.labelTextLight} textAnchor="end">0.5</text>
           <text x={chartOrgX - 6} y={chartOrgY - chartH + 3} fontSize={font(9)} fill={CANVAS_COLORS.labelTextLight} textAnchor="end">1.0</text>

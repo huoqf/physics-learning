@@ -155,12 +155,16 @@ export function ObliqueThrowScene({
         y / m
       </text>
 
-      {/* X 轴刻度数字 */}
+      {/* X 轴刻度数字。
+          位置全部相对 `groundY`（地面线）而不是 `originPos.py`（小球球心高度）：
+          两者差一个小球半径，按球心高度排版会让刻度数字整排落进地面的斜线阴影带里
+          （阴影带 12px 高，正好盖住数字）。跟 PhysicsGround 内建标尺的口径对齐：
+          刻线从地面线往下 8px，数字在 `y + 22`，即阴影带下方。 */}
       {ticksData.xTicks.map(({ xVal, pos }) => (
         <g key={`x-tick-${xVal}`}>
-          <line x1={pos.px} y1={originPos.py} x2={pos.px} y2={originPos.py + 4} stroke={CANVAS_COLORS.axis} strokeWidth={1} />
-          <text x={pos.px} y={originPos.py + 16} fontSize={font(10)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
-            {`${xVal}m`}
+          <line x1={pos.px} y1={groundY} x2={pos.px} y2={groundY + 8} stroke={CANVAS_COLORS.axis} strokeWidth={1} />
+          <text x={pos.px} y={groundY + 22} fontSize={font(10)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
+            {xVal}
           </text>
         </g>
       ))}
@@ -170,12 +174,23 @@ export function ObliqueThrowScene({
         <g key={`y-tick-${yVal}`}>
           <line x1={originPos.px - 4} y1={pos.py} x2={originPos.px} y2={pos.py} stroke={CANVAS_COLORS.axis} strokeWidth={1} />
           <text x={originPos.px - 8} y={pos.py + 4} fontSize={font(10)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">
-            {`${yVal}m`}
+            {yVal}
           </text>
         </g>
       ))}
 
-      <text x={vp.designLeft + vp.designVisibleW - 20} y={originPos.py + 18} fontSize={font(11)} fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
+      {/* X 轴名：「轴名带单位、刻度只写数值」。
+          原来它与刻度行同在 originPos.py+16/+18，且末位刻度恒落在可视区右边缘
+          （maxPhysicalX 就是可见宽度对应的物理量），两者必然咬合。
+          地面线上方右端在射程之外是空的，抬到那里既躲开刻度行也不压轨迹。 */}
+      <text
+        x={vp.designLeft + vp.designVisibleW - 4}
+        y={originPos.py - 8}
+        fontSize={font(11)}
+        fill={PHYSICS_COLORS.labelText}
+        textAnchor="end"
+        fontWeight="bold"
+      >
         x / m
       </text>
 
@@ -237,11 +252,32 @@ export function ObliqueThrowScene({
         </g>
       )}
 
-      {/* 射程落地标记 */}
+      {/* 射程标注：落地点竖标记 + 标签摆在地面线上方的水平中点。
+          为什么不在落地点旁边写字：落地点紧贴地面（球心就在地面线上 10px），
+          文字摆下方会压进地面阴影带、摆上方会贴着下降段轨迹（落地前 16px 内
+          轨迹的横向跨度不到 3px）。
+          为什么不用「起抛点 → 落地点」的水平尺寸线：t=0 时 vx 矢量正好画在
+          球心高度、贴着地面，尺寸线只能落在它下方 3px 处，两条蓝线肉眼分不开，
+          而且尺寸线会从静止的小球身上穿过去。
+          水平中点处轨迹在最高点附近，是整幅图最空的位置，标签放这里既不压线也不压字。 */}
       {physics.range > 0.5 && (
-        <g transform={`translate(${rangePos.px}, ${groundY})`}>
-          <line x1={0} y1={-15} x2={0} y2={0} stroke={PHYSICS_COLORS.velocity} strokeWidth={1} />
-          <text y={16} fontSize={font(10)} fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
+        <g>
+          <line
+            x1={rangePos.px}
+            y1={groundY - 14}
+            x2={rangePos.px}
+            y2={groundY}
+            stroke={PHYSICS_COLORS.velocity}
+            strokeWidth={1}
+          />
+          <text
+            x={(originPos.px + rangePos.px) / 2}
+            y={groundY - 8}
+            fontSize={font(10)}
+            fill={PHYSICS_COLORS.labelText}
+            textAnchor="middle"
+            fontWeight="bold"
+          >
             {`射程 X = ${physics.range.toFixed(1)}m`}
           </text>
         </g>
@@ -352,13 +388,16 @@ export function ObliqueThrowScene({
             sceneScale={sceneScale}
             strokeWidth={STROKE.vectorSub}
           />
-          {/* 合速度 v */}
+          {/* 合速度 v —— 读数直接挂在箭尖上（箭尖外 10px，沿矢量方向）。
+              原来单独写在球心正上方 `py - 20`：45° 的箭头从球心出发，任何以球心为
+              中点的横排文字都会被它从中穿过，而且起步时炮筒就在球旁边。 */}
           <PhysicsVectorArrow
             originDesign={{ x: ballPos.px, y: ballPos.py }}
             vector={{ x: physics.vx, y: physics.vy }}
             type="velocity"
             sceneScale={sceneScale}
             strokeWidth={STROKE.vectorMain}
+            label={`v = ${physics.v.toFixed(1)} m/s`}
           />
         </g>
       )}
@@ -367,17 +406,6 @@ export function ObliqueThrowScene({
       {!physics.isLanded && (
         <g>
           <Ball cx={ballPos.px} cy={ballPos.py} r={10} type="steel" />
-          {/* 数值标注 */}
-          <text
-            x={ballPos.px}
-            y={ballPos.py - 20}
-            fontSize={font(11)}
-            fill={PHYSICS_COLORS.velocity}
-            fontWeight="bold"
-            textAnchor="middle"
-          >
-            {`v = ${physics.v.toFixed(1)} m/s`}
-          </text>
         </g>
       )}
 

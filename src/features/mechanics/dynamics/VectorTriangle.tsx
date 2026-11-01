@@ -21,9 +21,12 @@ export function VectorTriangle({ physicsData, sceneScale, isPlaying, onDragStart
         type="appliedForce" arrowType="physical-schematic" sceneScale={sceneScale}
         strokeWidth={CANVAS_STYLE.stroke.vectorSub}
         pixelLength={Math.hypot(f1End.cx - origin.cx, f1End.cy - origin.cy)} />
-      <text x={f1End.cx} y={f1End.cy + 18} fontSize={CANVAS_STYLE.font.label}
-        fontFamily={CANVAS_STYLE.font.family} fill={PHYSICS_COLORS.appliedForce}
-        fontWeight="bold" textAnchor="middle">F₁</text>
+      {/* 同 VectorParallelogram：箭尖下方的「F₁」会落到 x 轴刻度行里，
+          水平分力时必然压住刻度数字，故改到箭尖外侧上方。 */}
+      <text x={f1End.cx + (f1End.cx > origin.cx ? 8 : -16)} y={f1End.cy - 8}
+        fontSize={CANVAS_STYLE.font.label} fontFamily={CANVAS_STYLE.font.family}
+        fill={PHYSICS_COLORS.appliedForce} fontWeight="bold"
+        textAnchor={f1End.cx > origin.cx ? "start" : "end"}>F₁</text>
 
       <DragHandle cx={f1End.cx} cy={f1End.cy} color={PHYSICS_COLORS.appliedForce}
         cursor="ew-resize" onPointerDown={(e) => onDragStart('f1', e)} />

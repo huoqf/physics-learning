@@ -295,19 +295,48 @@ export function FreeFallScene({
             additionalSeries={vtAdditionalSeries} showGrid />
         </g>
 
-        {/* 底部实时标注（环境状态已移至右侧屏，不重复显示） */}
-        <text x={dataX + 8} y={DATA_LAYOUT.labelY} fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontFamily="monospace" fontWeight="bold">
-          v{matA.label === '铁球' ? '球' : '币'} = {effectiveVA.toFixed(2)} m/s
-        </text>
-        <text x={dataX + dataWidth * 0.35} y={DATA_LAYOUT.labelY} fontSize={FONT.small} fill={CHART_COLORS.compareB} fontFamily="monospace" fontWeight="bold">
-          v{matB.label === '羽毛' ? '羽' : '纸'} = {effectiveVB.toFixed(2)} m/s
-        </text>
-        <text x={dataX + dataWidth * 0.65} y={DATA_LAYOUT.labelY} fontSize={FONT.small} fill={PHYSICS_COLORS.labelTextLight} fontFamily="monospace">
-          f'_air = {stateB.fDrag.toFixed(4)} N
-        </text>
-        <text x={dataX + dataWidth * 0.85} y={DATA_LAYOUT.labelY} fontSize={FONT.small} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end" fontFamily="monospace">
-          t = {time.toFixed(2)} s
-        </text>
+        {/*
+          底部实时标注：一条等宽字体的数据行。
+
+          【为什么不再用 0.35 / 0.65 / 0.85 这种手摆比例】那组比例是按"四条都短"假设的，
+          而 `f'_air = 0.0000 N` 有 17 个字符、`t = 0.00 s` 又从右侧反向锚定，两者
+          实测重叠 54×11px。标注文字长度随状态变化（0.0000 会变成 1.2345），
+          任何固定比例都会在某个取值上撞车。改为按字符宽度顺序排布：
+          等宽字体下拉丁字符 0.6em、CJK 1em，逐条累加，间距固定，永不重叠。
+        */}
+        {(() => {
+          /** 估算一条标注的像素宽度：等宽字体下拉丁字符 0.6em、CJK 1em（CJK 不会回落到半角） */
+          const textWidth = (s: string) =>
+            [...s].reduce(
+              (w, ch) => w + (/[\u2E80-\u9FFF\uFF00-\uFFEF]/.test(ch) ? FONT.small : FONT.small * 0.6),
+              0,
+            )
+          const items = [
+            { txt: `v${matA.label === '铁球' ? '球' : '币'} = ${effectiveVA.toFixed(2)} m/s`, fill: PHYSICS_COLORS.velocity, bold: true },
+            { txt: `v${matB.label === '羽毛' ? '羽' : '纸'} = ${effectiveVB.toFixed(2)} m/s`, fill: CHART_COLORS.compareB, bold: true },
+            { txt: `f'_air = ${stateB.fDrag.toFixed(4)} N`, fill: PHYSICS_COLORS.labelTextLight, bold: false },
+            { txt: `t = ${time.toFixed(2)} s`, fill: PHYSICS_COLORS.labelTextLight, bold: false },
+          ]
+          const gap = FONT.small * 1.2
+          let cursorX = dataX + 8
+          return items.map((it, i) => {
+            const x = cursorX
+            cursorX += textWidth(it.txt) + gap
+            return (
+              <text
+                key={`label-${i}`}
+                x={x}
+                y={DATA_LAYOUT.labelY}
+                fontSize={FONT.small}
+                fill={it.fill}
+                fontFamily="monospace"
+                fontWeight={it.bold ? 'bold' : undefined}
+              >
+                {it.txt}
+              </text>
+            )
+          })
+        })()}
       </svg>
     </div>
   )

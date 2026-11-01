@@ -25,6 +25,7 @@ export default function ObliqueThrowAnimation() {
   const { containerRef, canvasSize, vp } = useAnimationViewport({
     preset: CANVAS_PRESETS.splitV,
   })
+  const { font } = canvasSize
 
   // 3. 参数提取
   const {
@@ -59,13 +60,30 @@ export default function ObliqueThrowAnimation() {
   const needWidth = viewMode === 1 ? 100 : Math.max(physics.range * 1.15, 20)
   const needHeight = viewMode === 1 ? 35 : Math.max(physics.maxHeight * 1.35, 8)
 
-  // 物理窗口必须与画布同宽高比，否则 x/y 两轴缩放比不等（anchor='viewport' 会各自撑满）：
+  // 内容安全边距（设计坐标）：给「画在原点外侧」的元素留位置。
+  //
+  // 物理原点按 `bottomLeft` 落在可视区底边，于是地面线（球心下方 10px）、
+  // 地面阴影带（再往下 12px）、横轴刻度数字（`groundY + 22`）整排掉到可视区之外，
+  // 纵轴刻度数字与 `y / m` 则被左缘切掉——画了但看不见（压字守卫查不出这类，
+  // 因为它们不和任何东西重叠，只是不在画面里）。
+  // 数字按 `font()` 走：字号随画布缩放，边距不跟着变就会在大屏上贴边、小屏上留白过多。
+  const insetLeft = font(11) * 3.6
+  const insetRight = font(10) * 1.2
+  const insetTop = font(10) * 1.4
+  // 地面线 10 + 阴影带 12 + 刻度数字底缘 ~32，留 38 的余量
+  const insetBottom = font(10) * 3.8
+
+  // 物理窗口必须与**安全区**同宽高比，否则 x/y 两轴缩放比不等（anchor='viewport' 会各自撑满）：
   //   轨迹经 worldToDesign 受两轴缩放，起始方向被拉成 atan((scaleY/scaleX)·tanθ) ≠ θ；
   //   而炮筒、扇形与「θ = xx°」标注是屏幕空间画的（恒等于 θ），速度矢量箭头也在屏幕空间归一化。
   //   三者互相矛盾 —— 默认参数下轨迹实测偏离 48.6°，标注却是 45°，tanθ=2tanα 这类角度结论在画面上不成立。
-  // 取「保留所需量程、把较小的那一维按画布宽高比补足」，使 scaleX === scaleY（等比，角度真实）。
+  // 取「保留所需量程、把较小的那一维按安全区宽高比补足」，使 scaleX === scaleY（等比，角度真实）。
   // 代价：细长轨迹（如 θ=80°、v0=40）会按高度贴合，横向留白，但不再牺牲角度正确性。
-  const viewAspect = vp.visibleW / Math.max(vp.visibleH, 1)
+  // ⚠️ 这里必须用安全区而不是可视区：加了边距后两条轴各少一截，用可视区比例补齐
+  //    会让 scaleX ≠ scaleY 重新出现（角度失真回归）。
+  const safeW = Math.max(1, vp.designVisibleW - insetLeft - insetRight)
+  const safeH = Math.max(1, vp.designVisibleH - insetTop - insetBottom)
+  const viewAspect = safeW / safeH
   const targetWidth = Math.max(needWidth, needHeight * viewAspect)
   const targetHeight = targetWidth / viewAspect
 
@@ -83,6 +101,7 @@ export default function ObliqueThrowAnimation() {
     anchor: 'viewport',
     physicsWidth: targetWidth,
     physicsHeight: targetHeight,
+    contentInset: { left: insetLeft, right: insetRight, top: insetTop, bottom: insetBottom },
     refMagnitudes: { velocity: velRefs.main, velocityX: velRefs.component, velocityY: velRefs.component },
   })
 

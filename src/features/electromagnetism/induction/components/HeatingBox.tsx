@@ -206,7 +206,11 @@ export const HeatingBox = React.memo(function HeatingBox({
         </text>
       </g>
 
-      <g transform={`translate(${halfW - font(36)}, ${chamberH * 0.72})`}>
+      {/* 温度计离右壁 40px：读数 `20.0°C` 写在柱子右侧，整组贴到 halfW 时
+          读数右端压在面板右边缘上（实测被裁 5px）。
+          ⚠️ 这里必须用**设计单位**的常数，不能写 `halfW - font(44)`：`font()` 是
+          `clamp(v × scale, 7, 16)`，36 和 44 都会被夹到 16，改数值根本不移动。 */}
+      <g transform={`translate(${halfW - 40}, ${chamberH * 0.72})`}>
         <rect x={-font(4)} y={0} width={font(8)} height={chamberH * 0.22}
           fill={CANVAS_COLORS.grid} rx={font(3)} />
         <rect

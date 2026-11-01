@@ -237,7 +237,9 @@ export default function Capacitor() {
                 transform: hasDielectric ? 'translateX(0)' : `translateX(-${plateW + 40}px)`,
               }}
             />
-            {/* 电介质标签 */}
+            {/* 电介质标签。仅在插入时显示：抽出后这一行（`cy + 4`）正好是电源那两行
+                标注（`接通电源` / `U = 12 V 恒定`）的同一行，而标签随板一起左移到极板
+                左侧，两者必然咬合 27×15px。抽出的电介质本来就不参与电场，标签没必要跟着走。 */}
             <text
               x={plateLeft - (plateW + 40) / 2}
               y={cy + 4}
@@ -245,8 +247,10 @@ export default function Capacitor() {
               fontWeight="semibold"
               fill={SCENE_COLORS.circuit.capacitorSt}
               textAnchor="middle"
+              opacity={hasDielectric ? 1 : 0}
               style={{
-                transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), y 0.1s ease-out',
+                transition:
+                  'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), y 0.1s ease-out, opacity 0.3s ease-out',
                 transform: hasDielectric ? `translateX(${plateW + 40}px)` : 'translateX(0)',
               }}
             >

@@ -48,7 +48,11 @@ export function PowerScene({
   const objW = canvasSize.width * 0.08
   const objH = objW * 0.6
 
-  const carX = Math.min(padding + state.s * scale, canvasSize.width - padding - objW)
+  // 车尾的 `f`（摩擦力）矢量从车身左边缘向左画，标签又落在箭尖外 10px——
+  // 车从 `padding` 起步时，这两段都伸到画布外（实测左溢出 24px，标签整个看不见）。
+  // 给车尾单独留一条标注带：起步位右移 34px，行驶终点仍受右边界约束。
+  const carStartX = padding + 34
+  const carX = Math.min(carStartX + state.s * scale, canvasSize.width - padding - objW)
 
   const powerRatio = state.P / P_rated
   const wavePhase = (time * 5) % 1

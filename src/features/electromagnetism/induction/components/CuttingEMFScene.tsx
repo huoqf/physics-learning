@@ -3,6 +3,7 @@ import { PHYSICS_COLORS, EM_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/phy
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { Rails, ConductorRod, PhysicsVectorArrow, MagneticFieldSymbols } from '@/components/Physics'
 import { worldToDesign } from '@/scene'
+import { placeBeside, clampAnchoredX } from '@/utils/labelFit'
 import { CuttingEMFHandRule } from '../CuttingEMFHandRule'
 import type { CuttingEMFPhysicsResult } from '../hooks/useCuttingEMFPhysics'
 import type { SceneScale } from '@/scene'
@@ -43,6 +44,44 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
   const accelArrowOrigin = worldToDesign(finalX, L * 0.8 + 0.7, sceneScale)
   const forceBelowOrigin = worldToDesign(finalX, -0.15, sceneScale)
   const forceAboveOrigin = worldToDesign(finalX, 0.15, sceneScale)
+
+  // === 标注避让 ===
+  // 这一页的标注全是「贴在导体棒/电阻旁边」写的，而导体棒从导轨左端起步、一路走到
+  // 右端，两端都紧挨画布边缘。固定用 `x = rodPx - 35, textAnchor: 'end'` 会两头出事：
+  // 起步时整行字被左边缘推出画布，X 走到 10 m 时右侧的力标签被右边缘推出画布。
+  // 统一交给 `placeBeside`：惯用侧放不下就翻到另一侧。
+  const canvasBounds = { left: 0, right: CANVAS_PRESETS.splitV.width }
+
+  const resistorText = `电阻 R = ${R.toFixed(1)} Ω`
+  // 电阻标签在导轨左端外侧（导轨左端已留 150px，正常放得下），只做夹回
+  const resistorLabelX = clampAnchoredX(
+    railLeftDesign.px - 38, resistorText, font(11), 'end', canvasBounds,
+  )
+
+  const emfText = `E_感 = ${Math.abs(EMF_current).toFixed(2)} V`
+  const emfLabel = placeBeside({
+    x: rodDesign.px, text: emfText, fontSize: font(11), prefer: 'left', bounds: canvasBounds, gap: 15,
+  })
+
+  const extForceText = `F_外 = ${Math.abs(extForceX).toFixed(2)} N`
+  const extForceLabel = placeBeside({
+    x: rodDesign.px, text: extForceText, fontSize: font(11),
+    prefer: extForceX > 0 ? 'right' : 'left', bounds: canvasBounds, gap: 35,
+  })
+
+  const ampForceText = `F_安 = ${Math.abs(ampForceX).toFixed(2)} N`
+  const ampForceLabel = placeBeside({
+    x: rodDesign.px, text: ampForceText, fontSize: font(11),
+    prefer: ampForceX > 0 ? 'right' : 'left', bounds: canvasBounds, gap: 35,
+  })
+
+  const netForceText = `F_合 = ${Math.abs(F_ext + ampForceX).toFixed(2)} N`
+  const netForceLabel = placeBeside({
+    x: rodDesign.px, text: netForceText, fontSize: font(11),
+    prefer: F_ext + ampForceX > 0 ? 'right' : 'left', bounds: canvasBounds, gap: 25,
+  })
+
+  const drivingNoteText = '外力驱动匀速运动 (F_外 = F_安，受力平衡)'
 
   const fieldSymbols = useMemo(() => {
     const points: Array<{ x: number; y: number }> = []
@@ -149,15 +188,15 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
             R
           </text>
           <text
-            x={railLeftDesign.px - 38}
-            y={railCy}
+            x={resistorLabelX}
+            y={railCy + 34}
             fontSize={font(11)}
             fill={PHYSICS_COLORS.labelText}
             textAnchor="end"
             dominantBaseline="middle"
             style={{ userSelect: 'none' }}
           >
-            电阻 R = {R.toFixed(1)} Ω
+            {resistorText}
           </text>
         </g>
 
@@ -171,16 +210,20 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
 
         {Math.abs(EMF_current) > 0.01 && (
           <text
-            x={rodDesign.px - 15}
-            y={railCy - 10}
+            x={emfLabel.x}
+            y={railCy - 40}
             fontSize={font(11)}
             fill={PHYSICS_COLORS.emf}
             fontWeight="bold"
-            textAnchor="end"
+            textAnchor={emfLabel.anchor}
             dominantBaseline="middle"
+            paintOrder="stroke"
+            stroke={PHYSICS_COLORS.white}
+            strokeWidth={3}
+            strokeLinejoin="round"
             style={{ userSelect: 'none' }}
           >
-            E_感 = {Math.abs(EMF_current).toFixed(2)} V
+            {emfText}
           </text>
         )}
 
@@ -233,6 +276,12 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
 
         {showForceAnalysis === 1 && (
           <g opacity={0.85}>
+            {/* 手定则示意放在**画布右下角**固定位置，不跟导体棒走。
+                跟着走时，手掌正好顶在导体棒下端：指尖标签（拇/食/中）与导体棒的
+                极性符号 `−` 抢同一条带（都在下导轨正下方 8px），实测叠了 7×6px。
+                极性符号标的是导体棒两端的电性、必须贴着棒；而手定则是"读图用的图例"，
+                放在角落同样能说明 v/B/I 的三指对应，且手心/手指方向由 `vDir` 决定、
+                与位置无关。右下角在导轨之外是空的。 */}
             <CuttingEMFHandRule
               svgRef={undefined}
               vDir={finalV > 0 ? 1 : finalV < 0 ? -1 : 0}
@@ -240,7 +289,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
               isBack={B_out === 1}
               rule="right"
               fist={false}
-              cx={rodDesign.px}
+              cx={CANVAS_PRESETS.splitV.width - 95}
               cy={railCy + railSpacing / 2 + 45}
               scale={vpScale * 0.42}
               draggable={false}
@@ -302,15 +351,19 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
                   strokeWidth={2.5}
                 />
                 <text
-                  x={rodDesign.px + (extForceX > 0 ? 35 : -35)}
+                  x={extForceLabel.x}
                   y={railCy - 20}
                   fontSize={font(11)}
                   fill={PHYSICS_COLORS.appliedForce}
                   fontWeight="bold"
-                  textAnchor={extForceX > 0 ? 'start' : 'end'}
+                  textAnchor={extForceLabel.anchor}
+                  paintOrder="stroke"
+                  stroke={PHYSICS_COLORS.white}
+                  strokeWidth={3}
+                  strokeLinejoin="round"
                   style={{ userSelect: 'none' }}
                 >
-                  F_外 = {Math.abs(extForceX).toFixed(2)} N
+                  {extForceText}
                 </text>
               </g>
             )}
@@ -325,15 +378,19 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
                   strokeWidth={2.5}
                 />
                 <text
-                  x={rodDesign.px + (ampForceX > 0 ? 35 : -35)}
+                  x={ampForceLabel.x}
                   y={railCy - 20}
                   fontSize={font(11)}
                   fill={PHYSICS_COLORS.lorentzForce}
                   fontWeight="bold"
-                  textAnchor={ampForceX > 0 ? 'start' : 'end'}
+                  textAnchor={ampForceLabel.anchor}
+                  paintOrder="stroke"
+                  stroke={PHYSICS_COLORS.white}
+                  strokeWidth={3}
+                  strokeLinejoin="round"
                   style={{ userSelect: 'none' }}
                 >
-                  F_安 = {Math.abs(ampForceX).toFixed(2)} N
+                  {ampForceText}
                 </text>
               </g>
             )}
@@ -348,30 +405,34 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
                   strokeWidth={2.5}
                 />
                 <text
-                  x={rodDesign.px + (F_ext + ampForceX > 0 ? 25 : -25)}
+                  x={netForceLabel.x}
                   y={railCy + 20}
                   fontSize={font(11)}
                   fill={PHYSICS_COLORS.forceNet}
                   fontWeight="bold"
-                  textAnchor={F_ext + ampForceX > 0 ? 'start' : 'end'}
+                  textAnchor={netForceLabel.anchor}
+                  paintOrder="stroke"
+                  stroke={PHYSICS_COLORS.white}
+                  strokeWidth={3}
+                  strokeLinejoin="round"
                   style={{ userSelect: 'none' }}
                 >
-                  F_合 = {Math.abs(F_ext + ampForceX).toFixed(2)} N
+                  {netForceText}
                 </text>
               </g>
             )}
 
             {mode === 0 && Math.abs(finalV) > 0.05 && (
               <text
-                x={rodDesign.px - 25}
-                y={railCy - railSpacing / 2 - 8}
+                x={20}
+                y={50}
                 fontSize={font(11)}
                 fill={PHYSICS_COLORS.labelText}
                 fontWeight="bold"
-                textAnchor="end"
+                textAnchor="start"
                 style={{ userSelect: 'none' }}
               >
-                外力驱动匀速运动 (F_外 = F_安，受力平衡)
+                {drivingNoteText}
               </text>
             )}
           </g>

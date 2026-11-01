@@ -296,15 +296,21 @@ export default function CircularGeometryModel() {
             label="vt"
           />
 
-          {/* 实时粒子上的动态速度矢量 */}
-          <PhysicsVectorArrow
-            originDesign={{ x: currentParticleState.px, y: currentParticleState.py }}
-            vector={{ x: currentParticleState.vx, y: currentParticleState.vy }}
-            type="velocity"
-            sceneScale={sceneScale}
-            color={PHYSICS_COLORS.velocity}
-            label="v"
-          />
+          {/* 实时粒子上的动态速度矢量。只在磁场内画：
+              粒子出射后沿切线一直飞出画布，速度箭头（箭尖外 10px 的 `v` 标签）
+              跟着跑到面板上方 85px 处——画面上既看不到箭头也看不到字。
+              出磁场瞬间它与 `F_L` 一起收掉，正好成为"离开磁场"的视觉信号；
+              出射方向本来就由 `vt` 切线矢量标好了。 */}
+          {currentParticleState.inField && (
+            <PhysicsVectorArrow
+              originDesign={{ x: currentParticleState.px, y: currentParticleState.py }}
+              vector={{ x: currentParticleState.vx, y: currentParticleState.vy }}
+              type="velocity"
+              sceneScale={sceneScale}
+              color={PHYSICS_COLORS.velocity}
+              label="v"
+            />
+          )}
 
           {/* 实时粒子上的动态洛伦兹力向心力矢量 */}
           {currentParticleState.inField && (

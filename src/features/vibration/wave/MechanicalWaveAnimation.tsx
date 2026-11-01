@@ -8,7 +8,6 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, CANVAS_COLORS, STROKE } from '@/theme/physics'
 import { Ball, PhysicsVectorArrow } from '@/components/Physics'
 import { AnimationSvgCanvas } from '@/components/Layout'
-import { worldToDesign } from '@/scene'
 import {
   computeWaveParticleStates,
   computeWavelength,
@@ -22,7 +21,7 @@ import {
 const DESIGN_W = 840
 const DESIGN_H = 325
 
-/** 振幅 UI 参数单位 cm �?物理 m */
+/** 振幅 UI 参数单位 cm �?物理 m */
 function cmToM(cm: number): number {
   return cm / 100
 }
@@ -89,7 +88,7 @@ export default function MechanicalWaveAnimation() {
     [time, waveParams],
   )
 
-  // 场景：水平链居中，x: 40..660 �?物理 0..L
+  // 场景：水平链居中，x: 40..660 �?物理 0..L
   const padL = 50
   const padR = 40
   const chainPixelW = DESIGN_W - padL - padR
@@ -117,7 +116,7 @@ export default function MechanicalWaveAnimation() {
 
   const displayParticles = useMemo(() => {
     if (manualY === null || particles.length === 0) return particles
-    // 拖拽时仅改写振源，其余仍由因果波决定；为即时反馈也改写源�?
+    // 拖拽时仅改写振源，其余仍由因果波决定；为即时反馈也改写源�?
     return particles.map((p, i) => (i === 0 ? { ...p, y: manualY } : p))
   }, [particles, manualY])
 
@@ -155,11 +154,11 @@ export default function MechanicalWaveAnimation() {
   const onPointerUp = () => {
     if (!draggingRef.current) return
     draggingRef.current = false
-    // 松手后恢复时钟驱�?
+    // 松手后恢复时钟驱�?
     setManualY(null)
   }
 
-  // 波长标注：从 x=0 �?x=λ（若 λ 在链长内�?
+  // 波长标注：从 x=0 �?x=λ（若 λ 在链长内�?
   const lambdaPx = lambda > 0 ? lambda * scaleX : 0
   const showLambdaMark = showLambda && mode === 0 && lambda > 0 && lambda <= DEFAULT_WAVE_CHAIN_LENGTH
 
@@ -185,7 +184,7 @@ export default function MechanicalWaveAnimation() {
         strokeDasharray="4 3"
       />
 
-      {/* 弹性纽�?*/}
+      {/* 弹性纽�?*/}
       {showLinks && linkPath && (
         <path
           d={linkPath}
@@ -235,11 +234,14 @@ export default function MechanicalWaveAnimation() {
         </g>
       )}
 
-      {/* 波速矢�?*/}
+      {/* 波速矢量：放在链线上方固定的标注带里。
+          ⚠️ 原来给的是世界坐标 y = 0.09 m，但振幅只有 0.02 m、`scaleY = 70 / A = 3500 px/m`，
+          0.09 m 折算是 315px——整支箭头（连标签）被顶到面板上方 206px，画面上根本看不见。
+          「波速沿传播方向」只约束横向，纵向位置纯粹是摆放问题，直接给设计坐标。 */}
       {(() => {
-        const { px: vpX, py: vpY } = worldToDesign(DEFAULT_WAVE_CHAIN_LENGTH * 0.35, 0.09, sceneScale)
+        const vpX = toCx(DEFAULT_WAVE_CHAIN_LENGTH * 0.35)
         return (
-          <PhysicsVectorArrow originDesign={{ x: vpX, y: vpY }}
+          <PhysicsVectorArrow originDesign={{ x: vpX, y: originY - 100 }}
             vector={{ x: v, y: 0 }}
             type="velocity"
             sceneScale={sceneScale}
@@ -249,7 +251,7 @@ export default function MechanicalWaveAnimation() {
         )
       })()}
 
-      {/* 质点�?*/}
+      {/* 质点�?*/}
       {displayParticles.map((p) => {
         const isSource = p.index === 0
         const isTracked = p.index === DEFAULT_TRACKED_PARTICLE_INDEX

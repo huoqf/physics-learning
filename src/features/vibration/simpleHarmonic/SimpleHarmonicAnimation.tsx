@@ -99,7 +99,9 @@ export default function SimpleHarmonicAnimation() {
         {showFormulas && (
           <text
             x={sceneX0}
-            y={vp.visibleY + vp.visibleH - 12}
+            /* 公式行原来贴在可视区底边下方 12px，被面板底边裁掉 20px——
+               可视区高度没有把底部那圈内边距扣掉。上抬到留出整行字高 + 内边距。 */
+            y={vp.visibleY + vp.visibleH - 34}
             fontSize={font(12)}
             fill={colors.neutral[500]}
             fontFamily={CANVAS_STYLE.FONT.family}

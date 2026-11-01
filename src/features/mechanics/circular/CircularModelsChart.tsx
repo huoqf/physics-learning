@@ -33,7 +33,16 @@ function ChartPolyline({ points, stroke, dashed = false }: { points: Point[]; st
   )
 }
 
-function ChartPoint({ x, y, color, label }: { x: number; y: number; color: string; label: string }) {
+/**
+ * 图上的实心点 + 竖直虚线 + 右上角标签。
+ *
+ * `labelDy` 是给「两个点的 x 几乎重合」的场合用的：标签恒打点右上方 6px 处，
+ * 当两个点纵坐标相同（`t=0` 时"当前值"点与"临界/起摆"点都在 y=0 或 y=9.8）时，
+ * 两行标签的水平间距只有 6px，必然叠字。把其中一方抬到上一行即可错开。
+ */
+function ChartPoint({
+  x, y, color, label, labelDy = -6,
+}: { x: number; y: number; color: string; label: string; labelDy?: number }) {
   const ctx = useChartContext()
   if (!ctx) return null
   const sx = ctx.toSvgX(x)
@@ -52,7 +61,7 @@ function ChartPoint({ x, y, color, label }: { x: number; y: number; color: strin
       <circle cx={sx} cy={sy} r={4.5} fill={color} stroke={PHYSICS_COLORS.white} strokeWidth={1.8} />
       <text
         x={sx + ctx.px(6)}
-        y={sy - ctx.px(6)}
+        y={sy + ctx.px(labelDy)}
         fontSize={ctx.font(10)}
         fill={color}
         fontWeight="bold"
@@ -177,7 +186,7 @@ export default function CircularModelsChart() {
             >
               <ChartPolyline points={conicalCharts.thetaPoints} stroke={PHYSICS_COLORS.annotation} />
               <ChartPoint x={omega} y={conical.thetaDeg} color={PHYSICS_COLORS.annotation} label={`当前: ${conical.thetaDeg.toFixed(0)}°`} />
-              <ChartPoint x={conical.minOmega} y={0} color={PHYSICS_COLORS.dangerDark} label="临界 ω₀" />
+              <ChartPoint x={conical.minOmega} y={0} color={PHYSICS_COLORS.dangerDark} label="临界 ω₀" labelDy={-19} />
             </BasePhysicsChart>
           </div>
         </div>
@@ -204,7 +213,7 @@ export default function CircularModelsChart() {
               <ChartPolyline points={conicalCharts.tensionPoints} stroke={PHYSICS_COLORS.tension} />
               <HorizontalReference y={MASS_KG * 9.8} color={PHYSICS_COLORS.gravity} label="mg = 9.8N" />
               <ChartPoint x={omega} y={conical.tension} color={PHYSICS_COLORS.tension} label={`当前: ${conical.tension.toFixed(1)}N`} />
-              <ChartPoint x={conical.minOmega} y={MASS_KG * 9.8} color={PHYSICS_COLORS.dangerDark} label="起摆" />
+              <ChartPoint x={conical.minOmega} y={MASS_KG * 9.8} color={PHYSICS_COLORS.dangerDark} label="起摆" labelDy={-19} />
             </BasePhysicsChart>
           </div>
         </div>

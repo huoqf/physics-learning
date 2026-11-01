@@ -68,14 +68,10 @@ export const AmpereFIChart: React.FC<AmpereFIChartProps> = ({
         cursorX={I}
         cursorLabel={(_i, f) => `F=${f.toFixed(1)}N`}
         showZeroLine
-        markers={[
-          {
-            axis: 'vertical',
-            x: 0,
-            label: 'I=0',
-            color: CANVAS_COLORS.axis,
-          },
-        ]}
+        // 不再画 `I=0` 竖向参考线：横轴量程对称（-10..10），**y 轴本身就落在 I=0 上**，
+        // 这条参考线和它逐像素重合；而它的标签被摆在刻度行、x=0 又正好是画面横向中心，
+        // 于是必然压住居中的横轴名 `I (A)`。同一个量（I=0）标两遍属 §2.7 明令禁止，
+        // 这里删掉参考线与标签，保留零线（F=0）——图线过原点已经说明 F ∝ I。
       />
 
       <div

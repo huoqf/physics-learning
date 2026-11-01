@@ -213,12 +213,17 @@ export default function PhototubeCanvas({
     ctx.fill()
     ctx.stroke()
     // 读数
+    // ⚠️ 表盘直径只有 30px（r = 15，去掉 1.5 描边后内径 28.5），原来把
+    // `${I.toFixed(2)}μA` 整串（6 个字符 ≈ 37px）居中塞进去，左右各溢出 4~5px，
+    // 压在圆环描边和引线上，而且单位在表盘里印了两遍（`μA` 一次、读数后缀一次）。
+    // 单位只留表盘上方那一处，读数只写数值、字号降到 8px（5 个字符 ≈ 24px），
+    // 整串落在盘面内。
     ctx.fillStyle = '#18181B'
-    ctx.font = '9px monospace'
+    ctx.font = '8px monospace'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText(`${I.toFixed(2)}μA`, aPlateX, meterY + 5)
     ctx.fillText('μA', aPlateX, meterY - 6)
+    ctx.fillText(I.toFixed(2), aPlateX, meterY + 5)
     // 指针
     ctx.strokeStyle = '#EF4444'
     ctx.lineWidth = 1.2

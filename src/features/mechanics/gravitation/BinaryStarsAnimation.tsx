@@ -109,14 +109,20 @@ export default function BinaryStarsAnimation() {
           <line x1={cx - 6} y1={cy} x2={cx + 6} y2={cy} />
           <line x1={cx} y1={cy - 6} x2={cx} y2={cy + 6} />
         </g>
+        {/* 「质心」标签必须在十字记号**下方**另起一行：两颗星的万有引力箭头都沿
+            质心连线指向质心，箭尖就在 `(cx, cy)`，`VectorArrow` 的标签又固定打在
+            箭尖外 10px 处——所以 `cy 上方/右侧那一条带子属于 F₁₂ / F₂₁`。
+            原来摆在 `(cx+8, cy+12)` 恰好落进 F₁₂ 的墨迹里。
+            十字记号本身就是质心标记，标签不必再带一个 `+`。 */}
         <text
-          x={cx + 8}
-          y={cy + 12}
+          x={cx}
+          y={cy + 24}
           fontSize={font(10)}
           fill={CANVAS_COLORS.referencePoint}
           fontWeight="bold"
+          textAnchor="middle"
         >
-          质心 +
+          质心
         </text>
 
         {/* 3. 矢量箭头图解 (受力/速度) */}

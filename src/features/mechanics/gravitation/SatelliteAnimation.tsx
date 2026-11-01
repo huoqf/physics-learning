@@ -222,11 +222,14 @@ export default function SatelliteAnimation() {
             {showCompare === 1 && (
               <g>
                 <g transform={`translate(${sat近X}, ${sat近Y})`}><SatelliteSvg angleRad={angle_近} /></g>
-                <text x={sat近X} y={sat近Y - 14} fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">近地</text>
+                {/* 对比轨道的三枚标签一律抬到 `y-32`：研究星自己的标签在 `y-18`，
+                    当研究星拖到与某条对比轨道同位置时（r 接近近地/中轨/高轨），
+                    两者纵向只差 4px，字号 9 与 11 的墨迹必然叠上（实测 20×8px）。 */}
+                <text x={sat近X} y={sat近Y - 32} fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">近地</text>
                 <g transform={`translate(${sat中X}, ${sat中Y})`}><SatelliteSvg angleRad={angle_中} /></g>
-                <text x={sat中X} y={sat中Y - 14} fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">中轨示例</text>
+                <text x={sat中X} y={sat中Y - 32} fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">中轨示例</text>
                 <g transform={`translate(${sat高X}, ${sat高Y})`}><SatelliteSvg angleRad={angle_高} /></g>
-                <text x={sat高X} y={sat高Y - 14} fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">高轨示例</text>
+                <text x={sat高X} y={sat高Y - 32} fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">高轨示例</text>
               </g>
             )}
 

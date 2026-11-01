@@ -4,6 +4,7 @@ import { useAnimationStore } from '@/stores'
 import { calculateOhmmeter } from '@/physics'
 import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
+import { sparsifyTickLabels } from '@/utils/tickLayout'
 import {
   PHYSICS_COLORS,
   CANVAS_COLORS,
@@ -107,6 +108,33 @@ export const MultimeterCenterExtra: FC = () => {
     })
   }, [])
 
+  /**
+   * 欧姆档刻度值抽稀。
+   *
+   * 欧姆刻度是 `R = 1500/(1500+x)` 的反向非线性刻度：`x` 从 5k 到 100k 的整段
+   * 只占 3° 弧长，`50k`/`100k`/`∞` 三个标签投影到屏幕上相差不到 2px，必然叠字。
+   * 刻度线由物理决定不能动，**只能按文字宽度决定哪些值出数字**——真实 MF-47
+   * 的欧姆档也是这样，中段大量刻度只有刻线没有数字。
+   *
+   * 「必留」的三项是教学关键读数：`0`（满偏）、`1500`（中值电阻，欧姆表原理的核心，
+   * 内阻=中值刻度）、`∞`（开路）。它们先占位，其余标签绕开它们，而不是反过来。
+   */
+  const ohmTicksLabeled = useMemo(() => {
+    const kept = new Set(
+      sparsifyTickLabels(
+        ohmTicks.map((t) => ({
+          label: t.label,
+          x: t.tx,
+          y: t.ty + 3,
+          fontSize: t.label === '1500' ? font(11) : font(9),
+          keep: t.label === '0' || t.label === '1500' || t.label === '∞',
+        })),
+      ),
+    )
+    return ohmTicks.map((t, i) => (kept.has(i) ? t : { ...t, label: '' }))
+    // font 参与宽度估算，换字号要重算
+  }, [ohmTicks, font])
+
   // 2. 直流电压电流刻度 (DC V/A)：均匀刻度
   const dcTicks = useMemo(() => {
     const points = []
@@ -183,7 +211,7 @@ export const MultimeterCenterExtra: FC = () => {
         <svg className="w-full h-full" viewBox="0 0 840 220">
           {/* ==================== 1. 欧姆刻度 (绿色) ==================== */}
           <path fill="none" stroke={colors.success[600]} strokeWidth={1.8} d={ohmArcPath} />
-          {ohmTicks.map((t, idx) => (
+          {ohmTicksLabeled.map((t, idx) => (
             <g key={`ohm-${idx}`}>
               <line
                 x1={t.x1}

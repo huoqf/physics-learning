@@ -31,6 +31,15 @@ export function SpringEnergyChartContent({
 
   const pointsCount = 80;
 
+  /**
+   * 数值标签掉进刻度行就翻到上方。
+   * 曲线贴到横轴时（`E弹 = 0`，弹簧刚要压缩 / 悬空段），原来写在曲线下方的
+   * `dy = 11` 标签正好落在横轴刻度数字行上——`0.0m`、`0J` 被 `E弹: 0.0J` 压住。
+   * 刻度行是横轴的固有部分不能挪，只能让标签自己躲开。
+   */
+  const plotBottom = ctx.plotOrigin.y + ctx.plotSize.height;
+  const belowOrAbove = (y: number, below = 11, above = -7) => (y > plotBottom - 16 ? above : below);
+
   if (viewMode === 'E-x') {
     const x_max_phys = mode === 1 ? xD_phys : h + xD_phys;
     const dx = x_max_phys / (pointsCount - 1);
@@ -208,7 +217,7 @@ export function SpringEnergyChartContent({
             <text
               x={x_cursor}
               y={toSvgY(state.Epe)}
-              dy='11'
+              dy={belowOrAbove(toSvgY(state.Epe))}
               fontSize={font(8)}
               fill={PHYSICS_COLORS.potentialElastic}
               fontWeight='bold'
@@ -361,7 +370,7 @@ export function SpringEnergyChartContent({
       {state.x > 0.005 && (
         <text
           x={toSvgX(state.Epe)}
-          y={y_current + 11}
+          y={y_current + belowOrAbove(y_current)}
           fontSize={font(8)}
           fill={PHYSICS_COLORS.potentialElastic}
           fontWeight='bold'

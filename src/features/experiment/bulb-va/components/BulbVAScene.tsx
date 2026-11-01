@@ -48,10 +48,12 @@ export const BulbVAScene: React.FC<BulbVASceneProps> = ({ physics, font, time = 
               power={bulbPower}
               time={time}
             />
-            {/* 仅标注数值 */}
+            {/* 仅标注数值。
+                y 偏移必须让开 LightBulb 自己的标签（组件内固定在 y+32）：
+                原先写 +40，与「小灯泡」只差 8px，两行 11 号字直接压在一起。 */}
             <text
               x={pos.x}
-              y={pos.y + 40}
+              y={pos.y + 52}
               textAnchor="middle"
               fontSize={font(11)}
               fill={PHYSICS_COLORS.emf}

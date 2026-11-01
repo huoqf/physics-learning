@@ -107,10 +107,11 @@ export default function Multimeter() {
           </text>
         </g>
 
-        {/* C. 灵敏电流表头 G */}
+        {/* C. 灵敏电流表头 G
+            盘面不再印类型字母 `A`：这块表在教材里的符号就是 `G`（小量程电流表/表头），
+            盘面同时印 `A` 与下方 `G` 是同一块表两个符号，两者纵向只差 8px。 */}
         <g>
-          <DialMeter type="A" value={res.I} max={Ig} x={470} y={170} r={32} font={font} />
-          <circle cx={470} cy={170 + 21} r={9} fill={withAlpha(colors.neutral[100], 0.94)} />
+          <DialMeter type="A" value={res.I} max={Ig} x={470} y={170} r={32} font={font} showType={false} />
           <text x={470} y={170 + 24} fontSize={font(11)} fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold" textAnchor="middle">
             G
           </text>

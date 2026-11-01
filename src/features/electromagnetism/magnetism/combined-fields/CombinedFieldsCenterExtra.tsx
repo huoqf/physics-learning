@@ -125,6 +125,10 @@ export default function CombinedFieldsCenterExtra() {
               xLabel="质量 m (×10⁻²³ kg)"
               yLabel="落点 x 坐标 (px)"
               cursorX={p.m * 1e23}
+              // 游标停在"质子"这个点上，默认读数 `y.toFixed(2)` 会打出一个 `200.00`
+              // 正好压在标记点标签「质子 (¹H⁺)」上（对穿 50×19px）。同一坐标不要既打点
+              // 又让游标读数——这里只留点与标签，读数看右屏物理量表。
+              cursorLabel={() => null}
               title="底片落点与质量关系"
               series="secondary"
               variant="mini"

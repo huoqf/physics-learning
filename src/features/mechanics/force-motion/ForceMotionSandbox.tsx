@@ -427,16 +427,21 @@ export default function ForceMotionSandbox(props: ForceMotionSandboxProps) {
                 strokeLinejoin="round"
               >v</text>
 
-              <text
-                x={aLabelX}
-                y={aLabelY}
-                fill={PHYSICS_COLORS.acceleration}
-                fontSize={fontSize}
-                paintOrder="stroke"
-                stroke={PHYSICS_COLORS.white}
-                strokeWidth={3}
-                strokeLinejoin="round"
-              >a</text>
+              {/* 加速度为 0 时不标 `a`：此时 `VectorArrow` 因长度为 0 整个不渲染
+                  （收尾速度模式下 a≡0），只留一个孤儿 `a` 字会误导成"有加速度"，
+                  而且它就打在 `F合` 标签旁边（同一行、相距 7px，实测 7×16px 对穿）。 */}
+              {Math.hypot(view.accelVector.x, view.accelVector.y) > 2 && (
+                <text
+                  x={aLabelX}
+                  y={aLabelY}
+                  fill={PHYSICS_COLORS.acceleration}
+                  fontSize={fontSize}
+                  paintOrder="stroke"
+                  stroke={PHYSICS_COLORS.white}
+                  strokeWidth={3}
+                  strokeLinejoin="round"
+                >a</text>
+              )}
 
               {/* forceLabel 渲染 */}
               <text

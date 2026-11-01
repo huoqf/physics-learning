@@ -26,7 +26,7 @@ export default function OilFilmExperimentAnimation() {
     powderThickness,
   })
 
-  const { containerRef, canvasSize, vp } = useAnimationViewport({
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({
     preset: CANVAS_PRESETS.full,
   })
 
@@ -35,8 +35,11 @@ export default function OilFilmExperimentAnimation() {
       <OilFilmScene
         step={step}
         calcResult={calcResult}
-        width={vp.visibleW}
-        height={vp.visibleH}
+        /* 必须传**设计稿尺寸**：场景内所有坐标都在 `<g transform={vp.transform}>` 里，
+           量的是设计单位；`vp.visibleW/H` 是容器像素（设计尺寸 × 缩放）。面板略高于
+           设计稿时（缩放 1.07），底部那行测量结果会掉到面板下方 39px。 */
+        width={preset.width}
+        height={preset.height}
         font={canvasSize.font}
       />
     </AnimationSvgCanvas>

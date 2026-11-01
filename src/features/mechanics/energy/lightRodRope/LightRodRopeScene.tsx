@@ -204,6 +204,10 @@ export function LightRodRopeScene({ physics, font: fontProp }: LightRodRopeScene
             )}
             {showResolution && (
               <>
+                {/* 切向分量趋近 0 时（球过最高/最低点）分解退化：径向分量与合力
+                    方向、长度都重合，两个标签会落在同一像素上（实测 10×11px 对穿）；
+                    切向分量的箭头本身也只剩几个像素，标签在球心旁悬空。
+                    此时只保留合力标签，分量标签撤掉——分解没有信息量。 */}
                 <VectorArrow
                   originDesign={{ x: x_A, y: y_A }}
                   vector={forceVectors.F_A_radial}
@@ -211,7 +215,7 @@ export function LightRodRopeScene({ physics, font: fontProp }: LightRodRopeScene
                   type="forceComponent"
                   arrowType="visual-only"
                   sceneScale={IDENTITY_SCENE_SCALE}
-                  label="F_A径"
+                  label={Math.abs(forceVectors.mag_F_A_tan) * 2.5 > 12 ? 'F_A径' : undefined}
                   dashed={true}
                 />
                 <VectorArrow
@@ -222,7 +226,7 @@ export function LightRodRopeScene({ physics, font: fontProp }: LightRodRopeScene
                   arrowType="visual-only"
                   color={PHYSICS_COLORS.velocity}
                   sceneScale={IDENTITY_SCENE_SCALE}
-                  label="F_A切"
+                  label={Math.abs(forceVectors.mag_F_A_tan) * 2.5 > 12 ? 'F_A切' : undefined}
                 />
                 <line
                   x1={forceVectors.x_A_rad}
@@ -265,7 +269,7 @@ export function LightRodRopeScene({ physics, font: fontProp }: LightRodRopeScene
                   type="forceComponent"
                   arrowType="visual-only"
                   sceneScale={IDENTITY_SCENE_SCALE}
-                  label="F_B径"
+                  label={Math.abs(forceVectors.mag_F_B_tan) * 2.5 > 12 ? 'F_B径' : undefined}
                   dashed={true}
                 />
                 <VectorArrow
@@ -276,7 +280,7 @@ export function LightRodRopeScene({ physics, font: fontProp }: LightRodRopeScene
                   arrowType="visual-only"
                   color={PHYSICS_COLORS.power}
                   sceneScale={IDENTITY_SCENE_SCALE}
-                  label="F_B切"
+                  label={Math.abs(forceVectors.mag_F_B_tan) * 2.5 > 12 ? 'F_B切' : undefined}
                 />
                 <line
                   x1={forceVectors.x_B_rad}

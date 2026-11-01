@@ -267,11 +267,17 @@ export default function CurvedSlotAnimation() {
                   <PhysicsVectorArrow origin={ballCenterPhy} vector={{ x: -N * Math.sin(theta), y: N * Math.cos(theta) }} type="normalForce" sceneScale={sceneScale} label="N" />
                   <PhysicsVectorArrow origin={ballCenterPhy} vector={{ x: 0, y: -mgVal }} type="force" sceneScale={sceneScale} label="mg" color={PHYSICS_COLORS.gravity} />
 
-                  {/* 槽受滑块的压力 N' 及水平推力分力 N'x，作用于接触点 */}
+                  {/* 槽受滑块的压力 N' 及水平推力分力 N'x，作用于接触点。
+                      `|cosθ|` 很小时（槽接近竖直）法向几乎就是水平的，N' 与水平分量
+                      N'x 方向重合、箭头端点也重合，两个标签会落在同一像素上（实测
+                      12×14px 完全对穿）。这种角度下"分解"已经没有信息量——
+                      分量就是合力本身，画出来只会显示两支一模一样的箭头。 */}
                   {!isFixed && (
                     <>
                       <PhysicsVectorArrow origin={contactPhy} vector={{ x: N * Math.sin(theta), y: -N * Math.cos(theta) }} type="appliedForce" sceneScale={sceneScale} label="N'" color={PHYSICS_COLORS.appliedForce} />
-                      <PhysicsVectorArrow origin={contactPhy} vector={{ x: N * Math.sin(theta), y: 0 }} type="forceComponent" sceneScale={sceneScale} label="N'x" color={PHYSICS_COLORS.forceNet} dashed />
+                      {Math.abs(Math.cos(theta)) > 0.18 && (
+                        <PhysicsVectorArrow origin={contactPhy} vector={{ x: N * Math.sin(theta), y: 0 }} type="forceComponent" sceneScale={sceneScale} label="N'x" color={PHYSICS_COLORS.forceNet} dashed />
+                      )}
                     </>
                   )}
                 </g>

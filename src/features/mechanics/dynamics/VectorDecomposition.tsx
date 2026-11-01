@@ -20,7 +20,9 @@ export function VectorDecomposition({ physicsData, sceneScale, onDragStart }: Ve
         type="forceComponent" arrowType="physical-schematic" sceneScale={sceneScale}
         strokeWidth={CANVAS_STYLE.stroke.vectorSub}
         pixelLength={Math.hypot(fxEnd.cx - origin.cx, fxEnd.cy - origin.cy)} />
-      <text x={fxEnd.cx > origin.cx ? fxEnd.cx - 8 : fxEnd.cx + 8} y={origin.cy + 18}
+      {/* F_x 原来摆在 origin.cy+18，正好是 x 轴刻度行——水平分力的箭尖落在轴上时
+          必然压住刻度数字。抬到轴向正上方。 */}
+      <text x={fxEnd.cx > origin.cx ? fxEnd.cx - 8 : fxEnd.cx + 8} y={origin.cy - 8}
         fontSize={CANVAS_STYLE.font.label} fontFamily={CANVAS_STYLE.font.family}
         fill={PHYSICS_COLORS.forceComponent} fontWeight="bold"
         textAnchor={fxEnd.cx > origin.cx ? "end" : "start"}>F_x</text>

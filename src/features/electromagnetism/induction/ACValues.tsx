@@ -240,9 +240,12 @@ export default function ACValues() {
         >
           ΔQ = {(physics.state.Q_dc - physics.state.Q_ac).toFixed(2)} J | I_eff = {physics.state.I_eff.toFixed(3)} A | 误差 {Math.abs((Idc - physics.state.I_eff) / Math.max(physics.state.I_eff, 0.01) * 100).toFixed(1)}%
         </text>
+        {/* 两行都居中、且都算在同一个基线上：原来第二行只比第一行低 `font(22) - font(12)`，
+            在 1440 下只有 8.6px，比第一行的行高（9px）还小 → 两行叠在一起（6px）。
+            行距按行高给足。 */}
         <text
           x={DESIGN_WIDTH / 2}
-          y={LAYOUT.chamberY + LAYOUT.chamberH + pad + font(22)}
+          y={LAYOUT.chamberY + LAYOUT.chamberH + pad + font(12) + Math.max(12, font(13))}
           fontSize={font(8)}
           textAnchor="middle"
           fill={CANVAS_COLORS.trackHistory}

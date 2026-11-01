@@ -207,6 +207,13 @@ export default function AlphaScatterAnimation() {
       gradient.addColorStop(0.2, withAlpha(CANVAS_COLORS.referencePoint, 0.8))
       gradient.addColorStop(0.5, withAlpha(CANVAS_COLORS.referencePoint, 0.4))
       gradient.addColorStop(1, withAlpha(CANVAS_COLORS.referencePoint, 0))
+      // ⚠️ Canvas 的 textAlign / textBaseline 是**画布状态**，不是文字自己的属性：
+      // 上面 `arc` 的 stroke 已经 save/restore 过，但这一段没有包起来，
+      // 于是 `center` / `middle` 会一直泄漏到本帧后面所有文字——`b = 15 px`
+      // 被居中对齐到画布左边缘（半个字宽跑到画布外），统计看板的四行读数
+      // 也整体左移约半个标签宽、跑到深色底板外面（白字画在白底上 = 看不见）。
+      // 凡是临时改对齐方式的文字块，必须自己 save/restore。
+      ctx.save()
       ctx.fillStyle = gradient
       ctx.beginPath()
       ctx.arc(cx, cy, 24, 0, Math.PI * 2)
@@ -220,6 +227,7 @@ export default function AlphaScatterAnimation() {
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText('Au (79+)', cx, cy - 12)
+      ctx.restore()
     }
 
     // 粒子与轨迹
@@ -257,6 +265,9 @@ export default function AlphaScatterAnimation() {
     ctx.stroke()
     ctx.fillStyle = PHYSICS_COLORS.textMuted
     ctx.font = `${font(11)}px sans-serif`
+    // 基线标注是"从左边起笔"的，对齐方式显式写死，不继承画布当前状态
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'alphabetic'
     ctx.fillText(`b = ${b} px`, 10, cy - b - 6)
     ctx.restore()
 
@@ -287,6 +298,10 @@ function drawStatsPanel(
 ) {
   const px = w - 190, py = h - 140, pw = 176, ph = 86
   ctx.save()
+  // 看板自己定义文字锚点：所有读数都从 `px + 10` 起笔，不能依赖调用方留下的
+  // textAlign（`center` 会把整行按自身宽度向左居中，宽行直接跑到深色底板外）。
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'alphabetic'
   ctx.fillStyle = withAlpha(CANVAS_COLORS.strokeDark, 0.88)
   ctx.beginPath()
   ctx.roundRect(px, py, pw, ph, 8)
@@ -308,7 +323,9 @@ function drawStatsPanel(
   ctx.fillText(`大角偏转(5-90°): ${s.deflected} (${pct(s.deflected)})`, px + 10, py + 50)
   ctx.fillStyle = PHYSICS_COLORS.forceArrowRed
   ctx.fillText(`反弹 (≥90°):   ${s.rebound} (${pct(s.rebound)})`, px + 10, py + 66)
-  ctx.fillStyle = CANVAS_COLORS.labelTextLight
+  // 次要说明行不能用 `labelTextLight`（neutral[600] 深灰）——那是给白底用的，
+  // 画在 0.88 不透明的深色底板上几乎看不见。底板上的次级文字用半透明白。
+  ctx.fillStyle = withAlpha(CANVAS_COLORS.white, 0.6)
   ctx.font = `${font(9)}px sans-serif`
   ctx.fillText(`总射入样本数: ${total}`, px + 10, py + 78)
   ctx.restore()

@@ -268,13 +268,15 @@ export default function NewtonSecondAnimation() {
               )
             })()}
 
-            {/* 3. 重力 G = mg (向下) */}
+            {/* 3. 重力 G = mg (向下)
+                箭头不再单独挂 label="G"：下方的「G=19.6N」就贴在箭头尖端，
+                两者一个在 704、一个在 711，纵向只差 7px、横向正向重叠 9px，
+                渲染出来就是「G」压在「G=19.6N」上。符号与数值本就该是同一行文字。 */}
             <PhysicsVectorArrow
               originDesign={{ x: cx, y: cy }}
               vector={{ x: 0, y: -m * GRAVITY }}
               type="gravity"
               sceneScale={sceneScale}
-              label="G"
             />
             <text
               x={cx}

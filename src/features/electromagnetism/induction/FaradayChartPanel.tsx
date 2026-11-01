@@ -38,6 +38,16 @@ interface Props {
   indicatorX: number
   tNow: number
   font: (base: number) => number
+  /**
+   * 画布的整体变换（设计坐标 → 容器像素）。
+   *
+   * 这个看板是 **HTML 覆盖层**，不参加 `<g transform>` 的缩放；但它内部的 SVG
+   * 场景是按设计坐标排的（`dashLeft = 0.53 × 设计宽`）。直接拿设计坐标当 CSS px
+   * 用，只在 `scale ≈ 1`（1440 宽）时勉强对得上：1280 宽时缩放比降到 0.89，
+   * 覆盖层整体右移 50px、宽出 80px，最右两个刻度 `8.00` / `10.0` 被推出容器
+   * （实测右溢出 73px）。
+   */
+  overlayTransform: { scale: number; tx: number; ty: number }
 }
 
 function paddedDomain(min: number, max: number, fallbackSpan = 1): [number, number] {
@@ -127,6 +137,7 @@ export function FaradayChartPanel({
   emfIsZero,
   tNow,
   font,
+  overlayTransform,
 }: Props) {
   const phiSeries = useMemo(
     () => chartPoints.map((p) => ({ t: p.t, v: p.phi })),
@@ -162,15 +173,16 @@ export function FaradayChartPanel({
 
   const panelY = Math.max(0, chartPadTop - 18)
   const panelH = Math.max(120, H - panelY - 4)
+  const { scale: ovScale, tx: ovTx, ty: ovTy } = overlayTransform
 
   return (
     <div
       className="absolute"
       style={{
-        left: dashLeft,
-        top: panelY,
-        width: dashW,
-        height: panelH,
+        left: ovTx + dashLeft * ovScale,
+        top: ovTy + panelY * ovScale,
+        width: dashW * ovScale,
+        height: panelH * ovScale,
         display: 'flex',
         flexDirection: 'column',
         gap: 6,

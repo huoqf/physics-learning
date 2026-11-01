@@ -251,12 +251,18 @@ export default function ThinLensAnimation() {
               </text>
             </g>
 
+            {/* 物距 / 像距标注带：尺寸线 + 数字都排在导轨刻度行**下方**。
+                ⚠️ 导轨占 cy+8..cy+22（金属条）、厘米刻度数字基线在 cy+30（字形占 cy+22..cy+33），
+                尺寸线原先画在 cy+30、数字画在 cy+24/cy+34——正好落在刻度数字行里，
+                「30」「40」这些刻度值和 `u=30.0cm` 挤成一团。刻度行是导轨的固有部分不能挪，
+                所以物距、像距各自往下占一条独立标注带（线 + 线下方数字），
+                两条带之间留 8px，任何情况下都不与刻度行相交。 */}
             {mode === 0 && (
               <g>
-                <line x1={objSvgX} y1={cy + 30} x2={lensSvgX} y2={cy + 30}
+                <line x1={objSvgX} y1={cy + 44} x2={lensSvgX} y2={cy + 44}
                   stroke={CANVAS_COLORS.annotation} strokeWidth={STROKE.annotation}
                   strokeDasharray={`${DASH.reference[0]} ${DASH.reference[1]}`} />
-                <text x={(objSvgX + lensSvgX) / 2} y={cy + 24} textAnchor="middle" dominantBaseline="auto"
+                <text x={(objSvgX + lensSvgX) / 2} y={cy + 56} textAnchor="middle" dominantBaseline="auto"
                   fill={CANVAS_COLORS.annotation} fontSize={font(10)} fontFamily={FONT.family} fontWeight="bold">
                   u={u.toFixed(1)}cm
                 </text>
@@ -272,14 +278,20 @@ export default function ThinLensAnimation() {
                 {mode === 0 ? (
                   <g>
                     <CandleShape x={imgSvgX} y={cy} h={imgH} inverted={isReal} opacity={imageOpacity} />
-                    <line x1={lensSvgX} y1={cy + 40} x2={imgSvgX} y2={cy + 40}
+                    <line x1={lensSvgX} y1={cy + 62} x2={imgSvgX} y2={cy + 62}
                       stroke={CANVAS_COLORS.annotation} strokeWidth={STROKE.annotation}
                       strokeDasharray={`${DASH.reference[0]} ${DASH.reference[1]}`} />
-                    <text x={(lensSvgX + imgSvgX) / 2} y={cy + 34} textAnchor="middle" dominantBaseline="auto"
+                    <text x={(lensSvgX + imgSvgX) / 2} y={cy + 74} textAnchor="middle" dominantBaseline="auto"
                       fill={CANVAS_COLORS.annotation} fontSize={font(10)} fontFamily={FONT.family} fontWeight="bold">
                       v={vCm > 180 ? '→∞' : `${Math.abs(vCm).toFixed(1)}cm`}
                     </text>
-                    <text x={imgSvgX} y={isReal ? cy + imgH + 20 : cy - imgH - 12} textAnchor="middle" dominantBaseline="auto"
+                    {/* 像的性质：实像贴在像**右侧**、与像身中部同高。
+                        原来写在像下方 `cy + imgH + 20`：默认参数（u=30, f=10）下正好是 cy+40，
+                        而像距数字就在 cy+34 那条带里，两者横向又都压在像的位置附近，
+                        `v=15.0cm` 的后半截被 `倒立缩小实像` 压住。竖排三条标注带（刻度 / 物距 / 像距）
+                        已经把轴下空间占满，再往下排第四条就会离轴太远，所以改走横向。 */}
+                    <text x={imgSvgX + 10} y={isReal ? cy + Math.max(imgH, 10) / 2 + 4 : cy - imgH - 12}
+                      textAnchor={isReal ? 'start' : 'middle'} dominantBaseline="auto"
                       fill={isReal ? OPTICS_COLORS.lightRayRefracted : OPTICS_COLORS.criticalAngle}
                       fontSize={font(9)} fontFamily={FONT.family} fontWeight="bold">
                       {isReal ? '倒立' : '正立'}{Math.abs(lensResult.m) > 1 ? '放大' : Math.abs(lensResult.m) < 1 ? '缩小' : '等大'}{isReal ? '实像' : '虚像'}

@@ -227,13 +227,21 @@ export default function CuttingEMF() {
   }, [mode])
 
   // 场景 sceneScale
+  //
+  // 布局口径：导轨 0..10 m 必须完整落在画布内，且**左右两端都要留出标注带**——
+  // 电阻标签（`电阻 R = 2.0 Ω`，约 73px）写在导轨左端外侧，受力/感应电动势标签
+  // 还会跟着导体棒一路走到右端。原来 `physicsWidth: 12 / originX: 70` 把导轨左端
+  // 顶在画布左边缘（70px），电阻标签直接被推出画布；右端只余 70px，导体棒走到
+  // 10 m 时右侧的 `F_外 = 2.25 N` 也会被推出。
+  // 改为导轨占 600px、左右各留 150/90：`physicsWidth: 14` 使像素比例降为 60px/m，
+  // `originX: 150` 让导轨落在 150..750。物理量程与算法均不变，只是画得更紧凑。
   const sceneScale = useSceneScale({
     vp: sceneVp, preset: CANVAS_PRESETS.splitV,
     anchor: 'design',
-    physicsWidth: 12,
+    physicsWidth: 14,
     physicsHeight: 3,
     originSource: 'custom',
-    originX: 70,
+    originX: 150,
     originY: 160,
     refMagnitudes: {
       velocity: 3.0,

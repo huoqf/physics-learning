@@ -6,6 +6,7 @@ import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { worldToDesign } from '@/scene'
+import { clampAnchoredX } from '@/utils/labelFit'
 import type { LoopPassFieldPhysicsResult } from '../hooks/useLoopPassFieldPhysics'
 
 // ─── 布局常量（消除魔法数字）────────────────────────────────────────────────
@@ -22,8 +23,14 @@ const MAG_FIELD_HEIGHT = 255
 const WALL_TOP_Y = 25
 /** 磁场边界线底部 Y (px) */
 const WALL_BOTTOM_Y = 300
-/** 磁场边界标注 Y (px) */
-const WALL_LABEL_Y = 312
+/**
+ * 磁场边界标注 Y (px)。
+ *
+ * 原来在 312——和底部状态条（`301..321`，文字基线 315）同一行：状态条是居中的 280px 宽，
+ * 右侧磁场边界（`x = D`）正好落在它的横向范围内，两个标签在同一行对穿 61×11px。
+ * 画布 325 高，底部已被状态条占满，只能把边界标注收进磁场区域下沿内侧（底部 290）。
+ */
+const WALL_LABEL_Y = 288
 /** 磁场标题 Y (px) */
 const MAG_TITLE_Y = 20
 /** 线框切割发光扩展 (px) */
@@ -274,8 +281,16 @@ export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
           </text>
         )}
 
-        {/* 8. 线框尺寸标注 */}
-        <text x={loopCenterPx} y={LOOP_TOP_Y - 8} fontSize={font(12)} fontWeight="bold" fill={CANVAS_COLORS.textMuted} textAnchor="middle">
+        {/* 8. 线框尺寸标注。线框进场时中心还在磁场左边界之外（`loopCenterPx` 可为负），
+            居中标注会整行落到画布外（实测左侧超出 87px）。夹回画布内。 */}
+        <text
+          x={clampAnchoredX(loopCenterPx, `宽 d = ${(d * 100).toFixed(0)}cm`, font(12), 'middle', {
+            left: 0,
+            right: CANVAS_PRESETS.splitV.width,
+          })}
+          y={LOOP_TOP_Y - 8}
+          fontSize={font(12)} fontWeight="bold" fill={CANVAS_COLORS.textMuted} textAnchor="middle"
+        >
           宽 d = {(d * 100).toFixed(0)}cm
         </text>
 

@@ -22,6 +22,12 @@ const VT_DESIGN = { width: 100, height: 100 } as const
 /** 脉冲动画周期 (ms) */
 const PULSE_PERIOD = 800
 
+/** 演练区左边界（地面线起点）：留给纵轴刻度值的标注带宽 58px */
+const STAGE_LEFT = 58
+
+/** 纵轴刻度值的右对齐基准线 */
+const AXIS_LABEL_X = 52
+
 export default function VerticalThrowAnimation() {
   const { params, time, isPlaying, showVectors, setIsPlaying, setTime } = useAnimationStore(
     useShallow((s) => ({
@@ -122,6 +128,13 @@ export default function VerticalThrowAnimation() {
   }, [isLanded, time, setIsPlaying])
 
   // ── 最高点自动暂停 1 秒后继续 ──
+  /**
+   * `g` 标签的纵向位置：跟在重力箭头中段。
+   * 小球快落地时 `currentBallY` 已经贴近地面线，往下半个箭头长度就掉到画布外
+   * （实测 bottom 溢出 8px）。夹到地面线以上。
+   */
+  const gLabelY = Math.min(currentBallY + vtSceneScale.maxVectorLength * 0.5, groundY - 6)
+
   const hasPausedAtPeakRef = useRef(false)
   const peakTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => {
@@ -174,17 +187,19 @@ export default function VerticalThrowAnimation() {
 
         {/* ========== 左侧：物理演练区 ========== */}
         <PhysicsGround
-          x={30} y={groundY} width={stageWidth - 50}
+          x={STAGE_LEFT} y={groundY} width={stageWidth - STAGE_LEFT - 20}
           appearance={{ color: PHYSICS_COLORS.labelText }}
         />
 
-        <text x={25} y={originY + 4} fontSize={font(10)} fill={PHYSICS_COLORS.axis} textAnchor="end">
+        {/* 纵轴刻度值：画布左侧只有一条窄带，`11.5m`（47px）右对齐在 x=25 时左半截跑到画布外
+            （实测被裁 18px）。把刻度列的右边界退到 52、地面线起点退到 58，整列就有了 52px。 */}
+        <text x={AXIS_LABEL_X} y={originY + 4} fontSize={font(10)} fill={PHYSICS_COLORS.axis} textAnchor="end">
           {displayMaxHeight.toFixed(1)}m
         </text>
-        <text x={25} y={groundY + 4} fontSize={font(10)} fill={PHYSICS_COLORS.axis} textAnchor="end">0</text>
+        <text x={AXIS_LABEL_X} y={groundY + 4} fontSize={font(10)} fill={PHYSICS_COLORS.axis} textAnchor="end">0</text>
         <text x={leftBallX + (showDoubleTrack ? -20 : 18)} y={groundY + 14} fontSize={font(10)} fill={PHYSICS_COLORS.axis}>y=0</text>
 
-        <line x1={30} y1={originY + (displayMaxHeight - maxHeight) * scale} x2={stageWidth - 20} y2={originY + (displayMaxHeight - maxHeight) * scale}
+        <line x1={STAGE_LEFT} y1={originY + (displayMaxHeight - maxHeight) * scale} x2={stageWidth - 20} y2={originY + (displayMaxHeight - maxHeight) * scale}
           stroke={CHART_COLORS.highlight} strokeWidth={STROKE.reference}
           strokeDasharray={DASH.reference.join(' ')} opacity={0.6} />
         <text x={stageWidth - 18} y={originY + (displayMaxHeight - maxHeight) * scale - 4} fontSize={font(10)}
@@ -195,7 +210,7 @@ export default function VerticalThrowAnimation() {
         {advancedMode === 1 && targetHeight > 0 && targetHeight < maxHeight && (
           <>
             <line
-              x1={30} y1={originY + (displayMaxHeight - targetHeight) * scale}
+              x1={STAGE_LEFT} y1={originY + (displayMaxHeight - targetHeight) * scale}
               x2={stageWidth - 20} y2={originY + (displayMaxHeight - targetHeight) * scale}
               stroke={CHART_COLORS.highlight} strokeWidth={STROKE.reference}
               strokeDasharray={DASH.reference.join(' ')} opacity={0.7}
@@ -275,7 +290,7 @@ export default function VerticalThrowAnimation() {
               strokeWidth={STROKE.vectorMain}
             />
             <text
-              x={leftBallX - 30} y={currentBallY + vtSceneScale.maxVectorLength * 0.5}
+              x={leftBallX - 30} y={gLabelY}
               fontSize={font(10)} fill={PHYSICS_COLORS.gravity} fontWeight="bold">
               g
             </text>
@@ -295,7 +310,7 @@ export default function VerticalThrowAnimation() {
               />
               <animate attributeName="opacity" values="1;0.3;1" dur={`${PULSE_PERIOD}ms`} repeatCount="indefinite" />
             </g>
-            <text x={leftBallX - 30} y={currentBallY + vtSceneScale.maxVectorLength * 0.5}
+            <text x={leftBallX - 30} y={gLabelY}
               fontSize={font(10)} fill={PHYSICS_COLORS.gravity} fontWeight="bold">
               g
               <animate attributeName="opacity" values="1;0.3;1" dur={`${PULSE_PERIOD}ms`} repeatCount="indefinite" />

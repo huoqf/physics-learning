@@ -104,6 +104,9 @@ export default function BulbVAAnimation() {
           additionalSeries={additionalSeries}
           markers={markers}
           cursorX={physics.U_meas}
+          /* 测量点的坐标已经由 markers 的标签给出，游标只留圆点与十字线。
+             否则游标读数（`0.20`）会画在测量点标签里，两段文字直接对穿。 */
+          cursorLabel={() => null}
         />
       </div>
 

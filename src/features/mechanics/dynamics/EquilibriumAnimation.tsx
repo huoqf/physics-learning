@@ -416,7 +416,10 @@ export default function EquilibriumAnimation() {
               stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={1} />
             <line x1={chartX0} y1={chartY0} x2={chartX0} y2={chartY0 - chartH - 5}
               stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={1} />
-            <text x={chartX0 + chartW + 2} y={chartY0 + 9} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">θ(°)</text>
+            {/* 横轴不再挂轴名，单位回到刻度上：
+                这个小图右边缘紧贴卡片边框（末位刻度 `90` 之后只剩 2px），轴名放右侧会被裁，
+                放原点左侧又会与首刻度贴成「θ(°)10」，放刻度行下方则超出卡片底边。
+                只有两枚刻度，写「10°/90°」不存在重复累赘，且标题行 `T - θ 关系图像` 已交代符号。 */}
             <text x={chartX0 - 4} y={chartY0 - chartH} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight}>T(N)</text>
             <text x={thetaToX(10)} y={chartY0 + 9} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">10°</text>
             <text x={thetaToX(90)} y={chartY0 + 9} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">90°</text>

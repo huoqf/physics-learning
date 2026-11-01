@@ -131,13 +131,17 @@ export function VerticalCircularScene({ physics }: VerticalCircularSceneProps) {
           <PhysicsVectorArrow origin={{ x, y }} vector={{ x: 0, y: -m * GRAVITY }}
             type="gravity" sceneScale={sceneScale} label="G" />
           {currentPoint.state === 'on-track' && (
+            /* 拉力/支持力走"箭杆侧面"标注：它与 `a_合` 同起点（球心）、同方向（沿半径向心），
+               竖直位置（最低点/最高点）时两者像素长度只差几像素，标签都打在箭尖外必然叠字。
+               侧面标签放在箭杆 3/4 处的外法线方向，与箭尖那条带垂直分开。 */
             <PhysicsVectorArrow origin={{ x, y }}
               vector={{
                 x: -currentPoint.N * Math.sin(currentPoint.theta),
                 y: currentPoint.N * Math.cos(currentPoint.theta)
               }}
               type={trackType === 0 ? 'tension' : 'normalForce'}
-              sceneScale={sceneScale} label={trackType === 0 ? 'F_T' : 'F_N'} />
+              sceneScale={sceneScale} label={trackType === 0 ? 'F_T' : 'F_N'}
+              labelPlacement="side" />
           )}
           <PhysicsVectorArrow origin={{ x, y }}
             vector={{

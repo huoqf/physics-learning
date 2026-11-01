@@ -134,13 +134,15 @@ export function ElectricPotentialChartScene({
           strokeWidth={1.5}
         />
 
-        {/* 坐标轴标签 */}
+        {/* 坐标轴标签：X 轴名原来右对齐到右端、只比刻度行低 6px，
+            而末位刻度「6.0」正好落在右端同一位置 → 必然咬合。
+            改为常规做法：轴名居中排在刻度行的下一行。 */}
         <text
-          x={chartPadding.left + chartWidth}
-          y={chartPadding.top + chartHeight + 22}
+          x={chartPadding.left + chartWidth / 2}
+          y={chartPadding.top + chartHeight + 30}
           fontSize={font(10)}
           fill={colors.neutral[600]}
-          textAnchor="end"
+          textAnchor="middle"
           fontWeight="bold"
         >
           位移 x / m

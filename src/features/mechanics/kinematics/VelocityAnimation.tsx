@@ -265,15 +265,18 @@ export default function VelocityAnimation() {
           </g>
         )}
 
-        {/* ── 7. 位移大括号示意线 ── */}
+        {/* ── 7. 位移大括号示意线 ──
+            注意行位：地面标尺的数字排在 groundY+22（PhysicsGround 内 tickLen+14），
+            大括号原来画在 +16/+20、标签在 +30，整排压在标尺数字上，
+            「Δx=16.0m」正好砸在起始线的「0」上。故整体下移到标尺行之下。 */}
         {deltaT > 0 && showVectors && (
           <g>
-            <line x1={t1Pos} y1={groundY + 16} x2={t2Pos} y2={groundY + 16} stroke={PHYSICS_COLORS.displacement} strokeWidth={STROKE.vectorThin} />
-            <line x1={t1Pos} y1={groundY + 12} x2={t1Pos} y2={groundY + 20} stroke={PHYSICS_COLORS.displacement} strokeWidth={STROKE.vectorThin} />
-            <line x1={t2Pos} y1={groundY + 12} x2={t2Pos} y2={groundY + 20} stroke={PHYSICS_COLORS.displacement} strokeWidth={STROKE.vectorThin} />
+            <line x1={t1Pos} y1={groundY + 26} x2={t2Pos} y2={groundY + 26} stroke={PHYSICS_COLORS.displacement} strokeWidth={STROKE.vectorThin} />
+            <line x1={t1Pos} y1={groundY + 22} x2={t1Pos} y2={groundY + 30} stroke={PHYSICS_COLORS.displacement} strokeWidth={STROKE.vectorThin} />
+            <line x1={t2Pos} y1={groundY + 22} x2={t2Pos} y2={groundY + 30} stroke={PHYSICS_COLORS.displacement} strokeWidth={STROKE.vectorThin} />
             <text
               x={(t1Pos + t2Pos) / 2}
-              y={groundY + 30}
+              y={groundY + 40}
               fontSize={smallFont}
               fill={PHYSICS_COLORS.displacement}
               textAnchor="middle"
