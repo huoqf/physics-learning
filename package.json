@@ -21,8 +21,9 @@
     "check:control-meta": "node scripts/check-control-meta.mjs",
     "check:formula-condition": "node scripts/check-formula-condition.mjs",
     "check:seg-wrap": "node scripts/check-seg-wrap.mjs",
+    "check:text-overlap": "node scripts/check-text-overlap.mjs",
     "check:architecture": "npm run check:font-size && npm run check:viewport-legacy && npm run check:large-files && npm run check:no-raf && npm run check:no-marker && npm run check:component-reuse && npm run check:quantity-labels && npm run check:control-meta && npm run check:formula-condition",
-    "check": "npm run build && npm test -- --run && npm run check:architecture && npm run check:seg-wrap",
+    "check": "npm run build && npm test -- --run && npm run check:architecture && npm run check:seg-wrap && npm run check:text-overlap",
     "check:all": "npm run check && npm run audit:deps",
     "prepare": "lefthook install",
     "check:viewport-legacy": "node scripts/check-viewport-legacy.mjs",
@@ -71,9 +72,9 @@
     "@typescript-eslint/eslint-plugin": "^8.23.0",
     "@typescript-eslint/parser": "^8.23.0",
     "@vitejs/plugin-react": "^4.3.4",
-    "@vitest/coverage-v8": "^3.2.6",
+    "@vitest/coverage-v8": "^5.0.5",
     "autoprefixer": "^10.4.20",
-    "electron": "^43.2.0",
+    "electron": "^43.8.5",
     "electron-builder": "^26.15.3",
     "eslint": "^9.20.1",
     "eslint-plugin-react-hooks": "^5.1.0",
@@ -81,12 +82,12 @@
     "globals": "^15.15.0",
     "jsdom": "^26.0.0",
     "lefthook": "^2.1.9",
-    "postcss": "^8.4.49",
+    "postcss": "^8.5.32",
     "prettier": "^3.4.2",
     "tailwindcss": "^4.3.0",
     "tsx": "^4.23.1",
     "typescript": "^5.7.2",
-    "vite": "^6.4.3",
-    "vitest": "^3.2.6"
+    "vite": "^6.4.5",
+    "vitest": "^5.0.5"
   }
 }

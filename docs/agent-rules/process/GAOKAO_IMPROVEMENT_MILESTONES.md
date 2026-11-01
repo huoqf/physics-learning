@@ -100,5 +100,5 @@
 ## 🔍 4. 验收标准与测试规范
 
 1. **严格架构检查**：运行 `npm run check:architecture`（含 viewport、font-size、no-raf、no-marker、`check:control-meta`、`check:formula-condition` 等 9 项校验）确保无违规。
-2. **完整构建与测试**：运行 `npm run check`（`build` → 全量单测 → 9 项架构守卫 → `check:seg-wrap` 真机折行实测）。依赖安全审计单独为 `npm run check:all`——它与代码正确性无关，且当前存在需评估升级的存量漏洞，混在一个命令里会让本地门禁长期为红。
+2. **完整构建与测试**：运行 `npm run check`（`build` → 全量单测 → 9 项架构守卫 → `check:seg-wrap` 真机折行实测 → `check:text-overlap` 中屏标注压字实测）。最后两项都要自起 `vite preview` + Playwright，因此**必须先 `npm run build`**（脚本已内置该前置检查，缺 `dist/` 时以退出码 2 直接报出）。`check:text-overlap` 跑 1440/1280 双视口且**不允许跳过加载失败的页面**，所以两轮遍历约 4 分钟，属正常耗时。依赖安全审计单独为 `npm run check:all`——它与代码正确性无关，混在一个命令里会让本地门禁长期为红。
 3. **高考原题精准度校验**：真题描述与表达逻辑必须与高考卷面 100% 一致。

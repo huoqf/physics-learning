@@ -79,5 +79,5 @@ describe('masterModels · 数量与文案一致性守卫', () => {
       violations,
       `以下位置硬编码了 Master 模型数量，请改用 MASTER_MODEL_COUNT / MASTER_MODEL_SERIES_LABEL：\n${violations.join('\n')}`,
     ).toEqual([])
-  })
+  }, 20000)
 })

@@ -104,8 +104,9 @@ export default [
 
   // 2-c) Playwright 质检脚本：`page.evaluate()` 的回调体在**浏览器上下文**里执行，
   // 里面的 `document` / `getComputedStyle` 是合法的浏览器全局，不是 Node 全局。
+  // 新增用 Playwright 的质检脚本时，务必把文件名加进这份清单。
   {
-    files: ['scripts/audit-seg-wrap.mjs'],
+    files: ['scripts/audit-seg-wrap.mjs', 'scripts/check-text-overlap.mjs'],
     languageOptions: {
       globals: { ...globals.node, ...globals.browser },
     },
