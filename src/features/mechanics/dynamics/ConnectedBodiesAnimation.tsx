@@ -70,7 +70,7 @@ function ConnectionElement({ connectionType, ropeLeftX, ropeRightX, ropeY, isMov
         x1={ropeLeftX} y1={ropeY} x2={ropeRightX} y2={ropeY}
         coils={12} radius={11} isLightWeight={true}
       />
-      <g transform={`translate(${(ropeLeftX + ropeRightX) / 2}, ${ropeY - 16})`}>
+      <g transform={`translate(${(ropeLeftX + ropeRightX) / 2}, ${ropeY - 26})`}>
         <rect
           x={-38} y={-10} width={76} height={15} rx={3}
           fill="white" fillOpacity={0.85}
@@ -248,37 +248,46 @@ export default function ConnectedBodiesAnimation() {
               </text>
             </g>
 
-            {/* 张力 T */}
+            {/* 张力 T：绳两端各一根箭头（对 m₁ 向右、对 m₂ 向左），这是物理上
+                必须分开画的；但**标签只能出一个**——它就是同一个 T。
+                2026-10 实测：常规视图两端各标一次，51px 的绳上两个 53px 宽的
+                标签重叠 52×15px，看着像"字加粗了"，实际是重复渲染。
+                所以箭头按视图分别渲染，标签统一在下面单独出。 */}
             {!isSystemView && (
               <g>
                 {(isNormalView || isM1View) && (
-                  <g>
-                    <PhysicsVectorArrow
-                      originDesign={{ x: ropeLeftX, y: ropeY }}
-                      vector={{ x: T_val, y: 0 }}
-                      type="tension"
-                      sceneScale={cbSceneScale}
-                      strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                    />
-                    <text x={ropeLeftX + 10} y={ropeY - 6} fontSize={FONT.annotation} fill={PHYSICS_COLORS.tension} fontWeight="bold">
-                      T = {T_val.toFixed(1)}N
-                    </text>
-                  </g>
+                  <PhysicsVectorArrow
+                    originDesign={{ x: ropeLeftX, y: ropeY }}
+                    vector={{ x: T_val, y: 0 }}
+                    type="tension"
+                    sceneScale={cbSceneScale}
+                    strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+                  />
                 )}
                 {(isNormalView || isM2View) && (
-                  <g>
-                    <PhysicsVectorArrow
-                      originDesign={{ x: ropeRightX, y: ropeY }}
-                      vector={{ x: -T_val, y: 0 }}
-                      type="tension"
-                      sceneScale={cbSceneScale}
-                      strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                    />
-                    <text x={ropeRightX - 38} y={ropeY - 6} fontSize={FONT.annotation} fill={PHYSICS_COLORS.tension} fontWeight="bold" textAnchor="end">
-                      T = {T_val.toFixed(1)}N
-                    </text>
-                  </g>
+                  <PhysicsVectorArrow
+                    originDesign={{ x: ropeRightX, y: ropeY }}
+                    vector={{ x: -T_val, y: 0 }}
+                    type="tension"
+                    sceneScale={cbSceneScale}
+                    strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+                  />
                 )}
+                <text
+                  /* 隔离视图下标签要贴住"自己那根箭头的尾端"，两侧必须对称：
+                     m₁ 箭头从 ropeLeftX 向右 → 左端 +10；
+                     m₂ 箭头从 ropeRightX 向左 → 右端 -10。
+                     2026-10 实测 m₂ 侧曾写成 -38（比 m₁ 多飘 28px），
+                     标签右边缘离箭尾 38px，看着像随手放的，和 m₁ 侧不成对。 */
+                  x={isNormalView ? (ropeLeftX + ropeRightX) / 2 : isM1View ? ropeLeftX + 10 : ropeRightX - 10}
+                  y={ropeY - 6}
+                  textAnchor={isNormalView ? 'middle' : isM1View ? 'start' : 'end'}
+                  fontSize={FONT.annotation}
+                  fill={PHYSICS_COLORS.tension}
+                  fontWeight="bold"
+                >
+                  T = {T_val.toFixed(1)}N
+                </text>
               </g>
             )}
           </g>

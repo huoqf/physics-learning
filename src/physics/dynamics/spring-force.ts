@@ -39,6 +39,24 @@ export const BOX_SIZE = 48
  */
 export const CUT_ROPE_ANCHORS = { ceilY: 39, groundY: 610 } as const
 
+/**
+ * 系统二（绳在上、弹簧在下）落地后，从"落地瞬间"收敛到"压缩静平衡"的过渡时长 [s]。
+ *
+ * 为什么需要它：D 球触地后平动必须停止，但弹簧此刻仍处于自由段的拉伸状态
+ * （球心距 ≈ 88px，静平衡只需 61px）。若直接硬冻结，画面会停在一个既非平衡、
+ * 又带着残余速度的"半收缩态"上，看着像画面卡死。
+ *
+ * 取值 0.15s 是视觉节奏，不是物理推导：地面对小球是塑性冲击、弹簧内部有微元阻尼，
+ * 真实振动本就迅速衰减，因此用 smoothstep 收口在物理上讲得通。
+ */
+export const SYSTEM2_SETTLE_TIME = 0.15
+
+/**
+ * 系统二落地时刻的记忆表。
+ * 键 = k|m|ceilY|groundY：tLand2 只依赖这四项，逐帧重解超越方程纯属浪费。
+ */
+const SYS2_LAND_CACHE = new Map<string, number>()
+
 // ─── 胡克定律 / 水平简谐振动 ────────────────────────────────────────────
 
 export interface HookeLawState {
@@ -214,6 +232,9 @@ export function calculateCutRopeState(
   let yC = ceilY + ROPE_NATURAL_LENGTH
   let yD = yC + Ls2_eq
 
+  /** 落地收敛进度：null = 未落地；0 = 落地瞬间；1 = 已在压缩静平衡 */
+  let sys2Settle: number | null = null
+
   if (isCut === 1) {
     const yC_start = ceilY + ROPE_NATURAL_LENGTH
     const yD_start = yC_start + Ls2_eq
@@ -224,6 +245,30 @@ export function calculateCutRopeState(
     const rel_disp = amp_rel * Math.cos(omega_rel * tCut)
     yC = ycm - SPRING_NATURAL_LENGTH / 2 - rel_disp
     yD = ycm + SPRING_NATURAL_LENGTH / 2 + rel_disp
+
+    // D 球触地：系统二的平动到此为止。
+    //
+    // 落地前质心一直在自由落体，不截断的话 C/D 会在 t≈0.55s 穿地、0.75s 整体飞出
+    // 650px 画布（实测 t=1.0s 时 C 已在地面下 710px）。B 球早就有 isLanded，
+    // 系统二当时漏了这一半。
+    const tLand2 = calculateSystem2LandingTime(k, m, ceilY, groundY)
+    if (tCut >= tLand2) {
+      const yD_land = groundY - BALL_RADIUS
+      // C 在落地瞬间的位置要用自由段公式**在 tLand2 处外推**，
+      // 不能取当前 tCut —— 否则收敛起点会随播放进度漂移，每次渲染都不一样。
+      const ycm_land = ycm0 + 0.5 * g * tLand2 * tLand2 * PIXELS_PER_METER
+      const rel_land = amp_rel * Math.cos(omega_rel * tLand2)
+      const yC_land = ycm_land - SPRING_NATURAL_LENGTH / 2 - rel_land
+      // 静平衡：D 被地面托住（不参与运动），弹簧压缩 mg/k 托起 C。
+      // 球心距取 SPRING_NATURAL_LENGTH − 压缩量，沿用本文件"球心距即 Ls"的既有口径。
+      const yC_final = yD_land - (SPRING_NATURAL_LENGTH - xs2_eq_px)
+      const progress = Math.min(1, (tCut - tLand2) / SYSTEM2_SETTLE_TIME)
+      const ease = progress * progress * (3 - 2 * progress)
+
+      yD = yD_land
+      yC = yC_land + (yC_final - yC_land) * ease
+      sys2Settle = ease
+    }
   }
 
   // ── 受力与加速度 ──
@@ -246,16 +291,23 @@ export function calculateCutRopeState(
   // B 球：未落地时自由落体 a=-g；落地后静止 a=0（支持力平衡重力）
   const a_B = isCut === 1 ? (isLanded ? 0 : -g) : 0
 
-  const fSpring2 = isCut === 1 ? m * g * Math.cos(omega_rel * tCut) : fSpring2_pre
+  // 自由段（未落地）的弹簧力：mg·cos(ω_rel·t)。t=0 时为 +mg（弹簧被拉伸，拉 C 向下、D 向上）
+  const fSpring2Free = isCut === 1 ? m * g * Math.cos(omega_rel * tCut) : fSpring2_pre
+  // 落地后收敛到 −mg：弹簧转为**压缩**，对 C 向上推、对 D 向下压，符号与拉伸时相反。
+  // （写 +mg 会把终态的弹簧力方向画反，图上会看到落地后弹簧还在"拉"D 向上。）
+  const fSpring2 = sys2Settle === null ? fSpring2Free : fSpring2Free + (-m * g - fSpring2Free) * sys2Settle
 
   const fC_rope = isCut === 1 ? 0 : fRope2_pre
   const fC_spring = -fSpring2
   const fC_grav = -fGravity
-  const a_C = isCut === 1 ? -g * (1 + Math.cos(omega_rel * tCut)) : 0
+  // 落地后 C 停在压缩弹簧上（弹力 mg 平衡重力），加速度收敛到 0
+  const a_C_free = isCut === 1 ? -g * (1 + Math.cos(omega_rel * tCut)) : 0
+  const a_C = sys2Settle === null ? a_C_free : a_C_free * (1 - sys2Settle)
 
   const fD_spring = fSpring2
   const fD_grav = -fGravity
-  const a_D = isCut === 1 ? -g * (1 - Math.cos(omega_rel * tCut)) : 0
+  // D 触地后由地面支持力托住，加速度恒为 0（与系统一 B 球同一处理）
+  const a_D = sys2Settle === null ? (isCut === 1 ? -g * (1 - Math.cos(omega_rel * tCut)) : 0) : 0
 
   return {
     positions: { yA, yB, yC, yD },
@@ -305,6 +357,66 @@ export function calculateBallBFallTime(
 
   if (fallDistance <= 0) return Infinity
   return Math.sqrt((2 * fallDistance) / g)
+}
+
+/**
+ * 计算系统二 D 球触地时间（D 球最低，先于 C 落地）
+ *
+ * **没有闭式解**：D 球位置是"质心自由落体 + 弹簧相对简谐振动"的叠加
+ *
+ *   yD(t) = ycm0 + ½·g·t²·PPM + L_spring/2 + amp·cos(ω_rel·t)
+ *
+ * 自由落体项与 cos 项无法消去，只能数值求根。用二分法：自由落体项 ½gt²·PPM
+ * 在 [0, 2] 内远大于 ±amp 的振荡幅度，函数单调，二分稳定收敛。
+ *
+ * @param m 单球质量 [kg]
+ * @param k 劲度系数 [N/m]
+ * @param ceilY 天花板 Y 设计坐标 [px]
+ * @param groundY 地面 Y 设计坐标 [px]
+ * @returns D 球触地时间 [s]；初始就已在地面以下返回 0；永不落地返回 Infinity
+ */
+export function calculateSystem2LandingTime(
+  k: number,
+  m: number,
+  ceilY: number,
+  groundY: number,
+): number {
+  const key = `${k}|${m}|${ceilY}|${groundY}`
+  const cached = SYS2_LAND_CACHE.get(key)
+  if (cached !== undefined) return cached
+
+  const g = GRAVITY
+  const yC_start = ceilY + ROPE_NATURAL_LENGTH
+  const xs2_eq_px = ((m * g) / k) * PIXELS_PER_METER
+  const ycm0 = yC_start + (SPRING_NATURAL_LENGTH + xs2_eq_px) / 2
+  const amp = xs2_eq_px / 2
+  const omega = Math.sqrt((2 * k) / m)
+  const target = groundY - BALL_RADIUS
+
+  const yDAt = (t: number) =>
+    ycm0 +
+    0.5 * g * t * t * PIXELS_PER_METER +
+    SPRING_NATURAL_LENGTH / 2 +
+    amp * Math.cos(omega * t)
+
+  let result: number
+  if (yDAt(0) >= target) {
+    result = 0
+  } else if (yDAt(2) < target) {
+    result = Infinity
+  } else {
+    let lo = 0
+    let hi = 2
+    for (let i = 0; i < 60; i++) {
+      const mid = (lo + hi) / 2
+      if (yDAt(mid) < target) lo = mid
+      else hi = mid
+    }
+    result = hi
+  }
+
+  SYS2_LAND_CACHE.set(key, result)
+  return result
 }
 
 // ─── 轨迹预计算（用于拖拽扫查）──────────────────────────────────────────

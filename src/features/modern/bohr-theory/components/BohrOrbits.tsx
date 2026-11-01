@@ -81,10 +81,19 @@ export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: 
     const photon = photonRef.current
     const tgtLevel = targetLevel
 
-    const getRadius = (n: number) => {
-      if (realScale) return n * n * 15
-      return (n + 0.6) * 38
-    }
+    // ── 半径标尺：比例恒定，尺度跟着画布走 ──
+    // `n²` 是物理比例（本模式的教学点，不能动），`k` 只是**屏幕比例尺**。
+    // 原来写死 `n * n * 15`，等于假设画布永远是 828×747——而画布是随窗口变的：
+    // 实测 1366×640 时画布只有 834×487，r₄ = 240 顶端溢出 11px；1280×600 时
+    // 画布 748×447，上下各溢出 31px / 16px，最外圈和它的 `n=4` 标号直接被裁掉。
+    // 可用半径取到四边距离的最小值（cx = 0.65W 是给左侧能级图让位，右侧只剩 0.35W），
+    // 再扣掉圆外标号要占的那条带：5px 间隙 + 10px 字高 + 7px 呼吸位。
+    // 只扣 16 时 1366×640 下 `n=4` 的字顶离画布上沿只剩 1px，看着像被切了。
+    const R_LABEL_BAND = 22
+    const availR = Math.min(cx, W - cx, cy, H - cy) - R_LABEL_BAND
+    // 大屏（availR/16 > 15）仍用回 15，观感逐像素不变；只有摆不下时才缩。
+    const kReal = Math.max(6, Math.min(15, availR / 16))   // n = 4 时 n² = 16
+    const getRadius = (n: number) => (realScale ? n * n * kReal : (n + 0.6) * 38)
 
     // 1. 更新电子角度
     if (isPlaying) {
@@ -225,25 +234,41 @@ export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: 
     ctx.restore()
 
     // 3.2 原子核
+    // 真实 n² 比例下核必须"小到和第一轨道拉开量级差"：核半径原固定 11px、辉光 24px，
+    // 而该模式的 r₁ 只有 k ≈ 13~15px —— 整条第一轨道被橙色辉光吞掉，学生根本看不到
+    // n=1 轨道。而"核 ≪ 第一轨道"恰恰是这个模式要表达的关系（真实核的线度比 r₁ 小
+    // 4~5 个数量级，屏幕上传的永远是夸张值，只能保住"明显更小"这个定性关系）。
+    // 视觉示意比例不动：那里 r₁ = 60.8px，核要够大才点得着、看得清。
     ctx.save()
-    const nuclearRadius = 11
-    const grad = ctx.createRadialGradient(cx, cy, 1, cx, cy, nuclearRadius * 2.2)
+    const nuclearRadius = realScale ? 3 : 11
+    const glowR = nuclearRadius * (realScale ? 2 : 2.2)
+    const grad = ctx.createRadialGradient(cx, cy, 1, cx, cy, glowR)
     grad.addColorStop(0, CANVAS_COLORS.referencePoint)
     grad.addColorStop(0.3, withAlpha(CANVAS_COLORS.referencePoint, 0.8))
     grad.addColorStop(1, withAlpha(CANVAS_COLORS.referencePoint, 0))
     ctx.fillStyle = grad
     ctx.beginPath()
-    ctx.arc(cx, cy, nuclearRadius * 2.2, 0, Math.PI * 2)
+    ctx.arc(cx, cy, glowR, 0, Math.PI * 2)
     ctx.fill()
     ctx.fillStyle = CANVAS_COLORS.referencePoint
     ctx.beginPath()
     ctx.arc(cx, cy, nuclearRadius, 0, Math.PI * 2)
     ctx.fill()
-    ctx.fillStyle = '#ffffff'
-    ctx.font = 'bold 11px sans-serif'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText('H+', cx, cy)
+    if (realScale) {
+      // 3px 的核塞不进字：标号挪到**第一轨道外的空环带**（r₁ 与 r₂ 之间，那里什么都没有）。
+      // 试过贴在核上方并用白描边，结果白晕把 r₁ 的圆环擦出一道缺口——看着像轨道断了。
+      // 贴在核的**左侧同一高度**、不压任何描边，读起来就是"中心是核"。
+      ctx.font = '8px sans-serif'
+      ctx.fillStyle = CANVAS_COLORS.referencePoint
+      ctx.textAlign = 'right'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('H+', cx - getRadius(1) - 8, cy)
+    } else {
+      ctx.fillStyle = '#ffffff'
+      ctx.font = 'bold 11px sans-serif'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('H+', cx, cy)
+    }
     ctx.restore()
 
     // 3.3 轨道
@@ -254,9 +279,16 @@ export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: 
       ctx.beginPath()
       ctx.arc(cx, cy, getRadius(n), 0, Math.PI * 2)
       ctx.stroke()
+      // 轨道标号放在**正上方、圆外 5px**，而不是 3 点钟方向的圆内。
+      // 3 点钟位置正是电子（半径 12 的光晕）绕行的驻留点——`angle = 0` 既是
+      // 初始态也是暂停态，`n=2` 这类"当前能级"的标号会长期被电子光晕盖住。
+      // 竖直排在正上方还顺带解决了另一件事：四个标号沿同一列排开、间距 38px，
+      // 既不互相压字，也不会像"往外挪"那样横穿下一个圆的描边。
       ctx.fillStyle = '#a1a1aa'
       ctx.font = '10px monospace'
-      ctx.fillText(`n=${n}`, cx + getRadius(n) - 6, cy + 12)
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'alphabetic'
+      ctx.fillText(`n=${n}`, cx, cy - getRadius(n) - 5)
     }
     ctx.restore()
 
