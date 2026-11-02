@@ -21,7 +21,7 @@
 - [x] `npm create vite@latest` 初始化，选 React + TypeScript
 - [x] 配置 `tsconfig.json`：`strict: true`，`paths` 别名（`@/` → `src/`）
 - [x] 配置 `vite.config.ts`：`base: './'`，路径别名，esbuild tsx 显式声明
-- [x] 配置 `.eslintrc` + `prettier`
+- [x] 配置 `.eslintrc`（`prettier` 于 2026-11-02 移除，项目不做全仓格式化，见 ARCHITECTURE_RULES §11.1）
 - [x] 初始化 `package.json` scripts：`dev` / `build` / `test` / `lint`
 
 ### M0-2 TailwindCSS 4 配置

@@ -229,7 +229,7 @@ const SEG_WIDTHS = buildSegWidths(SPACING)
  * `固定 100m 量程对比`（模型 104.8 / 单格 111.5）双双漏网后真实折行。
  * 当时试图靠把系数压到 0.93 来兜底，反而误报 30 处实测正常的短标签——
  * **模型误差要靠校准字宽解决，不能靠放大安全系数掩盖**。
- * 边界兜底仍由 `npm run audit:seg-wrap` 实测把关。
+ * 边界兜底仍由 `npm run probe:seg-wrap` 实测把关。
  */
 const SEG_SAFE = 0.98
 /** 列数上限（与 SegmentedControl 的 columnsFor 保持一致） */

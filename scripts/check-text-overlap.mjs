@@ -104,7 +104,7 @@ if (!existsSync(join(ROOT, 'dist', 'index.html'))) {
   process.exit(2)
 }
 
-/** 从注册表里收集全部动画 id（与 audit-seg-wrap 同一口径） */
+/** 从注册表里收集全部动画 id（与 probe-seg-wrap 同一口径） */
 const ids = (() => {
   const set = new Set()
   for (const f of readdirSync(REG_DIR)) {

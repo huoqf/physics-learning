@@ -1,170 +1,103 @@
-# AGENTS.md — Antigravity 工作区规则（自动加载，优先级最高）
+# AGENTS.md — Antigravity 工作区入口（索引，不含独立规则）
 
-> 本文件由 Antigravity IDE 自动加载，无需手动读取。铁律违反 = 本次任务无效。
-> 详细规范见 `.trae/rules/project_rules.md` 与 `docs/agent-rules/` 下各文档。
+> 本文件由 Antigravity IDE 自动加载。
+> **它不是规范源**：铁律的编号与含义只以 `.trae/rules/project_rules.md` 为准，
+> 本文件只做「哪条规矩在哪、什么时候该去读」的索引。两者冲突时改本文件，不改 project_rules。
+>
+> 2026-11-02 收敛：此前本文件自带一套「铁律 1/2/3/4/4B/5/6」，与 project_rules 的
+> 编号同名不同义，且 4 处结论相反（SidebarExtra 是否可用、`anchor` 取值、import 路径、
+> 规范优先级）。现已全部删除，只保留指向真正权威的链接。
 
 ---
 
-## ⚡ 三屏内容分配铁律（设计前必读）
+## ⚡ 三条最容易违反的硬约束（速查，细则见 project_rules §4）
+
+| 约束 | ❌ 禁止 | ✅ 正确替代 | 权威 |
+|------|--------|-----------|------|
+| 统一来源 | `fill="#3B82F6"`、`fontSize={14}`、`scale = 0.8`、手写 `x*scale+offset` | `PHYSICS_COLORS`/`SCENE_COLORS`/`CHART_COLORS`、`font(N)`、`useSceneScale`、`worldToDesign` | 铁律 1（含 11 条子约束） |
+| 物理层纯净 | `src/physics/` 里 import React/DOM/window/Store | 纯函数 + JSDoc + 单位注释；看板与场景 import 同一实现 | 铁律 2 |
+| 左屏声明式 | 手写 `<input type="range">`、散乱左屏容器、**恢复 `SidebarExtra`** | `paramMeta → ParamControl`、`controlMeta → ControlPanel` | 铁律 6 |
+
+> `SidebarExtra` 已于 2026-07-13 全量清零，**不得恢复**（`ARCHITECTURE_RULES.md §8.1.3`）。
+
+## ⚡ 三屏内容分配（摘要，细则见 `08_THREE_PANEL_RULES.md`）
 
 ```
 左屏（LeftPanel）         中屏（AnimationSvgCanvas）        右屏（PhysicsPanel）
 ──────────────────        ──────────────────────────        ──────────────────────
 • paramMeta 数值参数      • 动画场景（SVG 主体）            • QuantitySection（物理量）
 • controlMeta 模式开关    • CenterExtra 图表（可选）         • FormulaSection（公式+条件）
-• SidebarExtra（复杂）    ❌ 禁止大段教学文字              • ExamPointSection（高考要点）
+                          ❌ 禁止大段教学文字              • ExamPointSection（高考要点）
                           ❌ 禁止完整公式推导               ❌ 禁止动画控制控件
-                          ❌ 禁止高考考点总结
 ```
 
-**主屏文字约束**：SVG 内只允许出现物理量数值标注（`v = 3.2 m/s`）和坐标轴标签，禁止教学解释段落。
+SVG 内只允许物理量数值标注（`v = 3.2 m/s`）与坐标轴标签，禁止教学解释段落。
 
-## ⚡ 布局 preset 选择铁律（分屏是主流，按动画方向选）
+## ⚡ 画布 preset（4 种，语义以 project_rules §CANVAS_PRESETS 为准）
 
-> 动画配合图表更能帮助学生理解物理过程，**`splitV`/`splitH` 是大多数页面的首选**。
+| preset | 设计尺寸 | 中屏分区方式 | 何时用 |
+|--------|---------|-------------|--------|
+| `full` | 840×650 | 动画独占中屏 | 无配套图表的纯场景（光学、磁场分布）；**无法判断时默认选它** |
+| `splitV` | 840×325 | 上下并列（场景 + 图表，或反向） | 有配套图表、且画面横向展开（追及、碰撞、平抛） |
+| `splitH` | 420×650 | 左右并列（场景 ∣ 图表） | 有配套图表、且画面纵向展开（自由落体、斜抛、弹簧振子） |
+| `square` | 650×650 | 方形 | 圆形/旋转对称（圆周运动、向心力） |
 
-| preset | 设计尺寸 | 选用条件 |
-|--------|---------|---------|
-| `CANVAS_PRESETS.splitV` | 840×325 | **水平运动**（追及、碰撞、平抛）或**多图表并列**（v-t + x-t + a-t） |
-| `CANVAS_PRESETS.splitH` | 420×650 | **垂直/斜向运动**（自由落体、斜抛、弹簧振子） |
-| `CANVAS_PRESETS.full` | 840×650 | 无需配套图表的纯场景（光学、磁场分布等） |
-| `CANVAS_PRESETS.square` | 650×650 | 圆形/旋转对称（圆周运动、向心力） |
+> 决策顺序：**没有配套图表 → `full`**；有图表再按画面方向在 `splitV`/`splitH` 里选。
+> ❌ 严禁 `wide` / `tall`（已废弃）；严禁手写 `width={900}` 固定像素。
 
-**决策直觉**：水平运动 → `splitV`；竖直运动 → `splitH`；多图表并列 → `splitV`；无图表 → `full`
-
-> ❌ 严禁 `wide` / `tall` 等废弃 preset；严禁手写 `width={900}` 固定像素。
-
----
-
-## ⚡ 其他铁律速查（违反则任务无效）
-
-### 铁律 1：统一来源，禁止硬编码
-
-| ❌ 禁止 | ✅ 正确替代 |
-|--------|-----------|
-| 硬编码颜色 `fill="#3B82F6"` | `import { PHYSICS_COLORS } from '@/theme/physics'` |
-| 硬编码尺寸 `fontSize={14}` | `font(14)`（来自 `canvasSize.font`） |
-| 自造 `<marker>` / `<line>` 矢量箭头 | `PhysicsVectorArrow` 或 `VectorArrow` |
-| 直接 `requestAnimationFrame(...)` | `useAnimationLifecycle` / `src/utils/animation.ts` |
-| 写死 `scale = 0.8` | `useSceneScale({ vp, preset, anchor })` |
-| 任何魔法数字坐标 | `worldToDesign()` from `@/scene` |
-
-### 铁律 2：新页面布局唯一路径
+## ⚡ 新页面唯一标准路径（细则见 `project_rules.md §4.8`、`07_CANVAS_SVG_CHART_RULES.md §2`）
 
 ```tsx
-// ✅ 唯一标准写法（新页面必须）
 const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
-const sceneScale = useSceneScale({ vp, preset: CANVAS_PRESETS.full, anchor: 'center' })
+const sceneScale = useSceneScale({ vp, preset: CANVAS_PRESETS.full, anchor: 'viewport', physicsWidth: 10, physicsHeight: 8 })
 <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
   ...
 </AnimationSvgCanvas>
 ```
 
 ```tsx
-// ✅ 圆周/旋转对称场景（square preset）— 两条等效路径，任选其一：
-// 路径 A：useSceneScale({ anchor: 'center' }) — 中心跟随可视区，适合有 overlay 时
-const sceneScale = useSceneScale({
-  vp, preset: CANVAS_PRESETS.square,
-  anchor: 'center',
-  physicsScaleDesign: scale, // 1m = scale 设计单位
-  centerSource: 'viewport',  // 以可视区中心为物理原点
-  refMagnitudes: { velocity: vMax, force: fMax },
-})
-
-// 路径 B：createSceneScaleFromDesignCenter() — 中心固定在设计坐标系，适合无 overlay
-// ⚠️ 接口必填 centerX/Y/scale，禁止传 worldWidth/worldHeight（不在接口定义内）
-const scale = Math.min((650 * 0.8) / (rMax * 2), (650 * 0.8) / (rMax * 2))
-const sceneScale = useMemo(() => createSceneScaleFromDesignCenter({
-  designWidth: 650, designHeight: 650,
-  centerX: 325, centerY: 325,   // preset 中心
-  scale,                         // design-unit / meter
-  refMagnitudes: { velocity: vMax, force: fMax },
-}), [scale, vMax, fMax])
-```
-
-```tsx
-// ❌ 禁止（存量遗留，新建页面严禁使用）
-viewBox={`0 0 ${width} ${height}`}           // 历史方式A（固定 viewBox）
+// ❌ 存量遗留，新建页面严禁使用
+viewBox={`0 0 ${width} ${height}`}                     // 历史方式A（固定 viewBox）
 createSceneScaleFromViewport({ mode: 'visibleArea' })  // deprecated
-physicsToCanvas(...)                          // 仅用于维护旧组件
+physicsToCanvas(...)                                    // 仅用于维护旧组件
 ```
 
-### 铁律 3：左屏控制台必须使用声明式体系
-
-```tsx
-// ✅ 正确
-paramMeta → 由 registry 驱动 ParamControl（数值参数）
-controlMeta → 由 registry 驱动 ControlPanel（模式/开关/提示）
-// ❌ 禁止
-手写 <input type="range" />   // 散乱控件
-新建 SidebarExtra 放简单开关  // 仅复杂自定义才用
-```
-
-### 铁律 4：组件复用，禁止重复手写
+## ⚡ 组件复用（完整清单见 `COMPONENT_REGISTRY.md`，铁律 5）
 
 | 场景 | 必须使用 | import |
 |------|---------|--------|
-| 三栏页面 | `ThreePanel` | `@/components/Layout` |
-| SVG 画布容器 | `AnimationSvgCanvas` | `@/components/Layout` |
-| 质点/小球 | `Ball` | `@/components/Physics` |
-| 滑块/木块 | `Block` | `@/components/Physics` |
-| 地面/斜面 | `PhysicsGround` | `@/components/Physics` |
-| 物理矢量 | `PhysicsVectorArrow` | `@/components/Physics` |
-| 视觉标注箭头 | `VectorArrow` | `@/components/Physics` |
+| 三栏页面 / SVG 画布容器 | `ThreePanel` / `AnimationSvgCanvas` | `@/components/Layout` |
+| 质点 / 滑块 / 地面 | `Ball` / `Block` / `PhysicsGround` | `@/components/Physics` |
+| 物理矢量 / 视觉标注箭头 | `PhysicsVectorArrow` / `VectorArrow` | `@/components/Physics` |
 | 粒子轨迹 | `ParticleTrajectory` | `@/components/Physics` |
-| 物理图表基座 | `BasePhysicsChart` | `@/components/Chart` |
-| 实时时序图 | `MiniChart` | `@/components/UI` |
+| 图表基座 / 实时时序图 | `BasePhysicsChart` / `MiniChart` | `@/components/Chart` · `@/components/UI` |
 | 左屏容器 | `LeftPanel` / `LeftPanelSection` | `@/components/UI` |
-| 右屏看板 | `PhysicsPanel` | `@/components/Formula` |
-| 公式渲染 | `KatexFormula` | `@/components/Formula` |
+| 右屏看板 / 公式 | `PhysicsPanel` / `KatexFormula` | `@/components/Formula` |
 
-**图表约束**：禁止手写 `toSvgX / toSvgY` 坐标轴；禁止 `<foreignObject>` 内嵌 React 图表；需图表时必须在现有组件基础上扩展或组合。
+**import 路径**：子模块入口优先（`@/theme/physics`、`@/theme/colors`、`@/theme/motion`）；
+`@/theme` 统一入口仍可用但子模块优先（语义更明确、tree-shaking 更好）。见 `ARCHITECTURE_RULES.md §10`。
 
-| 图表需求 | 必须使用 | import |
-|---------|---------|--------|
-| v-t 图 | `VelocityTimeChart` | `@/components/Chart` |
-| x-t 图 | `DisplacementTimeChart` | `@/components/Chart` |
-| a-t 图 | `AccelerationTimeChart` | `@/components/Chart` |
-| 自定义关系图 | `BasePhysicsChart` + 插件 | `@/components/Chart` |
-| 轻量实时图 | `MiniChart` | `@/components/UI` |
+**颜色语义层级**（混用即违规，`PHYSICS_COLORS` 与 `SCENE_COLORS` 不可互换）：
 
-### 铁律 4B：颜色语义层级隔离（混用即违规）
-
-| 语义层级 | 来源 | 适用场景 | ❌ 禁止 |
-|---------|------|---------|--------|
-| 物理量 | `PHYSICS_COLORS.*` | 力/速度/加速度矢量标注 | 用 `colors.primary` 表示速度 |
-| 场景器材 | `SCENE_COLORS.*` | 磁铁/线圈/球体材质 | 用 `PHYSICS_COLORS` 表示器材 |
-| Canvas 基础设施 | `CANVAS_COLORS.*` | 网格线/坐标轴/参考线 | 用 `colors.neutral[200]` 直接 |
-| 图表 | `CHART_COLORS.*` / `VT_CHART_COLORS.*` | 图表曲线 | 混用 PHYSICS_COLORS |
-| 透明度变体 | `withAlpha(token, 0.3)` | 任意半透明色 | 手拼 `rgba(...)` |
-
-```ts
-// ✅ 正确 import（统一入口，禁止子路径）
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CHART_COLORS, withAlpha } from '@/theme/physics'
-
-// ❌ 禁止子路径导入
-import { withAlpha } from '@/theme/physics/colors'
-```
-
-### 铁律 5：HashRouter Only
-
-禁止引入 `BrowserRouter`，路由跳转仅用 `to="/xxx"`（HashRouter 内部路径）。
-
-### 铁律 6：物理层纯净
-
-`src/physics/` 内禁止出现 DOM、React、window、Store 依赖。所有函数必须有 JSDoc + 单位注释。
+| 语义 | token | 用于 |
+|------|-------|------|
+| 物理量 | `PHYSICS_COLORS.*` | 力/速度/加速度矢量标注 |
+| 场景器材 | `SCENE_COLORS.*` | 磁铁/线圈/球体/电路元件材质 |
+| 画布基础设施 | `CANVAS_COLORS.*` | 网格线/坐标轴/参考线 |
+| 图表 | `CHART_COLORS.*` / `VT_CHART_COLORS.*` | 曲线、面积填充 |
+| 透明度变体 | `withAlpha(token, 0.3)` | 任意半透明（禁止手拼 `rgba()`） |
 
 ---
 
-## 📋 新建页面前必须确认的 7 件事
+## 📋 新建页面前要确认的 7 件事
 
-1. **选择 preset**：`full` / `splitV` / `splitH` / `square`（根据是否有图表分区、是否圆形对称决定）
-2. **选择 controlsMode**：高中物理**默认 `timed`**（有起点/终点的过程动画）；静态参数展示用 `param`；圆周/热运动等永续循环才用 `loop`
-3. **分层结构**：`XxxAnimation.tsx`（编排）+ `hooks/useXxxPhysics.ts`（物理）+ `components/XxxScene.tsx`（渲染）
-4. **颜色来源（按语义隔离）**：物理量 → `PHYSICS_COLORS`；场景器材 → `SCENE_COLORS`；图表 → `CHART_COLORS`；Canvas 基础设施 → `CANVAS_COLORS`；透明度变体 → `withAlpha()`
-5. **坐标系统**：`worldToDesign()` 转换，`useSceneScale` 比例尺，禁止手写 `x * scale + offset`；SVG 字体必须 `font(N)` 包裹
-6. **Registry 注册（5 个文件全部完成）**：`data/registries/<domain>.ts`（`paramMeta`/`controlMeta`/`defaultParams as const`）+ `data/quantities/<domain>/<topic>.ts`（物理量构建器）+ `data/physicsQuantities.ts`（注册构建器）+ `data/knowledgeTree.ts`（确认知识点）
-7. **组件复用检查**：新增场景前必须查阅 `COMPONENT_REGISTRY.md`，有现成组件时禁止手写等效实现
+1. **preset**：按上面的表选（无图表 → `full`）
+2. **controlsMode**：过程动画 `timed`（默认）；永续循环（圆周、热运动、交变波形）`loop`；纯参数驱动无时间推进 `param`
+3. **分层**：`XxxAnimation.tsx`（编排）+ `hooks/useXxxPhysics.ts`（物理）+ `components/XxxScene.tsx`（渲染）
+4. **颜色**：按上表语义选 token，不硬编码
+5. **坐标**：`useSceneScale` + `worldToDesign`，不手写 `x*scale+offset`；字号走 `font(N)`
+6. **注册 5 处**：`data/registries/<domain>.ts` + `data/quantities/<domain>/<topic>.ts` + `data/physicsQuantities.ts` + `data/knowledgeTree.ts` + 跑 `node scripts/gen-annotations.mjs`
+7. **复用检查**：先查 `COMPONENT_REGISTRY.md`，有现成组件时禁止手写等效实现
 
 ---
 
@@ -172,13 +105,14 @@ import { withAlpha } from '@/theme/physics/colors'
 
 | 触发条件 | 读取文档 |
 |---------|---------|
+| 铁律的权威定义 / 目录结构 / 数据层协议 | `.trae/rules/project_rules.md`、`docs/agent-rules/core/ARCHITECTURE_RULES.md` |
+| 涉及 UI 组件 / 颜色 / 间距 | `docs/agent-rules/ui/02_UI_RULES.md` |
 | 涉及 Canvas/SVG/图表布局 | `docs/agent-rules/ui/07_CANVAS_SVG_CHART_RULES.md` |
-| 涉及 UI 组件/颜色/间距 | `docs/agent-rules/ui/02_UI_RULES.md` |
 | 实现左侧/右侧屏组件 | `docs/agent-rules/ui/08_THREE_PANEL_RULES.md` |
 | 需要完整组件 API | `docs/agent-rules/ui/COMPONENT_REGISTRY.md` |
-| 查询动画入口→场景→物理映射 | `MEMORY.md`（动画映射表） |
+| 查询动画入口→场景→物理映射 | `MEMORY.md`（动画映射表，由 `scripts/gen-annotations.mjs` 生成） |
 | 提交前验收 | `docs/agent-rules/process/CHECKLIST.md` |
 
 ---
 
-*最后更新：2026-07-16 | 由 Antigravity 生成*
+*最后更新：2026-11-02（收敛为索引，删除与本项目权威规范冲突的独立铁律）*

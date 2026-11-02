@@ -27,8 +27,8 @@
 |------|------|------------|
 | `src/theme/colors.ts` | 5套色阶（primary/secondary/accent/neutral/状态色） | `@/theme/colors` |
 | `src/theme/physics/colors.ts` | 物理量颜色（~110 token，8 分组） | `@/theme/physics` |
-| `src/theme/physics/sceneColors.ts` | 场景器材外观色（磁铁/线圈/灯泡/手势/球体材质等） | `@/theme/physics` |
-| `src/theme/physics/chartColors.ts` | 物理图像配色（v-t/P-V/U-I 等 9 组） | `@/theme/physics` |
+| `src/theme/physics/scene/` | 场景器材外观色（磁铁/线圈/灯泡/手势/球体材质等，按域分 `materials`/`mechanics`/`electricity`/`thermal`/`optics`） | `@/theme/physics`（导出聚合对象 `SCENE_COLORS`） |
+| `src/theme/physics/index.ts` | 物理图像配色（`CHART_COLORS` / `VT_CHART_COLORS` / `PV_CHART_COLORS` 等 9 组，由 `colors.ts` 与 `scene/*` 桥接生成） | `@/theme/physics` |
 | `src/theme/physics/canvasStyle.ts` | SVG/Canvas 绘制规范（线宽/箭头/SVG_ATTR/Marker） | `@/theme/physics` |
 | `src/theme/spacing.ts` | 间距比例尺（4px基准）+ CANVAS_PRESETS | `@/theme/spacing` |
 | `src/theme/animationTokens.ts` | 动画 UI token（ANIM_FONT / ANIM_SHADOW / ANIM_PANEL / CHART_PAD） | `@/theme/animationTokens` |
@@ -106,7 +106,7 @@ Canvas/SVG 中的颜色按**语义层级**严格隔离，禁止混用：
 1. **统一渲染组件**：所有小球、钢珠、摆球、砝码球、行星等圆球物理实体的渲染，**必须**使用统一公共组件 `<Ball>`（位于 `src/components/Physics/Ball.tsx`）。**禁止**在单个动画页面中手绘圆球图层、SVG `<circle>` 或自造渐变 `<radialGradient>`。
 2. **渐变 ID 防冲突**：组件内部通过 React 19 的 `useId()` 自动生成独立唯一的局部 SVG 渐变 ID，用以彻底杜绝原有的 `steel-sphere-grad` 和 `vacuum-sphere-grad` 等重复定义导致的跨文件 SVG ID 命名冲突。
 3. **不得滥用语义色**：球体本体材质外观完全从 `SCENE_COLORS.sphere.*` 预设中读取，**禁止**借用物理量语义色 `PHYSICS_COLORS`（如速度、加速度颜色）充当物理实体本身的颜色。
-4. **材质精准对照**：主钢珠统一使用 `SCENE_COLORS.sphere.steel`，投影/真空对照球统一使用 `SCENE_COLORS.sphere.steelGhost`。摆球、砝码球、行星应分别使用对应 preset（`pendulumBob` / `brassWeight` / `planetCool`），避免同一项目内材质风格漂移。新增球体材质必须先扩展 `sceneColors.ts`，禁止在组件内私自定义配色体系。
+4. **材质精准对照**：主钢珠统一使用 `SCENE_COLORS.sphere.steel`，投影/真空对照球统一使用 `SCENE_COLORS.sphere.steelGhost`。摆球、砝码球、行星应分别使用对应 preset（`pendulumBob` / `brassWeight` / `planetCool`），避免同一项目内材质风格漂移。新增球体材质必须先扩展 `src/theme/physics/scene/materials.ts`，禁止在组件内私自定义配色体系。
 
 ### 3.2 滑块与滑车材质规范
 

@@ -10,10 +10,17 @@ pre-commit:
     typecheck:
       glob: "{**/,}*.{ts,tsx}"
       run: npx tsc --noEmit
+    typecheck-tests:
+      # 主 tsconfig 的 include 只有 src/，tests/ 与 e2e/ 必须单跑一份，否则单测与
+      # e2e 无类型保护（CI 同样跑这一条，两边保持一致）。
+      glob: "{**/,}*.ts"
+      run: npx tsc -p tsconfig.test.json --noEmit
     test:
       run: npx vitest --run
     guards:
       # 守门脚本合集（字号 / viewport 遗留 / 大文件 / rAF / marker / 组件复用 /
-      # 物理量标签 / controlMeta / 公式适用条件），全仓扫描、不接受文件参数，实测约 5s。改动源码时触发。
+      # 物理量标签 / controlMeta / 公式适用条件 / 模块命名 / 物理事实单一真源）；
+      # 颜色字面量不在此列——由上面的 lint 任务（eslint 规则 + suppressions 基线）统一守。
+      # 全仓扫描、不接受文件参数，实测约 7s。改动源码时触发。
       glob: "{**/,}*.{ts,tsx}"
       run: npm run check:architecture

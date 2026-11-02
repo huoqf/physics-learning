@@ -7,17 +7,51 @@ on:
     branches: [master]
 
 jobs:
-  check:
+  # 第一段：静态门禁（快，几分钟内出结果）。失败即终止，不浪费真机检测的机时。
+  static:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20.20.2'
+          node-version: '22.22.2'
           cache: 'npm'
       - run: npm ci
       - run: npm run lint
       - run: npx tsc --noEmit
-      - run: npm run test -- --run
+      # tests/ 与 e2e/ 不在主 tsconfig 的 include 内，必须单跑一份（否则 63 个单测 + e2e 无类型保护）
+      - run: npx tsc -p tsconfig.test.json --noEmit
+      # 带 --coverage：vitest.config.ts 里的 80/80/70 门槛只有跑覆盖率时才生效
+      - run: npm run test:coverage -- --run
+      # check:architecture 现为 11 项：字号 / viewport 遗留 / 大文件 / rAF / marker / 组件复用 /
+      # 物理量标签 / controlMeta / 公式适用条件 / 模块命名 / 物理事实单一真源
+      # （颜色字面量由 eslint 统一守，不在这 11 项里）
       - run: npm run check:architecture
       - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 1
+
+  # 第二段：真机实测（慢，约 8 分钟）。依赖 static 的 dist 产物——
+  # 两个脚本都读 `dist/`，用旧产物会得到假绿。
+  runtime:
+    needs: static
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.2'
+          cache: 'npm'
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - run: npx playwright install --with-deps chromium
+      # 分段器选项折行（真实 DOM 测高，静态字宽模型抓不到的贴边折行）
+      - run: npm run check:seg-wrap
+      # 中屏 SVG 标注压字 / 文字被裁（字符级碰撞，双视口 1440 + 1280）
+      - run: npm run check:text-overlap

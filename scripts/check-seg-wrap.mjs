@@ -7,9 +7,12 @@
  * 111.5px，理论上放得下，实际却折成两行」的边界案例。静态模型只能拦明显超长，
  * 贴边折行只有真实 DOM 能抓——所以必须有人在真浏览器里跑。
  *
- * 此前 `audit:seg-wrap` 需要人手动 `npx vite --port 5199 &`，规范只能写"必须跑"，
+ * 此前需要人手动 `npx vite --port 5199 &` 再跑探针，规范只能写"必须跑"，
  * 没有任何强制力。本脚本把它做成自包含：起 `vite preview`（读 `dist/`）→ 双视口实测
  * → 关服务 → 传退出码，因此可以进 `npm run check`。
+ *
+ * 层次：本文件只做"起服务 / 遍历视口 / 收端口 / 出结论"，真正的 DOM 测量在
+ * `scripts/probe-seg-wrap.mjs`（单一视口探针），两者不是重复实现。
  *
  * 用法：
  *   npm run check:seg-wrap              # 1440 + 1280 两个视口，默认态（CI 用）
@@ -130,7 +133,7 @@ if (!(await waitReady(BASE))) {
 
 let failed = 0
 for (const width of WIDTHS) {
-  const args = ['scripts/audit-seg-wrap.mjs', '--base', BASE, '--width', String(width)]
+  const args = ['scripts/probe-seg-wrap.mjs', '--base', BASE, '--width', String(width)]
   if (DEEP) args.push('--deep')
   const code = await run(process.execPath, args)
   if (code !== 0) failed = code

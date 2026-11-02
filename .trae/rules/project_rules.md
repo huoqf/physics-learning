@@ -47,10 +47,10 @@
 | CSS 框架 | TailwindCSS 4 |
 | 状态管理 | Zustand |
 | 路由 | react-router-dom（**HashRouter only**） |
-| 动画渲染 | SVG（教学图解优先）/ Canvas（高频动画）/ PixiJS（后期复杂场景） |
+| 动画渲染 | SVG（教学图解优先）/ Canvas（高频动画）。**未引入 PixiJS**，确需时先按 §4.1 申报 |
 | 数学公式 | KaTeX（完全离线） |
 | 图标 | lucide-react |
-| 数据验证 | Zod |
+| 数据验证 | 未引入运行时库：由 TypeScript 类型 + 构建器侧 `normalizeParams()` 在边界归一化（**不要**为校验再装 Zod） |
 | 本地存储 | IndexedDB（主）/ LocalStorage（轻量配置） |
 | 测试 | Vitest + Testing Library |
 | 打包目标 | 浏览器本地运行优先，后期平滑迁移 Electron |
@@ -69,14 +69,14 @@
 
 | 序号 | 铁律 | 禁止 |
 |------|------|------|
-| 1 | **统一来源，禁止绕过**（十条子约束见下方展开） | 硬编码颜色/魔法数字/裸值 `fontSize={N}`/自造 `<marker>`/直接 `requestAnimationFrame`/写死 `scale = N` |
+| 1 | **统一来源，禁止绕过**（十一条子约束见下方展开） | 硬编码颜色/魔法数字/裸值 `fontSize={N}`/自造 `<marker>`/直接 `requestAnimationFrame`/写死 `scale = N` |
 | 2 | **物理层纯函数可序列化**：`src/physics/` 无副作用、无 DOM/React/window 依赖、有 JSDoc + 单位注释；所有数据结构可序列化（IndexedDB 持久化兼容） | 在 `physics/` 中访问 DOM/Store；不可序列化的数据结构（Set/Map/Function） |
 | 3 | **组件职责边界**：页面组件薄壳（路由+布局+数据注入）；三屏不交叉（详见 `02_UI_RULES.md §5.1`）；动画状态统一 `useAnimationStore` | 页面塞业务逻辑；右侧屏放参数控件；左侧屏放公式推导；另建 `usePhysicsState` |
 | 4 | **HashRouter only**：禁止 BrowserRouter（Electron `file://` 下路由 404） | BrowserRouter |
 | 5 | **组件复用优先**：场景中存在可复用组件时必须直接使用，禁止在 `features/` 中重复手写等效实现（详见下方展开） | 手写地面纹理/球体/滑块/矢量箭头/图表轴等已有组件实现 |
 | 6 | **左屏控制台声明式优先**：左屏必须使用 `LeftPanel` 体系；数值参数优先 `paramMeta → ParamControl`，模式/开关/预设/提示优先 `controlMeta → ControlPanel`；`SidebarExtra` 仅保留复杂自定义控制 | 新页面手写散乱左屏容器、简单模式切换/开关仍写 SidebarExtra、直接手写 `input[type=range]` |
 
-### 铁律 1 展开：统一来源十条子约束
+### 铁律 1 展开：统一来源十一条子约束
 
 1. **颜色/间距/圆角/阴影/动效** → 必须从 `src/theme/` 子模块引用
    - 禁的是**裸值**（`style={{ padding: 12 }}`、`#2563eb`、`fontSize={13}`），**不是** Tailwind 类名：`p-3` / `gap-2` / `rounded-lg` 是比例尺索引，与 `spacing.ts` 的 `spacing` 表同源（`3: '12px'`），合法。详见 `02_UI_RULES.md §2.1`。
@@ -161,10 +161,14 @@
 
 ## 5. 规范优先级
 
-1. `project_rules.md`（本文件） - 全局铁律与索引
+1. `project_rules.md`（本文件） - **唯一铁律源**：铁律的编号与含义只以本文件为准
 2. `ARCHITECTURE_RULES.md` - 架构细则
 3. `02_UI_RULES.md` - UI 视觉铁律
 4. 其他专题规范
+
+> **入口文件不是规范源**：`AGENT.md`（Trae/WorkBuddy 入口）、`.agents/AGENTS.md`（Antigravity 入口）只是
+> 本文件与 `docs/agent-rules/` 的**索引**，不含独立规则、不得各自定义铁律编号。
+> 三者冲突时以本文件为准；发现索引与本文不一致，改索引，不要改本文。
 
 ---
 
@@ -189,4 +193,8 @@
 
 ## 7. 提交 Checklist
 
-提交前按 [CHECKLIST.md](../docs/agent-rules/process/CHECKLIST.md) 逐项验收（80+ 项）。铁律 1–6 违反则提交无效。
+- **自动项**：跑 `npm run check`（`build` → 全量单测 → 11 项架构守卫 → 2 项真机实测），全绿才算过；依赖审计另跑 `npm run check:all`。
+  守卫与规范的逐条对应见 [CHECKLIST.md](../docs/agent-rules/process/CHECKLIST.md) 第一节。
+- **人工项**：20 条脚本判不了的内容（教学有效性、三屏分配、文案口味、视觉），见 CHECKLIST.md 第二节。
+
+铁律 1–6 违反则提交无效；**不要**用 `--no-verify` / `eslint-disable` / 往基线塞条目绕过守卫。

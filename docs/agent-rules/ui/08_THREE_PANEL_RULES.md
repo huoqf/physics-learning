@@ -212,7 +212,7 @@ LeftPanel                         ← AnimationPage 左屏唯一顶层容器
 
    **静态模型只是第一道闸，边界必须实测**。`charWidthPx` 的字宽来自 `canvas.measureText` 逐字符校准（中文恰好 12.00px，数字 7.4px、小写 `m` 11.78px、`+`/`=` 9.13px），并按"取跨平台较大值"向上取整。校准前它对数字与 `m` 系统性低估 7~12%，放过过 `① 结合能与质量亏损`（模型 111px / 单格 111.5px）与 `固定 100m 量程对比`（模型 104.8px / 单格 111.5px）这类"算得下、实际折"的边界案例。
    >
-   > 教训：**模型误差要靠校准字宽解决，不能靠放大安全系数掩盖**——把 `SEG_SAFE` 从 0.98 压到 0.93 试过，结果误报 30 处实测正常的短标签（72px / 73.5px），等于逼着人去砍不该砍的词。真正的兜底是 `npm run check:seg-wrap`（自起 preview 服务，用 Playwright 遍历全部动画、按真实 DOM 高度判定折行，已在 CI 内），它同时支持 `--width` 换视口、`--deep` 覆盖 `showIf` 分支。底层脚本 `npm run audit:seg-wrap` 保留给「已手动起 dev server」的场景。
+   > 教训：**模型误差要靠校准字宽解决，不能靠放大安全系数掩盖**——把 `SEG_SAFE` 从 0.98 压到 0.93 试过，结果误报 30 处实测正常的短标签（72px / 73.5px），等于逼着人去砍不该砍的词。真正的兜底是 `npm run check:seg-wrap`（自起 preview 服务，用 Playwright 遍历全部动画、按真实 DOM 高度判定折行，已在 CI 内），它同时支持 `--width` 换视口、`--deep` 覆盖 `showIf` 分支。底层探针 `npm run probe:seg-wrap`（`scripts/probe-seg-wrap.mjs`）保留给「已手动起 dev server」的场景，门禁只调它、不重复实现测量。
 
    以上六条由 `npm run check:control-meta` 强制：预设标签字数、左屏所有文案的卷别与应试化措辞（预设标签 / 分组名 / 选项 / 滑块名称与刻度 / tip 标题）、tip 字数与 C1/C3 关键词、`preset` 与模型选择的声明顺序、**分段器选项像素宽度（内容宽由 `PANEL.left` + `LEFT_PANEL_PADDING` 现算 = 225 / 185，× `SEG_SAFE = 0.98`，低于 `SEGMENTED.minCell = 72` 即降列）**，任一不合即 CI 失败；贴边折行的边界由 `npm run check:seg-wrap` 在真实浏览器里兜底。字数上限是**代理指标**，不是目的——真正的判据永远是上面那句话；脚本过了但读起来像答案，仍算违规。
 

@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "vitest/globals"],
+    // 允许从 tests/ 里 import scripts/*.mjs 的解析函数做单测（只读类型推断，不检查 JS 本体）
+    "allowJs": true
+  },
+  "include": ["src", "tests", "e2e"]
+}

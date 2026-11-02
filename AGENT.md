@@ -1,7 +1,8 @@
-# AGENT.md — Trae VIBE CODE 执行入口
+# AGENT.md — Trae VIBE CODE 执行入口（索引，不含独立规则）
 
-> **面向 AI Agent / Trae VIBE CODE 的执行入口。**
-> 核心规范位于 `docs/agent-rules/core/ARCHITECTURE_RULES.md`，本文件保留按需加载索引与任务标记约定。
+> **面向 AI Agent / Trae VIBE CODE 的执行入口，只做索引。**
+> **唯一铁律源**：`.trae/rules/project_rules.md`；架构细则：`docs/agent-rules/core/ARCHITECTURE_RULES.md`。
+> 本文件与 `.agents/AGENTS.md` 均为索引，不得各自定义铁律编号；冲突以 project_rules 为准。
 > **开发环境**：便携版 Node.js 位于 `D:\node-v24`，编译/安装依赖时需加入 PATH。
 
 ---
@@ -132,9 +133,9 @@ node scripts/gen-annotations.mjs
 // @agent-task: [M1-2] 实现 AcceleratedMotion 组件
 // @agent-rule: 见 docs/agent-rules/ui/02_UI_RULES.md §3（按需时读）
 // @agent-warn: tension 颜色已修正为 #9333EA，勿改回 #7C3AED
-// @agent-reuse: calculateCoulombForce 来自 src/physics/dynamics.ts
+// @agent-reuse: calculateCoulombForce 来自 src/physics/dynamics/force-laws.ts（经 @/physics 导出）
 ```
 
 ---
 
-*最后更新：2026-07-15 | 核心规范位于 docs/agent-rules/core/ARCHITECTURE_RULES.md，本文件保留按需加载索引*
+*最后更新：2026-11-02 | 唯一铁律源为 `.trae/rules/project_rules.md`，本文件与 `.agents/AGENTS.md` 均为按需加载索引*

@@ -4,7 +4,9 @@
 
 本文件约束「高中物理交互动画学习系统」的前端、数据层、物理计算层、题目解析层与桌面打包层实现。
 
-本文件是技术架构的权威来源。核心规范已整合至 `.trae/rules/project_rules.md`（Trae IDE 自动加载），本文件提供架构细则与铁律权威定义。**按需加载策略与文档优先级见 `AGENT.md` 按需加载速查**。
+本文件是**技术架构细则**的权威来源（目录结构、分层、数据层协议）。
+**铁律的编号与含义只以 `.trae/rules/project_rules.md` 为准**（Trae IDE 自动加载），本文件负责给出细则与例证。
+按需加载策略见 `AGENT.md`。两者冲突时：铁律部分以 project_rules 为准，架构细节以本文件为准。
 
 ---
 
@@ -26,6 +28,7 @@ src/
 │   └── UI/                 # UI 基础组件
 ├── hooks/                  # 跨页面复用 Hook
 │   └── useAnimationLifecycle.ts  # AnimationPage 生命周期封装
+├── context/                # React Context（AnimationLayoutContext 等）
 ├── pages/                  # 页面级容器（薄壳）
 ├── scene/                  # 场景配置与坐标缩放（SceneConfig、SceneScale）
 ├── features/               # 按学科/能力拆分的业务模块
@@ -46,8 +49,14 @@ src/
 │   │   └── induction/      #   电磁感应与交变电流（含 AC 动画）
 │   │       └── transformer/  # 变压器（model/hooks/components）
 │   ├── thermodynamics/     #   热学（理想气体、热力学定律）
-│   ├── optics/             #   光学（折射、反射、薄透镜）
-│   ├── atomic/             #   原子物理（待开发）
+│   ├── vibration/          #   机械振动与机械波
+│   ├── optics/             #   光学（折射、反射、薄透镜、干涉、衍射、偏振）
+│   ├── modern/             #   近代物理（光电效应、玻尔理论、原子核、相对论）
+│   ├── experiment/         #   高考实验专题（电表改装、电阻率、多用电表…）
+│   ├── master-models/      #   母题（跨章节综合模型的入口与图示）
+│   ├── analysis/           #   真题解析页组件
+│   ├── knowledge/          #   知识树可视化
+│   ├── wrongbook/          #   错题本与错因打靶
 │   ├── practice/           #   练习会话组件
 │   └── dev/                #   开发调试专用（不纳入生产功能）
 ├── physics/                # 纯物理计算（无副作用，不得依赖 React/DOM/window）
@@ -62,17 +71,19 @@ src/
 │   ├── types.ts            # AnimationConfig 等核心类型定义
 │   ├── problems/           # 题目与解析数据
 │   ├── quantities/         # 物理量构建器（按物理主题拆分，懒加载）
-│   │   ├── kinematics/     # 运动学（8 case，按动画拆分）
-│   │   ├── dynamics/       # 动力学（9 case，按动画拆分）
-│   │   ├── momentum/       # 动量（7 case，按动画拆分）
-│   │   ├── electromagnetism/ # 电磁学（5 case，按域拆分）
-│   │   ├── circular.ts
-│   │   ├── gravitation.ts
-│   │   ├── forceMotion.ts
-│   │   ├── energy.ts
-│   │   └── energyCases/    # energy 大 case 拆分子目录
-│   │       ├── verticalSpring.ts
-│   │       └── lightRodRope.ts
+│   │   ├── kinematics/     # 运动学（按动画拆分）
+│   │   ├── dynamics/       # 动力学
+│   │   ├── momentum/       # 动量
+│   │   ├── electromagnetism/ # 电磁学（按域拆分）
+│   │   ├── thermodynamics/ # 热学（麦克斯韦分布、油膜法、饱和汽…）
+│   │   ├── vibration/      # 振动与波（多普勒、受迫共振…）
+│   │   ├── mechanics/      # 力学实验
+│   │   ├── modern/         # 近代物理（核衰变、核反应…）
+│   │   ├── experiment/     # 高考实验（电阻率、多用电表…）
+│   │   ├── energyCases/    # energy 大 case 拆分子目录
+│   │   │   ├── verticalSpring.ts
+│   │   │   └── lightRodRope.ts
+│   │   └── *.ts            # 单文件 case（circular / gravitation / brownianMotion …）
 │   ├── knowledgeTree.ts    # 知识树索引（扁平源数据）
 │   ├── buildKnowledgeTree.ts # 运行时建树（扁平→层级，支持 parentId）
 │   ├── defineAnimations.ts # defineAnimations 工具函数
@@ -396,6 +407,18 @@ IndexedDB 体积上限：**200MB**，超限时提示用户清理。
 | 私有变量 | 下划线前缀 | `_internalState` |
 
 - 禁止同一目录下存在同名 `.ts` 与 `.tsx` 文件（如 `foo.ts` + `foo.tsx`），避免隐式扩展解析歧义
+- **禁止 `foo.ts` 与 `foo/index.ts` 同时存在**：此时 `import('./foo')` 会静默命中 `.ts` 文件而不是目录入口，
+  等于一个说明符指向两个目标。这是唯一真正会咬人的情形。
+- `foo.ts` 与 `foo/`（目录内无 `index.ts`）**允许并存**，但受两条约束：
+  1. `foo.ts` 的名字必须与内容相符。反例已修：`data/quantities/thermodynamics.ts` 实为布朗运动看板，
+     已改名 `brownianMotion.ts`；真正的热力学子模块在 `thermodynamics/` 目录内。
+  2. 若 `foo.ts` 只是 `foo/` 的 re-export barrel（`physics/electromagnetism.ts`、`physics/optics.ts`、
+     `physics/thermodynamics.ts` 属此类），文件头必须写明「re-export barrel」及其存在的理由（向后兼容）。
+- 同一目录内不得出现仅大小写不同的两个名字（Windows/macOS 不敏感、Linux 敏感，跨平台必炸）。
+  注意 `src/App.tsx` 与 `src/app/` 不是冲突：`.tsx` 是文件、`app` 是目录，且必须始终保持小写目录名。
+- 以上三条由 `npm run check:naming`（`scripts/check-naming.mjs`，`check:architecture` 第 10 项）自动判定：
+  同基名双后缀、`foo.ts` + `foo/index.ts`、仅大小写不同的同名。磁盘上抓不到的大小写碰撞
+  （Windows 无法让 `Foo.ts` 与 `foo.ts` 共存）再从 `git ls-files` 的 index 补一轮。
 - 纯函数必须有 JSDoc，公开 API 写明参数、返回值和边界条件
 - import 路径从最具体的子模块入口引用（如 `@/theme/physics`、`@/theme/colors`、`@/theme/motion`），`@/theme` 统一入口仍可用但子模块优先
 
@@ -405,11 +428,18 @@ IndexedDB 体积上限：**200MB**，超限时提示用户清理。
 
 ### 11.1 已批准依赖
 
-**生产**：`react`、`react-dom`、`react-router-dom`、`zustand`、`lucide-react`
+**生产**：`react`、`react-dom`、`react-router-dom`、`zustand`、`lucide-react`、`katex`、`idb`
 
-**开发**：`vite`、`@vitejs/plugin-react`、`tailwindcss`、`postcss`、`autoprefixer`、`typescript`、`vitest`、`@testing-library/react`、`@testing-library/jest-dom`、`@vitest/coverage-v8`、`jsdom`、`eslint`、`prettier`
+**开发**：`vite`、`@vitejs/plugin-react`、`tailwindcss`、`postcss`、`autoprefixer`、`typescript`、`vitest`、`@testing-library/react`、`@testing-library/jest-dom`、`@vitest/coverage-v8`、`jsdom`、`eslint`、`@playwright/test`、`lefthook`、`tsx`、`electron`、`electron-builder`
 
-**候选（按里程碑批准）**：`katex`、`idb`、`pixijs`
+**候选（按里程碑批准，当前均未引入）**：`pixijs`
+
+> `prettier` 已从依赖移除，`.prettierrc` / `.prettierignore` 一并删除（2026-11-02）：项目不做全仓格式化
+> （历史代码风格不统一，`--write` 会重排 1000+ 文件），风格由 `eslint` 与本文约定保证。
+> 遗留的 `.prettierrc` 声明 `semi:true`，而实际代码全仓无分号，属"声明了但永不执行"的假规范，
+> 留着只会误导 editor 与新人。若要引入格式化，必须单独一轮全仓 format 并单独提交，不得混在功能改动里。
+
+> 注：`zod` 曾被列在本表，但项目从未引入，运行时校验由 `normalizeParams()` 在构建器边界完成，故不再列入。
 
 ### 11.2 新增流程
 

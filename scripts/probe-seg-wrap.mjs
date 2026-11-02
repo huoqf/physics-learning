@@ -1,16 +1,23 @@
 #!/usr/bin/env node
 /**
- * 分段器折行实测审计（§2.6.6 的兜底验证层）
+ * probe-seg-wrap.mjs — 分段器折行实测的**底层探针**（§2.6.6 的兜底验证层）
  *
- * 为什么需要它：`check-control-meta.mjs` 用字宽模型估算选项宽度，模型是"约值"，
+ * 层次关系（两个脚本不是重复实现，是上下两层）：
+ *   · `check-seg-wrap.mjs` = 门禁入口：起 `vite preview` + 遍历视口 + 回收端口 + 传退出码
+ *   · 本文件               = 单一视口的 DOM 探针：给定 --base/--width，量出折行并报告
+ * 门禁只调探针，不重复实现测量；探针也可单独对着已起的 dev server 反复调试。
+ *
+ * 为什么需要真实 DOM：`check-control-meta.mjs` 用字宽模型估算选项宽度，模型是"约值"，
  * 而浏览器字形渲染每字可能在 12.0~12.2px 之间浮动。实测出现过「模型算 111px、
  * 按钮可用 111.5px，理论上放得下，实际却折成两行」的边界案例。
- * 静态守卫负责快速拦截明显超长，本脚本负责用真实 DOM 抓出边界漏网。
+ * 静态守卫负责快速拦截明显超长，本探针负责用真实 DOM 抓出边界漏网。
  *
- * 用法：
+ * 用法（人工调试时）：
  *   npx vite --port 5199 --strictPort &        # 先起 dev server
- *   npm run audit:seg-wrap                     # 默认 http://localhost:5199
- *   node scripts/audit-seg-wrap.mjs --base http://localhost:5199 --width 1440
+ *   npm run probe:seg-wrap                     # 默认 http://localhost:5199
+ *   node scripts/probe-seg-wrap.mjs --base http://localhost:5199 --width 1440
+ *
+ * 常规入口是 `npm run check:seg-wrap`（CI/本地门禁），不需要手动跑本文件。
  *
  * 退出码：0 全部不折行 / 1 存在折行
  */
