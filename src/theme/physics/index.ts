@@ -91,6 +91,7 @@ import {
 import {
   OPTICAL_COLORS,
   MODERN_PHYSICS_COLORS,
+  DARK_SCREEN_COLORS,
 } from './scene/optics'
 
 export const SCENE_COLORS = {
@@ -116,6 +117,7 @@ export const SCENE_COLORS = {
   electrostaticApparatus: ELECTROSTATIC_APPARATUS_COLORS,
   thermoChamber: THERMO_CHAMBER_COLORS,
   modernPhysics: MODERN_PHYSICS_COLORS,
+  darkScreen: DARK_SCREEN_COLORS,
   charts: CHART_COMPONENT_COLORS,
 } as const;
 
@@ -138,6 +140,9 @@ export {
   THERMAL_COLORS,
   ELECTRICAL_APPARATUS_COLORS,
   ELECTROSTATIC_APPARATUS_COLORS,
+  MECHANICS_APPARATUS_COLORS,
+  MODERN_PHYSICS_COLORS,
+  DARK_SCREEN_COLORS,
 }
 
 export type SceneColorGroup   = keyof typeof SCENE_COLORS
@@ -401,3 +406,9 @@ export type {
 } from './arrowStyle'
 
 export { withAlpha } from './colors'
+
+// ─── 连续插值着色（温度/内能）与光谱配色 ────────────────────────────────────
+// 这两个模块承担「物理量 → 颜色」的映射，原先散落在 src/physics/ 内并各写一份，
+// 2026-11 迁到此层：物理层零颜色，场景与看板共用同一实现。
+export { temperatureColor, deltaUToBgColor } from './tints'
+export { frequencyToColor } from './spectrum'

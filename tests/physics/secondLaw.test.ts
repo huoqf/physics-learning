@@ -4,7 +4,6 @@ import {
   initDiffusionParticles,
   stepParticles,
   computeMicrostates,
-  temperatureToColor,
   computeTemperatureDiff,
   computeParticleDistribution,
 } from '@/physics/secondLaw'
@@ -191,43 +190,6 @@ describe('computeMicrostates', () => {
     const result = computeMicrostates(particles, X_MIN, X_MAX, Y_MIN, Y_MAX)
     expect(result.normalizedEntropy).toBeGreaterThanOrEqual(0)
     expect(result.normalizedEntropy).toBeLessThanOrEqual(1)
-  })
-})
-
-describe('temperatureToColor', () => {
-  it('高温应返回偏红色', () => {
-    const color = temperatureToColor(500, 500, 200)
-    // 红色通道应较高
-    const match = color.match(/rgb\((\d+),(\d+),(\d+)\)/)
-    expect(match).not.toBeNull()
-    if (match) {
-      const r = parseInt(match[1])
-      const b = parseInt(match[3])
-      expect(r).toBeGreaterThan(b)
-    }
-  })
-
-  it('低温应返回偏蓝色', () => {
-    const color = temperatureToColor(200, 500, 200)
-    const match = color.match(/rgb\((\d+),(\d+),(\d+)\)/)
-    expect(match).not.toBeNull()
-    if (match) {
-      const r = parseInt(match[1])
-      const b = parseInt(match[3])
-      expect(b).toBeGreaterThan(r)
-    }
-  })
-
-  it('中温应返回紫色调', () => {
-    const color = temperatureToColor(350, 500, 200)
-    expect(color).toMatch(/^rgb\(\d+,\d+,\d+\)$/)
-  })
-
-  it('超出范围应被截断', () => {
-    const colorHigh = temperatureToColor(600, 500, 200)
-    const colorLow = temperatureToColor(100, 500, 200)
-    expect(colorHigh).toMatch(/^rgb\(/)
-    expect(colorLow).toMatch(/^rgb\(/)
   })
 })
 

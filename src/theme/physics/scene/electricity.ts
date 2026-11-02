@@ -153,6 +153,7 @@ export const ELECTRICAL_APPARATUS_COLORS = {
   dialPlate:       '#1E293B', // 旋钮面板
   dialKnob:        '#0F172A', // 阻值旋钮
   dialMarker:      '#EF4444', // 指示刻度线 (red-500)
+  dialPaperBg:     '#FDFBF6', // 多用电表刻度盘纸底 (米黄，模拟胶木表盘)
 
   // 多用电表与表笔
   multimeterBody:  '#EA580C', // 电表深橙外壳 (orange-600，低饱和度防抢眼)

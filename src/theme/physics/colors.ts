@@ -137,6 +137,7 @@ export const TRANSMISSION_COLORS = {
 export const THERMO_COLORS = {
   temperature:        '#B91C1C', // 温度 T             — 热端深红 (Red-700)
   temperatureHigh:    '#EF4444', // 高温端             — 亮红 (Red-500)
+  temperatureMid:     '#A855F7', // 中温端（插值中点）   — 紫 (Violet-500)
   temperatureLow:     '#3B82F6', // 低温端             — 冷蓝 (Blue-500)
   temperatureIsothermalGroup: ['#3B82F6', '#60A5FA', '#F59E0B', '#EF4444'] as const, // 等温线组（冷蓝向暖红渐变）
   pressure:           '#7C3AED', // 压强 p             — 压强紫 (Violet-600)
@@ -157,10 +158,14 @@ export const OPTICS_COLORS = {
   lightRayNormal:     '#94A3B8', // 法线               — 辅助灰 (neutral-400)
   wavefront:          '#38BDF8', // 波前               — sky-400
   wavelengthRed:      '#EF4444', // 红光 λ≈700nm       — 光谱红 (Red-500)
+  wavelengthOrange:   '#F97316', // 橙光 λ≈600nm       — 光谱橙 (Orange-500)
   wavelengthYellow:   '#EAB308', // 黄光 λ≈580nm       — 光谱黄 (Yellow-500)
   wavelengthGreen:    '#22C55E', // 绿光 λ≈550nm       — 光谱绿 (Green-500)
   wavelengthBlue:     '#3B82F6', // 蓝光 λ≈450nm       — 光谱蓝 (Blue-500)
+  wavelengthIndigo:   '#6366F1', // 靛光 λ≈430nm       — 光谱靛 (Indigo-500)
   wavelengthViolet:   '#7C3AED', // 紫光 λ≈400nm       — 光谱紫 (Purple-600)
+  // 可见光谱带（红→紫 7 段，供光谱条渐变逐段取色，禁止在组件内重写这组 rgba）
+  visibleSpectrum:    ['#EF4444', '#F97316', '#EAB308', '#22C55E', '#06B6D4', '#3B82F6', '#A855F7'] as const,
   criticalAngle:      '#F97316', // 全反射临界角标注    — orange-500
   focalPoint:         '#EA580C', // 焦点               — orange-600
   opticalAxis:        '#CBD5E1', // 光轴               — neutral-300
@@ -202,6 +207,8 @@ export const MODERN_COLORS = {
   photonVisibleRed:   '#EF4444', // 可见红光（H-α 1.89 eV / 656 nm）— red-500
   photonVisibleCyan:  '#06B6D4', // 可见青光（H-β 2.55 eV / 486 nm）— cyan-500
   photoelectron:      '#2563EB', // 光电子 — blue-600
+  stoppingVoltage:    '#EF4444', // 遏止电压 U_c（按"反向电压栅栏"用红）— red-500
+  saturationCurrent:  '#DC2626', // 饱和光电流 I_m（与电流同色）— red-600
   electronBound:      '#71717A', // 束缚电子（阴极板上）— neutral-500
   cathodePlate:       '#52525B', // 阴极板 — neutral-600
   anodePlate:         '#A1A1AA', // 阳极板 — neutral-400

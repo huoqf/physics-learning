@@ -271,38 +271,9 @@ export function computeMicrostates(
   return { lnOmega, normalizedEntropy }
 }
 
-/**
- * 温度→颜色插值。
- * 高温端红色 → 中温紫色 → 低温端蓝色。
- *
- * @param T 当前温度 (K)
- * @param THigh 高温参考值 (K)
- * @param TLow 低温参考值 (K)
- * @returns CSS 颜色字符串
- */
-export function temperatureToColor(
-  T: number,
-  THigh: number = TH_T_HOT,
-  TLow: number = TH_T_COLD,
-): string {
-  const t = Math.max(0, Math.min(1, (T - TLow) / (THigh - TLow)))
+// 温度→颜色插值已迁至 src/theme/physics/tints.ts（原先本文件与 firstLaw 各有一份，
+// 渐变也不同：此处三段蓝→紫→红，firstLaw 两段蓝→红；现统一为三段单一实现）。
 
-  let r: number, g: number, b: number
-  if (t < 0.5) {
-    // 蓝 (59,130,246) → 紫 (168,85,247)
-    const s = t / 0.5
-    r = Math.round(59 + s * (168 - 59))
-    g = Math.round(130 + s * (85 - 130))
-    b = Math.round(246 + s * (247 - 246))
-  } else {
-    // 紫 (168,85,247) → 红 (239,68,68)
-    const s = (t - 0.5) / 0.5
-    r = Math.round(168 + s * (239 - 168))
-    g = Math.round(85 + s * (68 - 85))
-    b = Math.round(247 + s * (68 - 247))
-  }
-  return `rgb(${r},${g},${b})`
-}
 
 /**
  * 计算两侧平均温度差（热传导场景）。

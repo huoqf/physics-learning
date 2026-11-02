@@ -12,8 +12,8 @@
  * ─── 模块职责速查 ────────────────────────────────────────────────────────────
  *  colors.ts           — UI 语义色（primary / secondary / accent / neutral / status）
  *  physics/colors.ts   — 物理量颜色（速度/加速度/力/能量/电磁/热/光/波 共 ~110 token）
- *  physics/sceneColors — 场景器材外观色（磁铁 3D 面/线圈/灯泡/手势/电路元件等）
- *  physics/chartColors — 物理图像配色（v-t / x-t / P-V / U-I 等 9 组专项）
+ *  physics/scene/      — 场景器材外观色（按域拆分：materials/mechanics/electricity/thermal/optics）
+ *  physics/index.ts    — 图表配色桥接（CHART_COLORS / VT / PV / ENERGY 等 9 组）与 SCENE_COLORS 聚合
  *  physics/canvasStyle — SVG/Canvas 绘制规范（线宽/虚线/箭头/SVG属性/Marker/Filter/动画）
  *  spacing.ts          — 间距与布局网格
  *  radius.ts           — 圆角

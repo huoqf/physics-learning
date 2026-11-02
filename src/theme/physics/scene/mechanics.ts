@@ -48,6 +48,7 @@ export const SURFACE_COLORS = {
   // 摩擦面标注
   roughMark:     '#D97706', // 粗糙面标注    — amber-600（与摩擦力同色系）
   smoothMark:    '#94A3B8', // 光滑面标注    — neutral-400（视觉弱化）
+  smoothGlow:    '#38BDF8', // 光滑面冰蓝光晕 — sky-400（地面渐变高光）
 
   // 滑轮 & 绳
   pulleyFill:    '#6B7280', // 滑轮主体      — gray-500

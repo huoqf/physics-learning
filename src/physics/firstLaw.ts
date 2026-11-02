@@ -152,80 +152,9 @@ export function temperatureToSpeedScale(
   return Math.sqrt(Math.max(0, T) / TRef)
 }
 
-// ─── 颜色映射 (纯函数，不依赖 theme import) ──────────────────────────────
-/**
- * 解析 hex 颜色 → {r, g, b}。
- * @param hex 6位十六进制颜色，如 '#3B82F6'
- */
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const h = hex.replace('#', '')
-  return {
-    r: parseInt(h.substring(0, 2), 16),
-    g: parseInt(h.substring(2, 4), 16),
-    b: parseInt(h.substring(4, 6), 16),
-  }
-}
+// 颜色映射（温度→颜色、内能→背景色）已迁至 src/theme/physics/tints.ts：
+// 物理层不持有颜色 token，场景层一律从 @/theme/physics 取 temperatureColor / deltaUToBgColor。
 
-// 主题 token 预解析（与 THERMO_COLORS.temperatureLow/High 对齐）
-const TEMP_LOW = hexToRgb('#3B82F6')  // temperatureLow — 冷蓝
-const TEMP_HIGH = hexToRgb('#EF4444') // temperatureHigh — 亮红
-
-/**
- * 温度 → 气体分子颜色（冷蓝 → 亮红渐变）。
- * 用于粒子渲染，颜色随温度连续变化。
- *
- * @param T 当前温度 (K)
- * @param TRef 参考低温 (K)，默认 300
- * @param THigh 参考高温 (K)，默认 1200
- * @returns CSS rgb 颜色字符串
- */
-export function temperatureToColor(
-  T: number,
-  TRef: number = 300,
-  THigh: number = 1200,
-): string {
-  const t = Math.max(0, Math.min(1, (T - TRef) / (THigh - TRef)))
-  const r = Math.round(TEMP_LOW.r + t * (TEMP_HIGH.r - TEMP_LOW.r))
-  const g = Math.round(TEMP_LOW.g + t * (TEMP_HIGH.g - TEMP_LOW.g))
-  const b = Math.round(TEMP_LOW.b + t * (TEMP_HIGH.b - TEMP_LOW.b))
-  return `rgb(${r}, ${g}, ${b})`
-}
-
-/**
- * 内能增量 → 气缸背景颜色（带透明度）。
- * ΔU > 0 吸热偏暖橙，ΔU < 0 放热偏冷青，ΔU ≈ 0 中性。
- *
- * @param deltaU 内能变化量 (J)
- * @param maxAbsDU 归一化基准 (J)，默认 500
- * @returns CSS rgba 颜色字符串
- */
-export function deltaUToBgColor(
-  deltaU: number,
-  maxAbsDU: number = 500,
-): string {
-  const normU = Math.max(-1, Math.min(1, deltaU / maxAbsDU))
-  if (normU > 0) {
-    return `rgba(249, 115, 22, ${0.04 + normU * 0.16})`  // heatAbsorb + alpha
-  } else if (normU < 0) {
-    return `rgba(8, 145, 178, ${0.04 + Math.abs(normU) * 0.16})` // heatRelease + alpha
-  }
-  return `rgba(224, 231, 238, 0.4)` // gasVolumeBase + alpha
-}
-
-/**
- * 内能增量 → 气缸背景色 token 名。
- * 用于场景层选择颜色 token（不返回 CSS 字符串，供 SVG fill 直接使用）。
- *
- * @param deltaU 内能变化量 (J)
- * @returns 'heatAbsorb' | 'heatRelease' | 'gasVolumeBase'
- */
-export function deltaUBgToken(
-  deltaU: number,
-): 'heatAbsorb' | 'heatRelease' | 'gasVolumeBase' {
-  if (deltaU > 0) return 'heatAbsorb'
-  if (deltaU < 0) return 'heatRelease'
-  return 'gasVolumeBase'
-}
 
 // ─── 绝热过程计算 ──────────────────────────────────────────────────────────
 

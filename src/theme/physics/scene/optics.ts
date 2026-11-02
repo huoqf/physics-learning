@@ -46,4 +46,28 @@ export const MODERN_PHYSICS_COLORS = {
   levelGround:     '#0F172A', // 基态轨道线 (强调其最稳定)
   transitionArrow: '#7C3AED', // 跃迁指示箭头 (violet-600，避开弹力玫红，契合高频紫光语义)
   emittedPhoton:   '#F59E0B', // 辐射光子波浪线 (amber-500)
+
+  // 氢原子能级色标（n=1→4，能量越低越"红"，n≥5 近似电离取灰）
+  levelColors:     ['#F87171', '#FB923C', '#FACC15', '#60A5FA'] as const,
+  levelIonized:    '#A1A1AA', // 电离态/高激发态能级色标 (zinc-400)
+
+  // 氢原子发射谱线（按跃迁能量着色，红外→可见→紫外三档区分）
+  spectralIr:      '#FF4444', // 0.66 eV (4→3) 红外——不可见，示意红
+  spectralRed:     '#EF4444', // 1.89 eV (3→2) 红光 H-α
+  spectralCyan:    '#00F0FF', // 2.55 eV (4→2) 青光 H-β
+  spectralUvA:     '#818CF8', // 10.20 eV (2→1) 紫外（Lyman-α）
+  spectralUvB:     '#C084FC', // 12.09 eV (3→1) 紫外
+  spectralUvC:     '#D8B4FE', // 12.75 eV (4→1) 紫外
+
+  // 光谱条不可见区压暗底色（渐变起止）
+  irBandBg:        ['#120404', '#1B0808'] as const, // 红外区
+  uvBandBg:        ['#130A24', '#080312'] as const, // 紫外区
+} as const;
+
+// ─── 暗场观察屏（激光 / 衍射 / 偏振的观察窗） ────────────────────────────────
+export const DARK_SCREEN_COLORS = {
+  bg:     '#090D16', // 暗场屏幕底色（近黑蓝）
+  stroke: '#2A354F', // 暗场边框
+  screen: '#1E3A34', // 观察窗玻璃（偏青绿）
+  pitch:  '#000000', // 纯黑暗场（衍射/干涉屏）
 } as const;

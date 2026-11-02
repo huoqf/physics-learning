@@ -140,30 +140,9 @@ export function intensityToSaturationCurrent(intensity: number): number {
   return (intensity / 100) * 50
 }
 
-/**
- * 频率 → 光束颜色 (hex)
- *
- * 映射关系：
- * - ν < 4.5 (红外): 红色
- * - 4.5 ≤ ν < 5.0 (红~橙): 橙红
- * - 5.0 ≤ ν < 5.5 (黄~绿): 黄绿
- * - 5.5 ≤ ν < 6.0 (绿~蓝): 蓝绿
- * - 6.0 ≤ ν < 6.5 (蓝~靛): 蓝色
- * - 6.5 ≤ ν < 7.0 (靛~紫): 靛蓝
- * - ν ≥ 7.0 (紫外): 紫色
- *
- * @param nu 频率 (×10¹⁴ Hz)
- * @returns hex 颜色字符串
- */
-export function frequencyToColor(nu: number): string {
-  if (nu < 4.5) return '#EF4444'     // 红
-  if (nu < 5.0) return '#F97316'     // 橙
-  if (nu < 5.5) return '#EAB308'     // 黄
-  if (nu < 6.0) return '#22C55E'     // 绿
-  if (nu < 6.5) return '#3B82F6'     // 蓝
-  if (nu < 7.0) return '#6366F1'     // 靛
-  return '#7C3AED'                    // 紫（紫外）
-}
+// 频率→颜色映射（七色光谱）已迁至 src/theme/physics/spectrum.ts：
+// 物理层不持有颜色，场景与看板统一从 @/theme/physics 取 frequencyToColor。
+
 
 /**
  * 频率 → 可见光波长 (nm)
