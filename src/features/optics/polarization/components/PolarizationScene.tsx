@@ -1,11 +1,11 @@
-import { PHYSICS_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_COLORS, withAlpha, DARK_SCREEN_COLORS } from '@/theme/physics'
 import type { SceneScale } from '@/scene'
 import type { PolarizationPhysicsResult, PolarizationWavePoint } from '../hooks/usePolarizationPhysics'
 
 /** 暗色面板背景 (相机取景器) */
-const DARK_VIEWFINDER_BG = '#090d16'
-const DARK_VIEWFINDER_STROKE = '#2a354f'
-const DARK_VIEWFINDER_SCREEN = '#1e3a34'
+const DARK_VIEWFINDER_BG = DARK_SCREEN_COLORS.bg
+const DARK_VIEWFINDER_STROKE = DARK_SCREEN_COLORS.stroke
+const DARK_VIEWFINDER_SCREEN = DARK_SCREEN_COLORS.screen
 
 interface PolarizationSceneProps {
   physics: PolarizationPhysicsResult

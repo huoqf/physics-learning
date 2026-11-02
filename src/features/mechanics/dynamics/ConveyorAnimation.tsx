@@ -8,6 +8,7 @@ import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene/SceneScale'
 import { getConveyorFrame, type ConveyorMode } from '@/physics/conveyor'
 import { GRAVITY } from '@/physics/constants'
+import { colors } from '@/theme/colors'
 
 const MASS_KG = 1
 const THETA_RAD = Math.PI / 12
@@ -134,9 +135,9 @@ export default function ConveyorAnimation() {
       <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
         <defs>
           <radialGradient id="roller-metal-gradient" cx="50%" cy="50%" r="50%" fx="30%" fy="30%">
-            <stop offset="0%" stopColor="#e2e8f0" />
-            <stop offset="70%" stopColor="#94a3b8" />
-            <stop offset="100%" stopColor="#475569" />
+            <stop offset="0%" stopColor={colors.neutral[200]} />
+            <stop offset="70%" stopColor={colors.neutral[400]} />
+            <stop offset="100%" stopColor={colors.neutral[600]} />
           </radialGradient>
           <filter id="glow-effect" x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur stdDeviation="3" result="blur" />
@@ -203,8 +204,8 @@ export default function ConveyorAnimation() {
                 <circle cx={cx} cy={cy - SCENE.rollerRadius + 8} r={2} fill={PHYSICS_COLORS.strokeDark} />
                 <circle cx={cx} cy={cy + SCENE.rollerRadius - 8} r={2} fill={PHYSICS_COLORS.strokeDark} />
                 {/* 轴承 */}
-                <circle cx={cx} cy={cy} r={10} fill="#475569" stroke={PHYSICS_COLORS.strokeDark} strokeWidth={1} />
-                <circle cx={cx} cy={cy} r={5} fill="#1e293b" />
+                <circle cx={cx} cy={cy} r={10} fill={colors.neutral[600]} stroke={PHYSICS_COLORS.strokeDark} strokeWidth={1} />
+                <circle cx={cx} cy={cy} r={5} fill={colors.neutral[800]} />
               </g>
             )
           })}

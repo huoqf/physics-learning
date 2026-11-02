@@ -181,10 +181,10 @@ export default function WaveDiffractionAnimation() {
     >
       <defs>
         <linearGradient id="barrier-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#475569" />
-          <stop offset="30%" stopColor="#64748B" />
-          <stop offset="70%" stopColor="#334155" />
-          <stop offset="100%" stopColor="#1E293B" />
+          <stop offset="0%" stopColor={colors.neutral[600]} />
+          <stop offset="30%" stopColor={colors.neutral[500]} />
+          <stop offset="70%" stopColor={colors.neutral[700]} />
+          <stop offset="100%" stopColor={colors.neutral[800]} />
         </linearGradient>
       </defs>
 

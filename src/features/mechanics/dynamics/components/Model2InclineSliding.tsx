@@ -262,7 +262,7 @@ export function Model2InclineSliding({
               vector={{ x: model2.f_slope * Math.cos(thetaRad), y: -model2.f_slope * Math.sin(thetaRad) }}
               type="friction"
               sceneScale={sceneScale}
-              color="#f43f5e"
+              color={PHYSICS_COLORS.friction}
               label={`f' = ${model2.f_slope.toFixed(1)}N`}
               font={font}
             />

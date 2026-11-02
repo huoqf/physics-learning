@@ -10,6 +10,7 @@ import {
   intensityToSaturationCurrent,
   isPhotoelectricEffect,
 } from '@/physics/photoelectric'
+import { MODERN_COLORS } from '@/theme/physics'
 
 interface PhotoelectricParams {
   frequency: number
@@ -52,7 +53,7 @@ export function buildPhotoelectricQuantities(
       symbol: 'E_km',
       value: isPE ? Ekm.toFixed(2) : '—',
       unit: 'eV',
-      color: '#2563EB',
+      color: MODERN_COLORS.photoelectron,
       highlight: isPE ? 'positive' : undefined,
     },
     {
@@ -60,7 +61,7 @@ export function buildPhotoelectricQuantities(
       symbol: 'U_c',
       value: isPE ? Uc.toFixed(2) : '—',
       unit: 'V',
-      color: '#EF4444',
+      color: MODERN_COLORS.stoppingVoltage,
       highlight: isPE ? 'extreme' : undefined,
     },
     {
@@ -68,7 +69,7 @@ export function buildPhotoelectricQuantities(
       symbol: 'I_m',
       value: isPE ? Imax.toFixed(1) : '0',
       unit: 'μA',
-      color: '#DC2626',
+      color: MODERN_COLORS.saturationCurrent,
     },
   ]
 

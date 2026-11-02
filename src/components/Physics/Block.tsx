@@ -51,7 +51,7 @@ export interface BlockProps extends Omit<SVGProps<SVGGElement>, 'type'> {
    * 滑块的描边颜色。
    * 若未指定，则会自动根据材质类型采用对应 `SCENE_COLORS` 中的配置：
    * - `wood` / `woodCart` 采用 `SCENE_COLORS.materials.woodSphereGrad[1]`
-   * - `metal` 采用 `SCENE_COLORS.pendulum.rodStroke` 或 `#334155`
+   * - `metal` 采用 `SCENE_COLORS.pendulum.rodStroke` 或 `colors.neutral[700]`
    */
   stroke?: string;
   /**

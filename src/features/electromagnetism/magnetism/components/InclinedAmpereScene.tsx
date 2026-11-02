@@ -13,6 +13,7 @@ import {
 } from './inclineSceneUtils'
 import { InclinedBFieldLines } from './InclinedBFieldLines'
 import { InclinedForceVectors } from './InclinedForceVectors'
+import { colors } from '@/theme/colors'
 
 interface InclinedAmpereSceneProps {
   x: number
@@ -90,18 +91,18 @@ export const InclinedAmpereScene: React.FC<InclinedAmpereSceneProps> = ({
       <defs>
         {/* 斜面高质感淡蓝白渐变 */}
         <linearGradient id="incline-slope-grad" x1="0" y1="1" x2="0" y2="0">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="100%" stopColor="#f0f9ff" />
+          <stop offset="0%" stopColor={colors.neutral.white} />
+          <stop offset="100%" stopColor={colors.primary[50]} />
         </linearGradient>
         {/* 前立面遮罩（轻量半透明） */}
         <linearGradient id="incline-front-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#f8fafc" stopOpacity="0.45" />
-          <stop offset="100%" stopColor="#e2e8f0" stopOpacity="0.45" />
+          <stop offset="0%" stopColor={colors.neutral[50]} stopOpacity="0.45" />
+          <stop offset="100%" stopColor={colors.neutral[200]} stopOpacity="0.45" />
         </linearGradient>
         {/* 右立面（轻量半透明阴影） */}
         <linearGradient id="incline-right-grad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#cbd5e1" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="#94a3b8" stopOpacity="0.5" />
+          <stop offset="0%" stopColor={colors.neutral[300]} stopOpacity="0.5" />
+          <stop offset="100%" stopColor={colors.neutral[400]} stopOpacity="0.5" />
         </linearGradient>
       </defs>
 
@@ -156,21 +157,21 @@ export const InclinedAmpereScene: React.FC<InclinedAmpereSceneProps> = ({
           <polygon
             points={`${r1sx},${r1sy} ${r1ex},${r1ey} ${r1ex + dx},${r1ey + dy} ${r1sx + dx},${r1sy + dy}`}
             fill="url(#incline-slope-grad)"
-            stroke="#ced4da"
+            stroke={colors.neutral[300]}
             strokeWidth="0.6"
           />
           {/* 前侧立面 */}
           <polygon
             points={`${r1sx + dx},${r1sy + dy} ${r1ex + dx},${r1ey + dy} ${r1ex + dx},${groundY} ${r1sx + dx},${groundY}`}
             fill="url(#incline-front-grad)"
-            stroke="#adb5bd"
+            stroke={colors.neutral[400]}
             strokeWidth="0.5"
           />
           {/* 右侧立面 */}
           <polygon
             points={`${r1ex},${r1ey} ${r1ex + dx},${r1ey + dy} ${r1ex + dx},${groundY} ${r1ex},${groundY}`}
             fill="url(#incline-right-grad)"
-            stroke="#adb5bd"
+            stroke={colors.neutral[400]}
             strokeWidth="0.5"
           />
         </g>

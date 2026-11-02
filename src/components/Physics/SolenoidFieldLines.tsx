@@ -20,7 +20,7 @@ export interface SolenoidFieldLinesProps {
   current: number
   /** 归一化强度 [0, 1]，控制线条透明度与渐隐，默认跟随 |current| */
   intensity?: number
-  /** 磁感线基准色，默认 PHYSICS_COLORS.magneticField ('#10B981') */
+  /** 磁感线基准色，默认 PHYSICS_COLORS.magneticField */
   lineColor?: string
   /** 自定义类名 */
   className?: string

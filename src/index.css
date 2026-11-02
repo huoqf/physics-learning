@@ -80,6 +80,7 @@
   --color-warning-600: #ea580c;
   --color-warning-700: #c2410c;
   --color-warning-800: #9a3412;
+  --color-warning-900: #7c2d12;
   --color-warning-950: #431407;
 
   /* ─── 统一动效时长与缓动 (配合 src/theme/motion.ts) ─────────────────── */

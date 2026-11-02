@@ -4,6 +4,7 @@ import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
 import { getConveyorFrame, type ConveyorMode } from '@/physics/conveyor'
 import { GRAVITY } from '@/physics/constants'
+import { colors } from '@/theme/colors'
 
 const THETA_RAD = Math.PI / 12
 const MASS_KG = 1
@@ -215,8 +216,8 @@ export default function ConveyorChart() {
             formatY={(v) => v.toFixed(1)}
           >
             {/* 临界最大摩擦力线 */}
-            <HorizontalLine y={fMaxLimit} color="#94a3b8" label="+f_max" />
-            <HorizontalLine y={-fMaxLimit} color="#94a3b8" label="-f_max" />
+            <HorizontalLine y={fMaxLimit} color={colors.neutral[400]} label="+f_max" />
+            <HorizontalLine y={-fMaxLimit} color={colors.neutral[400]} label="-f_max" />
             
             <ChartPolyline points={fPoints} color={PHYSICS_COLORS.friction} />
             {showSyncLine && data.syncTime != null && <VerticalMarker x={data.syncTime} color={PHYSICS_COLORS.annotation} label="共速" />}

@@ -3,6 +3,7 @@ import { VectorDefs } from '../../components/Physics/VectorDefs';
 import { createSceneScale } from '../../scene/SceneScale';
 import type { SceneConfig } from '../../scene/SceneConfig';
 import { VECTOR_COLORS, type VectorType } from '../../theme/physics/vectorStyle';
+import { colors } from '@/theme/colors'
 
 const TEST_SCENE: SceneConfig = {
   worldWidth: 20,
@@ -38,15 +39,15 @@ export default function VectorPlayground() {
       <svg
         width={700}
         height={450}
-        style={{ border: '1px solid #ccc', background: '#fafafa' }}
+        style={{ border: `1px solid ${colors.neutral[300]}`, background: colors.neutral[50] }}
       >
         <VectorDefs colors={USED_COLORS} />
 
         {/* coordinate axes */}
         <line x1={TEST_SCENE.originX} y1={20} x2={TEST_SCENE.originX} y2={430}
-          stroke="#999" strokeWidth={1} strokeDasharray="4" />
+          stroke={colors.neutral[400]} strokeWidth={1} strokeDasharray="4" />
         <line x1={20} y1={TEST_SCENE.originY} x2={680} y2={TEST_SCENE.originY}
-          stroke="#999" strokeWidth={1} strokeDasharray="4" />
+          stroke={colors.neutral[400]} strokeWidth={1} strokeDasharray="4" />
 
         {TEST_CASES.map((tc, i) => (
           <VectorArrow
@@ -63,7 +64,7 @@ export default function VectorPlayground() {
         {TEST_CASES.map((tc, i) => (
           <text key={`label-${i}`}
             x={520} y={80 + i * 25}
-            fontSize={13} fill="#333">
+            fontSize={13} fill={colors.neutral[700]}>
             {tc.label}
           </text>
         ))}

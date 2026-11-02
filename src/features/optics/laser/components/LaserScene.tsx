@@ -1,6 +1,8 @@
 import { OPTICS_COLORS, PHYSICS_COLORS, CANVAS_COLORS, SCENE_COLORS, withAlpha } from '@/theme/physics'
 import type { SceneScale } from '@/scene'
 import type { LaserPhysicsResult } from '../hooks/useLaserPhysics'
+import { LASER_BEAM_INITIAL_RADIUS_M, beamRadius, halfAngleFromDeg } from '@/physics/laser'
+import { colors } from '@/theme/colors'
 
 /** 科学实验室清爽明亮面板调色 (引自统一 Theme Token) */
 const PANEL_BG = CANVAS_COLORS.gridSubtle
@@ -72,9 +74,8 @@ export function LaserScene({
 
     const normalPath = Array.from({ length: 20 }).map((_, idx) => {
       const d = (idx / 19) * 100
-      const r0 = 1.0
-      const thetaNorm = (divergenceAngleNormal * Math.PI / 180) / 2
-      const rN = (r0 + d * Math.tan(thetaNorm) * 1000)
+      // 与看板/hook 同一实现：米制计算后仅在展示层换成 mm
+      const rN = beamRadius(LASER_BEAM_INITIAL_RADIUS_M, d, halfAngleFromDeg(divergenceAngleNormal)) * 1000
       const px = plotX + (d / 100) * plotW
       const py = plotY + plotH - Math.min(1.0, rN / 25) * plotH
       return `${idx === 0 ? 'M' : 'L'} ${px.toFixed(1)} ${py.toFixed(1)}`
@@ -474,8 +475,8 @@ export function LaserScene({
         <defs>
           {/* 0: 纸张材质 (柔和纸色) */}
           <linearGradient id="materialPaperGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FFF7ED" />
-            <stop offset="100%" stopColor="#FEF3C7" />
+            <stop offset="0%" stopColor={colors.warning[50]} />
+            <stop offset="100%" stopColor={colors.accent[100]} />
           </linearGradient>
 
           {/* 1: 木板材质 (自然木纹，引用 SCENE_COLORS.materials.labWoodGrad) */}
@@ -611,7 +612,7 @@ export function LaserScene({
   return (
     <g>
       {/* 充满 840 x 325 splitV 视口的纯白底盘 */}
-      <rect x={0} y={0} width={840} height={325} fill="#FFFFFF" rx={8} />
+      <rect x={0} y={0} width={840} height={325} fill={colors.neutral.white} rx={8} />
 
       {modeVal === 0 && renderDirectionality()}
       {modeVal === 1 && renderCoherence()}

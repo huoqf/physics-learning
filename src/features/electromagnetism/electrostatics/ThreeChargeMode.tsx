@@ -30,10 +30,10 @@ import {
 import { colors } from '@/theme/colors'
 
 import { Button } from '@/components/UI'
-import { useSceneScale } from '@/hooks'
+import { useSceneScale } from '@/hooks'
+import { COULOMB_CONSTANT } from '@/physics/constants'
 
 /** 静电力常量 k = 9×10⁹ N·m²/C² */
-const COULOMB_K = 9e9
 
 /**
  * 三电荷模式布局配置常量
@@ -98,7 +98,7 @@ export default function ThreeChargeMode({
     { x: q3X * 0.01, y: centerY * 0.01, q: q3 * 1e-6 },
   ]
 
-  const forces = calculateThreeChargeForces(COULOMB_K, charges)
+  const forces = calculateThreeChargeForces(COULOMB_CONSTANT, charges)
   const isBalanced = forces[2].magnitude < LAYOUT.equilibriumThreshold
   const isAllThreeBalanced = forces.every((f) => f.magnitude < LAYOUT.equilibriumThreshold)
 

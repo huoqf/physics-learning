@@ -80,7 +80,7 @@ export function DeflectScene({
 
       {/* 分界线与右侧荧光屏 */}
       <line x1={DEFLECT.magneticB2StartX} y1={20} x2={DEFLECT.magneticB2StartX} y2={310} stroke={colors.neutral[300]} strokeDasharray="4 4" />
-      <rect x={DEFLECT.screenX} y={20} width={8} height={290} fill="#222" rx={2} />
+      <rect x={DEFLECT.screenX} y={20} width={8} height={290} fill={colors.neutral[900]} rx={2} />
 
       {/* 粒子轨迹（统一组件：预测虚线 + 历史虚线 + 拖尾 + 本体） */}
       {visibleTrajectory.length > 0 && (
@@ -155,7 +155,7 @@ export function DeflectScene({
             strokeDasharray="3 3"
           />
           {/* 电板中线焦点标记 */}
-          <circle cx={175} cy={DEFLECT.yMid} r={4} fill={colors.accent[500]} stroke="#fff" strokeWidth={1} />
+          <circle cx={175} cy={DEFLECT.yMid} r={4} fill={colors.accent[500]} stroke={colors.neutral.white} strokeWidth={1} />
           <text x={175} y={DEFLECT.yMid + 16} fontSize={font(9)} fill={colors.accent[600]} textAnchor="middle" fontWeight="bold">
             极板中点 (L/2)
           </text>
@@ -262,7 +262,7 @@ export function DeflectScene({
       {timeSec >= sim.endTime * 0.95 && deflect.hitReason === 'film' && (
         <g>
           <circle cx={deflect.hitPoint?.x} cy={deflect.hitPoint?.y} r={7} fill={colors.success[500]} opacity={0.6} />
-          <circle cx={deflect.hitPoint?.x} cy={deflect.hitPoint?.y} r={2} fill="#fff" />
+          <circle cx={deflect.hitPoint?.x} cy={deflect.hitPoint?.y} r={2} fill={colors.neutral.white} />
         </g>
       )}
 

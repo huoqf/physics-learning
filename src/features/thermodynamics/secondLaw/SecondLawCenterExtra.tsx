@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { RelationChart } from '@/components/Chart'
 import { SECOND_LAW_COLORS } from '@/theme/physics'
 import { secondLawSharedState } from './sharedState'
+import { colors } from '@/theme/colors'
 
 export default function SecondLawCenterExtra() {
   const { time } = useAnimationStore(
@@ -43,7 +44,7 @@ export default function SecondLawCenterExtra() {
               axis: 'horizontal',
               y: 1.0,
               label: '最大无序度 (S=1.0)',
-              color: '#94a3b8',
+              color: colors.neutral[400],
             },
           ]}
         />

@@ -1,5 +1,6 @@
 import React from 'react'
-import { CANVAS_COLORS, withAlpha } from '@/theme/physics'
+import { CANVAS_COLORS, withAlpha, MECHANICS_APPARATUS_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 
 export interface TimerDisplayProps {
   /** 仪器左上角 X 坐标 */
@@ -65,8 +66,8 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
         width={width}
         height={height}
         rx={5}
-        fill="#334155"
-        stroke="#1E293B"
+        fill={colors.neutral[700]}
+        stroke={colors.neutral[800]}
         strokeWidth={1.5}
       />
 
@@ -74,7 +75,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
       <text
         x={8}
         y={14}
-        fill="#94A3B8"
+        fill={colors.neutral[400]}
         fontSize={9}
         fontWeight="bold"
         fontFamily="sans-serif"
@@ -84,7 +85,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
       <text
         x={width - 8}
         y={14}
-        fill="#38BDF8"
+        fill={MECHANICS_APPARATUS_COLORS.meterTextActive}
         fontSize={9}
         fontWeight="bold"
         fontFamily="sans-serif"
@@ -100,8 +101,8 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
         width={width - 16}
         height={32}
         rx={3}
-        fill="#0F172A"
-        stroke="#1E293B"
+        fill={colors.neutral[900]}
+        stroke={colors.neutral[800]}
         strokeWidth={1}
       />
 
@@ -109,7 +110,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
       <text
         x={width - 24}
         y={42}
-        fill="#1E293B"
+        fill={colors.neutral[800]}
         fontSize={18}
         fontFamily={fontFamily}
         fontWeight="bold"
@@ -122,7 +123,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
       <text
         x={width - 24}
         y={42}
-        fill="#22D3EE"
+        fill={colors.secondary[400]}
         fontSize={18}
         fontFamily={fontFamily}
         fontWeight="bold"
@@ -136,7 +137,7 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
       <text
         x={width - 12}
         y={42}
-        fill="#A5F3FC"
+        fill={colors.secondary[200]}
         fontSize={10}
         fontFamily="sans-serif"
         fontWeight="bold"
@@ -145,13 +146,13 @@ export const TimerDisplay: React.FC<TimerDisplayProps> = ({
       </text>
 
       {/* 底部操控按键示意 */}
-      <circle cx={20} cy={59} r={4} fill="#475569" stroke="#64748B" strokeWidth={0.8} />
-      <text x={28} y={62} fill="#94A3B8" fontSize={7} fontFamily="sans-serif">
+      <circle cx={20} cy={59} r={4} fill={colors.neutral[600]} stroke={colors.neutral[500]} strokeWidth={0.8} />
+      <text x={28} y={62} fill={colors.neutral[400]} fontSize={7} fontFamily="sans-serif">
         RESET
       </text>
 
-      <circle cx={70} cy={59} r={4} fill="#0284C7" stroke="#38BDF8" strokeWidth={0.8} />
-      <text x={78} y={62} fill="#94A3B8" fontSize={7} fontFamily="sans-serif">
+      <circle cx={70} cy={59} r={4} fill={colors.secondary[600]} stroke={MECHANICS_APPARATUS_COLORS.meterTextActive} strokeWidth={0.8} />
+      <text x={78} y={62} fill={colors.neutral[400]} fontSize={7} fontFamily="sans-serif">
         HOLD
       </text>
     </g>

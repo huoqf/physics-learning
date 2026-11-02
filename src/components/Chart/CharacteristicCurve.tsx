@@ -9,6 +9,7 @@ import {
   DASH,
 } from '@/theme/physics'
 import type { ChartSeriesVariant } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 
 export interface CharacteristicCurveSeries {
   /** 曲线点集（物理坐标） */
@@ -119,7 +120,7 @@ function CharacteristicCurveContent({
       {thresholds.map((th, i) => {
         if (th.y < yDomain[0] || th.y > yDomain[1]) return null
         const sy = toSvgY(th.y)
-        const lineCol = th.color || '#ef4444'
+        const lineCol = th.color || colors.danger[500]
         return (
           <g key={i}>
             <line
@@ -150,7 +151,7 @@ function CharacteristicCurveContent({
       <g clipPath={`url(#${clipId})`}>
         {/* 附加对比曲线 */}
         {additionalSeries.map((s, idx) => {
-          const col = s.color || (s.series ? SERIES_MAP[s.series] : '#64748b')
+          const col = s.color || (s.series ? SERIES_MAP[s.series] : colors.neutral[500])
           return (
             <path
               key={idx}
@@ -188,7 +189,7 @@ function CharacteristicCurveContent({
                 x2={cx}
                 y1={toSvgY(yDomain[0])}
                 y2={cy}
-                stroke="#3b82f6"
+                stroke={colors.primary[500]}
                 strokeWidth={1.2}
                 strokeDasharray="3 3"
                 opacity={0.7}
@@ -198,7 +199,7 @@ function CharacteristicCurveContent({
                 x2={cx}
                 y1={cy}
                 y2={cy}
-                stroke="#3b82f6"
+                stroke={colors.primary[500]}
                 strokeWidth={1.2}
                 strokeDasharray="3 3"
                 opacity={0.7}
@@ -209,15 +210,15 @@ function CharacteristicCurveContent({
                 cx={cx}
                 cy={cy}
                 r={6}
-                fill="#3b82f6"
+                fill={colors.primary[500]}
                 opacity={0.3}
               />
               <circle
                 cx={cx}
                 cy={cy}
                 r={3.5}
-                fill="#ffffff"
-                stroke="#3b82f6"
+                fill={colors.neutral.white}
+                stroke={colors.primary[500]}
                 strokeWidth={2}
               />
 
@@ -228,7 +229,7 @@ function CharacteristicCurveContent({
                 width={86}
                 height={22}
                 rx={4}
-                fill="#1e293b"
+                fill={colors.neutral[800]}
                 opacity={0.88}
               />
               <text
@@ -236,7 +237,7 @@ function CharacteristicCurveContent({
                 y={Math.max(cy - 26, plotOrigin.y + 4) + 15}
                 textAnchor="middle"
                 fontSize={font(11)}
-                fill="#ffffff"
+                fill={colors.neutral.white}
                 fontFamily="sans-serif"
               >
                 {`(${currentX.toFixed(1)}, ${currentY.toFixed(1)})`}

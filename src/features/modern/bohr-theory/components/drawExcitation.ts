@@ -1,5 +1,9 @@
-import { CANVAS_COLORS, EM_COLORS, MODERN_COLORS, PHYSICS_COLORS, withAlpha } from '@/theme/physics/colors'
+import { OPTICS_COLORS, CANVAS_COLORS, EM_COLORS, MODERN_COLORS, MODERN_PHYSICS_COLORS, PHYSICS_COLORS, withAlpha } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 import type { CollisionCard, TransitionLine } from './types'
+
+/** 可见光谱带 7 段的归一化位置（与 OPTICS_COLORS.visibleSpectrum 一一对应） */
+const VISIBLE_SPECTRUM_STOPS = [0, 0.2, 0.4, 0.6, 0.75, 0.9, 1] as const
 
 export function drawCollisionCard(ctx: CanvasRenderingContext2D, card: CollisionCard | null, xVal: number, yVal: number) {
   if (!card || !card.show) return
@@ -18,9 +22,9 @@ export function drawCollisionCard(ctx: CanvasRenderingContext2D, card: Collision
   ctx.font = '10px monospace'
   ctx.fillStyle = CANVAS_COLORS.textMuted
   ctx.fillText(`入射能量: ${card.inE.toFixed(2)} eV`, x + 10, y + 29)
-  ctx.fillStyle = '#34d399'
+  ctx.fillStyle = colors.success[400]
   ctx.fillText(`跃迁吸收: ${card.absorbed.toFixed(2)} eV (n=${card.lvl})`, x + 10, y + 42)
-  ctx.fillStyle = '#60a5fa'
+  ctx.fillStyle = colors.primary[400]
   ctx.fillText(`折射余能: ${card.remain.toFixed(2)} eV`, x + 10, y + 54)
   ctx.restore()
 }
@@ -32,10 +36,10 @@ export function drawEnergyLevels(
 ) {
   const lx1 = W * 0.72, lx2 = W * 0.88
   const levels = [
-    { n: 1, e: -13.60, color: '#f87171' },
-    { n: 2, e: -3.40, color: '#fb923c' },
-    { n: 3, e: -1.51, color: '#facc15' },
-    { n: 4, e: -0.85, color: '#60a5fa' },
+    { n: 1, e: -13.60, color: MODERN_PHYSICS_COLORS.levelColors[0] },
+    { n: 2, e: -3.40, color: MODERN_PHYSICS_COLORS.levelColors[1] },
+    { n: 3, e: -1.51, color: MODERN_PHYSICS_COLORS.levelColors[2] },
+    { n: 4, e: -0.85, color: MODERN_PHYSICS_COLORS.levelColors[3] },
   ]
   const topY = H * 0.15, botY = H * 0.65
 
@@ -133,23 +137,17 @@ export function drawSpectrum(ctx: CanvasRenderingContext2D, w: number, h: number
   ctx.clip()
 
   const irGrad = ctx.createLinearGradient(sx, sy, x_vis_start, sy)
-  irGrad.addColorStop(0, '#120404'); irGrad.addColorStop(1, '#1b0808')
+  irGrad.addColorStop(0, MODERN_PHYSICS_COLORS.irBandBg[0]); irGrad.addColorStop(1, MODERN_PHYSICS_COLORS.irBandBg[1])
   ctx.fillStyle = irGrad
   ctx.fillRect(sx, sy, x_vis_start - sx, sh)
 
   const visGrad = ctx.createLinearGradient(x_vis_start, sy, x_uv_start, sy)
-  visGrad.addColorStop(0, 'rgba(239, 68, 68, 0.18)')
-  visGrad.addColorStop(0.2, 'rgba(249, 115, 22, 0.18)')
-  visGrad.addColorStop(0.4, 'rgba(234, 179, 8, 0.18)')
-  visGrad.addColorStop(0.6, 'rgba(34, 197, 94, 0.18)')
-  visGrad.addColorStop(0.75, 'rgba(6, 182, 212, 0.18)')
-  visGrad.addColorStop(0.9, 'rgba(59, 130, 246, 0.18)')
-  visGrad.addColorStop(1, 'rgba(168, 85, 247, 0.18)')
+  VISIBLE_SPECTRUM_STOPS.forEach((pos, i) => visGrad.addColorStop(pos, withAlpha(OPTICS_COLORS.visibleSpectrum[i], 0.18)))
   ctx.fillStyle = visGrad
   ctx.fillRect(x_vis_start, sy, x_uv_start - x_vis_start, sh)
 
   const uvGrad = ctx.createLinearGradient(x_uv_start, sy, sx + sw, sy)
-  uvGrad.addColorStop(0, '#130a24'); uvGrad.addColorStop(1, '#080312')
+  uvGrad.addColorStop(0, MODERN_PHYSICS_COLORS.uvBandBg[0]); uvGrad.addColorStop(1, MODERN_PHYSICS_COLORS.uvBandBg[1])
   ctx.fillStyle = uvGrad
   ctx.fillRect(x_uv_start, sy, sx + sw - x_uv_start, sh)
   ctx.restore()
@@ -178,7 +176,7 @@ export function drawSpectrum(ctx: CanvasRenderingContext2D, w: number, h: number
   ctx.font = '9px sans-serif'
   ctx.textAlign = 'center'
   ctx.fillText('红外区 (不可见)', sx + (x_vis_start - sx) / 2, sy - 6)
-  ctx.fillStyle = '#f43f5e'
+  ctx.fillStyle = colors.danger[500]
   ctx.fillText('可见光区', x_vis_start + (x_uv_start - x_vis_start) / 2, sy - 6)
   ctx.fillStyle = PHYSICS_COLORS.textMuted
   ctx.fillText('紫外区 (不可见)', x_uv_start + (sx + sw - x_uv_start) / 2, sy - 6)
@@ -194,12 +192,12 @@ export function drawSpectrum(ctx: CanvasRenderingContext2D, w: number, h: number
   }
 
   const allPossibleLines = [
-    { e: 0.66, color: '#ff4444', label: '0.66 eV (4→3 红外)' },
-    { e: 1.89, color: '#ef4444', label: '1.89 eV (3→2 红光)' },
-    { e: 2.55, color: '#00f0ff', label: '2.55 eV (4→2 青光)' },
-    { e: 10.20, color: '#818cf8', label: '10.20 eV (2→1 紫外)' },
-    { e: 12.09, color: '#c084fc', label: '12.09 eV (3→1 紫外)' },
-    { e: 12.75, color: '#d8b4fe', label: '12.75 eV (4→1 紫外)' },
+    { e: 0.66, color: MODERN_PHYSICS_COLORS.spectralIr, label: '0.66 eV (4→3 红外)' },
+    { e: 1.89, color: MODERN_PHYSICS_COLORS.spectralRed, label: '1.89 eV (3→2 红光)' },
+    { e: 2.55, color: MODERN_PHYSICS_COLORS.spectralCyan, label: '2.55 eV (4→2 青光)' },
+    { e: 10.20, color: MODERN_PHYSICS_COLORS.spectralUvA, label: '10.20 eV (2→1 紫外)' },
+    { e: 12.09, color: MODERN_PHYSICS_COLORS.spectralUvB, label: '12.09 eV (3→1 紫外)' },
+    { e: 12.75, color: MODERN_PHYSICS_COLORS.spectralUvC, label: '12.75 eV (4→1 紫外)' },
   ]
 
   ctx.save()

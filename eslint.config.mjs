@@ -62,10 +62,14 @@ export default [
   },
 
   // 1-c) 禁止硬编码颜色（铁律1-1）
-  // 作用域仅限页面/组件层；src/theme/ 是颜色 token 的 SSOT，其字面量 hex 属合法定义。
-  // 存量违规由 .eslint-suppressions.json 冻结（B1 基线抑制），新增违规立即报错。
+  // 覆盖 src/ 全域（早期只覆盖 features/ 与 components/，导致 data/ 与 physics/ 成盲区：
+  // 2026-11-02 审计在 data/quantities 里抓到 19 处 hex、physics/ 里抓到 10 处）。
+  // src/theme/ 是颜色 token 的 SSOT，其字面量 hex 属合法定义，排除。
+  // 测试文件测的就是十六进制解析，排除。
+  // 存量违规由 suppressions 基线冻结（`npx eslint . --suppress-all` 维护），新增违规立即报错。
   {
-    files: ['src/features/**/*.{ts,tsx}', 'src/components/**/*.{ts,tsx}'],
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/theme/**', '**/__tests__/**', '**/*.test.*', '**/*.spec.*'],
     rules: {
       'no-restricted-syntax': ['error', {
         selector: 'Literal[value=/^#[0-9A-Fa-f]{3,8}$/]',
@@ -91,7 +95,7 @@ export default [
   },
 
   // 2-b) Node 脚本（ESM .mjs）
-  // ecmaVersion 必须 ≥ 2022：`audit-seg-wrap.mjs` 等质检脚本用顶层 await 起 Playwright 浏览器，
+  // ecmaVersion 必须 ≥ 2022：`probe-seg-wrap.mjs` 等质检脚本用顶层 await 起 Playwright 浏览器，
   // 2020 下解析直接失败（"Cannot use keyword 'await' outside an async function"）。
   {
     files: ['scripts/**/*.mjs'],
@@ -106,7 +110,7 @@ export default [
   // 里面的 `document` / `getComputedStyle` 是合法的浏览器全局，不是 Node 全局。
   // 新增用 Playwright 的质检脚本时，务必把文件名加进这份清单。
   {
-    files: ['scripts/audit-seg-wrap.mjs', 'scripts/check-text-overlap.mjs'],
+    files: ['scripts/probe-seg-wrap.mjs', 'scripts/check-text-overlap.mjs'],
     languageOptions: {
       globals: { ...globals.node, ...globals.browser },
     },

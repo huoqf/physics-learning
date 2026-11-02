@@ -1,6 +1,7 @@
 import React from 'react';
 import { MAGNET_COLORS, PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics';
 import { bezierAt, bezierTangent, FieldArrow } from './magneticFieldUtils';
+import { colors } from '@/theme/colors'
 
 /**
  * 参数化磁感线组件 Props
@@ -14,7 +15,7 @@ interface MagneticFieldProps {
   pole: 1 | -1
   /** 画布总高度 (px)，用于计算垂直边界安全裁剪 */
   canvasHeight: number
-  /** 磁感线颜色，默认 '#4ade80' */
+  /** 磁感线颜色，默认 PHYSICS_COLORS.magneticField */
   lineColor?: string
   /** 是否展示小磁针探针，默认 false */
   showCompasses?: boolean
@@ -174,7 +175,7 @@ export const ParametricMagneticField: React.FC<MagneticFieldProps> = ({
   // 统一的小磁针渲染函数：支持按磁场切线偏转，红端指N，蓝端指S
   const renderCompass = (cx: number, cy: number, angle: number) => {
     const r = 8.5; // 直径 17px
-    const borderStroke = MAGNET_COLORS.bodyStroke || '#737373';
+    const borderStroke = MAGNET_COLORS.bodyStroke || colors.neutral[500];
     return (
       <g transform={`translate(${cx}, ${cy})`} className="magnetic-compass">
         {/* 外表壳 */}

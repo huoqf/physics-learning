@@ -1,6 +1,7 @@
 import React from 'react'
 import { CANVAS_COLORS } from '@/theme/physics'
 import { createRulerTicks, calculateNiceStep } from '@/utils/ruler'
+import { colors } from '@/theme/colors'
 
 export interface LabRulerProps {
   /** 刻度尺左上角 X 坐标 */
@@ -57,11 +58,11 @@ export const LabRuler: React.FC<LabRulerProps> = ({
     styleType === 'transparent'
       ? 'rgba(241, 245, 249, 0.75)'
       : styleType === 'wood'
-      ? '#FDE68A'
-      : '#E2E8F0'
+      ? colors.accent[200]
+      : colors.neutral[200]
 
   const borderStroke =
-    styleType === 'wood' ? '#D97706' : styleType === 'steel' ? '#64748B' : '#94A3B8'
+    styleType === 'wood' ? colors.accent[600] : styleType === 'steel' ? colors.neutral[500] : colors.neutral[400]
 
   return (
     <g
@@ -170,7 +171,7 @@ export const LabRuler: React.FC<LabRulerProps> = ({
             cy={0}
             r={24 * magnifierZoom * 0.5}
             fill="rgba(255, 255, 255, 0.95)"
-            stroke="#374151"
+            stroke={colors.neutral[700]}
             strokeWidth={2}
           />
           {/* 光效反射斜纹 */}
@@ -186,7 +187,7 @@ export const LabRuler: React.FC<LabRulerProps> = ({
             y1={-20}
             x2={0}
             y2={20}
-            stroke="#EF4444"
+            stroke={CANVAS_COLORS.alertRed}
             strokeWidth={1}
             strokeDasharray="2 1"
           />

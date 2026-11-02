@@ -1,5 +1,6 @@
 import React from 'react'
 import { PhysicsVectorArrow } from '@/components/Physics'
+import { PHYSICS_COLORS } from '@/theme/physics'
 import type { AdvancedAmperePhysicsResult } from '../ampereForceModel'
 import type { SceneScale } from '@/scene'
 import type { Point } from './inclineSceneUtils'
@@ -75,7 +76,7 @@ export const InclinedForceVectors: React.FC<InclinedForceVectorsProps> = ({
             y1={rodBack.y}
             x2={rodBack.x - slopeUnit.x * motionSign * 18}
             y2={rodBack.y - slopeUnit.y * motionSign * 18}
-            stroke="#3B82F6"
+            stroke={PHYSICS_COLORS.velocity}
             strokeWidth="0.9"
             strokeDasharray="2,3"
           />
@@ -84,7 +85,7 @@ export const InclinedForceVectors: React.FC<InclinedForceVectorsProps> = ({
             y1={rodFront.y}
             x2={rodFront.x - slopeUnit.x * motionSign * 18}
             y2={rodFront.y - slopeUnit.y * motionSign * 18}
-            stroke="#3B82F6"
+            stroke={PHYSICS_COLORS.velocity}
             strokeWidth="0.9"
             strokeDasharray="2,3"
           />
@@ -136,7 +137,7 @@ export const InclinedForceVectors: React.FC<InclinedForceVectorsProps> = ({
           sceneScale={localScale}
           strokeWidth={1.8}
           label={Math.abs(physicsResult.f) >= 0.98 * (mu * physicsResult.N) ? 'f (临界)' : 'f'}
-          color={Math.abs(physicsResult.f) >= 0.98 * (mu * physicsResult.N) ? '#D97706' : undefined}
+          color={Math.abs(physicsResult.f) >= 0.98 * (mu * physicsResult.N) ? PHYSICS_COLORS.frictionStatic : undefined}
           glow={Math.abs(physicsResult.f) >= 0.98 * (mu * physicsResult.N)}
           font={font}
         />
@@ -175,7 +176,7 @@ export const InclinedForceVectors: React.FC<InclinedForceVectorsProps> = ({
             y: -slopeUnit.y * Math.sign(physicsResult.R_parallel) * 35,
           }}
           type="tension"
-          color="#EA580C"
+          color={PHYSICS_COLORS.forceNet}
           sceneScale={localScale}
           strokeWidth={1.6}
           dashed

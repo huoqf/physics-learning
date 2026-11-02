@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { PHYSICS_COLORS, STROKE, CANVAS_STYLE } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_COLORS, STROKE, CANVAS_STYLE } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { Block, PhysicsGround, Spring } from '@/components/Physics'
 import { computeVerticalSpringForces } from '@/physics/oscillation'
@@ -93,40 +93,40 @@ export function VerticalSpringScene({
       {/* 右侧横向沙摆传送带 */}
       {showGraph === 1 && (
         <g>
-          <rect x={vGraphX} y={vGraphY} width={vGraphW} height={vGraphH} rx={12} fill="#e2e8f0" stroke="#cbd5e1" strokeWidth={2} />
+          <rect x={vGraphX} y={vGraphY} width={vGraphW} height={vGraphH} rx={12} fill={colors.neutral[200]} stroke={colors.neutral[300]} strokeWidth={2} />
           <line
             x1={vGraphX + 6} y1={vGraphY + 8}
             x2={vGraphX + vGraphW - 6} y2={vGraphY + 8}
-            stroke="#94a3b8" strokeWidth={2} strokeDasharray="6 6" strokeDashoffset={vx * time}
+            stroke={colors.neutral[400]} strokeWidth={2} strokeDasharray="6 6" strokeDashoffset={vx * time}
           />
           <line
             x1={vGraphX + 6} y1={vGraphY + vGraphH - 8}
             x2={vGraphX + vGraphW - 6} y2={vGraphY + vGraphH - 8}
-            stroke="#94a3b8" strokeWidth={2} strokeDasharray="6 6" strokeDashoffset={vx * time}
+            stroke={colors.neutral[400]} strokeWidth={2} strokeDasharray="6 6" strokeDashoffset={vx * time}
           />
           {Array.from({ length: 10 }).map((_, i) => {
             const lx = vGraphX + ((vx * time + i * (vGraphW / 10)) % vGraphW)
             return (
-              <line key={i} x1={lx} y1={vGraphY + 12} x2={lx} y2={vGraphY + vGraphH - 12} stroke="#cbd5e1" strokeWidth={1} opacity={0.5} />
+              <line key={i} x1={lx} y1={vGraphY + 12} x2={lx} y2={vGraphY + vGraphH - 12} stroke={colors.neutral[300]} strokeWidth={1} opacity={0.5} />
             )
           })}
-          <circle cx={vGraphX + vGraphW / 2} cy={vGraphY + 22} r={12} fill="#94a3b8" />
+          <circle cx={vGraphX + vGraphW / 2} cy={vGraphY + 22} r={12} fill={colors.neutral[400]} />
           <line
             x1={vGraphX + vGraphW / 2} y1={vGraphY + 22 - 12}
             x2={vGraphX + vGraphW / 2} y2={vGraphY + 22 + 12}
-            stroke="#f1f5f9" strokeWidth={2}
+            stroke={colors.neutral[100]} strokeWidth={2}
             transform={`rotate(${(vx * time * 2) % 360}, ${vGraphX + vGraphW / 2}, ${vGraphY + 22})`}
           />
-          <circle cx={vGraphX + vGraphW / 2} cy={vGraphY + vGraphH - 22} r={12} fill="#94a3b8" />
+          <circle cx={vGraphX + vGraphW / 2} cy={vGraphY + vGraphH - 22} r={12} fill={colors.neutral[400]} />
           <line
             x1={vGraphX + vGraphW / 2} y1={vGraphY + vGraphH - 22 - 12}
             x2={vGraphX + vGraphW / 2} y2={vGraphY + vGraphH - 22 + 12}
-            stroke="#f1f5f9" strokeWidth={2}
+            stroke={colors.neutral[100]} strokeWidth={2}
             transform={`rotate(${(vx * time * 2) % 360}, ${vGraphX + vGraphW / 2}, ${vGraphY + vGraphH - 22})`}
           />
-          <path d={verticalWavePath} fill="none" stroke="#8b5cf6" strokeWidth={3.5} strokeLinecap="round" opacity={0.8} />
-          <line x1={axisX} y1={massCenterY} x2={vGraphX} y2={massCenterY} stroke="#a78bfa" strokeWidth={1.5} strokeDasharray="4 4" />
-          <circle cx={vGraphX} cy={massCenterY} r={4.5} fill="#7c3aed" />
+          <path d={verticalWavePath} fill="none" stroke={PHYSICS_COLORS.velocity} strokeWidth={3.5} strokeLinecap="round" opacity={0.8} />
+          <line x1={axisX} y1={massCenterY} x2={vGraphX} y2={massCenterY} stroke={CANVAS_COLORS.trackHistoryAlt} strokeWidth={1.5} strokeDasharray="4 4" />
+          <circle cx={vGraphX} cy={massCenterY} r={4.5} fill={PHYSICS_COLORS.velocity} />
         </g>
       )}
 
@@ -134,8 +134,8 @@ export function VerticalSpringScene({
       <line x1={axisX} y1={sceneY0} x2={axisX} y2={sceneY1} stroke={colors.neutral[300]} strokeWidth={STROKE.objectThin} />
 
       {/* 弹簧原长线 */}
-      <line x1={axisX - 45} y1={rawLengthY} x2={axisX + 45} y2={rawLengthY} stroke="#f97316" strokeWidth={1} strokeDasharray="3 3" />
-      <text x={axisX - 52} y={rawLengthY + 4} fontSize={smallFs} fill="#ea580c" fontFamily={CANVAS_STYLE.FONT.family} textAnchor="end">
+      <line x1={axisX - 45} y1={rawLengthY} x2={axisX + 45} y2={rawLengthY} stroke={CANVAS_COLORS.referencePoint} strokeWidth={1} strokeDasharray="3 3" />
+      <text x={axisX - 52} y={rawLengthY + 4} fontSize={smallFs} fill={CANVAS_COLORS.referencePoint} fontFamily={CANVAS_STYLE.FONT.family} textAnchor="end">
         原长位置 L₀
       </text>
 
@@ -163,8 +163,8 @@ export function VerticalSpringScene({
       {showVectors && (
         <g>
           {renderSceneVector(axisX - massSize * 0.65, massCenterY, 0, 1, vForces.gravity * forceScale, PHYSICS_COLORS.gravity, 'force', font, `G = ${vForces.gravity.toFixed(1)}N`)}
-          {renderSceneVector(axisX - massSize * 0.65, massCenterY, 0, -1, Math.abs(vForces.springForce) * forceScale, '#3b82f6', 'force', font, `F_弹 = ${Math.abs(vForces.springForce).toFixed(1)}N`)}
-          {renderSceneVector(axisX + massSize * 0.65, massCenterY, 0, Math.sign(vForces.netForce), Math.abs(vForces.netForce) * forceScale, '#ef4444', 'force', font, `F_回 = ${Math.abs(vForces.netForce).toFixed(1)}N`)}
+          {renderSceneVector(axisX - massSize * 0.65, massCenterY, 0, -1, Math.abs(vForces.springForce) * forceScale, PHYSICS_COLORS.elasticForce, 'force', font, `F_弹 = ${Math.abs(vForces.springForce).toFixed(1)}N`)}
+          {renderSceneVector(axisX + massSize * 0.65, massCenterY, 0, Math.sign(vForces.netForce), Math.abs(vForces.netForce) * forceScale, PHYSICS_COLORS.forceNet, 'force', font, `F_回 = ${Math.abs(vForces.netForce).toFixed(1)}N`)}
         </g>
       )}
     </g>

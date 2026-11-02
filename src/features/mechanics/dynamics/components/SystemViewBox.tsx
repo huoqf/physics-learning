@@ -1,5 +1,6 @@
 import { worldToDesign } from '@/scene'
 import type { SceneScale } from '@/scene/SceneScale'
+import { colors } from '@/theme/colors'
 
 interface SystemViewBoxProps {
   sceneScale: SceneScale
@@ -33,7 +34,7 @@ export function SystemViewBox({
         width={rb.px - lt.px}
         height={rb.py - lt.py}
         fill="rgba(34, 197, 94, 0.05)"
-        stroke="#22c55e"
+        stroke={colors.success[500]}
         strokeWidth={2}
         strokeDasharray="5,4"
         rx={6}
@@ -43,7 +44,7 @@ export function SystemViewBox({
         y={cy - 12}
         width={120}
         height={20}
-        fill="#22c55e"
+        fill={colors.success[500]}
         rx={4}
       />
       <text

@@ -1,3 +1,4 @@
+import { colors } from '@/theme/colors'
 import React, { useMemo } from 'react'
 import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { PhysicsVectorArrow, MagneticFieldGrid } from '@/components/Physics'
@@ -122,9 +123,9 @@ export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
         {/* SVG 渐变定义：营造科技感力场区 */}
         <defs>
           <linearGradient id="magneticGlowGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#10B981" stopOpacity="0.09" />
-            <stop offset="50%" stopColor="#10B981" stopOpacity="0.04" />
-            <stop offset="100%" stopColor="#10B981" stopOpacity="0.09" />
+            <stop offset="0%" stopColor={PHYSICS_COLORS.magneticField} stopOpacity="0.09" />
+            <stop offset="50%" stopColor={PHYSICS_COLORS.magneticField} stopOpacity="0.04" />
+            <stop offset="100%" stopColor={PHYSICS_COLORS.magneticField} stopOpacity="0.09" />
           </linearGradient>
         </defs>
 
@@ -215,7 +216,7 @@ export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
             y1={LOOP_TOP_Y}
             x2={cuttingRodPx}
             y2={LOOP_BOTTOM_Y}
-            stroke="#FBBF24" // 金黄色亮线表示切割生电
+            stroke={PHYSICS_COLORS.emf} // 金黄色亮线表示切割生电
             strokeWidth={3.5}
             strokeLinecap="round"
           />
@@ -225,14 +226,14 @@ export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
         {isCutting && (
           <g>
             {/* 上端正极 (+) */}
-            <circle cx={cuttingRodPx} cy={LOOP_TOP_Y + 8} r={POLARITY_CIRCLE_R} fill="#EF4444" stroke="#FFF" strokeWidth={1} />
-            <text x={cuttingRodPx} y={LOOP_TOP_Y + 8} fontSize={10} fontWeight="extrabold" fill="#FFF" textAnchor="middle" dominantBaseline="middle" style={{ userSelect: 'none' }}>
+            <circle cx={cuttingRodPx} cy={LOOP_TOP_Y + 8} r={POLARITY_CIRCLE_R} fill={PHYSICS_COLORS.positiveCharge} stroke={colors.neutral.white} strokeWidth={1} />
+            <text x={cuttingRodPx} y={LOOP_TOP_Y + 8} fontSize={10} fontWeight="extrabold" fill={colors.neutral.white} textAnchor="middle" dominantBaseline="middle" style={{ userSelect: 'none' }}>
               +
             </text>
 
             {/* 下端负极 (-) */}
-            <circle cx={cuttingRodPx} cy={LOOP_BOTTOM_Y - 8} r={POLARITY_CIRCLE_R} fill="#3B82F6" stroke="#FFF" strokeWidth={1} />
-            <text x={cuttingRodPx} y={LOOP_BOTTOM_Y - 8} fontSize={10} fontWeight="extrabold" fill="#FFF" textAnchor="middle" dominantBaseline="middle" style={{ userSelect: 'none' }}>
+            <circle cx={cuttingRodPx} cy={LOOP_BOTTOM_Y - 8} r={POLARITY_CIRCLE_R} fill={PHYSICS_COLORS.negativeCharge} stroke={colors.neutral.white} strokeWidth={1} />
+            <text x={cuttingRodPx} y={LOOP_BOTTOM_Y - 8} fontSize={10} fontWeight="extrabold" fill={colors.neutral.white} textAnchor="middle" dominantBaseline="middle" style={{ userSelect: 'none' }}>
               -
             </text>
           </g>
@@ -251,7 +252,7 @@ export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
               cols={3}
               opacity={0.65}
             />
-            <text x={loopCenterPx} y={loopCenterY + INDUCED_LABEL_OFFSET_Y} fontSize={font(10)} fontWeight="bold" fill="#0284C7" textAnchor="middle" style={{ userSelect: 'none' }}>
+            <text x={loopCenterPx} y={loopCenterY + INDUCED_LABEL_OFFSET_Y} fontSize={font(10)} fontWeight="bold" fill={PHYSICS_COLORS.magneticField} textAnchor="middle" style={{ userSelect: 'none' }}>
               B_感 ⊙ 阻碍增加
               <animate attributeName="opacity" values="0.6;0.9;0.6" dur="1.5s" repeatCount="indefinite" />
             </text>
@@ -269,7 +270,7 @@ export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
               cols={3}
               opacity={0.65}
             />
-            <text x={loopCenterPx} y={loopCenterY + INDUCED_LABEL_OFFSET_Y} fontSize={font(10)} fontWeight="bold" fill="#B45309" textAnchor="middle" style={{ userSelect: 'none' }}>
+            <text x={loopCenterPx} y={loopCenterY + INDUCED_LABEL_OFFSET_Y} fontSize={font(10)} fontWeight="bold" fill={PHYSICS_COLORS.magneticField} textAnchor="middle" style={{ userSelect: 'none' }}>
               B_感 ⊗ 阻碍减少
               <animate attributeName="opacity" values="0.6;0.9;0.6" dur="1.5s" repeatCount="indefinite" />
             </text>

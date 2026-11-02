@@ -24,7 +24,7 @@ interface CoupledCoilFieldProps {
   current: number
   /** 画布总高度 (px)，用于边界安全裁剪 */
   canvasHeight: number
-  /** 磁感线颜色，默认 '#10B981' */
+  /** 磁感线颜色，默认 PHYSICS_COLORS.magneticField */
   lineColor?: string
 }
 

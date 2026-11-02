@@ -80,7 +80,7 @@ export default function SimpleHarmonicAnimation() {
 
         {/* ── 统一部分 ────────────────────────────────────────────────────── */}
         <g fontFamily={CANVAS_STYLE.FONT.family} fontSize={smallFs} transform={`translate(0, 0)`}>
-          <rect x={sceneX0} y={vp.visibleY + 10} width={260} height={26} rx={4} fill="#f8fafc" stroke="#e2e8f0" strokeWidth={1} />
+          <rect x={sceneX0} y={vp.visibleY + 10} width={260} height={26} rx={4} fill={colors.neutral[50]} stroke={colors.neutral[200]} strokeWidth={1} />
           <circle cx={sceneX0 + 12} cy={vp.visibleY + 23} r={4.5} fill={PHYSICS_COLORS.displacement} />
           <text x={sceneX0 + 22} y={vp.visibleY + 27} fill={colors.neutral[600]}>
             位移 x/y

@@ -27,8 +27,9 @@ export interface BasePhysicsChartProps {
   xLabel: string;
   /**
    * Y 轴标签文本。
+   * 省略时只画刻度与网格、不画轴名（内嵌小图或语义自明时使用）。
    */
-  yLabel: string;
+  yLabel?: string;
   /**
    * 图表标题（显示在图表上方）。
    */

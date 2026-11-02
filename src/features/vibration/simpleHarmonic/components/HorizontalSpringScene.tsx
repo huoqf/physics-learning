@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { PHYSICS_COLORS, STROKE, CANVAS_STYLE } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_COLORS, STROKE, CANVAS_STYLE } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { Block, PhysicsGround, Spring } from '@/components/Physics'
 import type { ViewportInfo } from '@/utils/useViewport'
@@ -96,40 +96,40 @@ export function HorizontalSpringScene({
       {/* 水平传送带 (沙摆模拟) */}
       {showGraph === 1 && (
         <g>
-          <rect x={hGraphX} y={hGraphY} width={hGraphW} height={hGraphH} rx={12} fill="#e2e8f0" stroke="#cbd5e1" strokeWidth={2} />
+          <rect x={hGraphX} y={hGraphY} width={hGraphW} height={hGraphH} rx={12} fill={colors.neutral[200]} stroke={colors.neutral[300]} strokeWidth={2} />
           <line
             x1={hGraphX + 8} y1={hGraphY + 6}
             x2={hGraphX + 8} y2={hGraphY + hGraphH - 6}
-            stroke="#94a3b8" strokeWidth={2} strokeDasharray="6 6" strokeDashoffset={-vy * time}
+            stroke={colors.neutral[400]} strokeWidth={2} strokeDasharray="6 6" strokeDashoffset={-vy * time}
           />
           <line
             x1={hGraphX + hGraphW - 8} y1={hGraphY + 6}
             x2={hGraphX + hGraphW - 8} y2={hGraphY + hGraphH - 6}
-            stroke="#94a3b8" strokeWidth={2} strokeDasharray="6 6" strokeDashoffset={-vy * time}
+            stroke={colors.neutral[400]} strokeWidth={2} strokeDasharray="6 6" strokeDashoffset={-vy * time}
           />
           {Array.from({ length: 8 }).map((_, i) => {
             const ly = hGraphY + ((vy * time + i * (hGraphH / 8)) % hGraphH)
             return (
-              <line key={i} x1={hGraphX + 12} y1={ly} x2={hGraphX + hGraphW - 12} y2={ly} stroke="#cbd5e1" strokeWidth={1} opacity={0.5} />
+              <line key={i} x1={hGraphX + 12} y1={ly} x2={hGraphX + hGraphW - 12} y2={ly} stroke={colors.neutral[300]} strokeWidth={1} opacity={0.5} />
             )
           })}
-          <circle cx={hGraphX + 22} cy={hGraphY + hGraphH / 2} r={12} fill="#94a3b8" />
+          <circle cx={hGraphX + 22} cy={hGraphY + hGraphH / 2} r={12} fill={colors.neutral[400]} />
           <line
             x1={hGraphX + 22 - 12} y1={hGraphY + hGraphH / 2}
             x2={hGraphX + 22 + 12} y2={hGraphY + hGraphH / 2}
-            stroke="#f1f5f9" strokeWidth={2}
+            stroke={colors.neutral[100]} strokeWidth={2}
             transform={`rotate(${(vy * time * 2) % 360}, ${hGraphX + 22}, ${hGraphY + hGraphH / 2})`}
           />
-          <circle cx={hGraphX + hGraphW - 22} cy={hGraphY + hGraphH / 2} r={12} fill="#94a3b8" />
+          <circle cx={hGraphX + hGraphW - 22} cy={hGraphY + hGraphH / 2} r={12} fill={colors.neutral[400]} />
           <line
             x1={hGraphX + hGraphW - 22 - 12} y1={hGraphY + hGraphH / 2}
             x2={hGraphX + hGraphW - 22 + 12} y2={hGraphY + hGraphH / 2}
-            stroke="#f1f5f9" strokeWidth={2}
+            stroke={colors.neutral[100]} strokeWidth={2}
             transform={`rotate(${(vy * time * 2) % 360}, ${hGraphX + hGraphW - 22}, ${hGraphY + hGraphH / 2})`}
           />
-          <path d={horizontalWavePath} fill="none" stroke="#8b5cf6" strokeWidth={3.5} strokeLinecap="round" opacity={0.8} />
-          <line x1={massCenterX} y1={axisY} x2={massCenterX} y2={hGraphY} stroke="#a78bfa" strokeWidth={1.5} strokeDasharray="4 4" />
-          <circle cx={massCenterX} cy={hGraphY} r={4.5} fill="#7c3aed" />
+          <path d={horizontalWavePath} fill="none" stroke={PHYSICS_COLORS.velocity} strokeWidth={3.5} strokeLinecap="round" opacity={0.8} />
+          <line x1={massCenterX} y1={axisY} x2={massCenterX} y2={hGraphY} stroke={CANVAS_COLORS.trackHistoryAlt} strokeWidth={1.5} strokeDasharray="4 4" />
+          <circle cx={massCenterX} cy={hGraphY} r={4.5} fill={PHYSICS_COLORS.velocity} />
         </g>
       )}
 
@@ -192,7 +192,7 @@ export function HorizontalSpringScene({
           <line
             x1={pointX - rcCx + equilibriumX} y1={rcCy}
             x2={massCenterX} y2={axisY}
-            stroke="#10b981" strokeWidth={1.2} strokeDasharray="5 5"
+            stroke={CANVAS_COLORS.trackHistoryAlt} strokeWidth={1.2} strokeDasharray="5 5"
           />
         </g>
       )}

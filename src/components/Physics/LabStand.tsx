@@ -1,5 +1,6 @@
 import React from 'react'
 import { CANVAS_COLORS, withAlpha } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 
 export interface LabStandProps {
   /** 铁架台底座中心 X 坐标 */
@@ -57,8 +58,8 @@ export const LabStand: React.FC<LabStandProps> = ({
           L ${baseWidth / 2} 0
           Z
         `}
-        fill="#334155"
-        stroke="#1E293B"
+        fill={colors.neutral[700]}
+        stroke={colors.neutral[800]}
         strokeWidth={1.5}
       />
 
@@ -68,8 +69,8 @@ export const LabStand: React.FC<LabStandProps> = ({
         y={-height}
         width={rodWidth}
         height={height - baseHeight}
-        fill="#94A3B8"
-        stroke="#475569"
+        fill={colors.neutral[400]}
+        stroke={colors.neutral[600]}
         strokeWidth={1}
       />
       {/* 金属高光 */}
@@ -78,7 +79,7 @@ export const LabStand: React.FC<LabStandProps> = ({
         y1={-height + 4}
         x2={-rodWidth / 2 + 2}
         y2={-baseHeight - 2}
-        stroke="#F1F5F9"
+        stroke={colors.neutral[100]}
         strokeWidth={1}
         opacity={0.8}
       />
@@ -87,24 +88,24 @@ export const LabStand: React.FC<LabStandProps> = ({
       {attachment !== 'none' && (
         <g transform={`translate(0, ${-clampY})`}>
           {/* 万向紧固螺母双顶丝 */}
-          <rect x={-10} y={-10} width={20} height={20} rx={3} fill="#475569" stroke="#1E293B" strokeWidth={1} />
-          <circle cx={-12} cy={0} r={4} fill="#64748B" />
-          <circle cx={0} cy={-12} r={4} fill="#64748B" />
+          <rect x={-10} y={-10} width={20} height={20} rx={3} fill={colors.neutral[600]} stroke={colors.neutral[800]} strokeWidth={1} />
+          <circle cx={-12} cy={0} r={4} fill={colors.neutral[500]} />
+          <circle cx={0} cy={-12} r={4} fill={colors.neutral[500]} />
 
           {attachment === 'clamp' ? (
             /* 铁夹伸出臂与双爪 */
             <g className="stand-clamp">
-              <rect x={10} y={-4} width={40} height={8} fill="#64748B" stroke="#334155" />
+              <rect x={10} y={-4} width={40} height={8} fill={colors.neutral[500]} stroke={colors.neutral[700]} />
               {/* 上夹爪 */}
-              <path d="M 50 -4 Q 65 -16 80 -12" fill="none" stroke="#475569" strokeWidth={3} strokeLinecap="round" />
+              <path d="M 50 -4 Q 65 -16 80 -12" fill="none" stroke={colors.neutral[600]} strokeWidth={3} strokeLinecap="round" />
               {/* 下夹爪 */}
-              <path d="M 50 4 Q 65 16 80 12" fill="none" stroke="#475569" strokeWidth={3} strokeLinecap="round" />
+              <path d="M 50 4 Q 65 16 80 12" fill="none" stroke={colors.neutral[600]} strokeWidth={3} strokeLinecap="round" />
             </g>
           ) : (
             /* 铁圈 (用于托举烧杯/网) */
             <g className="stand-ring">
-              <rect x={10} y={-3} width={30} height={6} fill="#64748B" />
-              <ellipse cx={60} cy={0} rx={25} ry={8} fill="none" stroke="#334155" strokeWidth={3} />
+              <rect x={10} y={-3} width={30} height={6} fill={colors.neutral[500]} />
+              <ellipse cx={60} cy={0} rx={25} ry={8} fill="none" stroke={colors.neutral[700]} strokeWidth={3} />
             </g>
           )}
         </g>

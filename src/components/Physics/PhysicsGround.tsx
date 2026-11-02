@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { useUniqueSvgId } from '@/hooks';
-import { CANVAS_STYLE, SCENE_COLORS, CHART_COLORS, PHYSICS_COLORS } from '@/theme/physics';
+import { CANVAS_STYLE, SCENE_COLORS, CHART_COLORS, PHYSICS_COLORS, SURFACE_COLORS } from '@/theme/physics';
 import { colors } from '@/theme/colors';
 import { calculateNiceStep } from '@/utils/ruler';
 import { sparsifyTickLabels } from '@/utils/tickLayout';
@@ -293,8 +293,8 @@ export function PhysicsGround({
           {/* 光滑冰蓝渐变 */}
           {isSmooth && (
             <linearGradient id={`smooth-glow-${hatchId}`} x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.0" />
+              <stop offset="0%" stopColor={SURFACE_COLORS.smoothGlow} stopOpacity="0.4" />
+              <stop offset="100%" stopColor={SURFACE_COLORS.smoothGlow} stopOpacity="0.0" />
             </linearGradient>
           )}
         </defs>

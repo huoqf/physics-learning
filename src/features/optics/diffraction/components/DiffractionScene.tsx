@@ -1,10 +1,10 @@
 import { useMemo } from 'react'
-import { OPTICS_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
+import { OPTICS_COLORS, CANVAS_COLORS, withAlpha, DARK_SCREEN_COLORS } from '@/theme/physics'
 import { hexToRgb } from '@/utils'
 import type { DiffractionPhysicsResult } from '../hooks/useDiffractionPhysics'
 
 /** 暗色光屏背景 */
-const DARK_SCREEN_BG = '#000000'
+const DARK_SCREEN_BG = DARK_SCREEN_COLORS.pitch
 
 interface DiffractionSceneProps {
   physics: DiffractionPhysicsResult

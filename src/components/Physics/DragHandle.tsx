@@ -7,7 +7,7 @@
  *
  * @example
  * ```tsx
- * <DragHandle cx={100} cy={200} color="#3b82f6"
+ * <DragHandle cx={100} cy={200} color={colors.primary[500]}
  *   onPointerDown={(e) => {
  *     e.preventDefault()
  *     setActiveDrag('f1')

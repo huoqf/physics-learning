@@ -29,10 +29,10 @@ import { colors } from '@/theme/colors'
 
 import { RelationChart } from '@/components/Chart'
 import { Button } from '@/components/UI'
-import { useSceneScale } from '@/hooks'
+import { useSceneScale } from '@/hooks'
+import { COULOMB_CONSTANT } from '@/physics/constants'
 
 /** 静电力常量 k = 9×10⁹ N·m²/C² */
-const COULOMB_K = 9e9
 
 /**
  * 基础模式布局配置常量
@@ -122,7 +122,7 @@ export default function BasicMode({
   const q1SI = Math.abs(q1 * 1e-6)
   const q2SI = Math.abs(q2 * 1e-6)
   const rSI = (r || 0.01) * 0.01
-  const { F } = calculateCoulombForce(COULOMB_K, q1SI, q2SI, rSI)
+  const { F } = calculateCoulombForce(COULOMB_CONSTANT, q1SI, q2SI, rSI)
 
   const attractive = q1 * q2 < 0
   const w = canvasSize.width
@@ -171,7 +171,7 @@ export default function BasicMode({
     const { rMin, rMax, rStep } = LAYOUT.frDataRange
     for (let ri = rMin; ri <= rMax + 1e-9; ri += rStep) {
       const riSI = ri * 0.01
-      const { F: Fi } = calculateCoulombForce(COULOMB_K, q1SI, q2SI, riSI)
+      const { F: Fi } = calculateCoulombForce(COULOMB_CONSTANT, q1SI, q2SI, riSI)
       pts.push({ x: ri, y: Fi })
     }
     return pts

@@ -7,9 +7,9 @@ import {
   isPhotoelectricEffect,
   intensityToSaturationCurrent,
   calculatePhotocurrent,
-  frequencyToColor,
   calculateComptonWavelengthShift,
 } from '@/physics/photoelectric'
+import { frequencyToColor } from '@/theme/physics'
 
 export interface PhotoelectricState {
   frequency: number

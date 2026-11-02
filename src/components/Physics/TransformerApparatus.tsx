@@ -1,6 +1,7 @@
 import React, { useMemo, CSSProperties } from 'react'
 import { useUniqueSvgId } from '@/hooks'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 
 export interface TransformerApparatusProps {
   /** 中心 x 坐标 */
@@ -173,7 +174,7 @@ export const TransformerApparatus: React.FC<TransformerApparatusProps> = ({
           y={coreTop}
           width={width}
           height={coreH}
-          fill={PHYSICS_COLORS.objectFillNeutral || '#E2E8F0'}
+          fill={PHYSICS_COLORS.objectFillNeutral || colors.neutral[200]}
           stroke={PHYSICS_COLORS.objectStroke}
           strokeWidth={CANVAS_STYLE.stroke.objectLine}
           rx={px(4)}

@@ -2,7 +2,7 @@ import { SCENE_COLORS, ENERGY_COLORS, THERMO_COLORS, FIRST_LAW_COLORS, STROKE, F
 import { PhysicsVectorArrow } from '@/components/Physics'
 import { worldToDesign } from '@/scene'
 import type { SceneScale } from '@/scene'
-import { temperatureToColor, deltaUToBgColor } from '@/physics/firstLaw'
+import { temperatureColor, deltaUToBgColor } from '@/theme/physics'
 import type { GasParticle, HeatParticle } from '@/physics/firstLaw'
 
 // ─── Scene props ───────────────────────────────────────────────────────────
@@ -171,7 +171,7 @@ export function FirstLawScene({
       {particlesRef.current.map((p, i) => {
         if (p.y > pistonY - 0.1) return null
         const dPos = worldToDesign(p.x, p.y, sceneScale)
-        const pColor = temperatureToColor(T)
+        const pColor = temperatureColor(T)
         return (
           <circle
             key={`gas-${i}`}

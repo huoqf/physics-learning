@@ -202,7 +202,7 @@ export const MultimeterCenterExtra: FC = () => {
 
   return (
     <div ref={containerRef} className="w-full h-full flex gap-3 px-2 py-2 border-b border-neutral-200 bg-neutral-100/50">
-      <Card className="flex-1 p-3 flex flex-col justify-center min-w-0 relative bg-[#fdfbf6] text-neutral-800 rounded-xl shadow-[inset_0_2px_8px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.05)] border border-neutral-300/80 overflow-hidden animate-fade-in">
+      <Card style={{ backgroundColor: ELECTRICAL_APPARATUS_COLORS.dialPaperBg }} className="flex-1 p-3 flex flex-col justify-center min-w-0 relative text-neutral-800 rounded-xl shadow-[inset_0_2px_8px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.05)] border border-neutral-300/80 overflow-hidden animate-fade-in">
         {/* 表盘标题与装饰 */}
         <span className="absolute top-2.5 left-4 text-[11px] font-bold text-neutral-500 tracking-wider">
           万用表多重模拟刻度盘 (满偏电流 Ig = 1.0mA)

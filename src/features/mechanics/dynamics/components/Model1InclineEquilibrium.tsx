@@ -237,7 +237,7 @@ export function Model1InclineEquilibrium({
               vector={{ x: model1.f_slope * Math.cos(thetaRad), y: -model1.f_slope * Math.sin(thetaRad) }}
               type="friction"
               sceneScale={sceneScale}
-              color="#f43f5e"
+              color={PHYSICS_COLORS.friction}
               label={`f' = ${model1.f_slope.toFixed(1)}N`}
               font={font}
             />

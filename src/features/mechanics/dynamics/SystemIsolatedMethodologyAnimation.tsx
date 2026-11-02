@@ -115,7 +115,6 @@ export default function SystemIsolatedMethodologyAnimation() {
             PHYSICS_COLORS.friction,
             PHYSICS_COLORS.tension,
             PHYSICS_COLORS.acceleration,
-            '#f43f5e'
           ]} />
         </defs>
       </AnimationSvgCanvas>

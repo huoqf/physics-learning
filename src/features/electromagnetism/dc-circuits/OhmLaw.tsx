@@ -53,7 +53,7 @@ export default function OhmLaw() {
       <defs>
         {/* 虚线框阴影 */}
         <filter id="box-shadow-ohm" x="-10%" y="-10%" width="120%" height="120%">
-          <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#000" floodOpacity="0.06" />
+          <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor={CANVAS_COLORS.black} floodOpacity="0.06" />
         </filter>
       </defs>
 

@@ -2,8 +2,9 @@ import { useEffect } from 'react'
 import { useAnimationViewport } from '@/hooks'
 import { useCanvasViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { MODERN_COLORS, EM_COLORS, KINEMATICS_COLORS, withAlpha } from '@/theme/physics'
+import { MODERN_COLORS, EM_COLORS, KINEMATICS_COLORS, withAlpha, PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import type { Photoelectron, PhotonParticle } from '../hooks/usePhotoelectricSimulation'
+import { colors } from '@/theme/colors'
 
 interface PhototubeCanvasProps {
   photoelectrons: Photoelectron[]
@@ -53,15 +54,15 @@ export default function PhototubeCanvas({
 
     // ─── 1. 光电管外壳（玻璃壳） ───
     ctx.save()
-    ctx.strokeStyle = withAlpha('#D4D4D8', 0.6)
+    ctx.strokeStyle = withAlpha(colors.neutral[300], 0.6)
     ctx.lineWidth = 2.5
-    ctx.fillStyle = withAlpha('#F4F4F5', 0.25)
+    ctx.fillStyle = withAlpha(colors.neutral[100], 0.25)
     ctx.beginPath()
     ctx.roundRect(tubeLeft, cy - PLATE_HALF_H - TUBE_PADDING, tubeWidth, PLATE_HALF_H * 2 + TUBE_PADDING * 2, TUBE_CORNER_R)
     ctx.fill()
     ctx.stroke()
     // 高光
-    ctx.strokeStyle = withAlpha('#FFFFFF', 0.7)
+    ctx.strokeStyle = withAlpha(colors.neutral.white, 0.7)
     ctx.lineWidth = 1
     ctx.beginPath()
     ctx.moveTo(tubeLeft + 15, cy - PLATE_HALF_H - TUBE_PADDING + 7)
@@ -75,7 +76,7 @@ export default function PhototubeCanvas({
     ctx.beginPath()
     ctx.roundRect(kPlateX - 4, cy - PLATE_HALF_H, 8, PLATE_HALF_H * 2, 2)
     ctx.fill()
-    ctx.fillStyle = '#18181B'
+    ctx.fillStyle = colors.neutral[900]
     ctx.font = 'bold 11px sans-serif'
     ctx.textAlign = 'center'
     ctx.fillText('K (铯)', kPlateX, cy - PLATE_HALF_H - 8)
@@ -87,7 +88,7 @@ export default function PhototubeCanvas({
     ctx.beginPath()
     ctx.roundRect(aPlateX - 3, cy - PLATE_HALF_H, 6, PLATE_HALF_H * 2, 2)
     ctx.fill()
-    ctx.fillStyle = '#18181B'
+    ctx.fillStyle = colors.neutral[900]
     ctx.font = 'bold 11px sans-serif'
     ctx.textAlign = 'center'
     ctx.fillText('A', aPlateX, cy - PLATE_HALF_H - 8)
@@ -178,7 +179,7 @@ export default function PhototubeCanvas({
       ctx.arc(e.x, e.y, 4, 0, Math.PI * 2)
       ctx.fill()
       // 负号标记
-      ctx.fillStyle = '#FFFFFF'
+      ctx.fillStyle = colors.neutral.white
       ctx.font = 'bold 8px monospace'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
@@ -189,7 +190,7 @@ export default function PhototubeCanvas({
     // ─── 8. 电路连线 ───
     const bottomY = cy + PLATE_HALF_H + TUBE_PADDING + 50
     ctx.save()
-    ctx.strokeStyle = '#71717A'
+    ctx.strokeStyle = colors.neutral[500]
     ctx.lineWidth = 2
     // K → 下方
     ctx.beginPath()
@@ -205,8 +206,8 @@ export default function PhototubeCanvas({
 
     // ─── 9. 微安表 ───
     const meterY = bottomY - 12
-    ctx.fillStyle = '#FFFFFF'
-    ctx.strokeStyle = '#3F3F46'
+    ctx.fillStyle = colors.neutral.white
+    ctx.strokeStyle = colors.neutral[700]
     ctx.lineWidth = 1.5
     ctx.beginPath()
     ctx.arc(aPlateX, meterY, 15, 0, Math.PI * 2)
@@ -218,14 +219,14 @@ export default function PhototubeCanvas({
     // 压在圆环描边和引线上，而且单位在表盘里印了两遍（`μA` 一次、读数后缀一次）。
     // 单位只留表盘上方那一处，读数只写数值、字号降到 8px（5 个字符 ≈ 24px），
     // 整串落在盘面内。
-    ctx.fillStyle = '#18181B'
+    ctx.fillStyle = colors.neutral[900]
     ctx.font = '8px monospace'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText('μA', aPlateX, meterY - 6)
     ctx.fillText(I.toFixed(2), aPlateX, meterY + 5)
     // 指针
-    ctx.strokeStyle = '#EF4444'
+    ctx.strokeStyle = PHYSICS_COLORS.electricCurrent
     ctx.lineWidth = 1.2
     const ptrAngle = I > 0 ? Math.PI * 0.25 * Math.min(I / 25, 1) : 0
     ctx.beginPath()
@@ -234,7 +235,7 @@ export default function PhototubeCanvas({
     ctx.stroke()
 
     // A 下方连线 → 底部回路
-    ctx.strokeStyle = '#71717A'
+    ctx.strokeStyle = colors.neutral[500]
     ctx.lineWidth = 2
     ctx.beginPath()
     ctx.moveTo(aPlateX, meterY + 15)
@@ -244,7 +245,7 @@ export default function PhototubeCanvas({
 
     // ─── 10. 电源 ───
     const powerX = cx
-    ctx.strokeStyle = '#18181B'
+    ctx.strokeStyle = colors.neutral[900]
     ctx.lineWidth = 1
     ctx.beginPath()
     ctx.moveTo(powerX, bottomY - 10)
@@ -256,7 +257,7 @@ export default function PhototubeCanvas({
     ctx.lineTo(powerX + 6, bottomY + 6)
     ctx.stroke()
     // 极性
-    ctx.fillStyle = '#18181B'
+    ctx.fillStyle = colors.neutral[900]
     ctx.font = 'bold 11px sans-serif'
     ctx.textAlign = 'center'
     ctx.fillText('+', powerX - 10, bottomY - 6)
@@ -264,7 +265,7 @@ export default function PhototubeCanvas({
 
     // 电压标注
     if (mode === 1) {
-      ctx.fillStyle = '#71717A'
+      ctx.fillStyle = colors.neutral[500]
       ctx.font = 'bold 11px sans-serif'
       ctx.fillText(`U = ${voltage.toFixed(1)} V`, cx, bottomY + 28)
     }
@@ -273,7 +274,7 @@ export default function PhototubeCanvas({
     // ─── 11. 截止频率标注 ───
     if (!isPE) {
       ctx.save()
-      ctx.fillStyle = withAlpha('#EF4444', 0.9)
+      ctx.fillStyle = withAlpha(CANVAS_COLORS.alertRed, 0.9)
       ctx.font = 'bold 13px sans-serif'
       ctx.textAlign = 'center'
       ctx.fillText('ν < ν₀ — 无法产生光电子', cx, cy + PLATE_HALF_H + TUBE_PADDING + 15)

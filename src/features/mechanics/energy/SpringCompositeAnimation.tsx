@@ -12,6 +12,7 @@ import { clientToContainerPoint } from '@/utils';
 import { useAnimationViewport } from '@/hooks';
 import { SpringEnergyChartContent } from './SpringEnergyChartContent';
 import { SpringForceChartContent } from './SpringForceChartContent';
+import { colors } from '@/theme/colors'
 
 // 设计空间常量（基准 840×650，高度按容器宽高比动态缩放）
 const DW = 840;
@@ -302,8 +303,8 @@ export default function SpringCompositeAnimation() {
           </g>
 
           {/* ── 分隔线 ── */}
-          <line x1={colW} y1={0} x2={colW} y2={DH} stroke='#e5e7eb' strokeWidth={1} />
-          <line x1={chart2X} y1={0} x2={chart2X} y2={DH} stroke='#e5e7eb' strokeWidth={1} />
+          <line x1={colW} y1={0} x2={colW} y2={DH} stroke={colors.neutral[200]} strokeWidth={1} />
+          <line x1={chart2X} y1={0} x2={chart2X} y2={DH} stroke={colors.neutral[200]} strokeWidth={1} />
 
           {/* ═══ 中列：能量图表 ═══ */}
           <g transform={`translate(${chart1X}, 0)`}>

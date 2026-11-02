@@ -99,7 +99,7 @@ export function SpectrometerScene({
       <MagneticFieldSymbols points={b2DotPoints} direction="out" radius={7} strokeWidth={1.2} opacity={0.5} />
 
       {/* 照相底片 & 刻度尺 (水平范围 40 ~ 300，彻底避免与极板重叠) */}
-      <rect x={40} y={SPECTROMETER.y1 - 3} width={260} height={5} fill="#111" />
+      <rect x={40} y={SPECTROMETER.y1 - 3} width={260} height={5} fill={colors.neutral[900]} />
       {Array.from({ length: 9 }).map((_, i) => {
         const x = 40 + i * 30
         return (
@@ -130,7 +130,7 @@ export function SpectrometerScene({
         <g>
           {/* 落点高亮 */}
           <circle cx={spectrometer.hitPoint?.x} cy={spectrometer.hitPoint?.y} r={7} fill={PHYSICS_COLORS.velocity} opacity={0.7} />
-          <circle cx={spectrometer.hitPoint?.x} cy={spectrometer.hitPoint?.y} r={2} fill="#fff" />
+          <circle cx={spectrometer.hitPoint?.x} cy={spectrometer.hitPoint?.y} r={2} fill={colors.neutral.white} />
 
           {/* 半径测量辅助标尺线 */}
           <line x1={spectrometer.hitPoint?.x} y1={SPECTROMETER.y1 + 10} x2={SPECTROMETER.xMid} y2={SPECTROMETER.y1 + 10} stroke={PHYSICS_COLORS.displacement} strokeWidth={1.2} />

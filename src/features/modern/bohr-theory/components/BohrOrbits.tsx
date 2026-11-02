@@ -1,6 +1,7 @@
+import { colors } from '@/theme/colors'
 import { useEffect, useRef } from 'react'
 import { useSimulationFrame } from '@/utils/animation'
-import { MODERN_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
+import { MODERN_COLORS, MODERN_PHYSICS_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
 import { useAnimationViewport } from '@/hooks'
 import { useCanvasViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -191,23 +192,23 @@ export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: 
     // 3.1 能级图
     const lx1 = 45, lx2 = 175
     const levels = [
-      { n: 1, y: 310, e: -13.60, color: '#f87171' },
-      { n: 2, y: 220, e: -3.40, color: '#fb923c' },
-      { n: 3, y: 170, e: -1.51, color: '#facc15' },
-      { n: 4, y: 140, e: -0.85, color: '#60a5fa' },
-      { n: 5, y: 95, e: 0.00, color: '#a1a1aa' },
+      { n: 1, y: 310, e: -13.60, color: MODERN_PHYSICS_COLORS.levelColors[0] },
+      { n: 2, y: 220, e: -3.40, color: MODERN_PHYSICS_COLORS.levelColors[1] },
+      { n: 3, y: 170, e: -1.51, color: MODERN_PHYSICS_COLORS.levelColors[2] },
+      { n: 4, y: 140, e: -0.85, color: MODERN_PHYSICS_COLORS.levelColors[3] },
+      { n: 5, y: 95, e: 0.00, color: colors.neutral[400] },
     ]
 
     ctx.save()
     levels.forEach((lvl) => {
-      ctx.strokeStyle = lvl.n === tgtLevel ? withAlpha(MODERN_COLORS.photoelectron, 0.8) : '#e4e4e7'
+      ctx.strokeStyle = lvl.n === tgtLevel ? withAlpha(MODERN_COLORS.photoelectron, 0.8) : colors.neutral[200]
       ctx.lineWidth = lvl.n === tgtLevel ? 3.5 : 1.5
       ctx.beginPath()
       ctx.moveTo(lx1, lvl.y)
       ctx.lineTo(lx2, lvl.y)
       ctx.stroke()
 
-      ctx.fillStyle = lvl.n === tgtLevel ? MODERN_COLORS.photoelectron : '#71717a'
+      ctx.fillStyle = lvl.n === tgtLevel ? MODERN_COLORS.photoelectron : colors.neutral[500]
       ctx.font = lvl.n === tgtLevel ? 'bold 12px sans-serif' : '11px sans-serif'
       ctx.fillText(`n = ${lvl.n}`, lx1 - 32, lvl.y + 4)
       ctx.textAlign = 'right'
@@ -264,7 +265,7 @@ export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: 
       ctx.textBaseline = 'middle'
       ctx.fillText('H+', cx - getRadius(1) - 8, cy)
     } else {
-      ctx.fillStyle = '#ffffff'
+      ctx.fillStyle = colors.neutral.white
       ctx.font = 'bold 11px sans-serif'
       ctx.textBaseline = 'middle'
       ctx.fillText('H+', cx, cy)
@@ -274,7 +275,7 @@ export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: 
     // 3.3 轨道
     ctx.save()
     for (let n = 1; n <= 4; n++) {
-      ctx.strokeStyle = n === tgtLevel ? withAlpha(MODERN_COLORS.photoelectron, 0.25) : '#f4f4f5'
+      ctx.strokeStyle = n === tgtLevel ? withAlpha(MODERN_COLORS.photoelectron, 0.25) : colors.neutral[100]
       ctx.lineWidth = n === tgtLevel ? 2.5 : 1
       ctx.beginPath()
       ctx.arc(cx, cy, getRadius(n), 0, Math.PI * 2)
@@ -284,7 +285,7 @@ export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: 
       // 初始态也是暂停态，`n=2` 这类"当前能级"的标号会长期被电子光晕盖住。
       // 竖直排在正上方还顺带解决了另一件事：四个标号沿同一列排开、间距 38px，
       // 既不互相压字，也不会像"往外挪"那样横穿下一个圆的描边。
-      ctx.fillStyle = '#a1a1aa'
+      ctx.fillStyle = colors.neutral[400]
       ctx.font = '10px monospace'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'alphabetic'
@@ -309,7 +310,7 @@ export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: 
     ctx.beginPath()
     ctx.arc(ex, ey, 5, 0, Math.PI * 2)
     ctx.fill()
-    ctx.fillStyle = '#ffffff'
+    ctx.fillStyle = colors.neutral.white
     ctx.font = 'bold 8px monospace'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
@@ -374,11 +375,11 @@ function drawFormulaCard(ctx: CanvasRenderingContext2D, prev: number, next: numb
   ctx.beginPath()
   ctx.roundRect(px, py, pw, ph, 8)
   ctx.fill()
-  ctx.strokeStyle = '#e4e4e7'
+  ctx.strokeStyle = colors.neutral[200]
   ctx.lineWidth = 1.5
   ctx.stroke()
 
-  ctx.fillStyle = '#18181b'
+  ctx.fillStyle = colors.neutral[900]
   ctx.font = 'bold 10px sans-serif'
   ctx.fillText('高考重点：跃迁吸能/放能计算', px + 10, py + 18)
 
@@ -387,7 +388,7 @@ function drawFormulaCard(ctx: CanvasRenderingContext2D, prev: number, next: numb
     ? `辐射光子退激：n = ${prev} → n = ${next}`
     : `吸收光子激发：n = ${prev} → n = ${next}`
   ctx.font = '10px sans-serif'
-  ctx.fillStyle = '#71717a'
+  ctx.fillStyle = colors.neutral[500]
   ctx.fillText(dirTxt, px + 10, py + 36)
 
   const E_prev = (-13.6 / (prev * prev)).toFixed(2)

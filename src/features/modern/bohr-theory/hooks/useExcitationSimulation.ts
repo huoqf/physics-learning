@@ -3,6 +3,7 @@ import { useAnimationViewport, useCanvasViewport } from '@/hooks'
 import { useSimulationFrame } from '@/utils/animation'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { MODERN_COLORS, EM_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics/colors'
+import { colors } from '@/theme/colors'
 import type { AtomState, IncidentParticle, OutgoingPhoton, CascadeStep, TransitionLine, CollisionCard } from '../components/types'
 import { ENERGY_MAP } from '../components/types'
 import { drawCollisionCard, drawEnergyLevels, drawSpectrum } from '../components/drawExcitation'
@@ -436,7 +437,7 @@ export function useExcitationSimulation({
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         ctx.fillText('-', particle.x, particle.y)
-        ctx.fillStyle = '#0f766e'
+        ctx.fillStyle = colors.secondary[700]
         ctx.font = 'bold 11px sans-serif'
         ctx.fillText(`e⁻: ${particle.energy.toFixed(1)} eV`, particle.x - 20, particle.y - 12)
       }
@@ -459,7 +460,7 @@ export function useExcitationSimulation({
         ctx.font = 'bold 8px monospace'
         ctx.fillText('-', op.x - 2, op.y + 2)
         if (op.energy > 0) {
-          ctx.fillStyle = '#0f766e'
+          ctx.fillStyle = colors.secondary[700]
           ctx.font = '9px sans-serif'
           ctx.fillText(`${op.energy.toFixed(2)} eV`, op.x - 15, op.y - 8)
         }

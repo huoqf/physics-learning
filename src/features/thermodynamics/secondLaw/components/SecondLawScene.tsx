@@ -2,8 +2,8 @@ import { useEffect, useMemo } from 'react'
 import { worldToDesign } from '@/scene'
 import type { SceneScale } from '@/scene'
 import { VectorArrow } from '@/components/Physics'
-import { SECOND_LAW_COLORS, CANVAS_COLORS, STROKE, FONT } from '@/theme/physics'
-import { temperatureToColor, type Particle, type Scenario } from '@/physics/secondLaw'
+import { SECOND_LAW_COLORS, CANVAS_COLORS, STROKE, FONT, temperatureColor } from '@/theme/physics'
+import type { Particle, Scenario } from '@/physics/secondLaw'
 import { PARTICLE_COUNT, PHYSICAL_CONTAINER } from '../hooks/useSecondLawPhysics'
 
 // ─── 常量 ─────────────────────────────────────────────────────────────
@@ -105,7 +105,7 @@ export function SecondLawScene({
       const pixelPos = designToPixel(designPos.px, designPos.py)
 
       if (scenario === 'heat-conduction') {
-        ctx.fillStyle = temperatureToColor(p.temperature, T_HOT, T_COLD)
+        ctx.fillStyle = temperatureColor(p.temperature, T_COLD, T_HOT)
       } else {
         ctx.fillStyle = SECOND_LAW_COLORS.coldParticle
       }

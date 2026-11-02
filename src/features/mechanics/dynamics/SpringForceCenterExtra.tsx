@@ -23,6 +23,7 @@ import {
   calculateElasticTensionState,
 } from '@/physics/dynamics/spring-force'
 import { CUT_ROPE_DESIGN, HOOKE_DESIGN } from './hooks/useSpringForceCutRope'
+import { colors } from '@/theme/colors'
 
 export default function SpringForceCenterExtra() {
   const { params, time, animationType } = useAnimationStore(
@@ -262,10 +263,10 @@ function CutRopeAccelerationChart({
   // 带方向的加速度数据：向上为正，向下为负
   // 物理约定：a>0 表示加速度方向向上，a<0 表示向下（与场景 SVG y 轴向下相反）
   const data = [
-    { label: 'A球', value: state.forces.a_A, color: '#F59E0B' },
-    { label: 'B球', value: state.forces.a_B, color: '#3B82F6' },
-    { label: 'C球', value: state.forces.a_C, color: '#EF4444' },
-    { label: 'D球', value: state.forces.a_D, color: '#10B981' },
+    { label: 'A球', value: state.forces.a_A, color: colors.accent[500] },
+    { label: 'B球', value: state.forces.a_B, color: colors.primary[500] },
+    { label: 'C球', value: state.forces.a_C, color: colors.danger[500] },
+    { label: 'D球', value: state.forces.a_D, color: colors.success[500] },
   ]
 
   return (

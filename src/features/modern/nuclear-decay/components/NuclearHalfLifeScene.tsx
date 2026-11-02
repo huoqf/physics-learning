@@ -43,7 +43,7 @@ export const NuclearHalfLifeScene: React.FC<NuclearHalfLifeSceneProps> = ({
         </radialGradient>
 
         <filter id="sphereShadow" x="-20%" y="-20%" width="150%" height="150%">
-          <feDropShadow dx="1" dy="2" stdDeviation="1.5" floodColor="#000000" floodOpacity="0.3" />
+          <feDropShadow dx="1" dy="2" stdDeviation="1.5" floodColor={CANVAS_COLORS.black} floodOpacity="0.3" />
         </filter>
       </defs>
 

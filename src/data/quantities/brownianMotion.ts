@@ -7,7 +7,7 @@ import { THERMO_COLORS, PHYSICS_COLORS } from '@/theme/physics'
 import { splitScientific } from '@/utils'
 import type { PhysicsPanelData } from './types'
 
-export function buildThermodynamicsQuantities(
+export function buildBrownianMotionQuantities(
   animId: string,
   params: Record<string, number>,
   _time: number,

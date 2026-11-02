@@ -1,5 +1,6 @@
 import React from 'react'
-import { SCENE_COLORS, PHYSICS_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
+import { SCENE_COLORS, PHYSICS_COLORS, CANVAS_COLORS, withAlpha, MECHANICS_APPARATUS_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 
 export interface PaperTapeProps {
   /** 纸带左上角 X 坐标 */
@@ -86,7 +87,7 @@ export const PaperTape: React.FC<PaperTapeProps> = ({
                 width={140}
                 height={16}
                 rx={4}
-                fill="#0F172A"
+                fill={colors.neutral[900]}
                 opacity={0.88}
                 stroke={PHYSICS_COLORS.displacement}
                 strokeWidth={1}
@@ -94,7 +95,7 @@ export const PaperTape: React.FC<PaperTapeProps> = ({
               <text
                 x={0}
                 y={1}
-                fill="#38BDF8"
+                fill={MECHANICS_APPARATUS_COLORS.meterTextActive}
                 fontSize={10}
                 fontWeight="bold"
                 fontFamily={fontFamily}

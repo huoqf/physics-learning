@@ -1,5 +1,6 @@
 import React from 'react'
-import { SCENE_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
+import { SCENE_COLORS, CANVAS_COLORS, withAlpha, MECHANICS_APPARATUS_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 
 export interface PhotogateProps {
   /** 光电门安装底座中心 X 坐标 */
@@ -52,10 +53,10 @@ export const Photogate: React.FC<PhotogateProps> = ({
         y={-baseThickness}
         width={16}
         height={baseThickness}
-        fill="#334155"
-        stroke="#1E293B"
+        fill={colors.neutral[700]}
+        stroke={colors.neutral[800]}
       />
-      <circle cx={0} cy={-baseThickness / 2} r={3} fill="#94A3B8" />
+      <circle cx={0} cy={-baseThickness / 2} r={3} fill={colors.neutral[400]} />
 
       {/* U 型光电门主体外壳 */}
       <path
@@ -81,7 +82,7 @@ export const Photogate: React.FC<PhotogateProps> = ({
         y={beamY - 4}
         width={4}
         height={8}
-        fill="#EF4444"
+        fill={MECHANICS_APPARATUS_COLORS.photogateBeam}
         rx={1}
       />
       {/* 右臂红外接收头 */}
@@ -90,7 +91,7 @@ export const Photogate: React.FC<PhotogateProps> = ({
         y={beamY - 4}
         width={4}
         height={8}
-        fill="#22C55E"
+        fill={MECHANICS_APPARATUS_COLORS.meterTextDone}
         rx={1}
       />
 
@@ -101,7 +102,7 @@ export const Photogate: React.FC<PhotogateProps> = ({
           y1={beamY}
           x2={totalWidth / 2 - armWidth}
           y2={beamY}
-          stroke={isBlocked ? '#EF4444' : '#DC2626'}
+          stroke={isBlocked ? MECHANICS_APPARATUS_COLORS.photogateBeam : colors.danger[600]}
           strokeWidth={isBlocked ? 2 : 1}
           strokeDasharray={isBlocked ? 'none' : '3 2'}
           opacity={isBlocked ? 0.9 : 0.6}
@@ -113,14 +114,14 @@ export const Photogate: React.FC<PhotogateProps> = ({
         cx={-totalWidth / 2 + armWidth / 2}
         cy={-height + 8}
         r={3}
-        fill={isBlocked ? '#EF4444' : '#64748B'}
+        fill={isBlocked ? MECHANICS_APPARATUS_COLORS.photogateBeam : colors.neutral[500]}
       />
       <circle
         cx={-totalWidth / 2 + armWidth / 2}
         cy={-height + 8}
         r={4.5}
         fill="none"
-        stroke={isBlocked ? withAlpha('#EF4444', 0.5) : 'none'}
+        stroke={isBlocked ? withAlpha(MECHANICS_APPARATUS_COLORS.photogateBeam, 0.5) : 'none'}
         strokeWidth={1}
       />
 
