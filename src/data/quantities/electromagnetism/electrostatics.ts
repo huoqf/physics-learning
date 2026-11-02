@@ -9,13 +9,14 @@ import {
   rcWindowFromParams,
   type RCPhase,
   TWO_CHARGE_SEPARATION_M,
+  COULOMB_CONSTANT,
+  GRAVITY,
 } from '../../../physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import type { PhysicsPanelData, PhysicsQuantity } from '../types'
 
-const COULOMB_K = 9e9
 const VACUUM_PERMITTIVITY = 8.85e-12
 
 export function handleElectrostatics(
@@ -31,7 +32,7 @@ export function handleElectrostatics(
       const r = params.r ?? 4
       const mode = params.mode ?? 0
       const attractive = q1 * q2 < 0
-      const k = 9e9
+      const k = COULOMB_CONSTANT
       const q1SI = Math.abs(q1 * 1e-6)
       const q2SI = Math.abs(q2 * 1e-6)
 
@@ -90,7 +91,7 @@ export function handleElectrostatics(
         const qSI = q * 1e-6
         const qTestSI = qTest * 1e-6
 
-        const { E } = calculateElectricField(COULOMB_K, Math.abs(qSI), rSI)
+        const { E } = calculateElectricField(COULOMB_CONSTANT, Math.abs(qSI), rSI)
         const F = Math.abs(qTestSI * E)
 
         return {
@@ -134,8 +135,8 @@ export function handleElectrostatics(
         const r1 = Math.abs(xp + d_half)
         const r2 = Math.abs(xp - d_half)
 
-        const E1 = calculateElectricField(COULOMB_K, Math.abs(q1 * 1e-6), Math.max(0.005, r1)).E * (q1 >= 0 ? 1 : -1) * (xp >= -d_half ? 1 : -1)
-        const E2 = calculateElectricField(COULOMB_K, Math.abs(q2 * 1e-6), Math.max(0.005, r2)).E * (q2 >= 0 ? 1 : -1) * (xp >= d_half ? 1 : -1)
+        const E1 = calculateElectricField(COULOMB_CONSTANT, Math.abs(q1 * 1e-6), Math.max(0.005, r1)).E * (q1 >= 0 ? 1 : -1) * (xp >= -d_half ? 1 : -1)
+        const E2 = calculateElectricField(COULOMB_CONSTANT, Math.abs(q2 * 1e-6), Math.max(0.005, r2)).E * (q2 >= 0 ? 1 : -1) * (xp >= d_half ? 1 : -1)
 
         const Enet = Math.abs(E1 + E2)
         const Fnet = Enet * Math.abs(qTest * 1e-6)
@@ -180,7 +181,7 @@ export function handleElectrostatics(
         q: q * 1e-6,
         m,
         v0,
-        g: useGravity === 1 ? 9.8 : 0,
+        g: useGravity === 1 ? GRAVITY : 0,
         isAC: isAC === 1,
         freq,
         phi0,
@@ -242,7 +243,7 @@ export function handleElectrostatics(
       } else {
         // 交变方形波模式：加入功与动能增量验证
         const dEk = 0.5 * m * (vTotal * vTotal - v0 * v0) * 1e6 // μJ
-        const W_g = m * (useGravity === 1 ? 9.8 : 0) * curState.y * 1e6 // μJ
+        const W_g = m * (useGravity === 1 ? GRAVITY : 0) * curState.y * 1e6 // μJ
         const W_E = dEk - W_g // W_E + W_g = dEk => W_E = dEk - W_g
         quantitiesList.push(
           {
@@ -592,7 +593,7 @@ export function handleElectrostatics(
 
       const getPotentialAt = (px: number, py: number) => {
         let v = 0
-        const k = 9e9
+        const k = COULOMB_CONSTANT
         const mPerPx = 0.005
         for (const c of charges) {
           const dx = px - c.x

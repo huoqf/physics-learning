@@ -16,13 +16,21 @@ const panel = (t: number) => {
   return data!
 }
 
+/** `formulas` 是可选字段；此处显式断言存在，避免 `?? []` 把空数组当成通过 */
+const formulasOf = (data: ReturnType<typeof panel>) => {
+  expect(data.formulas, 'formulas').toBeDefined()
+  return data.formulas ?? []
+}
+
 const readAccel = (t: number, label: string) => {
   const row = panel(t).quantities.find((q) => q.label === label)
   expect(row, label).toBeDefined()
   return row!.value
 }
 
-const numeric = (text: string) => Number.parseFloat(text.replace(/[↑↓\s]/g, ''))
+/** 看板 value 是 `number | string`（部分量按字符串格式化输出），这里统一归一化 */
+const numeric = (value: number | string) =>
+  typeof value === 'number' ? value : Number.parseFloat(value.replace(/[↑↓\s]/g, ''))
 
 describe('轻质物体突变 · 右屏加速度随 t 演化', () => {
   it('t=0（剪断瞬间）：g / g / 2g / 0，方向与教科书结论一致', () => {
@@ -55,7 +63,7 @@ describe('轻质物体突变 · 右屏加速度随 t 演化', () => {
   })
 
   it('公式标题写明「剪断瞬间」，不会与逐帧值打架', () => {
-    for (const f of panel(0.3).formulas) {
+    for (const f of formulasOf(panel(0.3))) {
       expect(f.name.startsWith('剪断瞬间')).toBe(true)
     }
   })
@@ -89,8 +97,8 @@ describe('弹力演示 · 三个 mode 各自对应自己的物理模型', () => 
     for (const label of ['球 A 加速度 a_A', '球 B 加速度 a_B', '球 C 加速度 a_C', '球 D 加速度 a_D']) {
       expect(data.quantities.find((q) => q.label === label), label).toBeUndefined()
     }
-    expect(data.formulas.map((f) => f.name)).not.toContain('剪断瞬间：A 球向上加速')
-    expect(data.formulas.map((f) => f.name)).toContain('支持力的弹力本质')
+    expect(formulasOf(data).map((f) => f.name)).not.toContain('剪断瞬间：A 球向上加速')
+    expect(formulasOf(data).map((f) => f.name)).toContain('支持力的弹力本质')
   })
 
   it('mode 2（绳拉力）给出 T / G / 绳伸长量，与 kRope 联动', () => {
@@ -98,8 +106,8 @@ describe('弹力演示 · 三个 mode 各自对应自己的物理模型', () => 
 
     expect(valueOf(data, '绳拉力 T')).toBe((2 * GRAVITY).toFixed(1))
     expect(valueOf(data, '绳伸长量 Δx')).toBe(((2 * GRAVITY) / 150 * 100).toFixed(2))
-    expect(data.formulas.map((f) => f.name)).toContain('拉力的弹力本质')
-    expect(data.formulas.map((f) => f.name)).not.toContain('剪断瞬间：A 球向上加速')
+    expect(formulasOf(data).map((f) => f.name)).toContain('拉力的弹力本质')
+    expect(formulasOf(data).map((f) => f.name)).not.toContain('剪断瞬间：A 球向上加速')
   })
 
   it('mode 0 仍是胡克定律，与前两档互不串台', () => {

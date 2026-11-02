@@ -1,6 +1,6 @@
 import type { PhysicsPanelData, PhysicsQuantity, Formula, GaokaoPoint, ParamDefs } from '../types'
 import { normalizeParams } from '../types'
-import { GRAVITY } from '../../../physics'
+import { GRAVITY, computeStackedStaticStatics, computeSlidingStatics } from '../../../physics'
 
 interface Params {
   modelType: number
@@ -102,10 +102,14 @@ export function handleSystemIsolated(
 
   // ------------------ 模型 1: 静力学叠放平衡 (推斜面) ------------------
   else if (modelType === 1) {
-    const N_ground = (m1 + m2) * g
-    const f_ground = F // 地面摩擦力平衡外力 F
-    const N_slope = m1 * g * Math.cos(theta)
-    const f_slope = m1 * g * Math.sin(theta) // 沿斜面向上，平衡重力分力
+    // 受力全部来自物理层（与中屏 hook 同一实现），此处只做展示
+    const { N_ground, f_ground, N_slope, f_slope } = computeStackedStaticStatics(
+      m1,
+      m2,
+      theta,
+      g,
+      F,
+    )
 
     if (analysisView === 0) {
       quantities.push(
@@ -150,17 +154,14 @@ export function handleSystemIsolated(
 
   // ------------------ 模型 2: 系统牛顿第二定律 (斜面下滑) ------------------
   else if (modelType === 2) {
-    const hasMotion = Math.sin(theta) > mu * Math.cos(theta)
-    const acceleration = hasMotion ? g * (Math.sin(theta) - mu * Math.cos(theta)) : 0
-
-    const ax = acceleration * Math.cos(theta)
-    const ay = acceleration * Math.sin(theta) // 向下
-
-    const f_ground = m1 * ax
-    const N_ground = (m1 + m2) * g - m1 * ay
-
-    const N_slope = m1 * g * Math.cos(theta)
-    const f_slope = hasMotion ? mu * m1 * g * Math.cos(theta) : m1 * g * Math.sin(theta)
+    // 起动判据、加速度分解、地面反力全部来自物理层，与中屏 hook 同一实现
+    const { acceleration, ay, f_ground, N_ground, N_slope, f_slope } = computeSlidingStatics(
+      m1,
+      m2,
+      theta,
+      mu,
+      g,
+    )
 
     const currentA = time > 0 ? acceleration : 0
     const currentAy = time > 0 ? ay : 0

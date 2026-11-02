@@ -22,7 +22,7 @@ type BuilderName =
   | 'buildMomentumQuantities'
   | 'buildElectromagnetismQuantities'
   | 'buildEnergyQuantities'
-  | 'buildThermodynamicsQuantities'
+  | 'buildBrownianMotionQuantities'
   | 'buildIntermolecularForcesQuantities'
   | 'buildGasLawsQuantities'
   | 'buildClapeyronQuantities'
@@ -184,7 +184,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
 
 
   // 热学
-  'anim-brownian-motion':       { loader: () => import('./quantities/thermodynamics'), builderName: 'buildThermodynamicsQuantities' },
+  'anim-brownian-motion':       { loader: () => import('./quantities/brownianMotion'), builderName: 'buildBrownianMotionQuantities' },
   'anim-micro-quantities':      { loader: () => import('./quantities/thermodynamics/microQuantities'), builderName: 'buildMicroQuantitiesData' },
   'anim-intermolecular-forces': { loader: () => import('./quantities/intermolecularForces'), builderName: 'buildIntermolecularForcesQuantities' },
   'anim-maxwell-distribution':  { loader: () => import('./quantities/thermodynamics/maxwellDistribution'), builderName: 'buildMaxwellDistributionData' },

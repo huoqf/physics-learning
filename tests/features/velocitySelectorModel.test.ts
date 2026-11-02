@@ -41,7 +41,7 @@ describe('velocity selector view model', () => {
       cy: layout.cy,
       gapPlatePx: layout.gapPlatePx,
       wPlatePx: layout.wPlatePx,
-      canvasHeight: 600,
+      presetHeight: 600,
       cxIn: layout.cxIn,
     })
 

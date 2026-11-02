@@ -173,7 +173,7 @@ export function buildEnergyQuantities(
     case 'anim-potential-energy': {
       const mode = params.mode ?? 0
       const m = params.m ?? 2
-      const g = params.g ?? 9.8
+      const g = params.g ?? GRAVITY
       const y0 = params.y0 ?? 8
       const y_ref = params.y_ref ?? 3
       const k = params.k ?? 100
@@ -236,7 +236,7 @@ export function buildEnergyQuantities(
     case 'anim-energy-conservation': {
       const mode = params.mode ?? 0
       const m = params.m ?? 2
-      const g = params.g ?? 9.8
+      const g = params.g ?? GRAVITY
       const theta0 = params.theta0 ?? 45
       const L = params.L ?? 5
       const R = params.R ?? 5

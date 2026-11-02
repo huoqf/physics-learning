@@ -226,7 +226,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
         return `${label} — ${desc}`
       }, variant: 'info', showIf: 'advancedMode', showIfValue: 0 },
       { type: 'tip', title: '重力加速度 g', group: '环境状态', content: (p) => {
-        const g = p.g ?? 9.8
+        const g = p.g ?? GRAVITY
         return `g = ${g.toFixed(3)} m/s²，由纬度和海拔自动计算`
       }, variant: 'info', showIf: 'advancedMode', showIfValue: 1 },
     ],
@@ -407,7 +407,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     maxTime: (p) => {
       const v0 = p.v0 ?? 20
       const angle = p.angle ?? 45
-      const g = p.g ?? 9.8
+      const g = p.g ?? GRAVITY
       const v0y = v0 * Math.sin((angle * Math.PI) / 180)
       const groundTime = g > 0 ? (2 * v0y) / g : 0
       return Math.max(1, Number((groundTime * 1.15).toFixed(2)))
@@ -415,7 +415,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     criticalTimes: (p) => {
       const v0 = p.v0 ?? 20
       const angle = p.angle ?? 45
-      const g = p.g ?? 9.8
+      const g = p.g ?? GRAVITY
       const angleRad = (angle * Math.PI) / 180
       const v0y = v0 * Math.sin(angleRad)
       const topTime = g > 0 ? v0y / g : 0

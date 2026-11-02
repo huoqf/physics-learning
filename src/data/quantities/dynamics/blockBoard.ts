@@ -1,6 +1,7 @@
 import type { PhysicsPanelData, PhysicsQuantity, Formula, GaokaoPoint, ParamDefs } from '../types'
 import { normalizeParams } from '../types'
-import { getBoardSystemState } from '../../../physics/blockBoard'
+import { getBoardSystemState } from '../../../physics/blockBoard'
+import { GRAVITY } from '@/physics/constants'
 
 interface Params {
   m: number
@@ -35,7 +36,7 @@ export function handleBlockBoard(
   const mu2 = p.mu2 ?? 0.05
   const v0 = p.v0 ?? 5
   const L = p.L ?? 2.5
-  const g = 9.8
+  const g = GRAVITY
 
   const param = { m, M, mu1, mu2, v0, L, g }
   const state = getBoardSystemState(param, time)

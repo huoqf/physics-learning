@@ -1,6 +1,11 @@
 import type { PhysicsPanelData } from './types'
 import { normalizeParams, type ParamDefs } from './types'
 import { NUCLIDES, MASS_PROTON, MASS_NEUTRON, MASS_MEV_CONVERSION } from '@/features/modern/nuclear-reaction/model/constants'
+import {
+  chainFissionCount,
+  chainCumulativeFissionCount,
+  chainCumulativeEnergyMeV,
+} from '@/physics/chainReaction'
 
 interface NuclearReactionParams {
   mode: number                   // 0: 结合能, 1: 核反应
@@ -127,16 +132,17 @@ export function buildNuclearReactionQuantities(
 
       mnemonic = '慢中子轰击铀核裂，裂变释放快中子；代代相传指数升，临界体积是生死。'
     } else {
-      // 链式反应
+      // 链式反应：代数、裂变数与累计能量全部来自物理层
       const generation = Math.min(4, 1 + Math.floor(time * 2.5))
-      const countU235 = Math.pow(3, generation - 1)
-      const cumulativeEnergy = ((Math.pow(3, generation) - 1) / 2) * 200
+      const countU235 = chainFissionCount(generation)
+      const cumulativeCount = chainCumulativeFissionCount(generation)
+      const cumulativeEnergy = chainCumulativeEnergyMeV(generation)
 
       quantities.push(
         { label: '反应类型', value: '链式反应 (Chain)', unit: '', highlight: 'positive' as const },
         { label: '当前裂变代数', value: generation, unit: '代' },
         { label: '本代裂变铀核数', value: countU235, unit: '个' },
-        { label: '累计裂变铀核数', value: (Math.pow(3, generation) - 1) / 2, unit: '个' },
+        { label: '累计裂变铀核数', value: cumulativeCount, unit: '个' },
         { label: '累计释放能 ΔE_cum', value: cumulativeEnergy >= 1000 ? `${(cumulativeEnergy / 1000).toFixed(2)}` : cumulativeEnergy.toFixed(0), unit: cumulativeEnergy >= 1000 ? 'GeV' : 'MeV', highlight: 'extreme' as const },
       )
 

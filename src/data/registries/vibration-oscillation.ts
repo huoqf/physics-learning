@@ -1,6 +1,7 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
-import { SIMPLE_PENDULUM_DEFAULT_PARAMS } from '@/physics/experimentPendulum'
+import { SIMPLE_PENDULUM_DEFAULT_PARAMS } from '@/physics/experimentPendulum'
+import { GRAVITY } from '@/physics/constants'
 
 // ===== 机械振动与波 =====
 export const vibrationOscillationAnimations = defineAnimations({
@@ -88,7 +89,7 @@ export const vibrationOscillationAnimations = defineAnimations({
         const l = params.l_line ?? 0.985
         const d = (params.d_mm ?? 20.0) / 2000
         const L = l + d
-        const g = params.g ?? 9.8
+        const g = params.g ?? GRAVITY
         const n = params.n_cycles ?? 40
         const T = 2 * Math.PI * Math.sqrt(L / g)
         return Math.ceil(n * T) + 2

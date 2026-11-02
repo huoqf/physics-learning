@@ -4,9 +4,9 @@
  * 从 ElectricField.tsx 拆分：所有物理计算、图表数据、电场线路径。
  */
 import { useMemo } from 'react'
-import { calculateElectricField } from '@/physics'
+import { calculateElectricField } from '@/physics'
+import { COULOMB_CONSTANT } from '@/physics/constants'
 
-const COULOMB_K = 9e9
 
 interface Point {
   x: number
@@ -184,7 +184,7 @@ export function useElectricFieldPhysics(p: ElectricFieldPhysicsParams): Electric
     const qSI = qSource * 1e-6
     const qTestSI = qTest * 1e-6
 
-    const { E } = calculateElectricField(COULOMB_K, Math.abs(qSI), Math.max(0.005, distM))
+    const { E } = calculateElectricField(COULOMB_CONSTANT, Math.abs(qSI), Math.max(0.005, distM))
 
     const angle = Math.atan2(dy, dx)
     const dirFactor = qSource >= 0 ? 1 : -1
@@ -204,7 +204,7 @@ export function useElectricFieldPhysics(p: ElectricFieldPhysicsParams): Electric
     const dy1 = cy1 - testY
     const r1Px = Math.sqrt(dx1 * dx1 + dy1 * dy1)
     const r1M = Math.max(0.2, r1Px / pxPerCm) * 0.01
-    const E1_val = calculateElectricField(COULOMB_K, Math.abs(q1 * 1e-6), r1M).E
+    const E1_val = calculateElectricField(COULOMB_CONSTANT, Math.abs(q1 * 1e-6), r1M).E
     const angle1 = Math.atan2(dy1, dx1)
     const dir1 = q1 >= 0 ? 1 : -1
     const E1x = E1_val * dir1 * Math.cos(angle1)
@@ -214,7 +214,7 @@ export function useElectricFieldPhysics(p: ElectricFieldPhysicsParams): Electric
     const dy2 = cy2 - testY
     const r2Px = Math.sqrt(dx2 * dx2 + dy2 * dy2)
     const r2M = Math.max(0.2, r2Px / pxPerCm) * 0.01
-    const E2_val = calculateElectricField(COULOMB_K, Math.abs(q2 * 1e-6), r2M).E
+    const E2_val = calculateElectricField(COULOMB_CONSTANT, Math.abs(q2 * 1e-6), r2M).E
     const angle2 = Math.atan2(dy2, dx2)
     const dir2 = q2 >= 0 ? 1 : -1
     const E2x = E2_val * dir2 * Math.cos(angle2)
@@ -386,7 +386,7 @@ export function useElectricFieldPhysics(p: ElectricFieldPhysicsParams): Electric
 
     // Y 轴上界（用最小允许 r 的场强 / 力作上界，避免极小 r 的奇点把曲线压扁）
     const qSI = Math.abs(qSource * 1e-6)
-    const { E: eMax } = calculateElectricField(COULOMB_K, qSI, 1.2 * 0.01)
+    const { E: eMax } = calculateElectricField(COULOMB_CONSTANT, qSI, 1.2 * 0.01)
     const fMax = eMax * 2.0 * 1e-6
 
     // 整段曲线采样（仅当 qSource / qTest 变化时重算）
@@ -394,7 +394,7 @@ export function useElectricFieldPhysics(p: ElectricFieldPhysicsParams): Electric
     const step = 0.1
     for (let r = rMin; r <= rMax + 0.01; r += step) {
       const rSI = r * 0.01
-      const { E } = calculateElectricField(COULOMB_K, qSI, rSI)
+      const { E } = calculateElectricField(COULOMB_CONSTANT, qSI, rSI)
       const F = E * Math.abs(qTest) * 1e-6
       points.push({ r, E, F })
     }

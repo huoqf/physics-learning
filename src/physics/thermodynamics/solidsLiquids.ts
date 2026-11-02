@@ -1,3 +1,5 @@
+import { GRAVITY } from '../constants'
+
 /**
  * 固体、液体与表面张力物理纯函数
  */
@@ -103,7 +105,7 @@ export function calculateCapillaryRise(
   theta: number,
   r: number,
   rho: number = 1000,
-  g: number = 9.8
+  g: number = GRAVITY
 ): {
   h: number // 上升高度 (m)；当 theta > pi/2 时 h < 0 为下降
   isWetting: boolean // 是否浸润

@@ -1,4 +1,11 @@
 import { useMemo } from 'react'
+import {
+  LASER_BEAM_INITIAL_RADIUS_M,
+  beamRadius,
+  halfAngleFromDeg,
+  halfAngleFromMrad,
+  intensityRatioPercent,
+} from '@/physics/laser'
 
 interface UseLaserPhysicsParams {
   mode: number                  // 0: 平行性, 1: 相干性, 2: 高能量应用
@@ -90,28 +97,28 @@ export function useLaserPhysics({
     let tempChartPoints: ChartPoint[] = []
     let sparks: SparkParticle[] = []
 
-    const r0 = 0.001 // 初始光束半径 1mm
+    const r0 = LASER_BEAM_INITIAL_RADIUS_M
 
     // ==========================================
     // 1. 模式 0：平行性对比 (Directionality)
     // ==========================================
     if (modeVal === 0) {
-      const thetaLaserRad = (divergenceAngleLaser / 1000) / 2 // 半发散角 (rad)
-      const thetaNormalRad = (divergenceAngleNormal * Math.PI / 180) / 2 // 半发散角 (rad)
+      const thetaLaserRad = halfAngleFromMrad(divergenceAngleLaser)
+      const thetaNormalRad = halfAngleFromDeg(divergenceAngleNormal)
 
       // 计算在当前传播距离处的光斑半径
-      laserSpotRadius = r0 + propagationDistance * Math.tan(thetaLaserRad)
-      normalSpotRadius = r0 + propagationDistance * Math.tan(thetaNormalRad)
+      laserSpotRadius = beamRadius(r0, propagationDistance, thetaLaserRad)
+      normalSpotRadius = beamRadius(r0, propagationDistance, thetaNormalRad)
 
       // 光强与面积成反比 I/I0 = (r0/r)^2
-      laserIntensityRatio = Math.max(0.01, Math.min(100, (r0 / laserSpotRadius) ** 2 * 100))
-      normalIntensityRatio = Math.max(0.0001, Math.min(100, (r0 / normalSpotRadius) ** 2 * 100))
+      laserIntensityRatio = Math.max(0.01, Math.min(100, intensityRatioPercent(r0, laserSpotRadius)))
+      normalIntensityRatio = Math.max(0.0001, Math.min(100, intensityRatioPercent(r0, normalSpotRadius)))
 
       // 生成 R-d 曲线，传播距离从 0 到 100m
       const steps = 50
       for (let i = 0; i <= steps; i++) {
         const d = (i / steps) * 100
-        const rLaser = r0 + d * Math.tan(thetaLaserRad)
+        const rLaser = beamRadius(r0, d, thetaLaserRad)
         divergenceChartPoints.push({ x: d, y: rLaser * 1000 }) // 转换为 mm 绘图更直观
       }
     }

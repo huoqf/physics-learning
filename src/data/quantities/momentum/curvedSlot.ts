@@ -1,5 +1,6 @@
 import type { PhysicsPanelData, PhysicsQuantity, ParamDefs } from '../types'
 import { normalizeParams } from '../types'
+import { GRAVITY } from '@/physics/constants'
 import {
   precomputeCurvedSlot,
   interpolateCurvedSlot,
@@ -36,15 +37,15 @@ export function handleCurvedSlot(
   const isFixed = p.isFixed
   const slotShape = p.slotShape
 
-  const states = precomputeCurvedSlot(m, M, R, 9.8, 6.0, 0.002, isFixed, slotShape)
+  const states = precomputeCurvedSlot(m, M, R, GRAVITY, 6.0, 0.002, isFixed, slotShape)
   const st = interpolateCurvedSlot(states, _time)
 
   const v_block_bottom = isFixed
-    ? -Math.sqrt(2 * 9.8 * R)
-    : -Math.sqrt((2 * 9.8 * R * M) / (M + m))
+    ? -Math.sqrt(2 * GRAVITY * R)
+    : -Math.sqrt((2 * GRAVITY * R * M) / (M + m))
   const v_slot_bottom = isFixed ? 0 : -(m / M) * v_block_bottom
 
-  const N_bottom = isFixed ? m * 9.8 * 3 : m * 9.8 * (3 + (2 * m) / M)
+  const N_bottom = isFixed ? m * GRAVITY * 3 : m * GRAVITY * (3 + (2 * m) / M)
 
   const s_m = isFixed ? R : (M * R) / (M + m)
   const s_M = isFixed ? 0 : (m * R) / (M + m)

@@ -10,7 +10,8 @@ import {
   generateRealPendulumTrajectory,
   getPendulumStateFromTrajectory
 } from '@/physics/oscillation'
-import { computePendulumExperiment } from '@/physics/experimentPendulum'
+import { computePendulumExperiment } from '@/physics/experimentPendulum'
+import { GRAVITY } from '@/physics/constants'
 import {
   computeWaveDisplacement,
   computeWavelength,
@@ -44,7 +45,7 @@ export function buildVibrationQuantities(
   if (animId === 'anim-simple-pendulum') {
     const mode = params.mode ?? 0 // 0: 简谐运动, 1: 大角对比, 2: 能量守恒, 3: 高考实验
     const L = params.L ?? 1.0
-    const g = params.g ?? 9.8
+    const g = params.g ?? GRAVITY
     const theta0Deg = mode === 3 ? (params.theta0_exp ?? params.theta0 ?? 4) : (params.theta0 ?? 8)
     const phiDeg = params.phiDeg ?? 0
     const phi = (phiDeg * Math.PI) / 180
@@ -56,7 +57,7 @@ export function buildVibrationQuantities(
         l_line: params.l_line,
         d_mm: params.d_mm,
         n_cycles: params.n_cycles,
-        g_true: params.g ?? 9.800,
+        g_true: params.g ?? GRAVITY,
         timing_err: params.timing_err,
         theta0: theta0Deg,
       })

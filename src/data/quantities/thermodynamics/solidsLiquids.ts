@@ -1,4 +1,5 @@
 import type { PhysicsPanelData, PhysicsQuantity, Formula, GaokaoPoint } from '../types'
+import { GRAVITY } from '@/physics/constants'
 import {
   calculateSurfaceTensionForce,
   calculateCapillaryRise,
@@ -77,7 +78,7 @@ export function buildSolidsLiquidsQuantities(
       LIQUID_CONTACT_ANGLE[liquidKey],
       rMeters,
       LIQUID_DENSITY[liquidKey],
-      9.8,
+      GRAVITY,
     )
 
     quantities.push(

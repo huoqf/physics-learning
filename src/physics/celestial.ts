@@ -9,7 +9,7 @@
  *
  * @param M 中心天体质量 (kg)
  * @param r 轨道半径 (m)，必须 > 0
- * @param G 万有引力常量 (N·m²/kg²)，默认 6.674e-11
+ * @param G 万有引力常量 (N·m²/kg²)，通常传 `GRAVITATIONAL_CONSTANT`
  * @returns v 轨道速度 (m/s)、T 轨道周期 (s)、a_c 向心加速度 (m/s²)
  */
 export function calculateOrbitalSpeed(M: number, r: number, G: number): { v: number; T: number; a_c: number } {

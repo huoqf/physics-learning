@@ -40,7 +40,7 @@ describe('anim-conveyor · criticalTimes 物理正确性', () => {
   })
 
   it('所有临界时刻都在观察窗口内、为正、且按升序排列', () => {
-    const presets = [
+    const presets: Array<Record<string, number>> = [
       { conveyorMode: 0, vBelt: 3.0, v0: 0, mu: 0.2, L: 6 },
       { conveyorMode: 0, vBelt: 2.0, v0: 5.0, mu: 0.2, L: 6 },
       { conveyorMode: 0, vBelt: -2.0, v0: 4.0, mu: 0.2, L: 6 },

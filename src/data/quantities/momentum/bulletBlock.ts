@@ -1,5 +1,23 @@
 import type { PhysicsPanelData, PhysicsQuantity, ParamDefs } from '../types'
 import { normalizeParams } from '../types'
+import {
+  getBulletBlockState,
+  getBulletBlockTimeline,
+  getCriticalVelocity,
+  type BulletBlockMode,
+  type BulletBlockParam,
+} from '@/physics'
+
+/**
+ * 子弹打木块（anim-bullet-block）右屏看板。
+ *
+ * 单一真源：模式判定（v₀ vs v_crit）、时间线（t_sync / t_exit / 穿出速度）、
+ * 相对位移、摩擦生热全部来自 `@/physics/bulletBlock`，与中屏 `useBulletBlockPhysics`
+ * 调同一组函数。本文件只负责"把物理量翻译成看板文案"。
+ *
+ * 历史教训：这里曾自己解一遍二次方程求穿出时刻、又用 `deltaXSync > L` 另判穿透，
+ * 与物理层的 `getCriticalVelocity` 构成两套判据 —— 改一个参数区间就可能只对了一半。
+ */
 
 interface BulletBlockParams {
   m: number
@@ -7,16 +25,15 @@ interface BulletBlockParams {
   v0: number
   f: number
   L: number
-  mode: number
 }
 
+/** 与 registry `mechanics-momentum.ts` 的 defaultParams 对齐（仅 params 缺失时兜底） */
 const DEFAULTS: ParamDefs<BulletBlockParams> = {
-  m: { default: 0.05 },
-  M: { default: 1.0 },
-  v0: { default: 200 },
-  f: { default: 500 },
-  L: { default: 0.2 },
-  mode: { default: 0 },
+  m: { default: 0.1 },
+  M: { default: 0.4 },
+  v0: { default: 30 },
+  f: { default: 10 },
+  L: { default: 0.5 },
 }
 
 export function handleBulletBlock(
@@ -28,39 +45,57 @@ export function handleBulletBlock(
   if (animId !== 'anim-bullet-block') return null
 
   const p = normalizeParams(params, DEFAULTS)
-  const m = p.m ?? 0.05
-  const M = p.M ?? 1.0
-  const v0 = p.v0 ?? 200
-  const f = p.f ?? 500
-  const L = p.L ?? 0.2
+  const param: BulletBlockParam = { m: p.m, M: p.M, v0: p.v0, f: p.f, L: p.L }
 
-  const vCommon = (m * v0) / (m + M)
-  const aBullet = -f / m
-  const aBlock = f / M
-  const tSync = v0 / (Math.abs(aBullet) + aBlock)
-  const deltaXSync = v0 * tSync + 0.5 * (aBullet - aBlock) * tSync * tSync
-  const Ek0 = 0.5 * m * v0 * v0
-  const QMax = Ek0 - 0.5 * (m + M) * vCommon * vCommon
+  // 模式判据与中屏完全一致：超过临界初速度才穿透
+  const mode: BulletBlockMode = param.v0 > getCriticalVelocity(param) ? 'penetrate' : 'retain'
+  const timeline = getBulletBlockTimeline(param, mode)
+  // t=0 取初态（子弹初动能），t=tMax 取终态（内能、末速度），都不在本文件另算
+  const initial = getBulletBlockState(param, 0, mode)
+  const final = getBulletBlockState(param, timeline.tMax, mode)
 
-  // 物理判定：根据相对滑动距离 deltaXSync 与木块厚度 L 自动决定模式（若外部显式传入 mode 则优先）
-  const isPenetrate = ('mode' in params) ? (p.mode === 1) : (deltaXSync > L)
+  /** 穿透模式但数值上未真正穿出（极端参数）时退化为留存展示 */
+  const isPenetrate = mode === 'penetrate' && Number.isFinite(timeline.tExit)
 
   const quantities: PhysicsQuantity[] = [
     ...base,
-    { label: '运动模式', value: isPenetrate ? '穿透模式' : '留存模式', unit: '', highlight: isPenetrate ? 'extreme' : 'positive' },
-    { label: '系统总动量', value: (m * v0).toFixed(1), unit: 'kg·m/s', highlight: 'positive' },
-    { label: '子弹初动能', value: Ek0.toFixed(1), unit: 'J' },
+    {
+      label: '运动模式',
+      value: isPenetrate ? '穿透模式' : '留存模式',
+      unit: '',
+      highlight: isPenetrate ? 'extreme' : 'positive',
+    },
+    { label: '系统总动量', value: (param.m * param.v0).toFixed(1), unit: 'kg·m/s', highlight: 'positive' },
+    { label: '子弹初动能', value: initial.EkBullet.toFixed(1), unit: 'J' },
   ]
 
   let formulas: Array<{ name: string; latex: string; level: 'core' | 'important'; note?: string }> = []
 
-  if (!isPenetrate) {
-    // 留存模式
+  if (isPenetrate) {
     quantities.push(
-      { label: '共速速度', value: vCommon.toFixed(2), unit: 'm/s', highlight: 'positive' },
-      { label: '达共速时间', value: tSync.toFixed(4), unit: 's' },
-      { label: '相对位移 Δx', value: deltaXSync.toFixed(3), unit: 'm' },
-      { label: '摩擦生热 Q', value: QMax.toFixed(1), unit: 'J', highlight: 'extreme' },
+      { label: '穿出时刻', value: timeline.tExit.toFixed(4), unit: 's' },
+      { label: '穿出子弹速度', value: timeline.vExitBullet.toFixed(2), unit: 'm/s', highlight: 'positive' },
+      { label: '穿出木块速度', value: timeline.vExitBlock.toFixed(2), unit: 'm/s', highlight: 'positive' },
+      { label: '摩擦生热 Q', value: final.Q.toFixed(1), unit: 'J', highlight: 'extreme' },
+    )
+    formulas = [
+      {
+        name: '动量守恒',
+        latex: 'm v_0 = m v_1 + M v_2',
+        level: 'core',
+      },
+      {
+        name: '能量转化 (摩擦生热)',
+        latex: 'Q = f \\cdot L = \\frac{1}{2}m v_0^2 - \\left(\\frac{1}{2}m v_1^2 + \\frac{1}{2}M v_2^2\\right)',
+        level: 'important',
+      },
+    ]
+  } else {
+    quantities.push(
+      { label: '共速速度', value: timeline.vSync.toFixed(2), unit: 'm/s', highlight: 'positive' },
+      { label: '达共速时间', value: timeline.tSync.toFixed(4), unit: 's' },
+      { label: '相对位移 Δx', value: timeline.deltaXSync.toFixed(3), unit: 'm' },
+      { label: '摩擦生热 Q', value: final.Q.toFixed(1), unit: 'J', highlight: 'extreme' },
     )
     formulas = [
       {
@@ -74,48 +109,6 @@ export function handleBulletBlock(
         level: 'important',
       },
     ]
-  } else {
-    // 穿透模式：计算穿出状态
-    const A = 0.5 * (f / m + f / M)
-    const disc = v0 * v0 - 4 * A * L
-    if (disc >= 0) {
-      const sqrtDisc = Math.sqrt(disc)
-      const tExit = (v0 - sqrtDisc) / (2 * A)
-      const vBulletExit = Math.max(0, v0 + aBullet * tExit)
-      const vBlockExit = aBlock * tExit
-      const QExit = f * L
-      quantities.push(
-        { label: '穿出时刻', value: tExit.toFixed(4), unit: 's' },
-        { label: '穿出子弹速度', value: vBulletExit.toFixed(2), unit: 'm/s', highlight: 'positive' },
-        { label: '穿出木块速度', value: vBlockExit.toFixed(2), unit: 'm/s', highlight: 'positive' },
-        { label: '摩擦生热 Q', value: QExit.toFixed(1), unit: 'J', highlight: 'extreme' },
-      )
-      formulas = [
-        {
-          name: '动量守恒',
-          latex: 'm v_0 = m v_1 + M v_2',
-          level: 'core',
-        },
-        {
-          name: '能量转化 (摩擦生热)',
-          latex: 'Q = f \\cdot L = \\frac{1}{2}m v_0^2 - \\left(\\frac{1}{2}m v_1^2 + \\frac{1}{2}M v_2^2\\right)',
-          level: 'important',
-        },
-      ]
-    } else {
-      quantities.push(
-        { label: '状态结论', value: '无法穿透', unit: '', highlight: 'negative' },
-        { label: '共速速度', value: vCommon.toFixed(2), unit: 'm/s' },
-        { label: '摩擦生热 Q', value: QMax.toFixed(1), unit: 'J', highlight: 'extreme' },
-      )
-      formulas = [
-        {
-          name: '动量守恒',
-          latex: 'm v_0 = (m + M) v_{\\text{共}}',
-          level: 'core',
-        },
-      ]
-    }
   }
 
   return {

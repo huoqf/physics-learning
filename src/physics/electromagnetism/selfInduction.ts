@@ -1,3 +1,5 @@
+import { GRAVITY } from '../constants'
+
 /**
  * 自感、互感与涡流电磁阻尼纯物理计算模型 (SSOT)
  *
@@ -113,7 +115,7 @@ export function calcEddyDampingOscillation(
   length: number = 0.5,
 ): { theta: number; omega: number; energyRatio: number } {
   if (t < 0) return { theta: theta0, omega: 0, energyRatio: 1 }
-  const g = 9.8
+  const g = GRAVITY
   const w0 = Math.sqrt(g / length)
 
   // 阻尼系数 gamma: 与 B^2 成正比，开缝梳齿片阻尼弱化 15 倍

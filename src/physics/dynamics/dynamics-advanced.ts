@@ -99,7 +99,7 @@ export function calculateNewtonSecondVariableMotion(
 } {
   const m = params.m;
   const mu = params.mu;
-  const g = params.g ?? 9.8;
+  const g = params.g ?? GRAVITY;
   const N = m * g;
 
   if (modelType === 0) {

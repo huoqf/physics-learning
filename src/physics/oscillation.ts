@@ -1,3 +1,5 @@
+import { GRAVITY } from './constants'
+
 /**
  * 简谐运动（Simple Harmonic Motion, SHM）纯函数库。
  *
@@ -94,7 +96,7 @@ export function computeVerticalSpringForces(
   mass: number,
   k: number,
   y: number,
-  g = 9.8,
+  g = GRAVITY,
 ): VerticalSpringForces {
   const equilibriumOffset = (mass * g) / k
   const gravity = mass * g

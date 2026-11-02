@@ -1,5 +1,6 @@
 import type { PhysicsPanelData, PhysicsQuantity, ParamDefs } from '../types'
 import { normalizeParams } from '../types'
+import { GRAVITATIONAL_CONSTANT } from '@/physics/constants'
 
 interface Params {
   mode: number
@@ -28,7 +29,7 @@ export function handleGravity(
 
   const mode = p.mode ?? 0
   const preset = p.preset ?? 0
-  const G = 6.674e-11
+  const G = GRAVITATIONAL_CONSTANT
 
   let m1 = p.m1 ?? 1000
   let m2 = p.m2 ?? 10
@@ -76,7 +77,7 @@ export function handleGravity(
         { label: `${name2}质量 m₂`, value: realM2.toExponential(2), unit: 'kg' },
         { label: '天体间距 r', value: realR.toExponential(2), unit: 'm' },
         { label: '万有引力 F', value: F_val.toExponential(2), unit: 'N', highlight: 'positive' as const },
-        { label: '引力常数 G', value: '6.674×10⁻¹¹', unit: 'N·m²/kg²' }
+        { label: '引力常数 G', value: '6.67×10⁻¹¹', unit: 'N·m²/kg²' }
       ],
       formulas: [
         { name: '万有引力定律', latex: 'F = G \\frac{m_1 m_2}{r^2}', level: 'core', condition: '质点或均匀球体' }

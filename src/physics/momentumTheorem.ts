@@ -1,3 +1,5 @@
+import { GRAVITY } from './constants'
+
 /**
  * src/physics/momentumTheorem.ts
  * 动量定理（Momentum Theorem）纯物理计算模块
@@ -16,7 +18,7 @@
  * @param g 重力加速度 (m/s²)，默认 9.8
  * @returns v 着地速度 (m/s)
  */
-export function calculateFallVelocity(h: number, g: number = 9.8): number {
+export function calculateFallVelocity(h: number, g: number = GRAVITY): number {
   return Math.sqrt(2 * g * h)
 }
 
@@ -32,7 +34,7 @@ export function calculateFallVelocity(h: number, g: number = 9.8): number {
  * @returns F_avg 平均冲力 (N)
  */
 export function calculateAverageImpactForce(
-  m: number, v: number, dt: number, g: number = 9.8
+  m: number, v: number, dt: number, g: number = GRAVITY
 ): number {
   return (m * v) / dt + m * g
 }

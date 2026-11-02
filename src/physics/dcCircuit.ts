@@ -1,3 +1,5 @@
+import { GRAVITY } from './constants'
+
 /**
  * 恒定电流纯函数库。
  * 无副作用，不依赖 React/DOM/window。单位采用 SI。
@@ -273,7 +275,7 @@ export function calculateMotorCircuit(
   E_back: number,
   m_load: number
 ): MotorCircuitResult {
-  const g = 9.8
+  const g = GRAVITY
   
   if (state === 0) {
     const totalR = R_protect + r_M

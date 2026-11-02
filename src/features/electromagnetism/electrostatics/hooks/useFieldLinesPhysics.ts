@@ -5,10 +5,10 @@
  * 组件 JSX 零物理公式。
  */
 import { useMemo } from 'react'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS } from '@/theme/physics'
+import { COULOMB_CONSTANT } from '@/physics/constants'
 
 // ── 物理与绘图常量 ──
-const COULOMB_K = 9e9
 export const CHARGE_RADIUS = 22
 const PROBE_CHARGE = 1e-6 // 探针试探电荷 +1.0 μC
 
@@ -31,7 +31,7 @@ function electricField(charges: Charge[], px: number, py: number, mPerPx: number
     const rPx = Math.sqrt(dx * dx + dy * dy)
     const rM = Math.max(0.02, rPx * mPerPx) // 防止除零，限制最小物理距离 2cm
     const qSI = c.q * 1e-6
-    const mag = (COULOMB_K * qSI) / (rM * rM)
+    const mag = (COULOMB_CONSTANT * qSI) / (rM * rM)
     ex += mag * (dx / rPx)
     ey += mag * (dy / rPx)
   }
@@ -46,7 +46,7 @@ function potential(charges: Charge[], px: number, py: number, mPerPx: number) {
     const dy = py - c.y
     const rPx = Math.sqrt(dx * dx + dy * dy)
     const rM = Math.max(0.04, rPx * mPerPx) // 限制最小距离 4cm
-    v += (COULOMB_K * c.q * 1e-6) / rM
+    v += (COULOMB_CONSTANT * c.q * 1e-6) / rM
   }
   return v
 }

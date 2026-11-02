@@ -246,10 +246,8 @@ export function getBoardSystemState(param: BlockBoardParam, t: number): BoardSys
 
 // ─── v-t 图数据生成 ────────────────────────────────────────────────────────
 
-export interface VTPoint {
-  t: number
-  v: number
-}
+export type { VTPoint } from './chartPoint'
+import type { VTPoint } from './chartPoint'
 
 /**
  * 生成滑块和木板的完整 v-t 理论轨迹（用于图表定标）

@@ -1,3 +1,5 @@
+import { GRAVITY } from './constants'
+
 /**
  * 高考物理实验：用单摆测重力加速度 —— 纯物理计算模型。
  *
@@ -16,7 +18,7 @@ export const PENDULUM_EXP_DEFAULTS = {
   l_line: 0.985, // 摆线长 (m)，米尺测量
   d_mm: 20.0, // 摆球直径 (mm)，游标卡尺测量
   n_cycles: 40, // 全振动次数 N (次)
-  g_true: 9.800, // 真实环境重力加速度 (m/s²)，隐藏真值基准
+  g_true: GRAVITY, // 真实环境重力加速度 (m/s²)，隐藏真值基准
   timing_err: 0, // 人工停表反应/操作误差 (s)
   theta0: 4, // 初始摆角 (度，高考实验要求 θ ≤ 5°)
 } as const
@@ -24,7 +26,7 @@ export const PENDULUM_EXP_DEFAULTS = {
 /** 单摆动画全局默认参数单一真源 (SSOT) */
 export const SIMPLE_PENDULUM_DEFAULT_PARAMS = {
   L: 1.5,
-  g: 9.8,
+  g: GRAVITY,
   theta0: 8,
   phiDeg: 0,
   mode: 0,
@@ -45,7 +47,7 @@ export interface PendulumExperimentInput {
   d_mm?: number
   /** 累积全振动次数 N (次)，有效区间 [20, 60] */
   n_cycles?: number
-  /** 当地真实重力加速度真值 (m/s²)，默认 9.800 */
+  /** 当地真实重力加速度真值 (m/s²)，默认取 GRAVITY 常量 */
   g_true?: number
   /** 计时操作误差 Δt (s)，反应时间或停表读数偏差 */
   timing_err?: number

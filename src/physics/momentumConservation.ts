@@ -1,3 +1,5 @@
+import { GRAVITY } from './constants'
+
 /**
  * src/physics/momentumConservation.ts
  * 动量守恒定律（Law of Conservation of Momentum）纯物理计算模块
@@ -92,7 +94,7 @@ export function calculateCommonVelocity(m: number, v0: number, M: number): numbe
  * @returns t 共速时间 (s)
  */
 export function calculateCommonVelocityTime(
-  M: number, vCommon: number, mu: number, m: number, g: number = 9.8
+  M: number, vCommon: number, mu: number, m: number, g: number = GRAVITY
 ): number {
   const frictionForce = mu * m * g
   if (frictionForce <= 0) return Infinity
@@ -110,7 +112,7 @@ export function calculateCommonVelocityTime(
  * @returns x1 滑块位移 (m)
  */
 export function calculateSliderDisplacement(
-  v0: number, mu: number, t: number, g: number = 9.8, m?: number, M?: number
+  v0: number, mu: number, t: number, g: number = GRAVITY, m?: number, M?: number
 ): number {
   if (m === undefined || M === undefined || mu <= 0) {
     return v0 * t - 0.5 * mu * g * t * t
@@ -134,7 +136,7 @@ export function calculateSliderDisplacement(
  * @returns x2 木板位移 (m)
  */
 export function calculateBoardDisplacement(
-  mu: number, m: number, M: number, t: number, g: number = 9.8, v0?: number
+  mu: number, m: number, M: number, t: number, g: number = GRAVITY, v0?: number
 ): number {
   const aBoard = (mu * m * g) / M
   if (v0 === undefined || mu <= 0) return 0.5 * aBoard * t * t
@@ -156,7 +158,7 @@ export function calculateBoardDisplacement(
  * @returns v_slider 滑块速度 (m/s)
  */
 export function calculateSliderVelocity(
-  v0: number, mu: number, t: number, g: number = 9.8, m?: number, M?: number
+  v0: number, mu: number, t: number, g: number = GRAVITY, m?: number, M?: number
 ): number {
   if (m === undefined || M === undefined || mu <= 0) {
     return Math.max(v0 - mu * g * t, 0)
@@ -180,7 +182,7 @@ export function calculateSliderVelocity(
  * @returns v_board 木板速度 (m/s)
  */
 export function calculateBoardVelocity(
-  mu: number, m: number, M: number, t: number, v0: number, g: number = 9.8
+  mu: number, m: number, M: number, t: number, v0: number, g: number = GRAVITY
 ): number {
   const aBoard = (mu * m * g) / M
   const vCommon = calculateCommonVelocity(m, v0, M)
@@ -210,7 +212,7 @@ export function calculateRelativeDisplacement(x1: number, x2: number): number {
  * @returns Q 摩擦生热 (J)
  */
 export function calculateFrictionHeat(
-  mu: number, m: number, delta_x: number, g: number = 9.8
+  mu: number, m: number, delta_x: number, g: number = GRAVITY
 ): number {
   return mu * m * g * delta_x
 }

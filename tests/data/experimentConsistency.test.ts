@@ -56,7 +56,8 @@ describe('高考实验专题 · 高中物理规范与知识体系守卫', () => 
       // 3. 步骤与选项严谨性
       expect(prob.steps.length).toBeGreaterThanOrEqual(2)
       expect(prob.steps.every((s) => s.formula && s.explanation)).toBe(true)
-      const options = Object.values(prob.optionExplanations)
+      expect(prob.optionExplanations, `题目 ${prob.id} 缺少选项解析`).toBeDefined()
+      const options = Object.values(prob.optionExplanations ?? {})
       expect(options.some((o) => o.isCorrect)).toBe(true)
     }
   })

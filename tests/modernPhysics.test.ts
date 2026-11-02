@@ -28,15 +28,15 @@ describe('Bohr Theory and Modern Physics Quantities Builder', () => {
         buildAlphaScatterQuantities(scatterId, { modelType: 1, impactParameter: b }, 0)!
 
       // b = 库仑作用尺度 a = 4px 时，散射角恰为 90°（双曲线几何分界）
-      expect(parseFloat(row(4).quantities[2].value)).toBeCloseTo(90, 1)
+      expect(parseFloat(String(row(4).quantities[2].value))).toBeCloseTo(90, 1)
 
       // 散射角随碰撞参数单调递减
-      const angle = (b: number) => parseFloat(row(b).quantities[2].value)
+      const angle = (b: number) => parseFloat(String(row(b).quantities[2].value))
       expect(angle(1)).toBeGreaterThan(angle(8))
       expect(angle(8)).toBeGreaterThan(angle(20))
 
       // 最近接近距离满足 r_min = a + √(a² + b²)
-      expect(parseFloat(row(0).quantities[4].value)).toBeCloseTo(8, 1)
+      expect(parseFloat(String(row(0).quantities[4].value))).toBeCloseTo(8, 1)
     })
 
     it('should classify scattering behavior consistently with the animation', () => {
@@ -58,15 +58,15 @@ describe('Bohr Theory and Modern Physics Quantities Builder', () => {
     it('should calculate En and rn accurately for different quantum numbers', () => {
       // n = 1 基态
       const resN1 = buildModernPhysicsQuantities(animId, { mode: 0, targetLevel: 1 }, 0)
-      const En1 = parseFloat(resN1?.quantities[1].value || '0')
-      const rn1 = parseFloat(resN1?.quantities[2].value || '0')
+      const En1 = parseFloat(String(resN1?.quantities[1].value || '0'))
+      const rn1 = parseFloat(String(resN1?.quantities[2].value || '0'))
       expect(En1).toBeCloseTo(-13.60, 2)
       expect(rn1).toBeCloseTo(0.53, 2)
 
       // n = 2 激发态
       const resN2 = buildModernPhysicsQuantities(animId, { mode: 0, targetLevel: 2 }, 0)
-      const En2 = parseFloat(resN2?.quantities[1].value || '0')
-      const rn2 = parseFloat(resN2?.quantities[2].value || '0')
+      const En2 = parseFloat(String(resN2?.quantities[1].value || '0'))
+      const rn2 = parseFloat(String(resN2?.quantities[2].value || '0'))
       expect(En2).toBeCloseTo(-3.40, 2)
       expect(rn2).toBeCloseTo(2.12, 2)
     })

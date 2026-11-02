@@ -1,3 +1,5 @@
+import { COULOMB_CONSTANT } from './constants'
+
 /**
  * 静电场纯函数库。
  * 无副作用，不依赖 React/DOM/window。单位采用 SI。
@@ -387,7 +389,7 @@ export function calculateNonUniformEField(
   x_ground: number,
   y_ground: number
 ): { phi: number; Ex: number; Ey: number; E: number; isRegularized: boolean; rEffective: number } {
-  const k = 9e9
+  const k = COULOMB_CONSTANT
   const MIN_R = 0.1 // 可视化正则化半径：10 cm
   const dx = x - xq
   const dy = y - yq

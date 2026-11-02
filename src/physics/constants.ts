@@ -9,6 +9,14 @@ export const GRAVITY = 9.8
 /** 万有引力常量 G (N·m²/kg²) */
 export const GRAVITATIONAL_CONSTANT = 6.67e-11
 
+/**
+ * 静电力常量 k = 1/(4πε₀) (N·m²/C²)。
+ *
+ * 高中物理取近似值 9.0×10⁹。历史问题：中屏与看板各自写一份 `const COULOMB_K = 9e9`，
+ * 共 8 处副本，改一处即分叉。
+ */
+export const COULOMB_CONSTANT = 9e9
+
 /** 地球质量 (kg) */
 export const EARTH_MASS = 5.97e24
 

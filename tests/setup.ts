@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom'
+import '@testing-library/jest-dom/vitest'
 
 // jsdom does not provide ResizeObserver; mock it for components using useCanvasSize
 class ResizeObserverMock {

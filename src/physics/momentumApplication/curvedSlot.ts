@@ -1,3 +1,5 @@
+import { GRAVITY } from '../constants'
+
 /**
  * 弧形槽-滑块模型 (Curved Slot & Block Model)
  */
@@ -64,7 +66,7 @@ export function precomputeCurvedSlot(
   m: number,
   M: number,
   R: number,
-  g: number = 9.8,
+  g: number = GRAVITY,
   totalDuration: number = 6.0,
   dt: number = 0.002,
   isFixed: number = 0,

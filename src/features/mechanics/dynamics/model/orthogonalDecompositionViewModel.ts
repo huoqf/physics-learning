@@ -1,4 +1,8 @@
-import { GRAVITY } from '@/physics/constants'
+import {
+  computeInclineEquilibrium,
+  decomposeForce,
+  sumForces,
+} from '@/physics/orthogonalDecomposition'
 
 // ─── 物理坐标系类型（y↑ 正） ───
 
@@ -74,19 +78,12 @@ function computeForce(
   originX: number,
   originY: number,
 ): ForcePhysicsData {
-  const rad = (thetaDeg * Math.PI) / 180
-  const fx = fVal * Math.cos(rad)
-  const fy = fVal * Math.sin(rad)
-
-  const relRad = rad - axisAngleRad
-  const fxPrime = fVal * Math.cos(relRad)
-  const fyPrime = fVal * Math.sin(relRad)
-
-  // 物理投影坐标转为标准系坐标
-  const projX_physX = fxPrime * Math.cos(axisAngleRad)
-  const projX_physY = fxPrime * Math.sin(axisAngleRad)
-  const projY_physX = -fyPrime * Math.sin(axisAngleRad)
-  const projY_physY = fyPrime * Math.cos(axisAngleRad)
+  // 分解与投影全部来自物理层，中屏与右屏看板同一实现
+  const { fx, fy, fxPrime, fyPrime, projX, projY } = decomposeForce(
+    fVal,
+    thetaDeg,
+    axisAngleRad,
+  )
 
   return {
     name,
@@ -98,8 +95,8 @@ function computeForce(
     fxPrime,
     fyPrime,
     endPhys: { x: originX + fx, y: originY + fy },
-    xProjPhys: { x: originX + projX_physX, y: originY + projX_physY },
-    yProjPhys: { x: originX + projY_physX, y: originY + projY_physY },
+    xProjPhys: { x: originX + projX.x, y: originY + projX.y },
+    yProjPhys: { x: originX + projY.x, y: originY + projY.y },
   }
 }
 
@@ -111,22 +108,21 @@ function computeSlopeForce(
   axisAngleRad: number,
   blockCenterPhys: { x: number; y: number },
 ): SlopeForcePhysicsData {
-  const rad = (thetaDeg * Math.PI) / 180
-  const fx = fVal * Math.cos(rad)
-  const fy = fVal * Math.sin(rad)
-
-  const relRad = rad - axisAngleRad
-  const fxPrime = fVal * Math.cos(relRad)
-  const fyPrime = fVal * Math.sin(relRad)
-
-  const projX_physX = fxPrime * Math.cos(axisAngleRad)
-  const projX_physY = fxPrime * Math.sin(axisAngleRad)
-  const projY_physX = -fyPrime * Math.sin(axisAngleRad)
-  const projY_physY = fyPrime * Math.cos(axisAngleRad)
+  const { fx, fy, fxPrime, fyPrime, projX, projY } = decomposeForce(
+    fVal,
+    thetaDeg,
+    axisAngleRad,
+  )
 
   const endPhysFromBlock = { x: blockCenterPhys.x + fx, y: blockCenterPhys.y + fy }
-  const xProjPhysFromBlock = { x: blockCenterPhys.x + projX_physX, y: blockCenterPhys.y + projX_physY }
-  const yProjPhysFromBlock = { x: blockCenterPhys.x + projY_physX, y: blockCenterPhys.y + projY_physY }
+  const xProjPhysFromBlock = {
+    x: blockCenterPhys.x + projX.x,
+    y: blockCenterPhys.y + projX.y,
+  }
+  const yProjPhysFromBlock = {
+    x: blockCenterPhys.x + projY.x,
+    y: blockCenterPhys.y + projY.y,
+  }
 
   return {
     name,
@@ -138,8 +134,8 @@ function computeSlopeForce(
     fxPrime,
     fyPrime,
     endPhys: { x: fx, y: fy },
-    xProjPhys: { x: projX_physX, y: projX_physY },
-    yProjPhys: { x: projY_physX, y: projY_physY },
+    xProjPhys: { x: projX.x, y: projX.y },
+    yProjPhys: { x: projY.x, y: projY.y },
     endPhysFromBlock,
     xProjPhysFromBlock,
     yProjPhysFromBlock,
@@ -186,25 +182,24 @@ export function computeOrthogonalDecomposition({
   const F2 = computeForce('F₂', f2, theta2, '', axisAngleRad, 0, 0)
   const F3 = computeForce('F₃', f3, theta3, '', axisAngleRad, 0, 0)
 
-  const netFx = F1.fx + F2.fx + F3.fx
-  const netFy = F1.fy + F2.fy + F3.fy
-  const netVal = Math.sqrt(netFx * netFx + netFy * netFy)
-  let netAngle = (Math.atan2(netFy, netFx) * 180) / Math.PI
-  if (netAngle < 0) netAngle += 360
+  // 合力：角量与分解都由物理层给出，避免"先算大小再反推分量"多写一遍三角
+  const resultant = sumForces(
+    [
+      { F: f1, thetaDeg: theta1 },
+      { F: f2, thetaDeg: theta2 },
+      { F: f3, thetaDeg: theta3 },
+    ],
+    axisAngleRad,
+  )
+  const netFx = resultant.netX
+  const netFy = resultant.netY
+  const netVal = resultant.magnitude
+  const netAngle = resultant.angleDeg
+  const netFxPrime = resultant.sumFxPrime
+  const netFyPrime = resultant.sumFyPrime
 
-  const netFxPrime = F1.fxPrime + F2.fxPrime + F3.fxPrime
-  const netFyPrime = F1.fyPrime + F2.fyPrime + F3.fyPrime
-
-  const netRad = (netAngle * Math.PI) / 180
-  const netFxPhys = netVal * Math.cos(netRad)
-  const netFyPhys = netVal * Math.sin(netRad)
-  const netFxPrimePhys = netVal * Math.cos(netRad - axisAngleRad)
-  const netFyPrimePhys = netVal * Math.sin(netRad - axisAngleRad)
-
-  const projNetX_physX = netFxPrimePhys * Math.cos(axisAngleRad)
-  const projNetX_physY = netFxPrimePhys * Math.sin(axisAngleRad)
-  const projNetY_physX = -netFyPrimePhys * Math.sin(axisAngleRad)
-  const projNetY_physY = netFyPrimePhys * Math.cos(axisAngleRad)
+  // 合力自身在旋转坐标系下的分解（用于画投影虚线）
+  const netDecomposed = decomposeForce(netVal, netAngle, axisAngleRad)
 
   const netForce: ForcePhysicsData = {
     name: 'F合',
@@ -215,18 +210,18 @@ export function computeOrthogonalDecomposition({
     fy: netFy,
     fxPrime: netFxPrime,
     fyPrime: netFyPrime,
-    endPhys: { x: netFxPhys, y: netFyPhys },
-    xProjPhys: { x: projNetX_physX, y: projNetX_physY },
-    yProjPhys: { x: projNetY_physX, y: projNetY_physY },
+    endPhys: { x: netFx, y: netFy },
+    xProjPhys: { x: netDecomposed.projX.x, y: netDecomposed.projX.y },
+    yProjPhys: { x: netDecomposed.projY.x, y: netDecomposed.projY.y },
   }
 
   // ==========================================
   // 模式 1：斜面平衡建系对比
   // ==========================================
   const slopeAngleRad = (theta * Math.PI) / 180
-  const gravityVal = m * GRAVITY
-  const normalVal = gravityVal * Math.cos(slopeAngleRad)
-  const frictionVal = gravityVal * Math.sin(slopeAngleRad)
+  // 三力大小由物理层给出（与右屏看板同一实现）
+  const { gravity: gravityVal, normal: normalVal, friction: frictionVal } =
+    computeInclineEquilibrium(m, slopeAngleRad)
 
   const BLOCK_CENTER_PHYS = { x: -2, y: 1 } as const
   const blockCenterPhys = BLOCK_CENTER_PHYS

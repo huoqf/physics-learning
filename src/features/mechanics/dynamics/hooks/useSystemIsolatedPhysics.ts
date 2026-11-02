@@ -5,6 +5,7 @@ import { useAnimationViewport } from '@/hooks'
 import { useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { GRAVITY } from '@/physics/constants'
+import { computeStackedStaticStatics, computeSlidingStatics } from '@/physics'
 import { refFromPeak } from '@/utils/vectorRefs'
 
 /**
@@ -277,10 +278,14 @@ export function useSystemIsolatedPhysics(): SystemIsolatedPhysicsResult {
       y: groundY + slope_H - relY + (h_block / 2) * Math.cos(thetaRad),
     }
 
-    const N_slope = m1 * g * Math.cos(thetaRad)
-    const f_slope = m1 * g * Math.sin(thetaRad)
-    const N_ground = (m1 + m2) * g
-    const f_ground = F
+    // 受力来自物理层（与右屏看板同一实现），本 hook 只负责几何摆位
+    const { N_slope, f_slope, N_ground, f_ground } = computeStackedStaticStatics(
+      m1,
+      m2,
+      thetaRad,
+      g,
+      F,
+    )
 
     return {
       w_block,
@@ -309,11 +314,17 @@ export function useSystemIsolatedPhysics(): SystemIsolatedPhysicsResult {
 
     const L_slope = slope_W / Math.cos(thetaRad)
 
-    // 滑动条件：sin(theta) > mu * cos(theta)
-    const hasMotion = Math.sin(thetaRad) > mu * Math.cos(thetaRad)
-    const a = hasMotion ? g * (Math.sin(thetaRad) - mu * Math.cos(thetaRad)) : 0
-    const ax = a * Math.cos(thetaRad)
-    const ay = a * Math.sin(thetaRad)
+    // 起动判据 / 加速度分解 / 地面反力全部来自物理层（与右屏看板同一实现）
+    const {
+      hasMotion,
+      acceleration: a,
+      ax,
+      ay,
+      N_slope,
+      f_slope,
+      f_ground,
+      N_ground,
+    } = computeSlidingStatics(m1, m2, thetaRad, mu, g)
 
     // 滑块从左上顶端 (s=0) 滑到右下底端 (s = L_slope - 边缘留白)
     const margin = 0.5
@@ -330,12 +341,6 @@ export function useSystemIsolatedPhysics(): SystemIsolatedPhysicsResult {
     // 滑块中心位置 (顶端出发，向右下移动)
     const blockX = topX + travel * Math.cos(thetaRad) + (h_block / 2) * Math.sin(thetaRad)
     const blockY = topY - travel * Math.sin(thetaRad) + (h_block / 2) * Math.cos(thetaRad)
-
-    // 受力大小
-    const N_slope = m1 * g * Math.cos(thetaRad)
-    const f_slope = hasMotion ? mu * m1 * g * Math.cos(thetaRad) : m1 * g * Math.sin(thetaRad)
-    const f_ground = m1 * ax
-    const N_ground = (m1 + m2) * g - m1 * ay
 
     return {
       w_block,

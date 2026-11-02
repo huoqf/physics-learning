@@ -1,5 +1,12 @@
 import type { PhysicsPanelData, PhysicsQuantity, Formula, GaokaoPoint, ParamDefs } from '../types'
 import { normalizeParams } from '../types'
+import {
+  computeInclineEquilibrium,
+  decomposeForce,
+  sumForces,
+} from '../../../physics'
+import { CANVAS_COLORS, PHYSICS_COLORS } from '@/theme/physics'
+import { GRAVITY } from '@/physics/constants'
 
 interface Params {
   mode: number
@@ -57,48 +64,47 @@ export function handleOrthogonalDecomposition(
 
     const axisAngleRad = (axisAngle * Math.PI) / 180
 
-    const getFxPrime = (fVal: number, thetaDeg: number) => {
-      const rad = (thetaDeg * Math.PI) / 180
-      return fVal * Math.cos(rad - axisAngleRad)
-    }
+    // 分解与合力全部来自物理层（与中屏 viewModel 同一实现）
+    const components = [
+      decomposeForce(f1, theta1, axisAngleRad),
+      decomposeForce(f2, theta2, axisAngleRad),
+      decomposeForce(f3, theta3, axisAngleRad),
+    ]
+    const [c1, c2, c3] = components
 
-    const getFyPrime = (fVal: number, thetaDeg: number) => {
-      const rad = (thetaDeg * Math.PI) / 180
-      return fVal * Math.sin(rad - axisAngleRad)
-    }
-
-    // 计算分量
-    const f1x = getFxPrime(f1, theta1)
-    const f1y = getFyPrime(f1, theta1)
-    const f2x = getFxPrime(f2, theta2)
-    const f2y = getFyPrime(f2, theta2)
-    const f3x = getFxPrime(f3, theta3)
-    const f3y = getFyPrime(f3, theta3)
+    const f1x = c1.fxPrime
+    const f1y = c1.fyPrime
+    const f2x = c2.fxPrime
+    const f2y = c2.fyPrime
+    const f3x = c3.fxPrime
+    const f3y = c3.fyPrime
 
     // 代数和
     const sumFx = f1x + f2x + f3x
     const sumFy = f1y + f2y + f3y
 
-    // 合力物理计算
-    const rad1 = (theta1 * Math.PI) / 180
-    const rad2 = (theta2 * Math.PI) / 180
-    const rad3 = (theta3 * Math.PI) / 180
-    const netX = f1 * Math.cos(rad1) + f2 * Math.cos(rad2) + f3 * Math.cos(rad3)
-    const netY = f1 * Math.sin(rad1) + f2 * Math.sin(rad2) + f3 * Math.sin(rad3)
-    const fNet = Math.sqrt(netX * netX + netY * netY)
+    // 合力大小（与公式区 F_net = √(ΣFx′² + ΣFy′²) 同口径）
+    const fNet = sumForces(
+      [
+        { F: f1, thetaDeg: theta1 },
+        { F: f2, thetaDeg: theta2 },
+        { F: f3, thetaDeg: theta3 },
+      ],
+      axisAngleRad,
+    ).magnitude
 
     // 添加物理量展示
     quantities.push(
       { label: '坐标系旋转角 θ_axis', value: axisAngle.toFixed(0), unit: '°' },
-      { label: 'F₁ 在 x\' 轴分量 F1x\'', value: f1x.toFixed(2), unit: 'N', color: '#3b82f6' },
-      { label: 'F₁ 在 y\' 轴分量 F1y\'', value: f1y.toFixed(2), unit: 'N', color: '#3b82f6' },
-      { label: 'F₂ 在 x\' 轴分量 F2x\'', value: f2x.toFixed(2), unit: 'N', color: '#10b981' },
-      { label: 'F₂ 在 y\' 轴分量 F2y\'', value: f2y.toFixed(2), unit: 'N', color: '#10b981' },
-      { label: 'F₃ 在 x\' 轴分量 F3x\'', value: f3x.toFixed(2), unit: 'N', color: '#f59e0b' },
-      { label: 'F₃ 在 y\' 轴分量 F3y\'', value: f3y.toFixed(2), unit: 'N', color: '#f59e0b' },
+      { label: 'F₁ 在 x\' 轴分量 F1x\'', value: f1x.toFixed(2), unit: 'N', color: PHYSICS_COLORS.forceNet },
+      { label: 'F₁ 在 y\' 轴分量 F1y\'', value: f1y.toFixed(2), unit: 'N', color: PHYSICS_COLORS.forceNet },
+      { label: 'F₂ 在 x\' 轴分量 F2x\'', value: f2x.toFixed(2), unit: 'N', color: PHYSICS_COLORS.appliedForce },
+      { label: 'F₂ 在 y\' 轴分量 F2y\'', value: f2y.toFixed(2), unit: 'N', color: PHYSICS_COLORS.appliedForce },
+      { label: 'F₃ 在 x\' 轴分量 F3x\'', value: f3x.toFixed(2), unit: 'N', color: PHYSICS_COLORS.tension },
+      { label: 'F₃ 在 y\' 轴分量 F3y\'', value: f3y.toFixed(2), unit: 'N', color: PHYSICS_COLORS.tension },
       { label: 'x\' 轴代数合力 ΣFx\'', value: sumFx.toFixed(2), unit: 'N', highlight: Math.abs(sumFx) < 0.05 ? 'zero' : 'positive' },
       { label: 'y\' 轴代数合力 ΣFy\'', value: sumFy.toFixed(2), unit: 'N', highlight: Math.abs(sumFy) < 0.05 ? 'zero' : 'positive' },
-      { label: '总合成合力 F_net', value: fNet.toFixed(2), unit: 'N', color: '#ef4444', highlight: 'extreme' }
+      { label: '总合成合力 F_net', value: fNet.toFixed(2), unit: 'N', color: CANVAS_COLORS.alertRed, highlight: 'extreme' }
     )
 
     formulas = [
@@ -121,17 +127,16 @@ export function handleOrthogonalDecomposition(
     const m = p.m ?? 2.0
     const axisSelect = p.axisSelect ?? 0
 
-    const g = 9.8
+    const g = GRAVITY
     const slopeAngleRad = (theta * Math.PI) / 180
-    const G = m * g
-    const FN = G * Math.cos(slopeAngleRad)
-    const f = G * Math.sin(slopeAngleRad)
+    // 三力大小来自物理层（与中屏 viewModel 同一实现）
+    const { gravity: G, normal: FN, friction: f } = computeInclineEquilibrium(m, slopeAngleRad, g)
 
     // 添加基本物理量
     quantities.push(
-      { label: '重力大小 G (mg)', value: G.toFixed(2), unit: 'N', color: '#ef4444' },
-      { label: '支持力大小 FN', value: FN.toFixed(2), unit: 'N', color: '#3b82f6' },
-      { label: '摩擦力大小 f', value: f.toFixed(2), unit: 'N', color: '#10b981' }
+      { label: '重力大小 G (mg)', value: G.toFixed(2), unit: 'N', color: PHYSICS_COLORS.gravity },
+      { label: '支持力大小 FN', value: FN.toFixed(2), unit: 'N', color: PHYSICS_COLORS.normalForce },
+      { label: '摩擦力大小 f', value: f.toFixed(2), unit: 'N', color: PHYSICS_COLORS.friction }
     )
 
     if (axisSelect === 0) {
@@ -139,8 +144,8 @@ export function handleOrthogonalDecomposition(
       const Gx = G * Math.sin(slopeAngleRad)
       const Gy = G * Math.cos(slopeAngleRad)
       quantities.push(
-        { label: '重力沿斜面分量 Gx\'', value: Gx.toFixed(2), unit: 'N', color: '#ef4444' },
-        { label: '重力垂直斜面分量 Gy\'', value: (-Gy).toFixed(2), unit: 'N', color: '#ef4444' }
+        { label: '重力沿斜面分量 Gx\'', value: Gx.toFixed(2), unit: 'N', color: PHYSICS_COLORS.gravity },
+        { label: '重力垂直斜面分量 Gy\'', value: (-Gy).toFixed(2), unit: 'N', color: PHYSICS_COLORS.gravity }
       )
 
       formulas = [
@@ -157,10 +162,10 @@ export function handleOrthogonalDecomposition(
       const fy = f * Math.sin(slopeAngleRad)
 
       quantities.push(
-        { label: '支持力水平分量 FNx', value: FNx.toFixed(2), unit: 'N', color: '#3b82f6' },
-        { label: '支持力竖直分量 FNy', value: FNy.toFixed(2), unit: 'N', color: '#3b82f6' },
-        { label: '摩擦力水平分量 fx', value: (-fx).toFixed(2), unit: 'N', color: '#10b981' },
-        { label: '摩擦力竖直分量 fy', value: fy.toFixed(2), unit: 'N', color: '#10b981' }
+        { label: '支持力水平分量 FNx', value: FNx.toFixed(2), unit: 'N', color: PHYSICS_COLORS.normalForce },
+        { label: '支持力竖直分量 FNy', value: FNy.toFixed(2), unit: 'N', color: PHYSICS_COLORS.normalForce },
+        { label: '摩擦力水平分量 fx', value: (-fx).toFixed(2), unit: 'N', color: PHYSICS_COLORS.friction },
+        { label: '摩擦力竖直分量 fy', value: fy.toFixed(2), unit: 'N', color: PHYSICS_COLORS.friction }
       )
 
       formulas = [

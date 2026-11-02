@@ -1,5 +1,12 @@
 import type { PhysicsPanelData } from './types'
 import { normalizeParams, type ParamDefs } from './types'
+import {
+  LASER_BEAM_INITIAL_RADIUS_M,
+  beamRadius,
+  halfAngleFromDeg,
+  halfAngleFromMrad,
+  intensityRatioPercent,
+} from '@/physics/laser'
 
 interface LaserParams {
   mode: number
@@ -42,18 +49,18 @@ export function buildLaserQuantities(
   let formulas: PhysicsPanelData['formulas'] = []
   let gaokaoPoints: PhysicsPanelData['gaokaoPoints'] = []
 
-  const r0 = 0.001 // 初始半径 1mm
+  const r0 = LASER_BEAM_INITIAL_RADIUS_M
 
   if (modeVal === 0) {
-    // 1. 平行性对比模式
-    const thetaLaserRad = (p.divergenceAngleLaser / 1000) / 2
-    const thetaNormalRad = (p.divergenceAngleNormal * Math.PI / 180) / 2
+    // 1. 平行性对比模式（半角与光斑半径均由物理层给出）
+    const thetaLaserRad = halfAngleFromMrad(p.divergenceAngleLaser)
+    const thetaNormalRad = halfAngleFromDeg(p.divergenceAngleNormal)
 
-    const laserR = r0 + p.propagationDistance * Math.tan(thetaLaserRad)
-    const normalR = r0 + p.propagationDistance * Math.tan(thetaNormalRad)
+    const laserR = beamRadius(r0, p.propagationDistance, thetaLaserRad)
+    const normalR = beamRadius(r0, p.propagationDistance, thetaNormalRad)
 
-    const laserRatio = (r0 / laserR) ** 2 * 100
-    const normalRatio = (r0 / normalR) ** 2 * 100
+    const laserRatio = intensityRatioPercent(r0, laserR)
+    const normalRatio = intensityRatioPercent(r0, normalR)
 
     quantities.push({ label: '激光束半径 R_L', value: (laserR * 1000).toFixed(2), unit: 'mm', highlight: 'positive' })
     quantities.push({ label: '普通光半径 R_N', value: normalR >= 1.0 ? normalR.toFixed(2) : (normalR * 100).toFixed(2), unit: normalR >= 1.0 ? 'm' : 'cm' })

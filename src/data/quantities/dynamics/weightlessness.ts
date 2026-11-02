@@ -1,6 +1,7 @@
 import type { PhysicsPanelData, PhysicsQuantity, ParamDefs } from '../types'
 import { normalizeParams } from '../types'
 import { calculateElevatorMotion } from '../../../physics'
+import { GRAVITY } from '@/physics/constants'
 
 interface Params {
   m: number
@@ -12,7 +13,7 @@ interface Params {
 
 const DEFAULTS: ParamDefs<Params> = {
   m: { default: 50 },
-  g: { default: 9.8 },
+  g: { default: GRAVITY },
   a: { default: 2 },
   advancedMode: { default: 0 },
   modelIdx: { default: 0 },
@@ -28,7 +29,7 @@ export function handleWeightlessness(
   const p = normalizeParams(params, DEFAULTS)
 
   const m = p.m ?? 50
-  const g = p.g ?? 9.8
+  const g = p.g ?? GRAVITY
   const a_param = p.a ?? 2
   const advancedMode = p.advancedMode ?? 0
 

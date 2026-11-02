@@ -1,3 +1,5 @@
+import { GRAVITY } from './constants'
+
 /**
  * @file src/physics/inclined_plane.ts
  * 斜面模型物理受力与运动学纯计算函数。
@@ -46,7 +48,7 @@ export interface InclinedPlaneResult {
  */
 export function computeInclinedPlane(param: InclinedPlaneParam): InclinedPlaneResult {
   const { theta, mu, m } = param;
-  const g = param.g ?? 9.8;
+  const g = param.g ?? GRAVITY;
   const rad = (theta * Math.PI) / 180;
   
   // 临界角计算 (tanθ = μ)
