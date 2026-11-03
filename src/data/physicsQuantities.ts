@@ -28,6 +28,7 @@ type BuilderName =
   | 'buildClapeyronQuantities'
   | 'buildFirstLawQuantities'
   | 'buildSecondLawQuantities'
+  | 'buildEnergyConservationQuantities'
   | 'buildReflectionQuantities'
   | 'buildRefractionQuantities'
   | 'buildTotalReflectionQuantities'
@@ -193,6 +194,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-clapeyron':           { loader: () => import('./quantities/clapeyron'), builderName: 'buildClapeyronQuantities' },
   'anim-first-law':           { loader: () => import('./quantities/firstLaw'), builderName: 'buildFirstLawQuantities' },
   'anim-second-law':          { loader: () => import('./quantities/secondLaw'), builderName: 'buildSecondLawQuantities' },
+  'anim-energy-flow':         { loader: () => import('./quantities/energyConservation'), builderName: 'buildEnergyConservationQuantities' },
   'anim-solids-liquids':      { loader: () => import('./quantities/thermodynamics/solidsLiquids'), builderName: 'buildSolidsLiquidsQuantities' },
   'anim-saturated-vapor':     { loader: () => import('./quantities/thermodynamics/saturatedVapor'), builderName: 'buildSaturatedVaporQuantities' },
 

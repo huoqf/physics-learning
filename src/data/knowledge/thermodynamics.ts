@@ -122,4 +122,17 @@ export const thermodynamicsKnowledge: KnowledgeNode[] = [
     prerequisites: ['thermodynamics-3-1'],
     gaokaoFrequency: '高考5年6考 / 自发过程方向性与第二类永动机',
   },
+  {
+    // 编号排在 3-2 之后是历史顺序（3-2 已对外发布，不能重排以免旧链接失效）；
+    // 知识依赖上它只要求第一定律：能量守恒定律本身不需要熵增那套语言。
+    id: 'thermodynamics-3-3',
+    title: '能量守恒定律与能源',
+    chapter: '热学 第3章 热力学定律',
+    module: 'thermodynamics',
+    importance: 'gaokao',
+    animationIds: ['anim-energy-flow'],
+    problemIds: [],
+    prerequisites: ['thermodynamics-3-1'],
+    gaokaoFrequency: '高考高频选考 / 能量守恒普适性 + 新能源与效率情境（2024-2025 新型电力系统热点）',
+  },
 ]

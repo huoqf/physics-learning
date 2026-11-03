@@ -28,6 +28,8 @@ export { Pulley } from './Pulley'
 export { Spring } from './Spring'
 export { EnergyBars } from './EnergyBars'
 export type { EnergyBarItem } from './EnergyBars'
+export { EnergyFlowBars } from './EnergyFlowBars'
+export type { EnergyFlowBarsProps, EnergyFlowReservoir } from './EnergyFlowBars'
 export { SVGSingleBar } from './SVGSingleBar'
 
 // ============================================================================
