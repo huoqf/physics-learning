@@ -18,6 +18,7 @@ export const mechanicsExperimentAnimations = defineAnimations({
       d: 0.01,
       k: 100,
       m: 0.2,
+      friction: 2,
     } as const,
     paramMeta: [
       {
@@ -29,7 +30,7 @@ export const mechanicsExperimentAnimations = defineAnimations({
         unit: 'm/s',
         group: '运动学参数',
         hideIf: 'mode',
-        hideIfValue: 2,
+        hideIfValue: [2, 3],
       },
       {
         key: 'a',
@@ -40,7 +41,7 @@ export const mechanicsExperimentAnimations = defineAnimations({
         unit: 'm/s²',
         group: '运动学参数',
         hideIf: 'mode',
-        hideIfValue: 2,
+        hideIfValue: [2, 3],
       },
       {
         key: 'freq',
@@ -93,6 +94,25 @@ export const mechanicsExperimentAnimations = defineAnimations({
         showIfValue: 2,
         description: '单个钩码质量；上限对应弹簧最大伸长量 14.7 cm（画布量程内）',
       },
+      {
+        // 重物质量在「验证机械能守恒」中不开放调节：ΔEₖ 与 ΔEₚ 同乘 m，
+        // 验证结论与 m 无关（m 被约去）。开放它只会让学生误以为要"调质量才守恒"。
+        // 该模式固定取 defaultParams.m = 0.2 kg，与教材重锤量级一致。
+        key: 'friction',
+        label: '纸带阻力',
+        min: 0,
+        max: 10,
+        step: 1,
+        unit: '%',
+        group: '下落与阻力',
+        showIf: 'mode',
+        showIfValue: 3,
+        description: '阻力使实测加速度降为 g(1−k)，是 ΔEₖ 略小于 ΔEₚ 的唯一来源；调 0 可看到理想守恒',
+        marks: [
+          { value: 0, label: '理想无阻', variant: 'critical' },
+          { value: 2, label: '真实纸带', variant: 'critical' },
+        ],
+      },
     ],
     controlMeta: [
       {
@@ -104,6 +124,7 @@ export const mechanicsExperimentAnimations = defineAnimations({
           { label: '①纸带分析', value: 0 },
           { label: '②光电门测速', value: 1 },
           { label: '③胡克定律', value: 2 },
+          { label: '④机械能守恒', value: 3 },
         ],
       },
       {
@@ -122,9 +143,17 @@ export const mechanicsExperimentAnimations = defineAnimations({
       },
       {
         type: 'preset',
-        label: '🎯 验证机械能守恒（a=9.8m/s²）',
-        description: '自由落体打点纸带：初速为零，逐点比较重力势能减少与动能增加',
-        params: { mode: 0, v0: 0, a: 9.8, freq: 50 },
+        label: '🎯 验证机械能守恒（真实纸带）',
+        description:
+          '竖直自由下落打点：纸带阻力 2%，逐点比对 mgh 与 ½mv²，动能增量略小于势能减少量',
+        params: { mode: 3, v0: 0, a: 9.8, freq: 50, friction: 2 },
+        restartOnApply: true,
+      },
+      {
+        type: 'preset',
+        label: '🎯 验证机械能守恒（理想无阻）',
+        description: '阻力调 0：ΔEₖ 与 ΔEₚ 严格相等，用以对照"为什么真实实验总差一点"',
+        params: { mode: 3, v0: 0, a: 9.8, freq: 50, friction: 0 },
         restartOnApply: true,
       },
       {

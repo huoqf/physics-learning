@@ -30,17 +30,15 @@ export const experimentKnowledge: KnowledgeNode[] = [
     chapter: '实验专题',
     module: 'experiment',
     importance: 'gaokao',
-    animationIds: ['anim-mechanics-experiment-base', 'anim-free-fall'],
+    animationIds: ['anim-mechanics-experiment-base'],
+    // mode 3 下 v0 恒为 0、加速度由 g(1−阻力) 解析得出，故这两个参数不传（传了也不生效）
     animationParams: {
-      mode: 0,
-      v0: 0,
-      a: 9.8,
+      mode: 3,
       freq: 50,
+      friction: 2,
     },
     problemIds: [],
     prerequisites: ['experiment-1-1'],
-    coverageNote:
-      '覆盖度声明：本节点借用「打点纸带/自由落体」原理动画，只演示纸带点迹与运动学量的测量。实验必需的「选取第 1、2 点间距约 2 mm 的纸带」「逐点比对 mgh 与 ½mv²」「因阻力导致 ΔEₖ 略小于 ΔEₚ 的误差归因」三个环节尚未实现。',
   },
   {
     id: 'experiment-2-3',

@@ -18,6 +18,18 @@ export const TICKER_FREQ_HZ = 50
 /** 每 5 个打点取 1 个计数点 ⇒ 计数周期 T = 5T₀ = 0.1 s（逐差法公式中的 T 即此值） */
 export const COUNT_INTERVAL = 5
 
+/**
+ * 连续打点（相邻两点即计数点）⇒ T = T₀ = 0.02 s。
+ *
+ * **验证机械能守恒必须用它，不能沿用逐差法的 5T₀**：
+ * ① 人教版选带条件「第 1、2 点间距接近 2 mm」= ½gT₀² = 1.96 mm，这个判据只在 T₀ = 0.02 s
+ *    下成立（若按 5T₀ 算就是 4.9 cm，判据本身失去意义）；
+ * ② vₙ = (sₙ + sₙ₊₁)/(2T) 中的 T 必须与相邻点间隔同源；
+ * ③ 0.6 m 纸带在 0.02 s 口径下有 18 个打点、16 个可比对点（课本数据表就是这么列，
+ *    按 5T₀ 只剩 4 个点、2 个可比对点，图线与表格都退化）。
+ */
+export const CONSECUTIVE_INTERVAL = 1
+
 /** 实验长木板轨道的有效长度 (m)：小车到达末端挡块即停止，其后位移与速度不再增长 */
 export const TRACK_MAX_M = 2.0
 
@@ -75,11 +87,14 @@ export function tickerPeriod(freq: number): number {
 }
 
 /**
- * 计数周期 T = 5T₀ (s)——逐差法 a = [(x₆−x₃)−(x₃−x₀)]/(9T²) 中的 T。
+ * 计数周期 T = interval × T₀ (s)——逐差法 a = [(x₆−x₃)−(x₃−x₀)]/(9T²) 中的 T。
+ *
  * @param freq 打点频率 (Hz)
+ * @param interval 每几个打点取一个计数点：逐差法取 {@link COUNT_INTERVAL}，
+ *   验证机械能守恒取 {@link CONSECUTIVE_INTERVAL}
  */
-export function countingPeriod(freq: number): number {
-  return COUNT_INTERVAL * tickerPeriod(freq)
+export function countingPeriod(freq: number, interval: number = COUNT_INTERVAL): number {
+  return Math.max(1, interval) * tickerPeriod(freq)
 }
 
 /**
@@ -158,6 +173,8 @@ export interface TapeDotsInput {
   time: number
   /** 打点频率 (Hz)，默认 TICKER_FREQ_HZ */
   freq?: number
+  /** 每几个打点取一个计数点，默认 {@link COUNT_INTERVAL}（验证机械能守恒传 {@link CONSECUTIVE_INTERVAL}） */
+  countInterval?: number
   /** 设计比例：1 m 位移对应的纸带长度 (design-unit/px) */
   pxPerMeter: number
   /** 轨道有效长度 (m)，默认 TRACK_MAX_M */
@@ -177,11 +194,12 @@ export function buildTapeCountingDots({
   a,
   time,
   freq = TICKER_FREQ_HZ,
+  countInterval = COUNT_INTERVAL,
   pxPerMeter,
   xMax = TRACK_MAX_M,
 }: TapeDotsInput): number[] {
   const { x, tActive } = solveTrackMotion({ v0, a, time, xMax })
-  const T = countingPeriod(freq)
+  const T = countingPeriod(freq, countInterval)
 
   const dots: number[] = []
   for (let k = 0; k < MAX_TAPE_DOTS; k++) {
@@ -303,22 +321,150 @@ export function solveHooke(mass: number, stiffness: number): HookeState {
 }
 
 /**
+ * 胡克定律实验可测的最大伸长量 (m)。
+ *
+ * 等于竖尺量程 23 cm 减去自然长度 8 cm 后、参数上限组合（m = 0.3 kg、k = 20 N/m）
+ * 对应的 14.7 cm。F–Δx 图线不得画出超过它的数据点——那些点对应的伸长量已经挂在
+ * 竖尺量程之外，尺上读不出来，"图上有点、尺上无读数"是不允许的同屏矛盾。
+ */
+export const SPRING_MAX_MEASURABLE_EXTENSION_M = 0.147
+
+/**
  * 胡克定律实验的挂钩码序列数据点：依次挂 1…count 个质量为 hookMass 的钩码。
  * 返回点集共线且过原点，斜率即弹簧劲度系数 k。
  *
  * @param hookMass 单个钩码质量 (kg)
  * @param stiffness 弹簧劲度系数 (N/m)
  * @param count 钩码个数上限，默认 6
+ * @param maxExtension 可测伸长量上限 (m)：超过它的后续点不再给出（至少保留 1 个点，
+ *   让"当前场景这一组"永远在图上），默认不限——调用方一般传
+ *   {@link SPRING_MAX_MEASURABLE_EXTENSION_M}
  */
 export function hookeSeries(
   hookMass: number,
   stiffness: number,
-  count = 6
+  count = 6,
+  maxExtension = Number.POSITIVE_INFINITY
 ): { extension: number; force: number }[] {
   const k = Math.max(1, stiffness)
   const m = Math.max(0, hookMass)
-  return Array.from({ length: Math.max(1, count) }, (_, i) => {
+  const series: { extension: number; force: number }[] = []
+  for (let i = 0; i < Math.max(1, count); i++) {
     const force = (i + 1) * m * GRAVITY
-    return { extension: force / k, force }
-  })
+    const extension = force / k
+    if (i > 0 && extension > maxExtension + 1e-12) break
+    series.push({ extension, force })
+  }
+  return series
 }
+
+// ─── 验证机械能守恒（竖直自由下落打点）──────────────────────────────────────
+
+/**
+ * 自由下落实验的有效下落高度上限 (m)。
+ *
+ * 取 0.6 m 而非 1.0 m：① 人教版该实验的实际下落高度通常在 0.5~0.8 m；
+ * ② 更关键的是渲染约束——本页 splitV 下屏可用高度约 400 design-unit，扣掉计时器占位后
+ * 只剩约 300，0.6 m 才能让纸带、重物与竖直刻度尺同时留在画布内；
+ * ③ 0.6 m 对应落地时刻 ≈ 0.35 s，按本实验的连续打点口径（T₀ = 0.02 s）可打出 18 个点、
+ *    给出 16 个可比对点，与课本数据表的行数同一量级。
+ */
+export const FREEFALL_MAX_M = 0.6
+
+/**
+ * 纸带首、次两点间距的判定阈值 (m)。
+ *
+ * 人教版要求「选第 1、2 点间距接近 2 mm 的纸带」——它等价于首点速度为零：
+ * h₁ = ½gT₀² = ½ × 9.8 × 0.02² ≈ 1.96 mm ≈ 2 mm。间距明显大于该值说明
+ * 打第一个点时重物已具有初速度，该纸带不能作为「初速为零」的验证对象。
+ */
+export const FIRST_DOT_GAP_MM = 2.0
+
+/** 首点间距判定的容差 (mm)：实测受阻力影响，2 mm 上下浮动属正常 */
+export const FIRST_DOT_GAP_TOLERANCE_MM = 0.6
+
+export interface EnergyVerificationPoint {
+  /** 计数点序号（0 为纸带首点） */
+  index: number
+  /** 相对首点的下落高度 hₙ (m) */
+  h: number
+  /** 中间时刻速度 vₙ = (sₙ + sₙ₊₁)/(2T) (m/s) */
+  v: number
+  /** 重力势能减少量 ΔEₚ = mghₙ (J) */
+  deltaEp: number
+  /** 动能增加量 ΔEₖ = ½mvₙ² (J) */
+  deltaEk: number
+  /** 相对偏差 (ΔEₖ − ΔEₚ)/ΔEₚ，理想无阻力时为 0，实际因阻力为负 */
+  relDeviation: number
+}
+
+export interface VerifyEnergyInput {
+  /** 纸带计数点位置数组（与 pxPerMeter 同单位，索引 0 为纸带首点，数值沿纸带递减） */
+  dotsPx: number[]
+  /** 设计比例（1 m 对应多少像素/design-unit） */
+  pxPerMeter: number
+  /** 计数周期 T (s) */
+  countingPeriodS: number
+  /** 重物质量 m (kg) */
+  mass: number
+  /** 重力加速度 g (m/s²) */
+  gravity?: number
+}
+
+/**
+ * 验证机械能守恒：由纸带读数逐点反算 ΔEₚ 与 ΔEₖ。
+ *
+ * 物理口径（与人教版一致）：
+ * - 以纸带**首点**为零势能参考点，hₙ 为首点到第 n 点的距离（由纸带实测间距累加，非解析式）；
+ * - vₙ 用中间时刻速度法 vₙ = (sₙ + sₙ₊₁)/(2T) 由纸带实测段长求得，**不用逐差法**——
+ *   逐差法求的是全程平均加速度，无法给出某一点的瞬时速度；
+ * - ΔEₚ = mghₙ 中的 g 取重力加速度常量，ΔEₖ = ½mvₙ² 中的 v 取实测值。
+ *
+ * 因此只要纸带存在阻力（实测加速度 a < g），必有 **ΔEₖ < ΔEₚ**，且差额恰为阻力做的功。
+ * 这一符号方向是该实验的核心结论，任何实现都不得把它抹平。
+ *
+ * 首点与末点不能算 v（缺前段/后段），故返回点数 = dotsPx.length − 2。
+ */
+export function verifyMechanicalEnergy({
+  dotsPx,
+  pxPerMeter,
+  countingPeriodS,
+  mass,
+  gravity = GRAVITY,
+}: VerifyEnergyInput): EnergyVerificationPoint[] {
+  const T = countingPeriodS
+  const m = Math.max(0, mass)
+  if (dotsPx.length < 3 || pxPerMeter <= 0 || T <= 0) return []
+
+  const dotsM = dotsPx.map((p) => p / pxPerMeter) // 索引 0 为首点，数值沿纸带递减
+  const points: EnergyVerificationPoint[] = []
+
+  for (let n = 1; n <= dotsM.length - 2; n++) {
+    const h = dotsM[0] - dotsM[n] // 首点到第 n 点
+    const segBefore = dotsM[n - 1] - dotsM[n] // 第 n−1 → n 段长
+    const segAfter = dotsM[n] - dotsM[n + 1] // 第 n → n+1 段长
+    const v = calcMidTimeVelocity(segBefore, segAfter, T)
+    const deltaEp = m * gravity * h
+    const deltaEk = 0.5 * m * v * v
+    points.push({
+      index: n,
+      h,
+      v,
+      deltaEp,
+      deltaEk,
+      relDeviation: deltaEp > 1e-12 ? (deltaEk - deltaEp) / deltaEp : 0,
+    })
+  }
+
+  return points
+}
+
+/**
+ * 判定纸带是否满足「初速为零」的选带条件：首、次两点间距是否落在 2 mm 容差内。
+ * @param firstGapM 首、次两点的实测间距 (m)
+ */
+export function isZeroInitialVelocityTape(firstGapM: number): boolean {
+  const gapMm = Math.abs(firstGapM) * 1000
+  return Math.abs(gapMm - FIRST_DOT_GAP_MM) <= FIRST_DOT_GAP_TOLERANCE_MM
+}
+
