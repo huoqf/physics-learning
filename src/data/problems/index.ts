@@ -13,11 +13,13 @@ import { vibrationGaokaoProblems } from './vibration'
 import { experimentProblems } from './experiment'
 import { inductionProblems } from './induction'
 import { nuclearGaokaoProblems } from './nuclear'
+import { gaokao2025Problems } from './gaokao2025'
 
 export const allProblems: Problem[] = [
   probBlockBoardModel,
   ...masterModelProblems,
   ...nuclearGaokaoProblems,
+  ...gaokao2025Problems,
   ...opticsGaokaoProblems,
   ...electromagnetismGaokaoProblems,
   ...vibrationGaokaoProblems,
