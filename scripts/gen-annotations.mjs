@@ -11,12 +11,12 @@
  * 用法：node scripts/gen-annotations.mjs
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'fs'
-import { globSync } from 'glob'
+import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs'
 import { join, basename, dirname, resolve } from 'path'
 
 const ROOT = resolve(import.meta.dirname, '..')
-const REGISTRIES_GLOB = 'src/data/registries/*.ts'
+/** 注册表目录（相对项目根）：本脚本只扫一层，不需要 glob 通配 */
+const REGISTRIES_DIR = 'src/data/registries'
 const MEMORY_PATH = join(ROOT, 'src', 'ANNOTATIONS.md')
 /** agent 检索用的权威副本，其「## 动画映射表」小节由本脚本原位替换 */
 const MEMORY_DOC_PATH = join(ROOT, 'MEMORY.md')
@@ -142,8 +142,16 @@ function extractScene(animationPath) {
 
 // ─── 主流程 ─────────────────────────────────────────────────
 
+/** 列出注册表文件（相对项目根，按名排序以保证输出稳定）*/
+function listRegistryFiles() {
+  return readdirSync(join(ROOT, REGISTRIES_DIR))
+    .filter((f) => f.endsWith('.ts'))
+    .sort()
+    .map((f) => join(REGISTRIES_DIR, f))
+}
+
 function main() {
-  const registryFiles = globSync(REGISTRIES_GLOB, { cwd: ROOT })
+  const registryFiles = listRegistryFiles()
   const results = []
 
   for (const regFile of registryFiles) {

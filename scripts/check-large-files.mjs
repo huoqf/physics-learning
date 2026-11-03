@@ -23,8 +23,8 @@ const ALLOWLIST = new Set([
    * 纯数据注册表：20+ 个动画的 title / 参数 / 预设 / 控件声明，没有逻辑可拆。
    * 行数随动画数线性增长，且「一个学科模块一份注册表」是本项目的检索约定，
    * 拆成多份会打散 mechanics 动力学模块的索引。
-   * ⚠ 仍是技术债：按 ARCHITECTURE_RULES「>500 行须拆分」，后续应把预设与
-   *   控件声明外提到独立数据模块，而不是继续往里堆。
+   * ⚠ 仍是技术债：按 ARCHITECTURE_RULES §12.1 的 800 行登记线要求登记于此，
+   *   后续若要继续增长，应把预设与控件声明外提到独立数据模块，而不是继续往里堆。
    */
   'src/data/registries/mechanics-dynamics.ts',
 ])

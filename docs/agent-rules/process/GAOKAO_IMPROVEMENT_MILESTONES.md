@@ -1,7 +1,8 @@
 # 高考物理提分优化方案与计划里程碑
 
-> **文档版本**：v1.0.0  
+> **文档版本**：v1.1.0  
 > **创建时间**：2026-07-29  
+> **最后核对**：2026-11-02（按 `src/` 实际代码逐项核实复选框状态，未勾选项均已注明核实结论）  
 > **适用范围**：`physics-learning` 高考物理提分扩展开发、真题系统建设与架构迭代
 
 ---
@@ -72,10 +73,12 @@
 
 ### 里程碑 2 (M2)：高考 Master 压轴模型专区与导航重构
 - [ ] **M2.1 知识树高考属性增强**：在 `knowledgeTree.ts` 中标注 `gaokaoFrequency`（考频勋章）与真题关联数，更新 `KnowledgePage.tsx` 卡片。
+  - 2026-11-02 核对：**部分完成**。`gaokaoFrequency` 仅覆盖 `modernPhysics.ts`(5) / `nuclear.ts`(5) / `thermodynamics.ts`(6) 共 16 处，131 个节点中覆盖率约 12%；力学 49 个、电学 39 个节点均未标注。
 - [ ] **M2.2 主页提分工作台升级**：重构 `HomePage.tsx`，增加“高考 Master 压轴模型特训”与“高频易错打靶”快捷入口。
-- [ ] **M2.3 高考 Master 压轴模型专区 (`MasterModelsPage.tsx`)**：
-  - 新建 `/master-models` 路由与页面。
-  - 汇总 18 个压轴模型，提供“`[模型动画]` + `[秒杀公式]` + `[真题变式链]`”卡片。
+  - 2026-11-02 核对：**部分完成**。首页已有「高考 N 大模型」入口（`MasterModelsPage`），但**没有**「高频易错打靶」入口；现有四卡为 Master 模型 / 知识树 / 真题练习 / 错题本。
+- [x] **M2.3 高考 Master 压轴模型专区 (`MasterModelsPage.tsx`)**：
+  - 新建 `/master-models` 路由与页面。✅ `src/pages/MasterModelsPage.tsx` 已上线
+  - 汇总 18 个压轴模型，提供“`[模型动画]` + `[秒杀公式]` + `[真题变式链]`”卡片。✅ `MASTER_MODEL_COUNT` 驱动首页标题
 
 ### 里程碑 3 (M3)：高考大题三步破题拆解与选项可视化验证
 - [x] **M3.1 大题三步破题流组件 (`ProblemDeconstruction.tsx`)**：
@@ -86,14 +89,18 @@
   - 支持在 Practice 中点击选项展示选项对应的物理状态及标注箭头。
 
 ### 里程碑 4 (M4)：智能错因诊断与靶向变式打靶系统
-- [ ] **M4.1 多维错因归因**：扩展 `useWrongStore` 存储结构，在错题提交时支持勾选错因标签。
-- [ ] **M4.2 错题本页面重构 (`WrongPage.tsx`)**：支持按错因标签筛选与复习。
+- [x] **M4.1 多维错因归因**：扩展 `useWrongStore` 存储结构，在错题提交时支持勾选错因标签。✅ 已上线：7 大认知错因（`src/data/wrongReasons.ts`），`reasons` 存认知缺陷、支持多挂，合并策略为并集（避免一次空自评抹掉既有归因）
+- [x] **M4.2 错题本页面重构 (`WrongPage.tsx`)**：支持按错因标签筛选与复习。✅ 已上线：`reasonFilter` 胶囊筛选，仅列「真的出现过」的错因，`filterKeepingSelected` 防止删除末题后筛选悬空
 - [ ] **M4.3 变式题推荐引擎**：实现基于 `masterModelId` 的同源变式题推荐。
+  - 2026-11-02 核对：**未实现**，全仓无 `relatedProblems` / `variant` 推荐链路。
 - [ ] **M4.4 模型掌握度热力图**：在 `AnalysisPage.tsx` 中绘制 18 个大模型的掌握度雷达图。
+  - 2026-11-02 核对：**未实现**，全仓无 `radar` / `heatmap` 实现；`AnalysisPage`（280 行）目前只有「已掌握」状态标记。
 
 ### 里程碑 5 (M5)：图像思维与临界探究特训
 - [ ] **M5.1 图像走向手绘预测**：在 `BasePhysicsChart` 中集成画布绘制预测功能。
+  - 2026-11-02 核对：未实现，全仓无 `GraphPredictor` 相关代码。
 - [ ] **M5.2 显性化临界刻度补全**：为全部核心动画补全 `ParamMark` 临界刻度标记。
+  - 2026-11-02 核对：**能力已具备、覆盖不足**。`ParamMark` 组件与 `paramMeta.marks` 类型已就位，`src/data/registries/` 内仅 40 处 `marks:` 使用，124 个动画中约 1/3 覆盖。
 
 ---
 

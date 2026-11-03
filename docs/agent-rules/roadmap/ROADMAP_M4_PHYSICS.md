@@ -1,6 +1,29 @@
 # [M4] 电磁学 / 热学 / 光学 / 原子物理模块
 
-&gt; 依赖：[M2] ✅ | 最后更新：2026-05-29
+&gt; 依赖：[M2] ✅ | 最后更新：2026-11-02（复选框现状核对）
+
+> **2026-11-02 现状核对**：本文件的复选框此前长期停留在「计划组件名」口径，而实际交付文件名与
+> 注册表 id 不同，导致 11 项已上线功能仍显示未完成。本轮按 `src/data/registries/` 与知识树
+> `animationIds` 逐项核实后修正。实际落点如下，后续核对请以此为准：
+>
+> | 文档条目 | 实际动画 id | 实际文件 |
+> |---|---|---|
+> | `InductionPhenomenon` | `anim-electromagnetic-induction` | `features/electromagnetism/induction/InductionPhenomenon.tsx` |
+> | `SelfInductance` | `anim-self-induction-eddy` | `features/electromagnetism/induction/self-induction/` |
+> | `BrownianMotion` | `anim-brownian-motion` | `features/thermodynamics/kinematics/BrownianMotion.tsx` |
+> | `MolecularForce` | `anim-intermolecular-forces` | `features/thermodynamics/kinematics/IntermolecularForcesAnimation.tsx` |
+> | `GasLaws` | `anim-gas-laws` | `features/thermodynamics/gasLaws/GasLawsAnimation.tsx` |
+> | `IdealGasState` | `anim-clapeyron` | `features/thermodynamics/`（克拉珀龙方程） |
+> | `FirstLawThermo` | `anim-first-law` | `features/thermodynamics/` |
+> | `SecondLawThermo` | `anim-second-law` | `features/thermodynamics/` |
+> | `Reflection` | `anim-reflection` | `features/optics/reflection/ReflectionAnimation.tsx` |
+> | `Refraction` | `anim-refraction` | `features/optics/` |
+> | `ThinLens` | `anim-thin-lens` | `features/optics/thin-lens/` |
+>
+> **仍未完成（4 项，已核实无对应动画）**：`ResistivityLaw`（电阻定律 R=ρL/S）、`ElectricPower`
+> （电功与电功率）、`MeterConnection`（电表内外接法误差分析）、`MagneticField`（直导线/圆环/螺线管
+> 磁感线专页）。其中 `electricity-3-0` 磁感应强度与磁通量节点目前借 `anim-faraday-law` /
+> `anim-ampere-force` 承载，无独立磁感线动画。
 
 ---
 
@@ -128,7 +151,7 @@
 | 导线切割磁力线 EMF=BLv | ⭐⭐⭐⭐⭐ | CuttingEMF |
 | 自感与互感 | ⭐⭐⭐ | SelfInductance |
 
-- [ ] **InductionPhenomenon.tsx** — 磁通量变化→感应电流，各种改变磁通量方式
+- [x] **InductionPhenomenon.tsx** — 磁通量变化→感应电流，各种改变磁通量方式
 
 > ✅ 2026-05-31：电磁感应高频 3 组件完成（LenzsLaw/FaradayLaw/CuttingEMF），
 > 知识点 electricity-4-1~4-3 + 注册表 + 参数面板 + 物理量看板全接线。
@@ -145,7 +168,7 @@
   - 导线在匀强磁场中切割：EMF=BLv，导轨模型（含电阻）
   - 安培力 vs 驱动力，达到匀速时安培力=驱动力
   - 高考要点：导轨问题能量守恒（电能=热能=安培力做的功）
-- [ ] **CuttingEMF 增强**（[M4-1.x] 路线图追加 2026-06-02）
+- [x] **CuttingEMF 增强**（[M4-1.x] 路线图追加 2026-06-02）
 
   > 缘由：[M4-1] 收官后，为深化高考必考点 `electricity-4-3` 教学效果，对 CuttingEMF 进行单点增强。
   > 范围：仅扩展 CuttingEMF 单组件，不影响其他 39 个动画 chunk。
@@ -164,7 +187,7 @@
   - [x] **交互模式三态**（[PR 2] ✅ 2026-06-02）：手动拖拽 / 匀速 / 受力 状态机
 
   **风险与豁免**：Canvas 7 元素限制豁免 ⊗ 网格（视为"参考层"）+ PiP 独立子画布；探索一目标修改需在 `data/knowledgeTree.ts` 的 `electricity-4-3` 节点的 problemIds 预留接入位。
-- [ ] **SelfInductance.tsx** — 通断电时电感的延迟效应，日光灯启动原理
+- [x] **SelfInductance.tsx** — 通断电时电感的延迟效应，日光灯启动原理
 
 #### 交变电流（⭐⭐⭐⭐ 高考重点）
 
@@ -212,16 +235,16 @@
 | 热力学第一定律 | ⭐⭐⭐⭐ | FirstLawThermo |
 | 热力学第二定律（方向性） | ⭐⭐⭐ | SecondLawThermo |
 
-- [ ] **BrownianMotion.tsx** — 粒子随机游走模拟，温度越高运动越剧烈；区分布朗运动（花粉）vs分子热运动
-- [ ] **MolecularForce.tsx** — 分子间F-r曲线（斥力+引力），平衡距离r0，引力斥力共存
-- [ ] **GasLaws.tsx**
+- [x] **BrownianMotion.tsx** — 粒子随机游走模拟，温度越高运动越剧烈；区分布朗运动（花粉）vs分子热运动
+- [x] **MolecularForce.tsx** — 分子间F-r曲线（斥力+引力），平衡距离r0，引力斥力共存
+- [x] **GasLaws.tsx**
   - 玻意耳定律（T恒定，pV=常数）：p-V图（等温线双曲线）
   - 查理定律（V恒定，p/T=常数）：p-T图（正比直线）
   - 盖-吕萨克定律（p恒定，V/T=常数）：V-T图（正比直线）
   - 高考要点：T必须用开尔文（K=℃+273）
-- [ ] **IdealGasState.tsx** — pV/T=常数，三变量联动，气柱问题模拟（封闭气体变化过程）
-- [ ] **FirstLawThermo.tsx** — ΔU=Q+W，吸热做功符号规定，各种热力学过程能量分析
-- [ ] **SecondLawThermo.tsx** — 热量自发从高温到低温，永动机不可能，熵增方向性演示
+- [x] **IdealGasState.tsx** — pV/T=常数，三变量联动，气柱问题模拟（封闭气体变化过程）
+- [x] **FirstLawThermo.tsx** — ΔU=Q+W，吸热做功符号规定，各种热力学过程能量分析
+- [x] **SecondLawThermo.tsx** — 热量自发从高温到低温，永动机不可能，熵增方向性演示
 
 ---
 
@@ -247,8 +270,8 @@
 | 薄透镜成像规律（1/u+1/v=1/f） | ⭐⭐⭐⭐⭐ | ThinLens |
 | 透镜作图（三条特殊光线） | ⭐⭐⭐⭐⭐ | ThinLens |
 
-- [ ] **Reflection.tsx** — 入射角/反射角相等，平面镜成像（等大虚像），逆光路原理
-- [ ] **Refraction.tsx**
+- [x] **Reflection.tsx** — 入射角/反射角相等，平面镜成像（等大虚像），逆光路原理
+- [x] **Refraction.tsx**
   - 折射定律n1sinθ1=n2sinθ2，折射率n=c/v
   - 光从密→疏偏离法线，从疏→密靠近法线
   - 高考要点：折射率越大光速越小；折射率=真空光速/介质光速
@@ -256,7 +279,7 @@
   - 临界角sinC=n2/n1（n1>n2时），光纤原理演示
   - 入射角逐渐增大→折射光线偏折→消失→全反射
   - 高考要点：只有从密介质射向疏介质时才可能发生全反射
-- [ ] **ThinLens.tsx**
+- [x] **ThinLens.tsx**
   - 凸透镜/凹透镜可切换，物距u可拖动调节
   - 实时显示：像距v，放大率m=v/u，像的性质（实/虚，正/倒，大/小）
   - 三条特殊光线作图（平行→过焦点/过光心不折/过焦点→平行）

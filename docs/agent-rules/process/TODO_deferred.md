@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-10-11（全仓核对：124 动画对账、真题 64+ 题、实验专题 experiment-3-3 独立实验页交付与借用节点实况校正）
+> 最后更新：2026-11-03（新增第 17/18 项：磁通量投影面积 S⊥ = S·cosθ 与测 B 两处缺口，登记为 `electricity-3-0` 内补；M4 四项审计确认全部已有动画）
 
 ---
 
@@ -32,17 +32,20 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 ### 拆分原则
 
+> **行数不是判据。** 500 行只表示「该看一眼」，不表示「该拆了」。判据见
+> `ARCHITECTURE_RULES.md §12.1`「三线制 + 拆分/反向判据」。以下原则围绕**可维护性**，不是围绕行数。
+
 **目的**（不是为了拆而拆）：
 1. 物理计算无法独立测试 → 抽纯函数到 `src/physics/`
 2. 改显示逻辑可能破坏物理 → 分离 view/model
 3. 视觉回归难发现 → 抽 viewModel 便于断言坐标
 4. 新人维护上下文过大 → 模块化降低认知负担
 
-**验收标准**（拆分后必须满足至少一项）：
+**验收标准**（拆分后必须满足至少一项，且**不得**以行数下降作为唯一成果）：
 - 物理计算与渲染逻辑解耦（物理计算逻辑完全隔离到纯函数或专用 hook 中，组件 JSX 内零物理公式）
-- 新增了可独立运行的单元测试
-- 单文件行数降到 500 以下且无物理计算与 JSX 混写
-- 减少了跨模块耦合
+- 新增了可独立运行的单元测试，且该测试在拆分前写不出来
+- 减少了跨模块耦合，或消除了同一逻辑的两处实现
+- 被拆出的单元有独立复用场景（≥2 处调用）或独立演进需求
 
 **铁律**：
 - 一次只拆一个动画，每次只抽一个层次，每次补一组测试
@@ -50,20 +53,29 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 - 组件复用优先：场景中已有 `src/components/` 下的组件时必须直接使用
 - 拆完跑 `npm run check && npm test`
 - **不拆的情况**：文件虽长但职责清晰、无物理计算与 JSX 混写、无测试需求、拆分后收益不明显
+- **过度拆分的判定与回滚**：拆完后若理解同一段逻辑需要跨 ≥2 个文件来回跳转，或拆出的单元既无复用也无单测，
+  即为过度拆分，**应回滚该次拆分**，并在此处记录「已评估、决定不拆」的结论，避免下次再被行数触发重拆。
 
 ---
 
 ## 一、超长文件拆分（P2）
 
-### 待处理（2026-10-11 核对）
+### 复核候选（2026-11-02 核对行数）
 
-**执行优先级**：RotatingCoil → AnimationPage → RelationChart（仅类型整理）
+> 下表只记录「进入复核」的文件与事实，**「拆不拆」的结论见本节末尾「复核结论」**。
+> 行数仅用于判断是否到了复核线（500），不构成拆分理由。
+
+**施工优先级（按复核结论，不按行数）**：AnimationPage（该拆）→ RotatingCoil（可选，触发性迁移）→ RelationChart（不拆）
+
+> **全仓超长文件的唯一真源是 `npm run check:large-files` 的输出**，本表只列「已进入复核线且尚未处置」的文件。
+> 当前另有 2 个 800+ 文件已在 `scripts/check-large-files.mjs` 的 `ALLOWLIST` 中（`data/problems/masterProblems.ts`
+> 894 行、`data/registries/mechanics-dynamics.ts` 832 行），均为纯数据文件，不在此表重复登记。
 
 | # | 文件 | 当前行数 | 消费者 | 测试 | 拆分方案 | 风险 |
 |:-:|------|-----:|--------|:---:|---------|:---:|
-| 1 | `RotatingCoil.tsx` (`src/components/Physics/`) | 619 | 1（`ACGeneration.tsx`） | 无 | `render3DSlipRing`/`render3DBrush`/`renderBrushWires` → `rotatingCoilParts.tsx`；主组件保留顶点计算 + 深度排序 + 组装 | 低 |
-| 2 | `AnimationPage.tsx` | 569 | 1（`App.tsx` 路由） | 无 | 抽 `useFilteredParams()`（showIf/hideIf 过滤）、`useAnimationMode()`（resetParams 逻辑）。无埋点/监控/URL 同步。SidebarExtra 已删除 | 低 |
-| 3 | `RelationChart.tsx` | 579 | **30+（132 处）** | 无 | **仅做类型整理**：`RelationDataSeries`/`RelationMarker`/`RelationChartProps` → `RelationChart.types.ts`。`RCContent` 依赖 `ChartContext`，保留在组件文件中 | 低（仅类型迁移） |
+| 1 | `RotatingCoil.tsx` (`src/components/Physics/`) | 618 | 1（`ACGeneration.tsx`） | 无 | `render3DSlipRing`/`render3DBrush`/`renderBrushWires` → `rotatingCoilParts.tsx`；主组件保留顶点计算 + 深度排序 + 组装 | 低 |
+| 2 | `AnimationPage.tsx` (`src/pages/`) | 645 | 1（`App.tsx` 路由） | 无 | 抽 `useFilteredParams()`（showIf/hideIf 过滤）、`useAnimationMode()`（resetParams 逻辑）。无埋点/监控/URL 同步。SidebarExtra 已删除 | 低 |
+| 3 | `RelationChart.tsx` | 776 | **30+（132 处）** | 无 | **仅做类型整理**：`RelationDataSeries`/`RelationMarker`/`RelationChartProps` → `RelationChart.types.ts`。`RCContent` 依赖 `ChartContext`，保留在组件文件中 | 低（仅类型迁移） |
 
 **补充信息**：
 
@@ -83,6 +95,24 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 ---
 
+### 复核结论（2026-11-02，按 §0 「拆分/反向判据」逐文件判定）
+
+> **结论：三个文件里只有 1 个该拆，另外 2 个「不拆」都是正确决定。**
+> 旧的「执行优先级 RotatingCoil → AnimationPage → RelationChart」按行数排序，方向本身就错——
+> 行数最长的 `RelationChart`（776）恰恰是最不该拆的。
+
+| 文件 | 行数 | 结论 | 判定依据 |
+|---|---:|---|---|
+| `AnimationPage.tsx` | 645 | **该拆** | 命中拆分判据 ②：`RightPhysicsPanel` 单函数 405 行，把参数清洗、参数词汇表、物理量装配、兄弟动画检索 4 类互不相关职责塞进 4 个 `useMemo`。这是职责混杂，不是「文件长」 |
+| `RotatingCoil.tsx` | 618 | **可选，暂不动** | 3D 投影几何计算（26 处运算）与滑环/电刷绘制混写，命中判据 ①，但只有 1 个消费者、无复用可能，拆出 `rotatingCoilParts.tsx` 收益中等。**不列入当前施工计划**，等下次改该组件时顺手抽（触发性迁移） |
+| `RelationChart.tsx` | 776 | **不拆** | 命中反向判据 ①：全文件**零物理公式**，是一个单一的图表渲染管线——`buildPath` / `labelWidth` / `estimateLabelWidth` / `planMarkerRows` 四个纯函数 + `RCContent` 渲染体，职责高度内聚。拆开会让读图表代码的人多跳 2~3 个文件，违反反向判据 ②。类型整理（`RelationChart.types.ts`）本身价值也有限，**属可选项，不排期** |
+
+**顺带纠正的口径问题**：旧 §1 用「>500 行」作为拆分触发条件，与 `check-large-files.mjs` 的 800/1000
+门禁不一致，也与 `ARCHITECTURE_RULES §12.1` 原文的「>500 行或混写时须拆分」不一致——三处三套数字，
+其中「须拆分」的措辞是导致「为拆而拆」的直接原因。已于 2026-11-02 统一为三线制，详见 `ARCHITECTURE_RULES §12.1`。
+
+---
+
 ## 二、响应式与颜色规范
 
 ### 2.1 响应式缩放（P1/P2）
@@ -97,7 +127,8 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 ### 3.1 AnimationPage 协调职责监控（P2）
 
-> 当前 569 行（2026-10-11 核对，仍超 500 行阈值）。触发拆分条件：行数 > 500，或存在物理计算与 JSX 混写，或职责 > 8 类。
+> 当前 645 行（2026-11-02 核对，较 2026-10-11 的 569 行增长 76 行）。已按 §1 复核结论判定**该拆**，
+> 判据是「`RightPhysicsPanel` 单函数 405 行承担 4 类互不相关职责」，**不是**行数超 500。
 
 膨胀触发区域：参数过滤（showIf/hideIf）、模式切换、RightPhysicsPanel 计算逻辑。
 如继续增长，优先抽 hook：`useFilteredParams()`、`useAnimationMode()`。
@@ -401,7 +432,9 @@ npx playwright test
 | 13 | P1-5 | `electricity-1-8` | 静电的防止与利用（静电感应/尖端放电/静电屏蔽） | `PhysicsVectorArrow` + 场线基座 | [x] 已完成 |
 | 14 | P1-4 | `wave-optics-1-5` | 薄膜干涉与增透膜 | `wave-optics-1-1` 干涉骨架 | [x] 已完成 |
 | 15 | P2 | `mechanics-6-6` | 相对论时空观与牛顿力学的局限性 | 双参考系光钟与动钟尺缩几何 | [x] 已完成 |
-| 16 | P2 | `thermodynamics-3-3` | 能量守恒定律与能源 | 非计算章节 | [ ] 未开工 |
+| 16 | P2 | `thermodynamics-3-3` | 能量守恒定律与能源 | 非计算章节 | [x] 已完成（`anim-energy-flow` 三情境） |
+| 17 | P1-2 | `electricity-3-0` 内补 | 磁通量 Φ = BS⊥ = BS·cosθ（线圈斜放取投影面积） | `anim-faraday-law` 加「线圈倾角 θ」mode：斜放线圈 + 法线 + 投影面积虚线（需新画法，不是加个参数就行） | [ ] 未开始 |
+| 18 | P3 | `electricity-3-0` 内补 | 用控制变量法测 B（改 I、改 L 看 F，作 F–I 图由斜率求 B） | `anim-ampere-force` 已有 F ∝ I、F ∝ L 的对照，可加「作 F–I 图求 B」mode | [ ] 暂不排（近 5 年考查频率低，`coverageNote` 已明示不覆盖） |
 | — | P2 | `modern-1-2` 内扩 mode | 康普顿效应 | 作为光电效应动画的一个 mode，**不单列节点** | [x] 已完成 |
 | — | P2 | `electricity-1-6` 内补 | 电势能 | 已在 `anim-electric-potential` 完整覆盖（含 $U_{AB}$、$\Delta E_p$、做功与路径无关） | [x] 已确认覆盖 |
 
@@ -430,9 +463,10 @@ done
 > **落地约束**：三者需从 `src/components/Physics/index.ts`（或 `Chart/`）导出，并在 `COMPONENT_REGISTRY.md` 登记**与源码一致的完整 props 签名**（见 §10.6）。
 > **核对命令**：`grep -rl "CharacteristicCurve\|EnergyFlowBars\|ChainCircuitBuilder" src/components src/features`（实测：CharacteristicCurve 6 处、ChainCircuitBuilder 5 处已落地消费；EnergyFlowBars 未开工）
 
-### 9.3 实验专题扩展（12 个节点，P1，9/12 闭环，3 个借用过渡待内生增强）
+### 9.3 实验专题扩展（12 个节点，P1，**12/12 全闭环**）
 
-现状：`src/data/knowledge/experiment.ts` 已经构建完整的力学、电学、光学、热学 12 个实验节点体系。其中 **9 个节点已实现独立专用实验页或内生实验模式闭环**；**3 个力学节点（2-2、2-3、2-4）已挂靠相关理论/基础实验动画，具备物理与测量底座，后续视需要进一步深化专用模式**。
+现状：`src/data/knowledge/experiment.ts` 已经构建完整的力学、电学、光学、热学 12 个实验节点体系，**12 个节点全部实现独立专用实验页或内生实验模式闭环**。
+2026-11-02 收口最后 1 个：`experiment-2-2` 由「借用过渡」升级为 `anim-mechanics-experiment-base` 的内生 **mode ④ 验证机械能守恒**，原先那条「本页不覆盖机械能守恒」的范围声明已随之删除。
 
 > **架构认知与最佳实践**：**高考实验不必全部单立空壳新动画，大量经典实验最佳实践是与核心知识点动画共建（通过 `mode` 切换或预设），既保持知识树的连续性，又避免碎片化维护。**
 > - **知识点内置高考实验/探究模式（已落地广泛实践）**：
@@ -459,7 +493,7 @@ done
 |---|---|---|:---:|
 | `experiment-1-1` | 力学实验基础与纸带/光电门分析 | `anim-mechanics-experiment-base` | [x] 已完成 |
 | `experiment-2-1` | 探究加速度与力、质量的关系 | `anim-mechanics-experiment-base` 纸带逐差法与 a-F 图像 | [x] 已完成 |
-| `experiment-2-2` | 验证机械能守恒定律 | 借用 `anim-mechanics-experiment-base` + `anim-free-fall`（已有自由落体打点预设，待深化落体专区） | [ ] 借用过渡待增强 |
+| `experiment-2-2` | 验证机械能守恒定律 | `anim-mechanics-experiment-base`（**内生扩展 mode ④**：竖直自由下落打点装置、选带条件「首打点间距 ≈2 mm」判定、中间时刻速度法求 vₙ、逐点比对 mgh 与 ½mv²、阻力使 ΔEₖ<ΔEₚ 的误差归因、ΔEₚ–ΔEₖ 双曲线比对屏） | [x] **已完成（内生扩展闭环）** |
 | `experiment-2-3` | 验证动量守恒定律 | `anim-momentum-conservation`（**内生扩展 Mode 2 高考实验**：气垫导轨、光电门1与光电门2测速、挡光片 $\Delta x$ 毫秒级计时、弹性/完全非弹性碰撞、反弹负动量矢量性、动量守恒比对与动能损失分析） | [x] **已完成（内生扩展闭环）** |
 | `experiment-2-4` | 用单摆测重力加速度 | `anim-simple-pendulum`（**内生扩展 Mode 3 高考实验**：摆长 $L=l+d/2$ 米尺卡尺两段测定、累积计时法 $T=t/N$、纯物理层 SSOT 下沉、右屏 $g_{测}$ 反求与相对误差比对表、中屏 $T^2-L$ 拟合图线与斜率法数据分析） | [x] **已完成（内生扩展闭环）** |
 | `experiment-1-2` | 电学实验基础（测定电源电动势与内阻） | `anim-experiment-er` | [x] 已完成 |
@@ -474,8 +508,17 @@ done
 
 ### 9.4 题库时效性（P1）
 
-- 现有题库带 `year:` 的真题共 **64** 题（实测：2020:2 / 2021:9 / 2022:12 / 2023:26 / 2024:15）；`year: 2025` **0 条**。
-- [ ] 补 2025 年真题 8–15 道，**优先覆盖本次新增章节**（LC 振荡 / 传感器 / 多普勒 / 受迫振动 / 实验专题），避免"有动画没题"。
+- 现有题库带 `year:` 的真题共 **68** 题（原 64 题：2020:2 / 2021:9 / 2022:12 / 2023:26 / 2024:15；**2026-11-02 新增 2025:4**）。
+- [x] **2025 真题首批录入（2026-11-02）**：`src/data/problems/gaokao2025.ts` 收录 2025 年全国卷（理综）第 14~17 题——
+  动车组匀减速（`mechanics-2-1`）、天都一号椭圆轨道（`mechanics-6-1/6-2/6-3`，绑 `anim-kepler`）、
+  撑杆跳高能量转化（`mechanics-7-5`）、匀强电场中正电荷轨迹辨析（`electricity-1-2/1-3`）。
+  三源交叉核对题干与选项；**仅收四选项完整无缺的题目**，该卷其余题目（磁场电子偏转 t₁/t₂/t₃、理想气体三状态、
+  人浪波长、金属圆环转动、橡皮筋测劲度、伏安法内外接、电容器键盘、圆弧轨道压轴）因网络文档版公式/选项残缺全部不收。
+- [ ] **2025 真题剩余 4~11 道，且需覆盖新增章节**（LC 振荡 / 传感器 / 多普勒 / 受迫振动 / 实验专题）。
+  **阻塞原因**：网络文档版不含这些题目的完整原文，必须由持有官方原卷 PDF 的人录入；**禁止凭记忆补写**——
+  残缺或臆造题干一旦入库，`verified: true` 即失真，且下游无法发现。
+  另：该卷第 10 题（伏安法测电阻、电流表内外接的「大于/小于」判定）正对 §9.1 缺口 `MeterConnection`，
+  拿到原卷后应优先收录并同步补 `MeterConnection` 知识点动画。
 - [ ] 补 2025 年代表性模拟题（河南/湖南/江苏/云南等卷）中上述章节的选择题。
 
 ### 9.5 施工批次建议

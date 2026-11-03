@@ -20,6 +20,7 @@
 | `SportsCar` | 运动小车 | `x`, `y` | `<SportsCar x={carX} y={groundY - 26} width={56} height={26} />` |
 | `Spring` | 弹簧 | `x1`, `y1`, `x2`, `y2` | `<Spring x1={ox} y1={oy} x2={bx} y2={oy} coils={8} radius={12} />` |
 | `EnergyBars` | 能量柱状图 | `items` | `<EnergyBars items={[{ key:'Ek', label:'Ek', value:state.Ek, color:COLORS.kineticEnergy }]} />` |
+| `EnergyFlowBars` | 能量流能量条（SVG / 设计坐标）：N 个能量库共用一把尺，损失库用低饱和+虚线柱身；用于场景内与设备图同框 | `x`, `y`, `width`, `height`, `reservoirs`, `max`, `total`, `font` | `<EnergyFlowBars x={556} y={10} width={274} height={300} reservoirs={list} max={1300} total={{label:'自给率',value:'78%'}} font={font} />` |
 | `ParticleTrajectory` | 粒子轨迹(SVG) | `historyPoints`, `predictedPoints`, `tailPoints`, `isFocus`, `chargeSign` | `<ParticleTrajectory historyPoints={hp} predictedPoints={pp} tailPoints={tp} isFocus chargeSign="+" />` |
 | `ParticleEmitter` | 粒子发射源 | `x`, `y` | `<ParticleEmitter x={lx} y={ly} active={isPlaying} chargeSign={q} />` |
 | `CapacitorPlates` | 平行板电容器 | `x`, `y`, `width`, `gap` | `<CapacitorPlates x={px} y={cy} width={wp} gap={gp} chargeSign={E > 0.01 ? 1 : 0} />` |
