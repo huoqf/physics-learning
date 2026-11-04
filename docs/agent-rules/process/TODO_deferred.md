@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-11-03（新增第 17/18 项：磁通量投影面积 S⊥ = S·cosθ 与测 B 两处缺口，登记为 `electricity-3-0` 内补；M4 四项审计确认全部已有动画）
+> 最后更新：2026-11-04（新增 §10.7：两个数据文件 CRLF 入库导致 `git diff` 显示整文件重写；11-03 新增第 17/18 项：磁通量投影面积 S⊥ = S·cosθ 与测 B 两处缺口）
 
 ---
 
@@ -140,7 +140,7 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 | `expandedNodes: string[]` → `Record<string, true>` | 当前 132 节点（组件内部已用 Set，Store 仍为 string[]，暂无性能瓶颈） |
 | `WrongPage.renderCard` 提取 `React.memo` | `menuFor` 状态只影响单张卡，收益有限 |
 | `RightPhysicsPanel` 计算逻辑抽取 | 可抽取独立 hook，优先级低 |
-| `VectorFormulaPanel.tsx` 删除 | [x] 已彻底删除 |
+| `VectorFormulaPanel.tsx` 删除 | [x] 已彻底删除（**11-04 复核发现旧记录与事实不符**：文件仍在、全仓零引用；本轮已实际删除。教训：勾掉「已删除」前先 `ls` 一眼） |
 
 ---
 
@@ -575,4 +575,10 @@ done
 
 - **状态**：已由 §10.5 守门脚本自动拦截保障，与 CI 门禁彻底闭环。
 - [x] **已完成闭环（2026-09-27）**
+
+### 10.7 两个数据文件的换行符历史遗留（P3，仓库卫生）
+
+- **现象**：`src/data/quantities/vibration.ts` 与 `src/data/registries/vibration-oscillation.ts` 以 **CRLF** 入库（其余源文件都是 LF），且库内还夹着 `\r\r` 双 CR 与个别 LF-only 行。`core.autocrlf=true` 下 git 会在比对前把工作区 CRLF 归一成 LF，再拿去和 CRLF 的 blob 比 —— 结果是**改一行、`git diff` 显示整文件重写**（`vibration.ts` 377/376 行）。
+- **绕法**：看真实差异用 `git -c core.autocrlf=false diff` 或 `git diff --ignore-cr-at-eol`；写回时基于 `git cat-file -p HEAD:<path>` 的字节做行内替换，别让编辑器/脚本整文件重写（2026-11-04 修 LaTeX 时踩过一次，已用字节级替换复原成 5/5、3/3 行）。
+- **一次性收口**：`git add --renormalize` 这两个文件（提交里会出现一次整文件 CRLF→LF，之后恢复正常）。**没有任何功能影响**，所以排在 P3，不做也行。
 
