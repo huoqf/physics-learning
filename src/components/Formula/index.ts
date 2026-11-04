@@ -14,4 +14,5 @@
  * ```
  */
 export { KatexFormula } from './KatexFormula'
+export { InlineMath } from './InlineMath'
 export { PhysicsPanel } from './PhysicsPanel'
