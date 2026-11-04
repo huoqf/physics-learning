@@ -279,7 +279,7 @@ export const vibrationOscillationAnimations = defineAnimations({
         type: 'tip',
         group: '教学提示',
         content:
-          '观察质点 $P$：波形向右传播时，$P$ 只在竖直方向振动（传波不传质）。波速 $v=\\lambda f$，调节 $v$ 或 $f$ 观察波长变化。',
+          '观察质点 P：波形向右传播时，P 只在竖直方向振动（传波不传质）。波速 v = λf，调节 v 或 f 观察波长变化。',
       },
       {
         type: 'tip',
@@ -351,7 +351,7 @@ export const vibrationOscillationAnimations = defineAnimations({
         type: 'tip',
         group: '教学提示',
         content:
-          '当缝宽 $d$ 接近或小于波长 $\\lambda$ 时，衍射最明显；右侧 $I(y)$ 曲线随之展宽。',
+          '当缝宽 d 接近或小于波长 λ 时，衍射最明显；右侧强度曲线 I(y) 随之展宽。',
       },
     ],
   },
@@ -424,7 +424,7 @@ export const vibrationOscillationAnimations = defineAnimations({
         type: 'tip',
         group: '教学提示',
         content:
-          '相干条件：频率相同、相位差恒定。程差 $\\delta=n\\lambda$ 加强，$\\delta=(n+1/2)\\lambda$ 减弱。',
+          '相干条件：频率相同、相位差恒定。程差 δ = nλ 时加强，δ = (n + 1/2)λ 时减弱。',
       },
     ],
   },

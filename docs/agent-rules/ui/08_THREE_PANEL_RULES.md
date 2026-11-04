@@ -155,6 +155,12 @@ LeftPanel                         ← AnimationPage 左屏唯一顶层容器
    >
    > 判定口径：**左屏 tip 里出现"这个物体现在这时候是多少"，就是答案；出现"你应该看哪里"，就是引导。**
 
+   > **左屏是纯文本面（2026-11 补记）**：预设标签、分组名、分段器选项、滑块刻度都由 `<span>` 直出，教学提示走 `TipCard`——**全都不经过 KaTeX**。因此在左屏文案里写 `$P$`、`$\lambda$` 不会渲染，只会把美元符号一起显示出来（曾有 3 条 tip 这么写：`anim-mechanical-wave` / `anim-wave-diffraction` / `anim-wave-interference`）。
+   >
+   > 左屏的写法是 **unicode + 半角运算符**：`λ`、`δ`、`R₂`、`v₀`、`v = λf`。真正的公式归右屏 `formulas.latex`。
+   >
+   > `ControlPanel` 也**不能**为了这件事去 import `InlineMath`：它挂在 `@/components/UI` barrel 下被 app shell 静态引用，一旦引入公式组件，`katex.min.css` 的副作用会把 KaTeX 拖进首屏 entry chunk（见 `components/Formula/index.ts` 的注释）。守卫：`check-control-meta` 扫 `controlMeta` 与 `paramMeta` 的全部可见文案，命中 `$` 或 `\cmd` 即失败。
+
    **清理手法：优先"改写"，其次"删除"。** 越界的 tip 多数原本是有用的教学意图，只是写成了结论。正确做法是把它翻成**观察任务**——把"振幅达到峰值"改成"三个预设只差 f，各放一次，只盯振幅读数怎么变"；把"感应磁场总是与原磁场相反"改成"看箭头什么时候同向、什么时候反向"。只有当右屏 `ExamPointSection` / `FormulaSection` 已逐条给出同一内容、且改写成任务后与动画画面无关时，才直接删除，并在原处留一行 `//` 注释说明右屏哪一处已覆盖（便于后人复核，不要删了不留痕）。**严禁**为了让脚本通过而把句子截断成半句。
 
    以上五条由 `npm run check:control-meta` 强制：预设标签字数、左屏所有文案的卷别与应试化措辞（预设标签 / 分组名 / 选项 / 滑块名称与刻度 / tip 标题）、tip 字数与 C1/C3 关键词、`preset` 与模型选择的声明顺序，任一不合即 CI 失败。字数上限是**代理指标**，不是目的——真正的判据永远是上面那句话；脚本过了但读起来像答案，仍算违规。
@@ -336,6 +342,22 @@ Formula
 - 全反射条件
 
 > 已纳入 CI 硬约束：`npm run check:formula-condition` 会对上述守恒/定律类公式强制校验 `condition` 非空（`condition` 缺失时右屏静默不渲染条件行，学生看不到成立前提）。新增定律类公式时请同步补齐条件。
+
+#### 3.2.1 `latex` 的转义层数（写错=页面显示源码）
+
+`latex` 是 **TS 字符串**，KaTeX 拿到的是**运行时值**，源码里必须写**两个**反斜杠：
+
+| 源码 | 运行时 | KaTeX 看到 | 结果 |
+|---|---|---|---|
+| `latex: 'v=\\lambda f'` | `v=\lambda f` | `\lambda` | ✅ 渲染 λ |
+| `latex: 'v=\\\\lambda f'` | `v=\\lambda f` | `\\` = 换行 + 文字 `lambda` | ❌ 静默渲染成乱码 |
+| `latex: 'v=\lambda f'` | `v=ambda f`（`\l` 被吃掉） | 无命令 | ❌ 静默 |
+
+**为什么守卫抓不到**：`KatexFormula` 用 `katex.render(..., { throwOnError: false })`，语法错误不抛异常，KaTeX 把源码当纯文本画出来——页面只是"看着没渲染"，控制台一片干净。2026-11 修 `vibration.ts` 时全库只此一处是四层转义（4 条公式 + 1 条 `condition`），逐条肉眼比对才发现。
+
+排查手法：直接拿字符串做 `katex.renderToString(tex, { throwOnError: true })`，比看页面可靠。注意 `\\`（换行）在 `cases` 环境里是**合法**的，那种位置必须写四个反斜杠——别一刀切。
+
+`condition` / `note` 是**纯文本**字段（不经过 KaTeX），里面不要写 `$...$` 或 `\sin`。
 
 ### 3.3 物理量区规范
 

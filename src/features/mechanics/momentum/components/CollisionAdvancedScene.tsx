@@ -14,7 +14,6 @@ import type { AnimationViewportResult } from '@/hooks'
 import type { SceneScale } from '@/scene/SceneScale'
 
 interface CollisionAdvancedSceneProps {
-  vA: number
   R_Adv: number
   R_Bdv: number
   posAAdv: number
@@ -35,7 +34,6 @@ interface CollisionAdvancedSceneProps {
 }
 
 export function CollisionAdvancedScene({
-  vA,
   R_Adv, R_Bdv, posAAdv, posBAdv, curVA, curVB,
   hasCollidedAdv, colTimeAdv, velocitySwap, heavyLight, lightHeavy,
   xCmAdv, time, showVectors, sceneScale, canvasSize, groundY,
@@ -126,13 +124,13 @@ export function CollisionAdvancedScene({
       {heavyLight && hasCollidedAdv && (
         <text x={COL_LAYOUT.designWidth / 2} y={35} fontSize={font(12)}
           fill={PHYSICS_COLORS.velocity} fontWeight="bold" textAnchor="middle">
-          大撞小 ($m_A \gg m_B$)：大球速度几乎不变，小球速度变为 $v_B' \approx 2v_A$ = {(2 * vA).toFixed(1)} m/s
+          大撞小（大球远比小球重）：大球几乎匀速，小球速度≈原来的 2 倍（当前 {curVB.toFixed(1)} m/s）
         </text>
       )}
       {lightHeavy && hasCollidedAdv && (
         <text x={COL_LAYOUT.designWidth / 2} y={35} fontSize={font(12)}
           fill={PHYSICS_COLORS.elasticForce} fontWeight="bold" textAnchor="middle">
-          小撞大 ($m_A \ll m_B$)：小球原速率反弹，大球近似静止
+          小撞大（小球远比大球轻）：小球原速率反弹，大球几乎不动
         </text>
       )}
     </g>

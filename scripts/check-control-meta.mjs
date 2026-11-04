@@ -367,6 +367,31 @@ const TIP_STEP_RE = /(?:^|[：:；;。\s])(?:[1-9]\.|[①-⑨]|•|·)/
 /** 左屏 tip 禁止出现的「= 数值」结论（§2.6.5 C1） */
 const TIP_VALUE_RE = /[=＝]\s*-?\d/
 
+/**
+ * 左屏可见文案不得出现 TeX 标记（`$...$` / `\lambda` 之类）。
+ *
+ * 根因：左屏全程是**纯文本面** —— 预设标签、分组名、分段器选项、滑块刻度走
+ * `<span>`，教学提示走 `TipCard`，都不经过 KaTeX。写了 `$P$` 就原样显示成
+ * 「$P$」。更麻烦的是 `KaTeX` 的 `throwOnError: false` 让右屏公式写错时也静默
+ * 退化成源码，两处一起坏、守卫全绿。
+ *
+ * 左屏可用的写法：unicode 希腊字母（λ δ Δ Ω θ）、unicode 上下标（R₂ v₀）、
+ * 半角运算符（v = λf）。真正的公式归右屏 `formulas.latex`。
+ *
+ * 顺带一提，这也解释了为什么 `ControlPanel` 不能引 `InlineMath`：它挂在
+ * `@/components/UI` barrel 下被 app shell 静态引用，一旦 import 公式组件，
+ * `katex.min.css` 的副作用就会把 KaTeX 拖进首屏 entry chunk。
+ */
+const TEX_MARK_RE = /\$|\\[a-zA-Z]{2,}/
+
+/**
+ * 去掉模板插值 `${...}` 再判 TeX 标记。
+ *
+ * `tipContents` 拿到的是**字面量切片**，函数式 tip 里的 `${v.toFixed(2)}`
+ * 会以源码形态出现在文本里 —— 那是 JS 插值（合法），不是 LaTeX 的 `$`。
+ */
+const stripTemplateExpr = (text) => text.replace(/\$\{[^{}]*\}/g, '')
+
 const EMOJI_RE = /[\p{Extended_Pictographic}\uFE0F\u200D]/gu
 
 function skipString(src, i) {
@@ -575,6 +600,16 @@ for (const file of files) {
         reason: `${scope}出现「${freq[0]}」，属考点出现频率（§2.6.5 C3），归右屏 ExamPointSection：${text}`,
       })
     }
+    const tex = stripTemplateExpr(text).match(TEX_MARK_RE)
+    if (tex) {
+      violations.push({
+        file: relPath,
+        line,
+        reason:
+          `${scope}出现 TeX 标记「${tex[0]}」—— 左屏是纯文本面（不经过 KaTeX），会连美元符号/反斜杠一起显示；` +
+          `请改成 unicode 写法（λ、δ、R₂、v = λf），真正的公式归右屏 formulas.latex：${text}`,
+      })
+    }
   }
 
   // ── paramMeta：滑块名称与滑块刻度 marks 的 label 同样是左屏可见文案 ──
@@ -744,6 +779,16 @@ for (const file of files) {
               file: relPath,
               line: entry.line,
               reason: `左屏 tip 出现「${hit}」，属 §2.6.5 C3/C4（考点总结/真题解析），应迁右屏 ExamPointSection 或 /practice：${text.slice(0, 30)}...`,
+            })
+          }
+          const tex = stripTemplateExpr(text).match(TEX_MARK_RE)
+          if (tex) {
+            violations.push({
+              file: relPath,
+              line: entry.line,
+              reason:
+                `左屏 tip 出现 TeX 标记「${tex[0]}」—— 提示卡是纯文本面（不经过 KaTeX），会连美元符号一起显示；` +
+                `请改成 unicode 写法（λ、δ、v = λf）：${text.slice(0, 40)}...`,
             })
           }
           if (TIP_VALUE_RE.test(text)) {

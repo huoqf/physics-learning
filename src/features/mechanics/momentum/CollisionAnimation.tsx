@@ -173,7 +173,6 @@ export default function CollisionAnimation() {
             />
           ) : (
             <CollisionAdvancedScene
-              vA={vA}
               R_Adv={advanced.R_Adv} R_Bdv={advanced.R_Bdv}
               posAAdv={advanced.posAAdv} posBAdv={advanced.posBAdv}
               curVA={advanced.curVA} curVB={advanced.curVB}

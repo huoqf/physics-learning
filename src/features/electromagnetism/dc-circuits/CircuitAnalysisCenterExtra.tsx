@@ -102,8 +102,7 @@ export const CircuitAnalysisCenterExtra: FC = () => {
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-semibold shadow-sm border-amber-200 bg-amber-50 text-amber-800 animate-pulse transition-all duration-300">
           <span className="text-xs">💡</span>
           <span>
-            【高考高频考点】：当前滑动变阻器 $R_2$ 的功率达到最大值！
-            （串并联最值规律：当滑动变阻器阻值 $R_2$ 等于外电路其它部分等效电阻 {R2_target.toFixed(1)} $\Omega$ 时，其消耗功率最大，当前为 {extendedData.P2.toFixed(2)} W）
+            {`【高考高频考点】：当前滑动变阻器 R₂ 的功率达到最大值！（串并联最值规律：当滑动变阻器阻值 R₂ 等于外电路其它部分等效电阻 ${R2_target.toFixed(1)} Ω 时，其消耗功率最大，当前为 ${extendedData.P2.toFixed(2)} W）`}
           </span>
         </div>
       )}

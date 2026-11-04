@@ -286,14 +286,14 @@ export function buildVibrationQuantities(
       formulas: [
         {
           name: '向右传播行波',
-          latex: 'y(x,t)=A\\\\sin\\\\left(2\\\\pi f\\\\left(t-\\\\dfrac{x}{v}\\\\right)+\\\\varphi_0\\\\right)',
+          latex: 'y(x,t)=A\\sin\\left(2\\pi f\\left(t-\\dfrac{x}{v}\\right)+\\varphi_0\\right)',
           level: 'core',
-          condition: 't \\\\ge x/v（因果性：扰动未到则为 0）',
+          condition: 't ≥ x/v（因果性：扰动未到则为 0）',
           note: '相位沿传播方向滞后',
         },
         {
           name: '波速与波长',
-          latex: 'v=\\\\lambda f=\\\\dfrac{\\\\lambda}{T}',
+          latex: 'v=\\lambda f=\\dfrac{\\lambda}{T}',
           level: 'core',
         },
       ],
@@ -332,7 +332,7 @@ export function buildVibrationQuantities(
       formulas: [
         {
           name: '单缝夫琅禾费强度',
-          latex: 'I=I_0\\\\operatorname{sinc}^2\\\\!\\\\left(\\\\dfrac{\\\\pi d\\\\sin\\\\theta}{\\\\lambda}\\\\right)',
+          latex: 'I=I_0\\operatorname{sinc}^2\\!\\left(\\dfrac{\\pi d\\sin\\theta}{\\lambda}\\right)',
           level: 'important',
           note: '高中定性：d 与 λ 可比时衍射显著',
         },
@@ -356,7 +356,7 @@ export function buildVibrationQuantities(
       formulas: [
         {
           name: '干涉加强/减弱',
-          latex: '\\\\delta=r_2-r_1=\\begin{cases}n\\\\lambda & \\\\text{加强}\\\\\\\\(n+\\\\tfrac12)\\\\lambda & \\\\text{减弱}\\\\end{cases}',
+          latex: '\\delta=r_2-r_1=\\begin{cases}n\\lambda & \\text{加强}\\\\(n+\\tfrac12)\\lambda & \\text{减弱}\\end{cases}',
           level: 'core',
         },
       ],
