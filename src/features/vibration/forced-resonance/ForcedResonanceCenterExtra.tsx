@@ -3,6 +3,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CharacteristicCurve, type CharacteristicCurveSeries } from '@/components/Chart/CharacteristicCurve'
 import { MiniChart, type MiniChartLine, type MiniChartStaticLine } from '@/components/UI/MiniChart'
+import { Card } from '@/components/UI/Card'
 import { CHART_COLORS, PHYSICS_COLORS, SERIES_MAP } from '@/theme/physics'
 import {
   calculateSteadyStateResonance,
@@ -282,10 +283,10 @@ export default function ForcedResonanceCenterExtra() {
   return (
     <div className="w-full h-full flex flex-col gap-2 p-2 bg-neutral-50/50 rounded-xl overflow-hidden min-h-0">
       {/* 上半部图表（flex-1 占 50% 高度） */}
-      <div className="flex-1 min-h-0 bg-white rounded-xl shadow-xs border border-neutral-100 p-2 flex flex-col">
+      <Card className="flex-1 min-h-0 p-2 flex flex-col">
         {mode === 0 ? (
           <>
-            <div className="text-xs font-semibold text-slate-700 px-3 pt-1 shrink-0 flex items-center justify-between">
+            <div className="text-xs font-semibold text-neutral-600 px-3 pt-1 shrink-0 flex items-center justify-between">
               <span>总位移包络 (x - t)</span>
               <div className="flex items-center gap-3 text-[11px] font-normal text-neutral-600">
                 <span className="inline-flex items-center gap-1">
@@ -326,7 +327,7 @@ export default function ForcedResonanceCenterExtra() {
           </>
         ) : (
           <>
-            <div className="text-xs font-semibold text-slate-700 px-3 pt-1 shrink-0 flex items-center justify-between">
+            <div className="text-xs font-semibold text-neutral-600 px-3 pt-1 shrink-0 flex items-center justify-between">
               <span>共振曲线 (A - f)</span>
               {mode === 2 && (
                 <div className="flex items-center gap-3 text-[11px] font-normal text-neutral-600">
@@ -363,11 +364,11 @@ export default function ForcedResonanceCenterExtra() {
             </div>
           </>
         )}
-      </div>
+      </Card>
 
       {/* 下半部图表（flex-1 占 50% 高度） */}
-      <div className="flex-1 min-h-0 bg-white rounded-xl shadow-xs border border-neutral-100 p-2 flex flex-col">
-        <div className="text-xs font-semibold text-slate-700 px-3 pt-1 shrink-0 flex items-center justify-between">
+      <Card className="flex-1 min-h-0 p-2 flex flex-col">
+        <div className="text-xs font-semibold text-neutral-600 px-3 pt-1 shrink-0 flex items-center justify-between">
           <span>
             {mode === 0
               ? '分量分解 (x - t)'
@@ -413,7 +414,7 @@ export default function ForcedResonanceCenterExtra() {
             minHeight={230}
           />
         </div>
-      </div>
+      </Card>
     </div>
   )
 }

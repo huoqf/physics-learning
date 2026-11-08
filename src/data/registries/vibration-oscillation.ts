@@ -628,7 +628,7 @@ export const vibrationOscillationAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 1,
         content:
-          '依次点击强烈共振、低频随动、高频避振预设，对比中屏 ±A 振幅包络线张开宽度与下方 x-t 真实位移波形高度的差异。',
+          '依次点击强烈共振、低频随动、高频避振预设，观察驱动频率 f 接近固有频率 f₀ 时的剧烈共振现象及远离 f₀ 时的明显减振效应。',
       },
       {
         type: 'tip',
@@ -640,7 +640,20 @@ export const vibrationOscillationAnimations = defineAnimations({
       },
     ],
     paramMeta: [
-      { key: 'f', label: '驱动频率 f', min: 0.2, max: 2.4, step: 0.05, unit: 'Hz', group: '驱动力参数' },
+      {
+        key: 'f',
+        label: '驱动频率 f',
+        description: '偏心轮电机驱动频率。系统固有频率 f₀ = 1/(2π)√(k/m)',
+        min: 0.2,
+        max: 2.4,
+        step: 0.05,
+        unit: 'Hz',
+        marks: [
+          { value: 1.0, label: '固有频率 f₀ (m=1kg)' },
+          { value: 2.2, label: '高频避振区' },
+        ],
+        group: '驱动力参数',
+      },
       { key: 'F0', label: '驱动力幅值 F₀', min: 0.5, max: 5.0, step: 0.5, unit: 'N', group: '驱动力参数' },
       { key: 'm', label: '振子质量 m', min: 0.5, max: 2.5, step: 0.1, unit: 'kg', group: '系统固有属性' },
       { key: 'k', label: '弹簧劲度 k', min: 10, max: 80, step: 5, unit: 'N/m', group: '系统固有属性' },
