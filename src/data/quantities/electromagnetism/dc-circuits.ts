@@ -205,6 +205,14 @@ export function handleDcCircuits(
         chainLatex = `R_2 ${arrow} \\implies R_{\\text{并}} ${arrow} \\implies R_{\\text{总}} ${arrow} \\implies I_{\\text{总}} ${arrowOpp} \\implies U_1 ${arrowOpp} \\implies U_2 ${arrow} \\implies I_3 ${arrow} \\implies I_2 ${arrowOpp}`
       }
 
+      // 变阻器最大功率考点检测：
+      // 1. 基础并联电路 (mode=0, subMode=1) 下，变阻器并在恒压源两端，P2 = U²/R2 单调递减，无极值；
+      // 2. 基础串联电路 (mode=0, subMode=0) 下，与 R1 串联，当 R2 = R1 时 P2 达到极大值；
+      // 3. 进阶混联电路 (mode=1) 下，从 R2 看入的等效内阻为 R1//R3，当 R2 = R1//R3 时 P2 达到极大值。
+      const hasMaxPower = mode === 1 || (mode === 0 && subMode === 0)
+      const R2_target = mode === 1 ? (R1 * R3) / (R1 + R3) : R1
+      const isMaxPowerPoint = hasMaxPower && Math.abs(R2 - R2_target) <= 1.5
+
       return {
         quantities: [
           ...base,
@@ -287,6 +295,10 @@ export function handleDcCircuits(
             importance: 'gaokao',
           },
           {
+            text: '【滑动变阻器功率极值规律】在串联或混联电路中，当滑动变阻器阻值等于电路其余部分的等效电阻时，变阻器消耗功率最大；在恒压并联电路中，其两端电压恒定，功率随电阻增大单调递减，无极大值。',
+            importance: 'gaokao',
+          },
+          {
             text: '【动态分析基本链条】局部电阻变化 → 总电阻变化 → 干路电流变化 → 定值电阻分压变化 → 支路分配变化。',
             importance: 'gaokao',
           },
@@ -296,6 +308,12 @@ export function handleDcCircuits(
           },
         ],
         warnings: [
+          ...(isMaxPowerPoint ? [
+            {
+              text: `【最值达成】当前滑动变阻器阻值 R₂ = ${R2.toFixed(1)} Ω 接近外电路其余等效电阻 (${R2_target.toFixed(1)} Ω)，R₂ 消耗功率达到最大值 (${(I2 * U2).toFixed(2)} W)！`,
+              level: 'warning' as const,
+            }
+          ] : []),
           {
             text: '易错点：在并联或混联中，滑动变阻器电阻 R₂ 增大时，盲目认为总电阻减小。切记：任何一个电阻增大，总等效电阻必定增大。',
             level: 'danger',
@@ -562,7 +580,7 @@ export function handleDcCircuits(
             importance: 'gaokao',
           },
           {
-            text: '【电路乙误差特点】采用电流表内接法，电流表分压。U-I 图线中，纵截距（E_测）等于真实值，但斜率绝对值（r_测）偏大（测得内阻包含了电流表内阻）。',
+            text: '【电路乙误差特点】采用电流表内接法，电流表分压。U-I 图线中，两线相交于纵轴电动势点 (0, E)；纵截距（E_测）等于真实值，但斜率绝对值（r_测）偏大（测得内阻包含了电流表内阻）。',
             importance: 'gaokao',
           },
           {
@@ -632,6 +650,12 @@ export function handleDcCircuits(
           }
         ],
         warnings: [
+          ...(motorState === 0 ? [
+            {
+              text: `【堵转预警】电动机被卡死，反电动势消失，退化为纯电阻电路。干路电流暴增至 ${res.I.toFixed(2)} A，发热功率飙升至 ${res.P_heat_M.toFixed(2)} W，极易烧毁绕组！`,
+              level: 'danger' as const,
+            }
+          ] : []),
           {
             text: '【物理雷区】欧姆定律 I = U/R 绝对不适用于电动机整体！计算电流或电压分配时，必须根据电功率分配方程 U_M = E_反 + I*r_M，切勿直接代入 I = U_M / r_M。',
             level: 'danger',

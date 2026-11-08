@@ -107,87 +107,75 @@ export const ExperimentErCenterExtra: FC = () => {
         </div>
       </Card>
 
-      {/* 右侧：分析卡片与交互操作台 */}
+      {/* 右侧：实验测量数据记录台 */}
       <Card className="flex-[2] p-3 flex flex-col justify-between min-w-0 bg-white border border-neutral-200/50">
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs font-bold text-neutral-800">
-              系统误差分析：{wiring === 0 ? '电路甲 (外接法)' : '电路乙 (内接法)'}
+        <div className="flex flex-col min-h-0 flex-1">
+          <div className="flex items-center justify-between mb-2 shrink-0">
+            <span className="text-xs font-semibold text-neutral-600">
+              实验测量数据台
             </span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-              教学误差放大模式 (Rv=10Ω, Ra=1.5Ω)
+            <span className="text-[11px] px-2 py-0.5 rounded bg-neutral-100 text-neutral-600 font-medium">
+              {wiring === 0 ? '电路甲 (外接法)' : '电路乙 (内接法)'}
             </span>
           </div>
 
-          <div className="text-[11px] text-neutral-600 space-y-1.5 leading-relaxed">
-            {wiring === 0 ? (
-              <>
-                <p>
-                  <strong className="text-blue-600">① 误差本质</strong>
-                  {"：电压表分流导致电流表读数 I_测 小于干路总电流 I_真 (I_真 = I_测 + U/Rv)。"}
-                </p>
-                <p>
-                  <strong className="text-purple-600">② 等效电源</strong>
-                  {"：视电池与电压表为一个等效电源，E_测 = E·Rv/(Rv+r) < E，r_测 = r·Rv/(Rv+r) < r。"}
-                </p>
-                <p>
-                  <strong className="text-emerald-600">③ 几何交点</strong>
-                  {"：测量线与真实线交于横轴短路电流点 (E/r)，短路时端电压为0，电压表无分流。"}
-                </p>
-                <p>
-                  <strong className="text-red-600">④ 高考避坑</strong>
-                  {"：若纵轴不从 0 开始，横截距绝不是短路电流！必须用斜率绝对值 |ΔU/ΔI| 计算内阻。"}
-                </p>
-              </>
+          <div className="flex-1 min-h-0 overflow-y-auto border border-neutral-100 rounded-lg p-1 bg-neutral-50/50">
+            {trajectory.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center p-3 text-neutral-400">
+                <span className="text-xs mb-1">暂无测量点</span>
+                <span className="text-[11px] text-neutral-400 leading-tight">
+                  调节变阻器 R 阻值后，点击下方按钮记录 U-I 实验散点
+                </span>
+              </div>
             ) : (
-              <>
-                <p>
-                  <strong className="text-blue-600">① 误差本质</strong>
-                  {"：电流表分压导致电压表读数 U_测 小于真实路端电压 U_真 (U_真 = U_测 + I·Ra)。"}
-                </p>
-                <p>
-                  <strong className="text-purple-600">② 等效电源</strong>
-                  {"：视电池与电流表为一个等效电源，E_测 = E_真，r_测 = r_真 + Ra > r_真。"}
-                </p>
-                <p>
-                  <strong className="text-emerald-600">③ 几何交点</strong>
-                  {"：测量线与真实线交于纵轴电动势点 (0, E)，断路时无电流，电流表无分压。"}
-                </p>
-                <p>
-                  <strong className="text-red-600">④ 选型铁律</strong>
-                  {"：因普通电源内阻极小 (r<1Ω)，内接法误差极严重，故高考测干电池必选电路甲！"}
-                </p>
-              </>
+              <table className="w-full text-[11px] text-center border-collapse">
+                <thead>
+                  <tr className="text-neutral-400 border-b border-neutral-200/60">
+                    <th className="py-1 font-normal">序号</th>
+                    <th className="py-1 font-normal">电流 I (A)</th>
+                    <th className="py-1 font-normal">端电压 U (V)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {trajectory.map((p, idx) => (
+                    <tr key={idx} className="text-neutral-600 hover:bg-neutral-100/60">
+                      <td className="py-1 text-neutral-400">{idx + 1}</td>
+                      <td className="py-1 font-mono font-medium">{p.x.toFixed(2)}</td>
+                      <td className="py-1 font-mono font-medium">{p.y.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
         </div>
 
-        {/* 交互操作区（原位于 SVG 内，现移至此处以符合规范） */}
-        <div className="border-t border-neutral-100 pt-3 flex flex-col gap-2">
+        {/* 交互操作区 */}
+        <div className="border-t border-neutral-100 pt-2.5 mt-2 flex flex-col gap-1.5 shrink-0">
           <div className="flex gap-2">
             <button
               onClick={handleRecord}
               disabled={trajectory.length >= 10}
-              className={`flex-1 py-1.5 text-white rounded text-xs font-bold shadow-sm transition active:scale-95 flex items-center justify-center gap-1 ${
+              className={`flex-1 py-1.5 text-white rounded-lg text-xs font-semibold shadow-xs transition active:scale-95 flex items-center justify-center gap-1.5 ${
                 trajectory.length >= 10 
                   ? 'bg-neutral-300 cursor-not-allowed' 
-                  : 'bg-emerald-600 hover:bg-emerald-700'
+                  : 'bg-primary-600 hover:bg-primary-700'
               }`}
             >
-              <span>📷</span>
-              <span>记录当前点 ({res.I_meas.toFixed(2)}A, {res.U_meas.toFixed(2)}V)</span>
+              <span>记录点 ({res.I_meas.toFixed(2)} A, {res.U_meas.toFixed(2)} V)</span>
             </button>
             <button
               onClick={handleClear}
-              className="px-2.5 py-1.5 border border-red-200 text-red-600 rounded text-xs font-bold hover:bg-red-50 transition active:scale-95 flex items-center justify-center"
+              disabled={trajectory.length === 0}
+              className="px-3 py-1.5 border border-neutral-200 text-neutral-600 rounded-lg text-xs font-medium hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed transition active:scale-95 flex items-center justify-center"
               title="清除所有实验记录点"
             >
-              <span>🗑️ 清除</span>
+              清空
             </button>
           </div>
-          <div className="flex justify-between items-center text-[10px] text-neutral-500 px-0.5 select-none">
-            <span>已记数据点：<strong className="text-emerald-600">{trajectory.length}</strong> / 10</span>
-            <span className="text-neutral-400">（切换接线方式时自动清除）</span>
+          <div className="flex justify-between items-center text-[10px] text-neutral-400 px-0.5 select-none">
+            <span>已记录：<strong className="text-neutral-700">{trajectory.length}</strong> / 10 组</span>
+            <span>切换接线时自动重置</span>
           </div>
         </div>
       </Card>

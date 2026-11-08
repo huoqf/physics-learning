@@ -98,7 +98,7 @@ export default function CircuitAnalysis() {
         x={x}
         y={y}
         voltage={U}
-        label="E, r"
+        label="U"
         polarity="right-positive"
       />
     )

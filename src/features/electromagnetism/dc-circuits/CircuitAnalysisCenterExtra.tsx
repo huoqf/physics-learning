@@ -35,9 +35,10 @@ export const CircuitAnalysisCenterExtra: FC = () => {
     return { P1, P2, P3, Ptotal }
   }, [circuitData, U])
 
-  // 滑动变阻器电功率最值考点检测
+  // 滑动变阻器电功率最值考点检测（纯并联时 P2 = U²/R2 单调递减，无极值）
+  const hasMaxPower = mode === 1 || (mode === 0 && subMode === 0)
   const R2_target = mode === 1 ? (R1 * R3) / (R1 + R3) : R1
-  const isMaxPowerPoint = Math.abs(R2 - R2_target) <= 1.5
+  const isMaxPowerPoint = hasMaxPower && Math.abs(R2 - R2_target) <= 1.5
 
   if (showChart === 0) {
     return (
@@ -95,25 +96,30 @@ export const CircuitAnalysisCenterExtra: FC = () => {
         { key: 'total', label: '总电路', value: extendedData.Ptotal, color: SCENE_COLORS.charts.circuitTotal },
       ]
 
+  // 依据当前电路拓扑动态匹配准确的物理规律标题
+  const voltageTitle =
+    mode === 1
+      ? '电压分配 U (V) — 混联分压'
+      : subMode === 0
+        ? '电压分配 U (V) — 串联分压'
+        : '支路电压 U (V) — 并联等压'
+
+  const currentTitle =
+    mode === 1
+      ? '电流分配 I (A) — 混联分流'
+      : subMode === 0
+        ? '回路电流 I (A) — 串联等流'
+        : '电流分配 I (A) — 并联分流'
+
   return (
     <div className="w-full h-full flex flex-col gap-2 p-1.5 border-b border-neutral-200/60 bg-neutral-50/50 min-h-0 select-none">
-      {/* 高考考点高亮提示横幅 */}
-      {isMaxPowerPoint && (
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-semibold shadow-sm border-amber-200 bg-amber-50 text-amber-800 animate-pulse transition-all duration-300">
-          <span className="text-xs">💡</span>
-          <span>
-            {`【高考高频考点】：当前滑动变阻器 R₂ 的功率达到最大值！（串并联最值规律：当滑动变阻器阻值 R₂ 等于外电路其它部分等效电阻 ${R2_target.toFixed(1)} Ω 时，其消耗功率最大，当前为 ${extendedData.P2.toFixed(2)} W）`}
-          </span>
-        </div>
-      )}
-
       {/* 并排渲染三维物理分配柱状图 */}
       <div className="flex-1 flex gap-2 min-h-0">
         <div className="flex-1 min-w-0 flex items-stretch">
-          <EnergyBars items={uItems} title="电压分配 U (V) — 串联分压" compact font={font} />
+          <EnergyBars items={uItems} title={voltageTitle} compact font={font} />
         </div>
         <div className="flex-1 min-w-0 flex items-stretch">
-          <EnergyBars items={iItems} title="电流分配 I (A) — 并联分流" compact font={font} />
+          <EnergyBars items={iItems} title={currentTitle} compact font={font} />
         </div>
         <div className="flex-1 min-w-0 flex items-stretch">
           <EnergyBars 
