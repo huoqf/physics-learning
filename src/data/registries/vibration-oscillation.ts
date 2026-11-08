@@ -1,6 +1,6 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
-import { SIMPLE_PENDULUM_DEFAULT_PARAMS } from '@/physics/experimentPendulum'
+import { SIMPLE_PENDULUM_DEFAULT_PARAMS } from '@/physics/experimentPendulum'
 import { GRAVITY } from '@/physics/constants'
 
 // ===== 机械振动与波 =====
@@ -497,37 +497,57 @@ export const vibrationOscillationAnimations = defineAnimations({
       mode: 1,
       m: 1.0,
       k: 39.5,
-      gamma: 0.85,
+      gamma: 0.6,
       F0: 2.0,
       f: 1.0,
       showForces: 1,
     } as const,
     controlMeta: [
-      // 1. 探究主题（置顶，选择实验模式）
+      // 1. 探究模式选择（切换时联动对应初态）
       {
         type: 'segmented',
         key: 'mode',
         label: '探究主题',
         group: '模型选择',
         resetOnChange: true,
+        onChangeSideEffect: (val) => {
+          if (val === 0) {
+            return { setParams: { m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 0.5 } }
+          }
+          return { setParams: { m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 1.0 } }
+        },
         options: [
           { value: 0, label: '衰减到稳定' },
           { value: 1, label: '共振曲线' },
           { value: 2, label: '不同阻尼' },
         ],
       },
-      // 2. 显示选项（辅助矢量开关）
+      // 2A. 「衰减到稳定 (mode=0)」专属情境预设
       {
-        type: 'toggle',
-        key: 'showForces',
-        label: '受力矢量分析 (弹力/阻力/驱动力)',
-        group: '显示选项',
+        type: 'preset',
+        label: '🔄 偏频起振收敛 (f = 0.5Hz)',
+        group: '典型物理情境',
+        showIf: 'mode',
+        showIfValue: 0,
+        restartOnApply: true,
+        params: () => ({ mode: 0, m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 0.5, showForces: 1 }),
       },
-      // 3. 典型物理情境预设（纯净紧凑按钮，无冗长卡片占用空间）
+      {
+        type: 'preset',
+        label: '⚡ 同频共振起振 (f = f₀ = 1.0Hz)',
+        group: '典型物理情境',
+        showIf: 'mode',
+        showIfValue: 0,
+        restartOnApply: true,
+        params: () => ({ mode: 0, m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 1.0, showForces: 1 }),
+      },
+      // 2B. 「共振曲线 (mode=1)」专属情境预设（探究频率 f 与固有频率 f₀ 关系）
       {
         type: 'preset',
         label: '⚡ 强烈共振 (f = f₀ = 1.0Hz)',
         group: '典型物理情境',
+        showIf: 'mode',
+        showIfValue: 1,
         restartOnApply: true,
         params: () => ({ mode: 1, m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 1.0, showForces: 1 }),
       },
@@ -535,13 +555,17 @@ export const vibrationOscillationAnimations = defineAnimations({
         type: 'preset',
         label: '🔄 低频随动 (f = 0.5Hz < f₀)',
         group: '典型物理情境',
+        showIf: 'mode',
+        showIfValue: 1,
         restartOnApply: true,
-        params: () => ({ mode: 1, m: 1.0, k: 39.5, gamma: 0.5, F0: 2.0, f: 0.5, showForces: 1 }),
+        params: () => ({ mode: 1, m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 0.5, showForces: 1 }),
       },
       {
         type: 'preset',
         label: '🛡️ 高频避振 (f = 2.2Hz >> f₀)',
         group: '典型物理情境',
+        showIf: 'mode',
+        showIfValue: 1,
         restartOnApply: true,
         params: () => ({ mode: 1, m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 2.2, showForces: 1 }),
       },
@@ -549,37 +573,78 @@ export const vibrationOscillationAnimations = defineAnimations({
         type: 'preset',
         label: '🏭 共振筛增重调频 (m: 1.0→1.6kg)',
         group: '典型物理情境',
+        showIf: 'mode',
+        showIfValue: 1,
         restartOnApply: true,
-        params: () => ({ mode: 1, m: 1.6, k: 39.5, gamma: 0.45, F0: 2.4, f: 0.79, showForces: 1 }),
+        params: () => ({ mode: 1, m: 1.6, k: 39.5, gamma: 0.6, F0: 2.0, f: 0.79, showForces: 1 }),
       },
-      // 4. 探究指引（原 196 字「工况条件与观察重点」四条结论表已压缩：
-      //    f 与 f₀ 的大小关系预设标签本身已写明，振幅峰/谷属结论（§2.6.5 C1/C3），右屏共振曲线给出）
+      // 2C. 「不同阻尼 (mode=2)」专属情境预设（探究阻尼系数 γ 对共振峰与稳态振幅的影响）
+      {
+        type: 'preset',
+        label: '🟢 弱阻尼尖锐共振 (γ = 0.3)',
+        group: '典型物理情境',
+        showIf: 'mode',
+        showIfValue: 2,
+        restartOnApply: true,
+        params: () => ({ mode: 2, m: 1.0, k: 39.5, gamma: 0.3, F0: 2.0, f: 1.0, showForces: 1 }),
+      },
+      {
+        type: 'preset',
+        label: '🔵 中阻尼标准共振 (γ = 0.6)',
+        group: '典型物理情境',
+        showIf: 'mode',
+        showIfValue: 2,
+        restartOnApply: true,
+        params: () => ({ mode: 2, m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 1.0, showForces: 1 }),
+      },
+      {
+        type: 'preset',
+        label: '🟠 强阻尼平缓抑振 (γ = 1.2)',
+        group: '典型物理情境',
+        showIf: 'mode',
+        showIfValue: 2,
+        restartOnApply: true,
+        params: () => ({ mode: 2, m: 1.0, k: 39.5, gamma: 1.2, F0: 2.0, f: 1.0, showForces: 1 }),
+      },
+      // 3. 显示辅助开关
+      {
+        type: 'toggle',
+        key: 'showForces',
+        label: '显示弹力与阻力矢量',
+        group: '显示辅助',
+      },
+      // 4. 分模式探究指引（恒置底）
       {
         type: 'tip',
-        group: '实验探究指引',
+        group: '教学提示',
+        showIf: 'mode',
+        showIfValue: 0,
         content:
-          '三个预设只差驱动频率 f：等于 f₀、低于 f₀、远高于 f₀ 各放一次，只盯振幅读数与相位差的变化。改 m 会挪动 f₀，注意共振条件是否还成立。',
+          '点击播放观察起振阶段：小球从初位移释放后，固有频率自由振动项随阻尼逐渐衰减至零，最终收敛于 ±A 包络线内按驱动频率 f 等幅振动。',
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        showIf: 'mode',
+        showIfValue: 1,
+        content:
+          '依次点击强烈共振、低频随动、高频避振预设，对比中屏 ±A 振幅包络线张开宽度与下方 x-t 真实位移波形高度的差异。',
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        showIf: 'mode',
+        showIfValue: 2,
+        content:
+          '切换弱/中/强阻尼预设或拖动阻尼系数 γ 滑块，同步观察左半区阻尼液浓度与小球振幅、右上图共振峰高度、右下图三条稳态波形幅度的变化。',
       },
     ],
     paramMeta: [
-      {
-        key: 'f',
-        label: '驱动频率 f',
-        description: '偏心轮电机驱动频率。系统固有频率 f₀ = 1/(2π)√(k/m)',
-        min: 0.2,
-        max: 2.4,
-        step: 0.05,
-        unit: 'Hz',
-        marks: [
-          { value: 1.0, label: '固有频率 f₀ (m=1kg)', variant: 'critical' },
-          { value: 2.2, label: '高频避振区' },
-        ],
-      },
-      { key: 'F0', label: '驱动力幅值 F0', min: 0.5, max: 5.0, step: 0.5, unit: 'N' },
-      { key: 'm', label: '振子质量 m', description: '增大 m 将降低固有频率 f₀', min: 0.5, max: 2.5, step: 0.1, unit: 'kg' },
-      { key: 'k', label: '弹簧劲度 k', min: 10, max: 80, step: 5, unit: 'N/m' },
-      { key: 'gamma', label: '介质阻力系数 γ', description: '阻力越小共振峰越尖锐；阻力越大共振峰越平缓', min: 0.1, max: 1.5, step: 0.05, unit: 'N·s/m' },
+      { key: 'f', label: '驱动频率 f', min: 0.2, max: 2.4, step: 0.05, unit: 'Hz', group: '驱动力参数' },
+      { key: 'F0', label: '驱动力幅值 F₀', min: 0.5, max: 5.0, step: 0.5, unit: 'N', group: '驱动力参数' },
+      { key: 'm', label: '振子质量 m', min: 0.5, max: 2.5, step: 0.1, unit: 'kg', group: '系统固有属性' },
+      { key: 'k', label: '弹簧劲度 k', min: 10, max: 80, step: 5, unit: 'N/m', group: '系统固有属性' },
+      { key: 'gamma', label: '阻尼系数 γ', min: 0.1, max: 1.5, step: 0.05, unit: 'N·s/m', group: '系统固有属性' },
     ],
   },
 })
-

@@ -9,6 +9,7 @@ import {
   CRANK_ECCENTRICITY_MIN,
   CRANK_ECCENTRICITY_MAX,
   FORCED_RESONANCE_EQUILIBRIUM_Y,
+  FORCED_RESONANCE_INITIAL_DISPLACEMENT,
 } from '../forcedResonance'
 
 describe('forcedResonance 物理纯函数计算', () => {
@@ -265,6 +266,40 @@ describe('forcedResonance 物理纯函数计算', () => {
         if (bladeLowest < g.tankBottom - 1e-9) violations++
       }
       expect(violations).toBe(0)
+    })
+  })
+
+  describe('模式 0（衰减到稳定）初值与微分自洽性', () => {
+    it('任意驱动频率下 t=0 时刻严格从初位移 x0 静止释放 x(0)=x0, v(0)=0', () => {
+      for (const f of [0.3, 0.7, 1.0, 1.6, 2.2]) {
+        const st0 = calculateForcedVibrationState(
+          { m: 1.0, k: 39.5, gamma: 0.85, F0: 2.0, f },
+          0,
+          0,
+        )
+        expect(st0.x).toBeCloseTo(FORCED_RESONANCE_INITIAL_DISPLACEMENT, 10)
+        expect(st0.v).toBeCloseTo(0, 10)
+        expect(st0.xSteady + st0.xTransient).toBeCloseTo(st0.x, 10)
+      }
+    })
+
+    it('暂态过程中瞬时速度 v(t) 严格等于位移 x(t) 的时间导数，且长时间后暂态项衰减至 0 收敛于稳态解', () => {
+      const config = { m: 1.0, k: 39.5, gamma: 0.85, F0: 2.0, f: 0.5 }
+      const dt = 1e-5
+      for (const t of [0.2, 0.8, 1.7, 3.1]) {
+        const prev = calculateForcedVibrationState(config, t - dt, 0)
+        const curr = calculateForcedVibrationState(config, t, 0)
+        const next = calculateForcedVibrationState(config, t + dt, 0)
+        const numericV = (next.x - prev.x) / (2 * dt)
+        expect(curr.v).toBeCloseTo(numericV, 6)
+      }
+
+      // 充分衰减后 (t = 30s) 暂态项归零，与稳态模式 (mode = 1) 完全收敛
+      const transientLate = calculateForcedVibrationState(config, 30, 0)
+      const steadyLate = calculateForcedVibrationState(config, 30, 1)
+      expect(Math.abs(transientLate.xTransient)).toBeLessThan(1e-4)
+      expect(transientLate.x).toBeCloseTo(steadyLate.x, 4)
+      expect(transientLate.v).toBeCloseTo(steadyLate.v, 4)
     })
   })
 })

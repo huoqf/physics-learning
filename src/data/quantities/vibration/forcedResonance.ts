@@ -5,6 +5,7 @@ import {
   calculateCrankEccentricity,
   calculateDamperGeometry,
   calculateStageAmplitudeCapacity,
+  FORCED_RESONANCE_VISUAL_AMP_MAX,
 } from '@/physics/vibration/forcedResonance'
 
 export function buildForcedResonanceQuantities(
@@ -122,6 +123,11 @@ export function buildForcedResonanceQuantities(
     warnings.push({
       level: 'warning',
       text: `当前参数下位移振幅达 ${(steady.maxAmplitude * 100).toFixed(0)} cm，超过演示舞台可容纳的 ${(capacity * 100).toFixed(0)} cm，阻尼叶片将无法全程浸没于介质。这是低阻尼、高驱动力的真实物理结果——建议减小 F₀ 或增大 γ、k 后再观察。`,
+    })
+  } else if (steady.amplitude > FORCED_RESONANCE_VISUAL_AMP_MAX) {
+    warnings.push({
+      level: 'warning',
+      text: `当前驱动频率下受迫振幅达 ${(steady.amplitude * 100).toFixed(1)} cm，已超过上下机构无碰撞净空（${(FORCED_RESONANCE_VISUAL_AMP_MAX * 100).toFixed(0)} cm）。为避免画面中小球撞击驱动滑块或浸入阻尼槽，舞台画面已按净空上限等比缩放显示，精确数值请以本看板及图表读数为准。`,
     })
   }
 

@@ -4,8 +4,17 @@ import {
   calculateForcedVibrationState,
   calculateCrankEccentricity,
   calculateDamperGeometry,
+  FORCED_RESONANCE_VISUAL_AMP_MAX,
   type SteadyStateResonanceResult,
 } from '@/physics/vibration/forcedResonance'
+
+/**
+ * 舞台竖直位移视觉映射系数：
+ * 将 [0, 1.20 m]（即右半区图表 [0, 120 cm] 标准量程）线性映射到舞台 [0, 0.72 m] 无碰撞净空内，
+ * 保证在弱阻尼 (γ=0.3, A≈106cm)、中阻尼 (γ=0.6, A≈53cm)、强阻尼 (γ=1.2, A≈27cm) 全量程下
+ * 左半区小球振幅、±A 包络线张开宽度与右半区图表高度严格 1:1 线性对应，不发生提前截断卡死。
+ */
+const STAGE_DISP_SCALE = 0.6
 
 export interface UseForcedResonancePhysicsOptions {
   m: number
@@ -20,6 +29,8 @@ export interface UseForcedResonancePhysicsOptions {
 
 export interface ForcedResonancePhysicsResult {
   steady: SteadyStateResonanceResult
+  /** 阻尼系数 γ（用于左半区阻尼液浓度视觉映射） */
+  gamma: number
   /** 振子物理坐标 (米, 真实物理空间) */
   ballPhys: { x: number; y: number }
   /** 驱动滑块物理坐标 (米) */
@@ -30,6 +41,10 @@ export interface ForcedResonancePhysicsResult {
   crankPinPhys: { x: number; y: number }
   /** 平衡位置物理坐标 (米) */
   equilibriumPhys: { x: number; y: number }
+  /** 稳态振幅上界物理坐标 (米) */
+  steadyTopPhys: { x: number; y: number }
+  /** 稳态振幅下界物理坐标 (米) */
+  steadyBottomPhys: { x: number; y: number }
   /** 阻尼槽物理边界 (米) */
   damperTankPhys: { x: number; y: number; width: number; height: number }
   /** 阻尼叶片物理高度 (米) */
@@ -41,8 +56,8 @@ export interface ForcedResonancePhysicsResult {
   /** 连杆长 (米) */
   rodLength: number
   /**
-   * 各矢量在稳态下的量程峰值（与 state 同单位、同源）：
-   * 用于 refMagnitudes 校准，使峰值箭头 = 0.9·maxVectorLength·weight。
+   * 各矢量的固定物理参考量程（与 state 同单位）：
+   * 采用固定参考基准而非随当前振幅动态缩放，使改变 f、γ、F0 时箭头长度真实反映物理量大小变化。
    */
   vectorPeaks: {
     velocity: number
@@ -55,6 +70,9 @@ export interface ForcedResonancePhysicsResult {
     x: number
     v: number
     a: number
+    xSteady: number
+    xTransient: number
+    transientEnvelope: number
     fDriver: number
     elasticForce: number
     dampingForce: number
@@ -87,43 +105,43 @@ export function useForcedResonancePhysics({
     const rodLength = 0.58 // 曲柄连杆长度 (米)
 
     // 曲柄偏心距：物理真值 e = F0/k，经物理层唯一入口派生（含几何限幅与限幅标记）。
-    // ⚠️ 严禁在消费点自行夹取 —— 那会造成「改k 时小球振幅与曲柄行程不同步」的破绽。
     const crank = calculateCrankEccentricity(F0, k)
     const crankEccentricity = crank.e
 
-    // 阻尼槽几何：按**小球自身**的稳态振幅峰值反推，保证叶片全程浸没。
-    // ⚠️ 不得并入 mode 2 的对比阻尼曲线（γ=0.2 / 1.2）：那两条只是图表曲线，
-    // 小球从不按它们运动。并入会让默认工况的槽体被撑高 3.3 倍（3.48 m vs 1.05 m），
-    // 并让 18% 的参数组合弹出与小球实际运动不符的告警。
-    const damper = calculateDamperGeometry(steady.maxAmplitude)
+    // 阻尼槽固定采用舞台最大净空几何，确保调参过程中槽体高度稳定、叶片永不穿底或脱出液面
+    const damper = calculateDamperGeometry(FORCED_RESONANCE_VISUAL_AMP_MAX)
 
     // 偏心轮旋转角度 theta = 2*pi*f*t
     const rotAngle = 2 * Math.PI * f * time
 
-    // 各矢量稳态峰值：x_max 来自稳态解，其余由它按定义式派生（不引入新的拟合常数）
-    const omega = 2 * Math.PI * f
-    const vMax = Math.abs(omega * steady.maxAmplitude)
+    // 固定物理量程峰值基准：使共振 vs 偏频、弱阻尼 vs 强阻尼、大/小驱动力下的矢量箭头长度差异一目了然
     const vectorPeaks = {
-      velocity: vMax,
-      tension: Math.abs(k * steady.maxAmplitude), // 弹性恢复力 k·x
-      friction: Math.abs(gamma * vMax),           // 阻尼力 γ·v
-      force: Math.abs(F0),                        // 驱动力幅值
+      velocity: 3.5, // m/s (对应标准共振 v_max ≈ 3.3 m/s)
+      tension: 25.0, // N   (对应标准共振 k·A ≈ 21 N)
+      friction: 2.5, // N   (对应标准共振 γ·v_max ≈ 2.0 N)
+      force: 3.0,    // N   (对应驱动力 F0 典型量程)
     }
 
-    // 曲柄销物理坐标 (在转盘上以偏心距 e 旋转)
+    // 曲柄销物理坐标 (竖直分量取 sin(rotAngle)，与驱动力 F0·sin(ωt) 严格同相同周期)
     const pinX = centerX + crankEccentricity * Math.cos(rotAngle)
     const pinY = wheelCenterY + crankEccentricity * Math.sin(rotAngle)
 
     // 严密刚体曲柄滑块几何约束: 滑块严格在 centerX 垂直线上
-    // 滑块纵坐标 y_driver = pinY - sqrt(rodLength^2 - (pinX - centerX)^2)
     const dx = pinX - centerX
     const dyOffset = Math.sqrt(Math.max(0.01, rodLength * rodLength - dx * dx))
     const driverY = pinY - dyOffset
 
-    // 振子小球位置 (物理平衡位置 + 真实受迫位移 x)
-    const ballY = eqY + state.x
+    // 振子小球位置：线性映射 [0, 1.2m] -> [0, 0.72m]，保证全参数区间内与右侧图表振幅成正比且不穿模
+    const clampStage = (val: number) =>
+      Math.max(-FORCED_RESONANCE_VISUAL_AMP_MAX, Math.min(FORCED_RESONANCE_VISUAL_AMP_MAX, val))
+    const visualX = clampStage(state.x * STAGE_DISP_SCALE)
+    const ballY = eqY + visualX
 
-    // 阻尼介质槽（固定在基座底盘上，尺寸由最大振幅反推，见 calculateDamperGeometry）
+    const visualSteadyAmp = clampStage(steady.amplitude * STAGE_DISP_SCALE)
+    const steadyTopPhys = { x: centerX, y: eqY + visualSteadyAmp }
+    const steadyBottomPhys = { x: centerX, y: eqY - visualSteadyAmp }
+
+    // 阻尼介质槽（固定在基座底盘上）
     const damperTankPhys = {
       x: centerX,
       y: damper.tankBottom,
@@ -131,16 +149,19 @@ export function useForcedResonancePhysics({
       height: damper.tankHeight,
     }
 
-    // 阻尼叶片中心：随振子同步运动，垂距固定（浸没性由槽体尺寸保证）
+    // 阻尼叶片中心：随振子同步运动，垂距固定
     const damperBladeY = ballY - damper.bladeDrop
 
     return {
       steady,
+      gamma,
       ballPhys: { x: centerX, y: ballY },
       driverPhys: { x: centerX, y: driverY },
       wheelCenterPhys: { x: centerX, y: wheelCenterY },
       crankPinPhys: { x: pinX, y: pinY },
       equilibriumPhys: { x: centerX, y: eqY },
+      steadyTopPhys,
+      steadyBottomPhys,
       damperTankPhys,
       damperBladeY,
       rotAngle,

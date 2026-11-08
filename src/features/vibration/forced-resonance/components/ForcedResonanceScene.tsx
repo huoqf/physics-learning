@@ -37,6 +37,8 @@ export function ForcedResonanceScene({
   const wheelCenter = worldToDesign(physics.wheelCenterPhys.x, physics.wheelCenterPhys.y, sceneScale)
   const crankPin = worldToDesign(physics.crankPinPhys.x, physics.crankPinPhys.y, sceneScale)
   const equilibriumPoint = worldToDesign(physics.equilibriumPhys.x, physics.equilibriumPhys.y, sceneScale)
+  const steadyTopPoint = worldToDesign(physics.steadyTopPhys.x, physics.steadyTopPhys.y, sceneScale)
+  const steadyBottomPoint = worldToDesign(physics.steadyBottomPhys.x, physics.steadyBottomPhys.y, sceneScale)
 
   // 阻尼槽物理投影（固定不随振子晃动）
   const damperTankBottom = worldToDesign(physics.damperTankPhys.x, physics.damperTankPhys.y, sceneScale)
@@ -51,6 +53,9 @@ export function ForcedResonanceScene({
   const damperTankW = physics.damperTankPhys.width * sceneScale.scale
   const damperTankH = Math.abs(damperTankBottom.py - damperTankTop.py)
 
+  // 阻尼液浓度（透明度 0.08 ~ 0.42）随阻尼系数 γ (0.1 ~ 1.5) 实时加深，直观映射介质阻尼强弱
+  const fluidAlpha = Math.max(0.08, Math.min(0.42, 0.06 + (physics.gamma / 1.5) * 0.36))
+
   return (
     <g>
       {/* 顶部固定机架平台 */}
@@ -61,10 +66,10 @@ export function ForcedResonanceScene({
         type="platform"
       />
 
-      {/* 竖直双导轨（限位驱动滑块） */}
+      {/* 竖直双导轨（限位驱动滑块，上接顶部机架平台） */}
       <line
         x1={driverPoint.px - 42}
-        y1={wheelCenter.py - 24}
+        y1={wheelCenter.py - 48}
         x2={driverPoint.px - 42}
         y2={equilibriumPoint.py - 60}
         stroke={CANVAS_COLORS.axis}
@@ -73,7 +78,7 @@ export function ForcedResonanceScene({
       />
       <line
         x1={driverPoint.px + 42}
-        y1={wheelCenter.py - 24}
+        y1={wheelCenter.py - 48}
         x2={driverPoint.px + 42}
         y2={equilibriumPoint.py - 60}
         stroke={CANVAS_COLORS.axis}
@@ -81,12 +86,12 @@ export function ForcedResonanceScene({
         strokeDasharray="6 3"
       />
 
-      {/* 偏心轮驱动电机外壳与轮盘 */}
+      {/* 偏心轮驱动电机外壳与轮盘（紧贴顶部固定机架平台） */}
       <rect
         x={wheelCenter.px - wheelR - 16}
-        y={wheelCenter.py - wheelR - 10}
+        y={wheelCenter.py - 48}
         width={(wheelR + 16) * 2}
-        height={(wheelR + 10) * 2}
+        height={wheelR + 58}
         rx={6}
         fill={withAlpha(SCENE_COLORS.materials.structStroke, 0.06)}
         stroke={CANVAS_COLORS.axis}
@@ -244,18 +249,58 @@ export function ForcedResonanceScene({
         fill={CANVAS_COLORS.textMuted}
         textAnchor="end"
       >
-        平衡位置 (O)
+        O
       </text>
 
+      {/* 稳态受迫振幅上下界包络参考线 (±A) */}
+      {Math.abs(steadyTopPoint.py - equilibriumPoint.py) > 6 && (
+        <g>
+          <line
+            x1={vp.designLeft + 15}
+            y1={steadyTopPoint.py}
+            x2={equilibriumPoint.px - 46}
+            y2={steadyTopPoint.py}
+            stroke={withAlpha(KINEMATICS_COLORS.displacement, 0.55)}
+            strokeDasharray="3 3"
+            strokeWidth={1.2}
+          />
+          <line
+            x1={vp.designLeft + 15}
+            y1={steadyBottomPoint.py}
+            x2={equilibriumPoint.px - 46}
+            y2={steadyBottomPoint.py}
+            stroke={withAlpha(KINEMATICS_COLORS.displacement, 0.55)}
+            strokeDasharray="3 3"
+            strokeWidth={1.2}
+          />
+          <text
+            x={vp.designLeft + 18}
+            y={steadyTopPoint.py - 4}
+            fontSize={font(10)}
+            fill={KINEMATICS_COLORS.displacement}
+          >
+            +A
+          </text>
+          <text
+            x={vp.designLeft + 18}
+            y={steadyBottomPoint.py + 12}
+            fontSize={font(10)}
+            fill={KINEMATICS_COLORS.displacement}
+          >
+            -A
+          </text>
+        </g>
+      )}
+
       {/* ── 阻尼系统 ────────────────────────────────────────────── */}
-      {/* 静止固定的阻尼介质槽 (固定在基座上，绝不随振子晃动) */}
+      {/* 静止固定的阻尼介质槽 (液体深浅随阻尼系数 γ 实时变化) */}
       <rect
         x={damperTankTop.px - damperTankW / 2}
         y={damperTankTop.py}
         width={damperTankW}
         height={damperTankH}
         rx={6}
-        fill={withAlpha(DYNAMICS_COLORS.friction, 0.15)}
+        fill={withAlpha(DYNAMICS_COLORS.friction, fluidAlpha)}
         stroke={CANVAS_COLORS.strokeDark}
         strokeWidth={2}
       />
@@ -269,15 +314,6 @@ export function ForcedResonanceScene({
         strokeWidth={1.5}
         strokeDasharray="4 2"
       />
-      <text
-        x={damperTankTop.px}
-        y={damperTankBottom.py - 10}
-        fontSize={font(10)}
-        fill={CANVAS_COLORS.textMuted}
-        textAnchor="middle"
-      >
-        阻尼介质槽 (油/水)
-      </text>
 
       {/* 随小球振动的阻尼拉杆与十字叶片 */}
       <line
@@ -333,7 +369,7 @@ export function ForcedResonanceScene({
         type="steel"
       />
 
-      {/* ── 物理矢量标注体系 ──────────────────────────────────────── */}
+      {/* ── 物理矢量标注体系（仅保留符号，数值由右屏物理量看板承载） ──── */}
       {/* 1. 速度矢量标注 */}
       {Math.abs(physics.state.v) > 0.03 && (
         <PhysicsVectorArrow
@@ -342,6 +378,9 @@ export function ForcedResonanceScene({
           type="velocity"
           sceneScale={sceneScale}
           strokeWidth={STROKE.vectorMain}
+          label="v"
+          labelPlacement="side"
+          font={font}
         />
       )}
 
@@ -353,6 +392,9 @@ export function ForcedResonanceScene({
           type="force"
           sceneScale={sceneScale}
           strokeWidth={STROKE.vectorMain}
+          label="F"
+          labelPlacement="side"
+          font={font}
         />
       )}
 
@@ -376,46 +418,6 @@ export function ForcedResonanceScene({
           strokeWidth={STROKE.vectorSub}
         />
       )}
-
-      {/* ── 物理文字与参数标注 ────────────────────────────────────── */}
-      <text
-        x={driverPoint.px - 56}
-        y={driverPoint.py - 8}
-        fontSize={font(11)}
-        fill={DYNAMICS_COLORS.appliedForce}
-        textAnchor="end"
-      >
-        {`驱动力 F: ${physics.state.fDriver.toFixed(2)} N`}
-      </text>
-
-      <text
-        x={ballPoint.px + 30}
-        y={ballPoint.py - 18}
-        fontSize={font(11)}
-        fill={KINEMATICS_COLORS.velocity}
-      >
-        {`v = ${physics.state.v.toFixed(2)} m/s`}
-      </text>
-
-      {/* 位移标注 */}
-      <text
-        x={ballPoint.px + 30}
-        y={ballPoint.py + 26}
-        fontSize={font(11)}
-        fill={CANVAS_COLORS.textMuted}
-      >
-        {`x = ${(physics.state.x * 100).toFixed(1)} cm`}
-      </text>
-
-      {/* 偏心轮驱动源标识 */}
-      <text
-        x={wheelCenter.px + wheelR + 24}
-        y={wheelCenter.py + 4}
-        fontSize={font(11)}
-        fill={CANVAS_COLORS.textMuted}
-      >
-        偏心轮驱动
-      </text>
     </g>
   )
 }

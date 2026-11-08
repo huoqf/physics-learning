@@ -54,6 +54,7 @@ export interface MiniChartProps {
    * 用于「图线下的面积有物理意义」的场景（i–t 图下面积 = ΔQ）。
    */
   shadedArea?: { key: string; color: string; opacity?: number }
+  gridCount?: { x?: number; y?: number }
   minWidth?: number
   minHeight?: number
   className?: string
@@ -169,31 +170,36 @@ function MiniChartContent({
         })}
       </g>
 
-      {/* 图例 */}
+      {/* 图例（仅渲染有名称的图例项，对称辅助线可设 name="" 免重复） */}
       <g transform={`translate(${plotOrigin.x + font(12)}, ${plotOrigin.y + font(4)})`}>
-        {lines.map((line, idx) => {
-          const currentVal = currentVals[line.key] ?? 0
-          const showVal = line.showValueInLegend ?? true
-          return (
-            <g key={`legend-${line.key}`} transform={`translate(0, ${idx * font(11)})`}>
-              <line x1={0} y1={-3} x2={10} y2={-3} stroke={line.color} strokeWidth={1.5} strokeDasharray={line.strokeDasharray} />
-              <text x={14} y={1} fontSize={font(FONT.small)} fill={CHART_COLORS.tickLabel} fontWeight="600" className="select-none">
-                {line.name}{showVal ? `: ${currentVal.toFixed(line.valueDigits ?? 1)}` : ''}
-              </text>
-            </g>
-          )
-        })}
-        {staticLines.map((sLine, idx) => {
-          const showVal = sLine.showValueInLegend ?? true
-          return (
-            <g key={`legend-s-${idx}`} transform={`translate(0, ${(lines.length + idx) * font(11)})`}>
-              <line x1={0} y1={-3} x2={10} y2={-3} stroke={sLine.color} strokeWidth={1.2} strokeDasharray={sLine.strokeDasharray} />
-              <text x={14} y={1} fontSize={font(FONT.small)} fill={CHART_COLORS.tickLabel} fontWeight="600" className="select-none">
-                {sLine.name}{showVal ? `: ${sLine.value.toFixed(sLine.valueDigits ?? 1)}` : ''}
-              </text>
-            </g>
-          )
-        })}
+        {lines
+          .filter((l) => Boolean(l.name))
+          .map((line, idx) => {
+            const currentVal = currentVals[line.key] ?? 0
+            const showVal = line.showValueInLegend ?? true
+            return (
+              <g key={`legend-${line.key}`} transform={`translate(0, ${idx * font(11)})`}>
+                <line x1={0} y1={-3} x2={10} y2={-3} stroke={line.color} strokeWidth={1.5} strokeDasharray={line.strokeDasharray} />
+                <text x={14} y={1} fontSize={font(FONT.small)} fill={CHART_COLORS.tickLabel} fontWeight="600" className="select-none">
+                  {line.name}{showVal ? `: ${currentVal.toFixed(line.valueDigits ?? 1)}` : ''}
+                </text>
+              </g>
+            )
+          })}
+        {staticLines
+          .filter((s) => Boolean(s.name))
+          .map((sLine, idx) => {
+            const visibleLineCount = lines.filter((l) => Boolean(l.name)).length
+            const showVal = sLine.showValueInLegend ?? true
+            return (
+              <g key={`legend-s-${idx}`} transform={`translate(0, ${(visibleLineCount + idx) * font(11)})`}>
+                <line x1={0} y1={-3} x2={10} y2={-3} stroke={sLine.color} strokeWidth={1.2} strokeDasharray={sLine.strokeDasharray} />
+                <text x={14} y={1} fontSize={font(FONT.small)} fill={CHART_COLORS.tickLabel} fontWeight="600" className="select-none">
+                  {sLine.name}{showVal ? `: ${sLine.value.toFixed(sLine.valueDigits ?? 1)}` : ''}
+                </text>
+              </g>
+            )
+          })}
       </g>
     </g>
   )
@@ -214,6 +220,7 @@ export function MiniChart({
   currentXVal,
   staticLines = [],
   shadedArea,
+  gridCount,
   minWidth = 300,
   minHeight = 130,
   className = '',
@@ -227,14 +234,22 @@ export function MiniChart({
     }
   }, [currentXVal, xMin, xMax])
 
+  // 正负对称区间（如 [-A, +A]）默认采用偶数 4 等分，确保必然包含 y = 0 平衡位置刻度，避免 3 等分产生怪异小数
+  const resolvedGridCount = useMemo(() => {
+    if (gridCount) return gridCount
+    const isSymmetricY = yMin < 0 && yMax > 0 && Math.abs(yMin + yMax) < 1e-6
+    return isSymmetricY ? { y: 4 } : undefined
+  }, [gridCount, yMin, yMax])
+
   return (
     <BasePhysicsChart
       xDomain={[xMin, xMax]}
       yDomain={[yMin, yMax]}
       xLabel={xLabel}
       yLabel={yLabel}
-      title={title}
+      title={title || undefined}
       variant="mini"
+      gridCount={resolvedGridCount}
       initialSize={{ width: minWidth, height: minHeight }}
       className={className}
     >

@@ -83,6 +83,9 @@ export function calculateSteadyStateResonance(config: ForcedResonanceConfig): St
   }
 }
 
+/** 振子在模式 0（衰减到稳定）下的初始自由释放位移 x0 (m) */
+export const FORCED_RESONANCE_INITIAL_DISPLACEMENT = 0.45
+
 /**
  * 计算某一时刻 t 振子的实时位移、速度与受迫状态
  * 采用稳态近似与初态过渡相结合的解析模型
@@ -90,11 +93,14 @@ export function calculateSteadyStateResonance(config: ForcedResonanceConfig): St
 export function calculateForcedVibrationState(
   config: ForcedResonanceConfig,
   time: number,
-  mode: number = 1 // 0: 自由 vs 受迫, 1: 共振现象, 2: 阻尼对比
+  mode: number = 1 // 0: 自由衰减至受迫稳定, 1: 共振现象, 2: 阻尼对比
 ): {
-  x: number // 位移 (m)
-  v: number // 速度 (m/s)
+  x: number // 总位移 (m)
+  v: number // 总速度 (m/s)
   a: number // 加速度 (m/s^2)
+  xSteady: number // 稳态受迫振动分量 (m)
+  xTransient: number // 固有频率阻尼衰减暂态分量 (m)
+  transientEnvelope: number // 暂态衰减项包络幅值 (m)
   driverX: number // 驱动端位移 (m)
   fDriver: number // 实时驱动力 (N)
   elasticForce: number // 弹簧弹力 -k*x (N)
@@ -110,8 +116,6 @@ export function calculateForcedVibrationState(
   const omega = 2 * Math.PI * f
 
   // 驱动源位移 (偏心轮或连杆)：振幅与曲柄偏心距严格同源
-  // ⚠️ 此前此处硬编码 0.04 m，与 hook 中的 `crankEccentricity`(自适应 0.04~0.20)
-  //构成两套独立真源。现统一经`calculateCrankEccentricity` 派生。
   const { e } = calculateCrankEccentricity(F0, k)
   const driverX = e * Math.sin(omega * time)
   const fDriver = F0 * Math.sin(omega * time)
@@ -122,14 +126,38 @@ export function calculateForcedVibrationState(
 
   let x = xSteady
   let v = vSteady
+  let xTransient = 0
+  let transientEnvelope = 0
 
-  // 若在模式 0 (演示初始过渡到稳态)，引入衰减的齐次自由振动分量
+  // 若在模式 0 (演示从初始扰动自由振动衰减过渡到受迫稳态)：
+  // 设 t=0 时振子从初始位移 x(0) = x0 处由静止 v(0) = 0 释放，
+  // 齐次阻尼自由振动项 x_h(t) = exp(-beta*t) * (C1*cos(omega1*t) + C2*sin(omega1*t))
+  // 其中 C1 = x0 - x_steady(0) = x0 + A*sin(phi), C2 = (beta*C1 - v_steady(0)) / omega1
   if (mode === 0) {
+    const x0 = FORCED_RESONANCE_INITIAL_DISPLACEMENT
     const decay = Math.exp(-steady.beta * time)
-    const xTransient = -steady.amplitude * Math.sin(-steady.phaseLag) * Math.cos(steady.omega1 * time) * decay
-    const vTransient = steady.amplitude * Math.sin(-steady.phaseLag) * steady.omega1 * Math.sin(steady.omega1 * time) * decay
-    x = xSteady + xTransient
-    v = vSteady + vTransient
+    const c1 = x0 + steady.amplitude * Math.sin(steady.phaseLag)
+    const vSteady0 = steady.amplitude * omega * Math.cos(steady.phaseLag)
+    if (steady.omega1 > 1e-6) {
+      const c2 = (steady.beta * c1 - vSteady0) / steady.omega1
+      const cosW1 = Math.cos(steady.omega1 * time)
+      const sinW1 = Math.sin(steady.omega1 * time)
+      xTransient = decay * (c1 * cosW1 + c2 * sinW1)
+      const vTransient =
+        decay *
+        ((-steady.beta * c1 + steady.omega1 * c2) * cosW1 -
+          (steady.beta * c2 + steady.omega1 * c1) * sinW1)
+      transientEnvelope = decay * Math.hypot(c1, c2)
+      x = xSteady + xTransient
+      v = vSteady + vTransient
+    } else {
+      const c2 = steady.beta * c1 - vSteady0
+      xTransient = decay * (c1 + c2 * time)
+      const vTransient = decay * (c2 - steady.beta * (c1 + c2 * time))
+      transientEnvelope = Math.abs(xTransient)
+      x = xSteady + xTransient
+      v = vSteady + vTransient
+    }
   }
 
   const elasticForce = -k * x
@@ -145,6 +173,9 @@ export function calculateForcedVibrationState(
     x,
     v,
     a,
+    xSteady,
+    xTransient,
+    transientEnvelope,
     driverX,
     fDriver,
     elasticForce,
@@ -241,6 +272,13 @@ export interface DamperGeometry {
 export const FORCED_RESONANCE_STAGE_HEIGHT = 6.5
 /** 振子平衡位置高度 (m) */
 export const FORCED_RESONANCE_EQUILIBRIUM_Y = 3.2
+/**
+ * 舞台机构无碰撞净空振幅上限 (m)：
+ * 平衡位置 eqY = 3.2 m，上方驱动滑块下沿约 4.51 m，下方阻尼槽顶盖随振幅上移（eqY + A - 1.85 + 0.15）。
+ * 为保证振子小球既不向上撞穿驱动滑块，又不向下冲入阻尼介质槽（3.2 - A - 0.16 > 3.2 + A - 1.85 + 0.15），
+ * 场景中振子与阻尼槽的无碰撞几何行程上限为 0.72 m (72 cm)。
+ */
+export const FORCED_RESONANCE_VISUAL_AMP_MAX = 0.72
 /** 叶片上下各需预留的浸没裕度 (m) */
 const DAMPER_MARGIN = 0.15
 /** 阻尼叶片相对平衡位置的名义下垂距离 (m)：振幅较小时使用 */
