@@ -1,6 +1,8 @@
 import {
   GRAVITATIONAL_CONSTANT,
   EARTH_MASS,
+  SOLAR_MASS,
+  SECONDS_PER_DAY,
   SATELLITE_LAUNCH_RADIUS_RATIO,
   calculateOrbitalSpeed,
   ellipseFromEccentricity,
@@ -10,13 +12,17 @@ import {
   calculateBinaryStars,
   calculateTripleStars,
   TRIPLE_STARS_DEFAULT_MASS,
+  MULTI_STAR_DEFAULT_PARAMS,
+  MULTI_STAR_DISTANCE_UNIT_M,
+  MULTI_STAR_DAYS_PER_ANIM_SEC,
   computeHohmannElements,
   computeTransferState,
   megaMetersToMeters,
 } from '../../physics'
-import type { PhysicsPanelData, PhysicsQuantity, Formula, GaokaoPoint } from './types'
+import type { PhysicsPanelData, PhysicsQuantity, Formula, GaokaoPoint, WarningItem } from './types'
 import type { OrbitTransferPhase } from '../../physics/orbitTransfer'
 import { PHYSICS_COLORS } from '@/theme/physics'
+import { formatScientific } from '@/utils/formatNumber'
 
 
 export function buildGravitationQuantities(
@@ -285,58 +291,120 @@ export function buildGravitationQuantities(
       }
     }
     case 'anim-binary-stars': {
-      const mode = params.mode ?? 0 // 0=双星系统, 1=三星系统
-      const L = params.L ?? 8.0
-      const massRatio = params.massRatio ?? 1.0
+      const mode = params.mode ?? MULTI_STAR_DEFAULT_PARAMS.mode // 0=双星系统, 1=三星系统
+      const L = params.L ?? MULTI_STAR_DEFAULT_PARAMS.L
+      const LMeters = L * MULTI_STAR_DISTANCE_UNIT_M
+      const massRatio = params.massRatio ?? MULTI_STAR_DEFAULT_PARAMS.massRatio
 
       const quantities: PhysicsQuantity[] = []
       const formulas: Formula[] = []
       const gaokaoPoints: GaokaoPoint[] = []
+      const warnings: WarningItem[] = []
 
       if (mode === 0) {
-        // 双星系统
-        const { r1, r2, v1, v2, T, F, a1, a2 } = calculateBinaryStars(L, massRatio)
+        // 双星系统（真实 SI 单位）
+        const { m1, m2, r1, r2, v1, v2, omega, T, F, a1, a2 } = calculateBinaryStars(LMeters, massRatio)
         quantities.push(
-          { label: '轨道半径 r₁ / r₂', value: `${r1.toFixed(2)}m / ${r2.toFixed(2)}m`, unit: '' },
-          { label: '线速度 v₁ / v₂', value: `${v1.toFixed(2)}m/s / ${v2.toFixed(2)}m/s`, unit: '' },
-          { label: '各自向心力 F₁ / F₂', value: `均为 ${F.toFixed(2)}`, unit: 'N' },
-          { label: '各自向心加速度 a₁ / a₂', value: `${a1.toFixed(2)}m/s² / ${a2.toFixed(2)}m/s²`, unit: '' },
-          { label: '运行周期 T', value: T.toFixed(2), unit: 's', highlight: 'positive' as const }
+          { label: '质量 m₁ / m₂', value: `${(m1 / SOLAR_MASS).toFixed(2)} / ${(m2 / SOLAR_MASS).toFixed(2)}`, unit: 'M☉' },
+          { label: '轨道半径 r₁ / r₂', value: `${(r1 / MULTI_STAR_DISTANCE_UNIT_M).toFixed(2)} / ${(r2 / MULTI_STAR_DISTANCE_UNIT_M).toFixed(2)}`, unit: '×10¹⁰ m' },
+          { label: '线速度 v₁ / v₂', value: `${(v1 / 1000).toFixed(2)} / ${(v2 / 1000).toFixed(2)}`, unit: 'km/s' },
+          { label: '向心力 F₁ = F₂', value: formatScientific(F, 2), unit: 'N' },
+          { label: '向心加速度 a₁ / a₂', value: `${a1.toFixed(3)} / ${a2.toFixed(3)}`, unit: 'm/s²' },
+          { label: '角速度 ω', value: formatScientific(omega, 2), unit: 'rad/s' },
+          { label: '运行周期 T', value: (T / SECONDS_PER_DAY).toFixed(2), unit: 'd', highlight: 'positive' as const }
         )
 
         formulas.push(
-          { name: '引力提供各自向心力 (星1)', latex: 'G\\frac{m_1 m_2}{L^2} = m_1 \\omega^2 r_1', level: 'important' },
-          { name: '引力提供各自向心力 (星2)', latex: 'G\\frac{m_1 m_2}{L^2} = m_2 \\omega^2 r_2', level: 'important' },
-          { name: '周期与总质量关系', latex: 'T = 2\\pi \\sqrt{\\frac{L^3}{G(m_1 + m_2)}}', level: 'core' }
+          {
+            name: '引力提供各自向心力',
+            latex: 'G\\frac{m_1 m_2}{L^2} = m_1 \\omega^2 r_1 = m_2 \\omega^2 r_2',
+            condition: '双星仅受相互万有引力，绕共同质心做共面匀速圆周运动',
+            note: '两星向心力大小严格相等，角速度 ω 与周期 T 相同。',
+            level: 'important',
+          },
+          {
+            name: '质心半径分配关系',
+            latex: 'm_1 r_1 = m_2 r_2, \\quad r_1 + r_2 = L',
+            condition: '质心静止在两星连线上',
+            note: '半径、线速度与向心加速度均与质量成反比。',
+            level: 'core',
+          },
+          {
+            name: '周期与总质量关系',
+            latex: 'T = 2\\pi \\sqrt{\\frac{L^3}{G(m_1 + m_2)}}',
+            condition: '总质量 m₁+m₂ 不变时，周期 T 只随间距 L 变化，与质量比无关',
+            level: 'core',
+          }
         )
 
         gaokaoPoints.push(
           { text: '易错陷阱：万有引力公式中的距离是双星间距 L，而向心力公式中的半径是各自的轨道半径 r₁ 或 r₂，二者绝不能混淆。', importance: 'gaokao' as const },
-          { text: '双星做匀速圆周运动的角速度 ω 和周期 T 绝对相等。', importance: 'core' as const },
-          { text: '双星的轨道半径、线速度、向心加速度均与它们的质量成反比。', importance: 'gaokao' as const }
+          { text: '双星做匀速圆周运动的角速度 ω 和周期 T 绝对相等，且连线始终通过质心。', importance: 'core' as const },
+          { text: '双星的轨道半径、线速度、向心加速度均与它们的质量成反比（r₁/r₂ = v₁/v₂ = a₁/a₂ = m₂/m₁）。', importance: 'gaokao' as const }
+        )
+
+        warnings.push(
+          {
+            text: '易错提醒：固定间距 L 调质量比，向心力 F₁ = F₂ 不因受力不均而偏心，但质量越小的星轨道半径、线速度与加速度越大。',
+            level: 'warning',
+          },
+          {
+            text: `单位与时间尺度说明：1 M☉ = 1.989×10³⁰ kg；本演示采用加速时间尺度（1 动画秒 = ${MULTI_STAR_DAYS_PER_ANIM_SEC} 天轨道时间）。`,
+            level: 'info',
+          }
         )
       } else {
-        // 三星系统
+        // 三星系统（等边三角形特例，真实 SI 单位）
         const starMass = TRIPLE_STARS_DEFAULT_MASS
-        const { r, fNet, v, T } = calculateTripleStars(L, undefined, starMass)
+        const { r, fNet, fPair, a, v, omega, T } = calculateTripleStars(LMeters, undefined, starMass)
 
         quantities.push(
-          { label: '单星质量 m', value: starMass.toFixed(1), unit: 'kg' },
-          { label: '轨道半径 r', value: r.toFixed(2), unit: 'm' },
-          { label: '线速度 v', value: v.toFixed(2), unit: 'm/s' },
-          { label: '星体合力 F_合', value: fNet.toFixed(2), unit: 'N' },
-          { label: '运行周期 T', value: T.toFixed(2), unit: 's', highlight: 'positive' as const }
+          { label: '单星质量 m', value: (starMass / SOLAR_MASS).toFixed(1), unit: 'M☉' },
+          { label: '轨道半径 r', value: (r / MULTI_STAR_DISTANCE_UNIT_M).toFixed(2), unit: '×10¹⁰ m' },
+          { label: '线速度 v', value: (v / 1000).toFixed(2), unit: 'km/s' },
+          { label: '星间分引力 F₀', value: formatScientific(fPair, 2), unit: 'N' },
+          { label: '星体合力 F_合', value: formatScientific(fNet, 2), unit: 'N' },
+          { label: '向心加速度 a', value: a.toFixed(3), unit: 'm/s²' },
+          { label: '角速度 ω', value: formatScientific(omega, 2), unit: 'rad/s' },
+          { label: '运行周期 T', value: (T / SECONDS_PER_DAY).toFixed(2), unit: 'd', highlight: 'positive' as const }
         )
 
         formulas.push(
-          { name: '等边三角形合向心力', latex: 'F_{\\text{合}} = \\sqrt{3} G \\frac{m^2}{L^2} = m \\omega^2 r', level: 'important' },
-          { name: '三星轨道半径关系', latex: 'r = \\frac{L}{\\sqrt{3}}', level: 'core' },
-          { name: '三星运转周期', latex: 'T = 2\\pi \\sqrt{\\frac{L^3}{3Gm}}', level: 'derived' }
+          {
+            name: '等边三角形分引力合成',
+            latex: 'F_{\\text{合}} = 2 F_0 \\cos 30^\\circ = \\sqrt{3} G \\frac{m^2}{L^2} = m \\omega^2 r',
+            condition: '三颗星等质量（m₁=m₂=m₃=m）、构成等边三角形、仅受相互引力且稳定圆周运动',
+            note: '任意星受到其余两星的分引力 F₀ = Gm²/L²，夹角 60°，合力指向正三角形中心。',
+            level: 'important',
+          },
+          {
+            name: '三星轨道半径关系',
+            latex: 'r = \\frac{L}{2\\cos 30^\\circ} = \\frac{L}{\\sqrt{3}}',
+            condition: '正三角形外接圆半径',
+            level: 'core',
+          },
+          {
+            name: '三星运转周期',
+            latex: 'T = 2\\pi \\sqrt{\\frac{L^3}{3Gm}}',
+            condition: '仅适用于等质量等边三角形稳态圆周特例',
+            level: 'derived',
+          }
         )
 
         gaokaoPoints.push(
-          { text: '三星系统的每颗星均受另外两颗星的引力，其合力指向正三角形的中心（质心）。', importance: 'core' as const },
-          { text: '三星做圆周运动的角速度 ω、周期 T 和轨道半径 r 完全相等。', importance: 'gaokao' as const }
+          { text: '三星系统的每颗星均受另外两颗星大小相等的分引力（夹角 60°），合力指向正三角形中心（质心）。', importance: 'core' as const },
+          { text: '该特例中三颗星做圆周运动的角速度 ω、周期 T、线速度 v 与轨道半径 r 完全相等，相位互差 120°。', importance: 'gaokao' as const }
+        )
+
+        warnings.push(
+          {
+            text: '适用条件限制：上述周期与合力公式仅对「等质量、等边三角形构型、只受相互引力」的稳定圆周运动成立；一般三星系统不保证做匀速圆周运动。',
+            level: 'danger',
+          },
+          {
+            text: `单位与时间尺度说明：1 M☉ = 1.989×10³⁰ kg；1 动画秒 = ${MULTI_STAR_DAYS_PER_ANIM_SEC} 天轨道时间。`,
+            level: 'info',
+          }
         )
       }
 
@@ -344,6 +412,7 @@ export function buildGravitationQuantities(
         quantities,
         formulas,
         gaokaoPoints,
+        warnings,
       }
     }
     case 'anim-orbit-transfer': {

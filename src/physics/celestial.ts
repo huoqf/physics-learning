@@ -1,7 +1,7 @@
 /**
  * 天体物理计算模块
  *
- * @category M4 — 天体物理（预留，当前无消费方）
+ * @category M4 — 天体物理
  */
 
 /**
@@ -186,7 +186,7 @@ export function calculateKeplerOrbit(
 // 旧实现 `T₂ = T₁·√(a₂/a₁)³` 用要证明的定律生成了用来证明它的数据，
 // T²–a³ 图像上的"直线"因此是恒等式而非结果。
 
-/** 教学归一化引力常量（与双星模型 CELESTIAL_SIM_G 保持同一约定） */
+/** 开普勒轨道教学模型引力常量（无量纲，与开普勒教学视口一致） */
 export const KEPLER_SIM_G = 1.0;
 
 /** 中心天体的引力参数 μ = GM (m³/s²) */
@@ -409,97 +409,7 @@ export function calculateLaunchTrajectory(
   return { orbitType, e, p, rPeri, rApo };
 }
 
-/** 教学归一化引力常量（双星/三星运动模型） */
-export const CELESTIAL_SIM_G = 1.0
-/** 双星系统默认总质量 (kg) */
-export const BINARY_STARS_DEFAULT_TOTAL_MASS = 10.0
-/** 三星系统默认单星质量 (kg) */
-export const TRIPLE_STARS_DEFAULT_MASS = 5.0
-
-/**
- * 计算双星系统的质量、轨道半径、线速度、周期与向心力
- *
- * 注意：双星/三星模型按教学惯例做了归一化（G = 1.0、m₁ + m₂ = 10 kg），
- * 看板上的 F 与 a 必须由本函数一并给出，不能再用真实 G = 6.67×10⁻¹¹ 另算——
- * 否则同一张看板上，T 由归一化模型算、F 由真实常量算，互相矛盾且 F 会显示成 0.00。
- *
- * @param L 双星间距 (m)
- * @param massRatio 质量比 m1/m2
- * @param G 万有引力常数，默认 1.0 (归一化教学模型)
- * @param totalMass 双星系统总质量，默认 10.0 kg
- * @returns 包含各星质量、轨道半径、线速度、角速度、周期、向心力与向心加速度的对象
- */
-export function calculateBinaryStars(
-  L: number,
-  massRatio: number,
-  G: number = CELESTIAL_SIM_G,
-  totalMass: number = BINARY_STARS_DEFAULT_TOTAL_MASS
-): {
-  m1: number;
-  m2: number;
-  r1: number;
-  r2: number;
-  v1: number;
-  v2: number;
-  omega: number;
-  T: number;
-  F: number;
-  a1: number;
-  a2: number;
-} {
-  const m1 = (totalMass * massRatio) / (1 + massRatio);
-  const m2 = totalMass / (1 + massRatio);
-  
-  // 质心分配半径：r1/r2 = m2/m1 -> r1 + r2 = L
-  const r1 = L / (1 + massRatio);
-  const r2 = (L * massRatio) / (1 + massRatio);
-  
-  // omega^2 = G * (m1 + m2) / L^3
-  const omega = Math.sqrt((G * totalMass) / Math.pow(L, 3));
-  const T = (2 * Math.PI) / omega;
-  
-  const v1 = omega * r1;
-  const v2 = omega * r2;
-
-  // 向心力与向心加速度：模型约定下 G=1.0，与运动轨道周期完全闭环
-  const F = (G * m1 * m2) / (L * L);
-  const a1 = m1 > 0 ? F / m1 : 0;
-  const a2 = m2 > 0 ? F / m2 : 0;
-  
-  return { m1, m2, r1, r2, v1, v2, omega, T, F, a1, a2 };
-}
-
-/**
- * 计算等边三角形三星系统的轨道半径、向心力、线速度及周期
- * 
- * @param L 三星之间的距离 (等边三角形边长) (m)
- * @param G 万有引力常数，默认 1.0
- * @param starMass 单个星体质量，默认 5.0 (三星质量相等)
- * @returns 包含轨道半径、合向心力、线速度、角速度和周期的对象
- */
-export function calculateTripleStars(
-  L: number,
-  G: number = CELESTIAL_SIM_G,
-  starMass: number = TRIPLE_STARS_DEFAULT_MASS
-): {
-  r: number;
-  fNet: number;
-  v: number;
-  omega: number;
-  T: number;
-} {
-  // 轨道半径：r = L / (2 * cos(30°)) = L / √3
-  const r = L / Math.sqrt(3);
-  
-  // 每颗星受另外两颗星的引力合力：F_net = √3 * G * m^2 / L^2
-  const fNet = Math.sqrt(3) * G * starMass * starMass / (L * L);
-  
-  // 合引力等于向心力：F_net = m * omega^2 * r -> omega = √(F_net / (m * r)) = √(3 * G * m / L^3)
-  const omega = Math.sqrt((3 * G * starMass) / Math.pow(L, 3));
-  const T = (2 * Math.PI) / omega;
-  const v = omega * r;
-  
-  return { r, fNet, v, omega, T };
-}
+// 双星 / 三星多体模型已独立拆分至 multiStar.ts，此处 re-export 保持既有引入路径兼容
+export * from './multiStar'
 
 

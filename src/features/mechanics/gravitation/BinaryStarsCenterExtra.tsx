@@ -1,350 +1,199 @@
-import { BasePhysicsChart, ChartCursor, useChartContext } from '@/components/Chart'
+import { useMemo } from 'react'
+import { BasePhysicsChart, ChartCursor, ChartLine } from '@/components/Chart'
 import { useBinaryStars } from './hooks/useBinaryStars'
-import { PHYSICS_COLORS } from '@/theme/physics'
-import { useAnimationStore } from '@/stores'
+import { SERIES_MAP, type ChartSeriesVariant } from '@/theme/physics'
+import {
+  MULTI_STAR_CHART_BOUNDS,
+  MULTI_STAR_DISTANCE_UNIT_M,
+  sampleBinaryStarsCurves,
+  sampleTripleStarsCurves,
+} from '@/physics/celestial'
 
-// ─── 双星模式位置投影曲线 (x-t) ────────────────────────────────────
-function BinaryCurvePaths({
-  r1,
-  r2,
-  omega,
-  T,
-}: {
-  r1: number
-  r2: number
-  omega: number
-  T: number
-}) {
-  const ctx = useChartContext()
-  if (!ctx) return null
-  const { toSvgX, toSvgY } = ctx
+interface LegendEntry {
+  label: string
+  series: ChartSeriesVariant
+}
 
-  const pointsCount = 80
-  const path1Arr: string[] = []
-  const path2Arr: string[] = []
-
-  for (let i = 0; i < pointsCount; i++) {
-    const t = (T * i) / (pointsCount - 1)
-    const x1 = r1 * Math.cos(omega * t)
-    const x2 = -r2 * Math.cos(omega * t)
-    path1Arr.push(`${toSvgX(t).toFixed(1)},${toSvgY(x1).toFixed(1)}`)
-    path2Arr.push(`${toSvgX(t).toFixed(1)},${toSvgY(x2).toFixed(1)}`)
-  }
-
+function SeriesLegend({ items }: { items: LegendEntry[] }) {
   return (
-    <>
-      <path
-        d={`M ${path1Arr.join(' L ')}`}
-        fill="none"
-        stroke={PHYSICS_COLORS.forceNet}
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-      <path
-        d={`M ${path2Arr.join(' L ')}`}
-        fill="none"
-        stroke={PHYSICS_COLORS.velocity}
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-    </>
+    <div className="shrink-0 flex items-center justify-between gap-2 px-1 pb-1 text-[11px] text-neutral-600">
+      <span className="font-medium text-neutral-500">质心系惯性坐标轴投影</span>
+      <div className="flex items-center gap-3">
+        {items.map((item) => (
+          <span key={item.label} className="inline-flex items-center gap-1 font-medium text-neutral-700">
+            <span
+              className="inline-block w-3 h-0.5 rounded-full"
+              style={{ backgroundColor: SERIES_MAP[item.series] }}
+            />
+            {item.label}
+          </span>
+        ))}
+      </div>
+    </div>
   )
 }
 
-// ─── 双星模式速度投影曲线 (vx-t) ───────────────────────────────────
-function BinaryVelCurvePaths({
-  v1,
-  v2,
-  omega,
-  T,
-}: {
-  v1: number
-  v2: number
-  omega: number
-  T: number
-}) {
-  const ctx = useChartContext()
-  if (!ctx) return null
-  const { toSvgX, toSvgY } = ctx
+const formatIntTick = (v: number) => String(Math.round(v))
 
-  const pointsCount = 80
-  const path1Arr: string[] = []
-  const path2Arr: string[] = []
-
-  for (let i = 0; i < pointsCount; i++) {
-    const t = (T * i) / (pointsCount - 1)
-    const vx1 = -v1 * Math.sin(omega * t)
-    const vx2 = v2 * Math.sin(omega * t)
-    path1Arr.push(`${toSvgX(t).toFixed(1)},${toSvgY(vx1).toFixed(1)}`)
-    path2Arr.push(`${toSvgX(t).toFixed(1)},${toSvgY(vx2).toFixed(1)}`)
-  }
-
-  return (
-    <>
-      <path
-        d={`M ${path1Arr.join(' L ')}`}
-        fill="none"
-        stroke={PHYSICS_COLORS.forceNet}
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-      <path
-        d={`M ${path2Arr.join(' L ')}`}
-        fill="none"
-        stroke={PHYSICS_COLORS.velocity}
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-    </>
-  )
-}
-
-// ─── 三星模式位置投影曲线 (x-t) ────────────────────────────────────
-function TripleCurvePaths({
-  r,
-  omega,
-  T,
-}: {
-  r: number
-  omega: number
-  T: number
-}) {
-  const ctx = useChartContext()
-  if (!ctx) return null
-  const { toSvgX, toSvgY } = ctx
-
-  const pointsCount = 80
-  const path1Arr: string[] = []
-  const path2Arr: string[] = []
-  const path3Arr: string[] = []
-
-  for (let i = 0; i < pointsCount; i++) {
-    const t = (T * i) / (pointsCount - 1)
-    const x1 = r * Math.cos(omega * t)
-    const x2 = r * Math.cos(omega * t + (2 * Math.PI) / 3)
-    const x3 = r * Math.cos(omega * t + (4 * Math.PI) / 3)
-    path1Arr.push(`${toSvgX(t).toFixed(1)},${toSvgY(x1).toFixed(1)}`)
-    path2Arr.push(`${toSvgX(t).toFixed(1)},${toSvgY(x2).toFixed(1)}`)
-    path3Arr.push(`${toSvgX(t).toFixed(1)},${toSvgY(x3).toFixed(1)}`)
-  }
-
-  return (
-    <>
-      <path
-        d={`M ${path1Arr.join(' L ')}`}
-        fill="none"
-        stroke={PHYSICS_COLORS.velocity}
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-      <path
-        d={`M ${path2Arr.join(' L ')}`}
-        fill="none"
-        stroke={PHYSICS_COLORS.forceNet}
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-      <path
-        d={`M ${path3Arr.join(' L ')}`}
-        fill="none"
-        stroke={PHYSICS_COLORS.magneticField}
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-    </>
-  )
-}
-
-// ─── 三星模式速度投影曲线 (vx-t) ───────────────────────────────────
-function TripleVelCurvePaths({
-  v,
-  omega,
-  T,
-}: {
-  v: number
-  omega: number
-  T: number
-}) {
-  const ctx = useChartContext()
-  if (!ctx) return null
-  const { toSvgX, toSvgY } = ctx
-
-  const pointsCount = 80
-  const path1Arr: string[] = []
-  const path2Arr: string[] = []
-  const path3Arr: string[] = []
-
-  for (let i = 0; i < pointsCount; i++) {
-    const t = (T * i) / (pointsCount - 1)
-    const vx1 = -v * Math.sin(omega * t)
-    const vx2 = -v * Math.sin(omega * t + (2 * Math.PI) / 3)
-    const vx3 = -v * Math.sin(omega * t + (4 * Math.PI) / 3)
-    path1Arr.push(`${toSvgX(t).toFixed(1)},${toSvgY(vx1).toFixed(1)}`)
-    path2Arr.push(`${toSvgX(t).toFixed(1)},${toSvgY(vx2).toFixed(1)}`)
-    path3Arr.push(`${toSvgX(t).toFixed(1)},${toSvgY(vx3).toFixed(1)}`)
-  }
-
-  return (
-    <>
-      <path
-        d={`M ${path1Arr.join(' L ')}`}
-        fill="none"
-        stroke={PHYSICS_COLORS.velocity}
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-      <path
-        d={`M ${path2Arr.join(' L ')}`}
-        fill="none"
-        stroke={PHYSICS_COLORS.forceNet}
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-      <path
-        d={`M ${path3Arr.join(' L ')}`}
-        fill="none"
-        stroke={PHYSICS_COLORS.magneticField}
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-    </>
-  )
-}
-
-// ─── 主组件 ──────────────────────────────────────────────────────────
 export default function BinaryStarsCenterExtra() {
   const state = useBinaryStars()
-  const time = useAnimationStore((s) => s.time)
 
-  if (!state) {
-    return (
-      <div className="w-full h-full flex items-center justify-center text-neutral-400 text-sm">
-        数据计算中…
-      </div>
-    )
-  }
+  const massRatio = state.mode === 0 ? state.massRatio : 1
 
-  const T = 2 * Math.PI / state.omega
-  const curT = time % T
+  const binarySamples = useMemo(
+    () => (state.mode === 0 ? sampleBinaryStarsCurves(state.LMeters, massRatio, 80) : []),
+    [state.mode, state.LMeters, massRatio],
+  )
 
-  // 1. 双星模式下的图表与校验
+  const tripleSamples = useMemo(
+    () => (state.mode === 1 ? sampleTripleStarsCurves(state.LMeters, 80) : []),
+    [state.mode, state.LMeters],
+  )
+
+  const yLimit = MULTI_STAR_CHART_BOUNDS.rMax
+  const vLimit = MULTI_STAR_CHART_BOUNDS.vMax
+  const xLimit = MULTI_STAR_CHART_BOUNDS.TMax
+
   if (state.mode === 0) {
-    const { r1, r2, v1, v2 } = state
+    const x1Points = binarySamples.map((s) => ({ x: s.tDays, y: s.x1 }))
+    const x2Points = binarySamples.map((s) => ({ x: s.tDays, y: s.x2 }))
+    const vx1Points = binarySamples.map((s) => ({ x: s.tDays, y: s.vx1 }))
+    const vx2Points = binarySamples.map((s) => ({ x: s.tDays, y: s.vx2 }))
 
-    // 位置投影数据游标点
-    const curX1 = r1 * Math.cos(state.omega * curT)
-    const curX2 = -r2 * Math.cos(state.omega * curT)
     const dataPointsX = [
-      { y: curX1, label: 'x₁', series: 'warm' as const },
-      { y: curX2, label: 'x₂', series: 'primary' as const },
+      { y: state.pos1.x / MULTI_STAR_DISTANCE_UNIT_M, label: 'x₁', series: 'warm' as const },
+      { y: state.pos2.x / MULTI_STAR_DISTANCE_UNIT_M, label: 'x₂', series: 'primary' as const },
     ]
-
-    // 速度投影数据游标点
-    const curVx1 = -v1 * Math.sin(state.omega * curT)
-    const curVx2 = v2 * Math.sin(state.omega * curT)
     const dataPointsV = [
-      { y: curVx1, label: 'v₁ₓ', series: 'warm' as const },
-      { y: curVx2, label: 'v₂ₓ', series: 'primary' as const },
+      { y: state.vel1.x / 1000, label: 'v₁ₓ', series: 'warm' as const },
+      { y: state.vel2.x / 1000, label: 'v₂ₓ', series: 'primary' as const },
     ]
 
-    const yLimit = Math.max(r1, r2) * 1.25
-    const vLimit = Math.max(v1, v2) * 1.25
+    const legendItems: LegendEntry[] = [
+      { label: '星1 (m₁)', series: 'warm' },
+      { label: '星2 (m₂)', series: 'primary' },
+    ]
 
     return (
       <div className="w-full h-full flex flex-col gap-3 p-3 bg-neutral-50/50 overflow-y-auto select-none">
-        {/* 上方图表区：位置投影 */}
-        <div className="flex-1 min-h-0 bg-white rounded-xl border border-neutral-200/50 p-2 shadow-sm">
-          <BasePhysicsChart
-            xDomain={[0, T]}
-            yDomain={[-yLimit, yLimit]}
-            xLabel="时间 t (s)"
-            yLabel="位置投影 x (m)"
-            title="双星空间位置投影 (x-t)"
-            yBaseline={0}
-            variant="mini"
-          >
-            <BinaryCurvePaths r1={r1} r2={r2} omega={state.omega} T={T} />
-            <ChartCursor x={curT} dataPoints={dataPointsX} />
-          </BasePhysicsChart>
+        <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl border border-neutral-200/50 p-2 shadow-sm">
+          <SeriesLegend items={legendItems} />
+          <div className="flex-1 min-h-0">
+            <BasePhysicsChart
+              xDomain={[0, xLimit]}
+              yDomain={[-yLimit, yLimit]}
+              xLabel="时间 t (d)"
+              yLabel="x 投影 (×10¹⁰ m)"
+              title="质心系惯性轴位置投影 (x–t)"
+              yBaseline={0}
+              gridCount={{ x: 4, y: 4 }}
+              formatX={formatIntTick}
+              formatY={formatIntTick}
+              variant="mini"
+            >
+              <ChartLine points={x1Points} series="warm" />
+              <ChartLine points={x2Points} series="primary" />
+              <ChartCursor x={state.curTDays} dataPoints={dataPointsX} />
+            </BasePhysicsChart>
+          </div>
         </div>
 
-        {/* 下方图表区：速度投影 */}
-        <div className="flex-1 min-h-0 bg-white rounded-xl border border-neutral-200/50 p-2 shadow-sm">
-          <BasePhysicsChart
-            xDomain={[0, T]}
-            yDomain={[-vLimit, vLimit]}
-            xLabel="时间 t (s)"
-            yLabel="速度投影 v_x (m/s)"
-            title="双星速度投影 (v_x-t)"
-            yBaseline={0}
-            variant="mini"
-          >
-            <BinaryVelCurvePaths v1={v1} v2={v2} omega={state.omega} T={T} />
-            <ChartCursor x={curT} dataPoints={dataPointsV} />
-          </BasePhysicsChart>
+        <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl border border-neutral-200/50 p-2 shadow-sm">
+          <SeriesLegend items={legendItems} />
+          <div className="flex-1 min-h-0">
+            <BasePhysicsChart
+              xDomain={[0, xLimit]}
+              yDomain={[-vLimit, vLimit]}
+              xLabel="时间 t (d)"
+              yLabel="vₓ 投影 (km/s)"
+              title="质心系惯性轴速度投影 (vₓ–t)"
+              yBaseline={0}
+              gridCount={{ x: 4, y: 4 }}
+              formatX={formatIntTick}
+              formatY={formatIntTick}
+              variant="mini"
+            >
+              <ChartLine points={vx1Points} series="warm" />
+              <ChartLine points={vx2Points} series="primary" />
+              <ChartCursor x={state.curTDays} dataPoints={dataPointsV} />
+            </BasePhysicsChart>
+          </div>
         </div>
       </div>
     )
   }
 
-  // 2. 三星模式下的图表与校验
-  const { r, v } = state
+  // 三星系统模式
+  const x1Points = tripleSamples.map((s) => ({ x: s.tDays, y: s.x1 }))
+  const x2Points = tripleSamples.map((s) => ({ x: s.tDays, y: s.x2 }))
+  const x3Points = tripleSamples.map((s) => ({ x: s.tDays, y: s.x3 ?? 0 }))
+  const vx1Points = tripleSamples.map((s) => ({ x: s.tDays, y: s.vx1 }))
+  const vx2Points = tripleSamples.map((s) => ({ x: s.tDays, y: s.vx2 }))
+  const vx3Points = tripleSamples.map((s) => ({ x: s.tDays, y: s.vx3 ?? 0 }))
 
-  // 位置投影游标点
-  const curX1 = r * Math.cos(state.omega * curT)
-  const curX2 = r * Math.cos(state.omega * curT + (2 * Math.PI) / 3)
-  const curX3 = r * Math.cos(state.omega * curT + (4 * Math.PI) / 3)
   const dataPointsX = [
-    { y: curX1, label: 'x₁', series: 'primary' as const },
-    { y: curX2, label: 'x₂', series: 'warm' as const },
-    { y: curX3, label: 'x₃', series: 'success' as const },
+    { y: state.pos1.x / MULTI_STAR_DISTANCE_UNIT_M, label: 'x₁', series: 'primary' as const },
+    { y: state.pos2.x / MULTI_STAR_DISTANCE_UNIT_M, label: 'x₂', series: 'warm' as const },
+    { y: state.pos3.x / MULTI_STAR_DISTANCE_UNIT_M, label: 'x₃', series: 'success' as const },
   ]
-
-  // 速度投影游标点
-  const curVx1 = -v * Math.sin(state.omega * curT)
-  const curVx2 = -v * Math.sin(state.omega * curT + (2 * Math.PI) / 3)
-  const curVx3 = -v * Math.sin(state.omega * curT + (4 * Math.PI) / 3)
   const dataPointsV = [
-    { y: curVx1, label: 'v₁ₓ', series: 'primary' as const },
-    { y: curVx2, label: 'v₂ₓ', series: 'warm' as const },
-    { y: curVx3, label: 'v₃ₓ', series: 'success' as const },
+    { y: state.vel1.x / 1000, label: 'v₁ₓ', series: 'primary' as const },
+    { y: state.vel2.x / 1000, label: 'v₂ₓ', series: 'warm' as const },
+    { y: state.vel3.x / 1000, label: 'v₃ₓ', series: 'success' as const },
   ]
 
-  const yLimit = r * 1.25
-  const vLimit = v * 1.25
+  const legendItems: LegendEntry[] = [
+    { label: '星1', series: 'primary' },
+    { label: '星2', series: 'warm' },
+    { label: '星3', series: 'success' },
+  ]
 
   return (
     <div className="w-full h-full flex flex-col gap-3 p-3 bg-neutral-50/50 overflow-y-auto select-none">
-      {/* 上方图表区：位置投影 */}
-      <div className="flex-1 min-h-0 bg-white rounded-xl border border-neutral-200/50 p-2 shadow-sm">
-        <BasePhysicsChart
-          xDomain={[0, T]}
-          yDomain={[-yLimit, yLimit]}
-          xLabel="时间 t (s)"
-          yLabel="位置投影 x (m)"
-          title="三星空间位置投影 (x-t)"
-          yBaseline={0}
-          variant="mini"
-        >
-          <TripleCurvePaths r={r} omega={state.omega} T={T} />
-          <ChartCursor x={curT} dataPoints={dataPointsX} />
-        </BasePhysicsChart>
+      <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl border border-neutral-200/50 p-2 shadow-sm">
+        <SeriesLegend items={legendItems} />
+        <div className="flex-1 min-h-0">
+          <BasePhysicsChart
+            xDomain={[0, xLimit]}
+            yDomain={[-yLimit, yLimit]}
+            xLabel="时间 t (d)"
+            yLabel="x 投影 (×10¹⁰ m)"
+            title="质心系惯性轴位置投影 (x–t)"
+            yBaseline={0}
+            gridCount={{ x: 4, y: 4 }}
+            formatX={formatIntTick}
+            formatY={formatIntTick}
+            variant="mini"
+          >
+            <ChartLine points={x1Points} series="primary" />
+            <ChartLine points={x2Points} series="warm" />
+            <ChartLine points={x3Points} series="success" />
+            <ChartCursor x={state.curTDays} dataPoints={dataPointsX} />
+          </BasePhysicsChart>
+        </div>
       </div>
 
-      {/* 下方图表区：速度投影 */}
-      <div className="flex-1 min-h-0 bg-white rounded-xl border border-neutral-200/50 p-2 shadow-sm">
-        <BasePhysicsChart
-          xDomain={[0, T]}
-          yDomain={[-vLimit, vLimit]}
-          xLabel="时间 t (s)"
-          yLabel="速度投影 v_x (m/s)"
-          title="三星速度投影 (v_x-t)"
-          yBaseline={0}
-          variant="mini"
-        >
-          <TripleVelCurvePaths v={v} omega={state.omega} T={T} />
-          <ChartCursor x={curT} dataPoints={dataPointsV} />
-        </BasePhysicsChart>
+      <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl border border-neutral-200/50 p-2 shadow-sm">
+        <SeriesLegend items={legendItems} />
+        <div className="flex-1 min-h-0">
+          <BasePhysicsChart
+            xDomain={[0, xLimit]}
+            yDomain={[-vLimit, vLimit]}
+            xLabel="时间 t (d)"
+            yLabel="vₓ 投影 (km/s)"
+            title="质心系惯性轴速度投影 (vₓ–t)"
+            yBaseline={0}
+            gridCount={{ x: 4, y: 4 }}
+            formatX={formatIntTick}
+            formatY={formatIntTick}
+            variant="mini"
+          >
+            <ChartLine points={vx1Points} series="primary" />
+            <ChartLine points={vx2Points} series="warm" />
+            <ChartLine points={vx3Points} series="success" />
+            <ChartCursor x={state.curTDays} dataPoints={dataPointsV} />
+          </BasePhysicsChart>
+        </div>
       </div>
     </div>
   )

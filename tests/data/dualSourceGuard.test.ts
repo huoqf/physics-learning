@@ -10,12 +10,18 @@ import {
   TWO_CHARGE_SEPARATION_M,
   FARADAY_UNIFORM_B0,
   SATELLITE_LAUNCH_RADIUS_RATIO,
+  SOLAR_MASS,
+  SECONDS_PER_DAY,
+  MULTI_STAR_DISTANCE_UNIT_M,
+  GRAVITATIONAL_CONSTANT,
+  calculateBinaryStars,
   computeACGenerationState,
   computeRCTransient,
   rcTauFromParams,
   computeProjectileStrobe,
   computeCentripetalFit,
 } from '@/physics'
+import { formatScientific } from '@/utils/formatNumber'
 import { electromagnetismElectrostaticsAnimations } from '@/data/registries/electromagnetism-electrostatics'
 import { LAYOUT } from '@/features/mechanics/gravitation/satelliteLayout'
 import { orbitalPeriodFromMass } from '@/physics'
@@ -88,18 +94,29 @@ describe('A 组 · 中屏与看板共用同一套常量/函数', () => {
     expect(Math.abs(num(panel, '磁通量变化率'))).toBeGreaterThan(EPS)
   })
 
-  // ── #3 双星：模型引力 G=1 与向心力 F=m·v²/r 严格自洽，绝不能输出 0.00N ──────
-  it('双星：向心力与加速度使用模型归一化 G，与运动学量 m·v²/r 完全闭环', () => {
+  // ── #3 双星：真实 SI 万有引力 G 与向心力 m·ω²·r 完全闭环，绝不能输出 0.00N ──────
+  it('双星：向心力与加速度使用真实 G 与太阳质量单位，与运动学量 m·v²/r 完全闭环', () => {
     const L = 8.0
     const massRatio = 1.0
     const panel = buildPhysicsQuantities('anim-binary-stars', { mode: 0, L, massRatio }, 0)
-    // 默认 L=8, massRatio=1 -> m1=m2=5, r1=r2=4, F = 1.0*5*5/64 = 0.390625 N
-    // 旧代码乘真实 G (6.67e-11) 导致输出 0.00N
-    const fStr = String(value(panel, '各自向心力 F₁ / F₂'))
-    expect(fStr).toContain('0.39')
-    expect(fStr).not.toBe('均为 0.00')
-    const aStr = String(value(panel, '各自向心加速度 a₁ / a₂'))
-    expect(aStr).toContain('0.08m/s²') // a1 = 0.390625 / 5 = 0.078125 -> 0.08
+    const { m1, r1, v1, F, a1, T } = calculateBinaryStars(
+      L * MULTI_STAR_DISTANCE_UNIT_M,
+      massRatio,
+      GRAVITATIONAL_CONSTANT,
+      10 * SOLAR_MASS,
+    )
+    expect(F).toBeCloseTo((m1 * v1 * v1) / r1, -20)
+
+    const fStr = String(value(panel, '向心力 F₁ = F₂'))
+    expect(fStr).toBe(formatScientific(F, 2))
+    expect(fStr).toContain('× 10')
+    expect(fStr).not.toBe('0.00')
+
+    const aStr = String(value(panel, '向心加速度 a₁ / a₂'))
+    expect(aStr).toBe(`${a1.toFixed(3)} / ${a1.toFixed(3)}`)
+
+    const tStr = String(value(panel, '运行周期 T'))
+    expect(tStr).toBe((T / SECONDS_PER_DAY).toFixed(2))
   })
 
   // ── #7 多用电表：真实电路拓扑（定值电阻无源测得 0V/0mA，黑箱测得 6V/2.13mA） ──

@@ -23,6 +23,12 @@ export const EARTH_MASS = 5.97e24
 /** 地球半径 (m) */
 export const EARTH_RADIUS = 6.37e6
 
+/** 太阳质量 M☉ (kg) */
+export const SOLAR_MASS = 1.989e30
+
+/** 一天的秒数 (s/d) */
+export const SECONDS_PER_DAY = 86400
+
 /**
  * 卫星发射演示的入轨半径比 r₀ / R_地球。
  *

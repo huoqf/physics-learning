@@ -2,188 +2,166 @@ import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import {
-  calculateBinaryStars,
-  calculateTripleStars,
-  CELESTIAL_SIM_G,
-  BINARY_STARS_DEFAULT_TOTAL_MASS,
-  TRIPLE_STARS_DEFAULT_MASS,
+  evaluateBinaryStarsState,
+  evaluateTripleStarsState,
+  MULTI_STAR_DEFAULT_PARAMS,
+  MULTI_STAR_DISTANCE_UNIT_M,
+  MULTI_STAR_TIME_SCALE,
+  type CelestialVec2,
 } from '@/physics/celestial'
+import { SECONDS_PER_DAY, SOLAR_MASS } from '@/physics/constants'
 
 export type BinaryStarsState =
   | {
       mode: 0
+      /** 间距 L (×10¹⁰ m) */
       L: number
+      /** 间距 L (m) */
+      LMeters: number
       massRatio: number
+      /** 轨道周期 (s) */
+      T: number
+      /** 轨道周期 (d) */
+      TDays: number
+      /** 当前物理时刻 (s) */
+      tPhys: number
+      /** 当前物理时刻在一个周期内的相位对应天数 (d) */
+      curTDays: number
       r1: number
       r2: number
-      r1Px: number
-      r2Px: number
-      pos1: { x: number; y: number }
-      pos2: { x: number; y: number }
-      forceVec1: { x: number; y: number }
-      forceVec2: { x: number; y: number }
-      velVec1: { x: number; y: number }
-      velVec2: { x: number; y: number }
+      pos1: CelestialVec2
+      pos2: CelestialVec2
+      forceDir1: CelestialVec2
+      forceDir2: CelestialVec2
+      vel1: CelestialVec2
+      vel2: CelestialVec2
       v1: number
       v2: number
       omega: number
+      F: number
+      a1: number
+      a2: number
       m1: number
       m2: number
-      scale: number
+      m1Solar: number
+      m2Solar: number
     }
   | {
       mode: 1
+      /** 边长 L (×10¹⁰ m) */
       L: number
+      /** 边长 L (m) */
+      LMeters: number
       starMass: number
+      starMassSolar: number
+      /** 轨道周期 (s) */
+      T: number
+      /** 轨道周期 (d) */
+      TDays: number
+      /** 当前物理时刻 (s) */
+      tPhys: number
+      /** 当前物理时刻在一个周期内的相位对应天数 (d) */
+      curTDays: number
       r: number
-      rPx: number
-      pos1: { x: number; y: number }
-      pos2: { x: number; y: number }
-      pos3: { x: number; y: number }
-      velVec1: { x: number; y: number }
-      velVec2: { x: number; y: number }
-      velVec3: { x: number; y: number }
-      forceVec1: { x: number; y: number }
-      forceVec2: { x: number; y: number }
-      forceVec3: { x: number; y: number }
-      force12: { x: number; y: number }
-      force13: { x: number; y: number }
+      pos1: CelestialVec2
+      pos2: CelestialVec2
+      pos3: CelestialVec2
+      vel1: CelestialVec2
+      vel2: CelestialVec2
+      vel3: CelestialVec2
+      forceNetDir1: CelestialVec2
+      forceNetDir2: CelestialVec2
+      forceNetDir3: CelestialVec2
+      force12Dir: CelestialVec2
+      force13Dir: CelestialVec2
       v: number
       omega: number
-      scale: number
+      fNet: number
+      fPair: number
+      a: number
     }
 
-// 物理常数（与 physics/celestial 严格同源）
-const G = CELESTIAL_SIM_G
-const TOTAL_MASS = BINARY_STARS_DEFAULT_TOTAL_MASS
-const STAR_MASS = TRIPLE_STARS_DEFAULT_MASS // 三星模式下每颗星质量
-
-export function useBinaryStars(): BinaryStarsState | null {
+/**
+ * 双星 / 三星系统派生物理状态 Hook（纯物理量，不返回任何像素或缩放系数）。
+ */
+export function useBinaryStars(): BinaryStarsState {
   const { params, time } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
       time: s.time,
-    }))
+    })),
   )
 
-  const mode = params.mode ?? 0 // 0 = 双星, 1 = 三星
-  const L = params.L ?? 8.0
-  const massRatio = params.massRatio ?? 1.0
+  const mode = params.mode ?? MULTI_STAR_DEFAULT_PARAMS.mode
+  const L = params.L ?? MULTI_STAR_DEFAULT_PARAMS.L
+  const massRatio = params.massRatio ?? MULTI_STAR_DEFAULT_PARAMS.massRatio
 
-  // 1. 双星物理解算
-  const binaryData = useMemo(() => {
-    if (mode !== 0) return null
-    return calculateBinaryStars(L, massRatio, G, TOTAL_MASS)
-  }, [mode, L, massRatio])
+  return useMemo(() => {
+    const LMeters = L * MULTI_STAR_DISTANCE_UNIT_M
+    const tPhys = time * MULTI_STAR_TIME_SCALE
 
-  // 2. 三星物理解算
-  const tripleData = useMemo(() => {
-    if (mode !== 1) return null
-    return calculateTripleStars(L, G, STAR_MASS)
-  }, [mode, L])
-
-  // 3. 计算随时间旋转的坐标与矢量
-  const animationState = useMemo(() => {
-    // 物理米到像素的缩放比例：双星模式为防偏心轨道溢出保持 18，三星完全对称放大为 28
-    const scale = mode === 0 ? 18 : 28
-
-    if (mode === 0 && binaryData) {
-      const { m1, m2, r1, r2, v1, v2, omega } = binaryData
-      const theta = omega * time
-
-      const cos = Math.cos(theta)
-      const sin = Math.sin(theta)
-
-      // 物理坐标系（质心在原点，Y轴向上）
-      const pos1 = { x: r1 * cos, y: r1 * sin }
-      const pos2 = { x: -r2 * cos, y: -r2 * sin }
-
-      // 引力矢量（指向质心/原点，视觉上让两个引力箭头像素长度一致且稳定，设为 35 像素）
-      const forceVec1 = { x: -cos, y: -sin }
-      const forceVec2 = { x: cos, y: sin }
-
-      // 速度矢量（切线方向为 (-sin, cos)）
-      const velVec1 = { x: -sin * v1, y: cos * v1 }
-      const velVec2 = { x: sin * v2, y: -cos * v2 }
-
-      return {
-        mode: 0 as const,
-        L,
-        massRatio,
-        r1,
-        r2,
-        r1Px: r1 * scale,
-        r2Px: r2 * scale,
-        pos1,
-        pos2,
-        forceVec1,
-        forceVec2,
-        velVec1,
-        velVec2,
-        v1,
-        v2,
-        omega,
-        m1,
-        m2,
-        scale,
-      }
-    } else if (mode === 1 && tripleData) {
-      const { r, v, omega } = tripleData
-      const theta = omega * time
-
-      // 三颗星角度，互隔 120 度
-      const theta1 = theta
-      const theta2 = theta + (2 * Math.PI) / 3
-      const theta3 = theta + (4 * Math.PI) / 3
-
-      const pos1 = { x: r * Math.cos(theta1), y: r * Math.sin(theta1) }
-      const pos2 = { x: r * Math.cos(theta2), y: r * Math.sin(theta2) }
-      const pos3 = { x: r * Math.cos(theta3), y: r * Math.sin(theta3) }
-
-      // 线速度矢量 (切线方向)
-      const velVec1 = { x: -Math.sin(theta1) * v, y: Math.cos(theta1) * v }
-      const velVec2 = { x: -Math.sin(theta2) * v, y: Math.cos(theta2) * v }
-      const velVec3 = { x: -Math.sin(theta3) * v, y: Math.cos(theta3) * v }
-
-      // 受合力矢量 (指向质心)
-      const forceVec1 = { x: -Math.cos(theta1), y: -Math.sin(theta1) }
-      const forceVec2 = { x: -Math.cos(theta2), y: -Math.sin(theta2) }
-      const forceVec3 = { x: -Math.cos(theta3), y: -Math.sin(theta3) }
-
-      // 两星分引力方向
-      const dir12 = { x: pos2.x - pos1.x, y: pos2.y - pos1.y }
-      const len12 = Math.sqrt(dir12.x * dir12.x + dir12.y * dir12.y)
-      const force12 = { x: dir12.x / len12, y: dir12.y / len12 }
-
-      const dir13 = { x: pos3.x - pos1.x, y: pos3.y - pos1.y }
-      const len13 = Math.sqrt(dir13.x * dir13.x + dir13.y * dir13.y)
-      const force13 = { x: dir13.x / len13, y: dir13.y / len13 }
-
+    if (mode === 1) {
+      const s = evaluateTripleStarsState(LMeters, tPhys)
+      const curTPhys = s.T > 0 ? tPhys % s.T : 0
       return {
         mode: 1 as const,
         L,
-        starMass: STAR_MASS,
-        r,
-        rPx: r * scale,
-        pos1,
-        pos2,
-        pos3,
-        velVec1,
-        velVec2,
-        velVec3,
-        forceVec1,
-        forceVec2,
-        forceVec3,
-        force12,
-        force13,
-        v,
-        omega,
-        scale,
+        LMeters,
+        starMass: s.starMass,
+        starMassSolar: s.starMass / SOLAR_MASS,
+        T: s.T,
+        TDays: s.T / SECONDS_PER_DAY,
+        tPhys,
+        curTDays: curTPhys / SECONDS_PER_DAY,
+        r: s.r,
+        pos1: s.pos1,
+        pos2: s.pos2,
+        pos3: s.pos3,
+        vel1: s.vel1,
+        vel2: s.vel2,
+        vel3: s.vel3,
+        forceNetDir1: s.forceNetDir1,
+        forceNetDir2: s.forceNetDir2,
+        forceNetDir3: s.forceNetDir3,
+        force12Dir: s.force12Dir,
+        force13Dir: s.force13Dir,
+        v: s.v,
+        omega: s.omega,
+        fNet: s.fNet,
+        fPair: s.fPair,
+        a: s.a,
       }
     }
 
-    return null
-  }, [mode, time, binaryData, tripleData, L, massRatio])
-
-  return animationState
+    const s = evaluateBinaryStarsState(LMeters, massRatio, tPhys)
+    const curTPhys = s.T > 0 ? tPhys % s.T : 0
+    return {
+      mode: 0 as const,
+      L,
+      LMeters,
+      massRatio,
+      T: s.T,
+      TDays: s.T / SECONDS_PER_DAY,
+      tPhys,
+      curTDays: curTPhys / SECONDS_PER_DAY,
+      r1: s.r1,
+      r2: s.r2,
+      pos1: s.pos1,
+      pos2: s.pos2,
+      forceDir1: s.forceDir1,
+      forceDir2: s.forceDir2,
+      vel1: s.vel1,
+      vel2: s.vel2,
+      v1: s.v1,
+      v2: s.v2,
+      omega: s.omega,
+      F: s.F,
+      a1: s.a1,
+      a2: s.a2,
+      m1: s.m1,
+      m2: s.m2,
+      m1Solar: s.m1 / SOLAR_MASS,
+      m2Solar: s.m2 / SOLAR_MASS,
+    }
+  }, [mode, L, massRatio, time])
 }

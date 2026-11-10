@@ -1,4 +1,9 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
+import {
+  CELESTIAL_MULTI_STAR_RANGES,
+  MULTI_STAR_DEFAULT_PARAMS,
+  multiStarMaxAnimTime,
+} from '@/physics/celestial'
 import { defineAnimations } from '../defineAnimations'
 
 export const mechanicsCircularGravitationAnimations = defineAnimations({
@@ -218,11 +223,29 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     Component: lazy(() => import('@/features/mechanics/gravitation/BinaryStarsAnimation')),
     CenterExtra: lazy(() => import('@/features/mechanics/gravitation/BinaryStarsCenterExtra')),
     centerLayout: 'splitH',
-    controlsMode: 'timed',
-    defaultParams: { L: 8.0, massRatio: 1.0, mode: 0 } as const,
+    controlsMode: 'loop',
+    maxTime: multiStarMaxAnimTime,
+    defaultParams: MULTI_STAR_DEFAULT_PARAMS,
     paramMeta: [
-      { key: 'L', label: '天体总距离 L', min: 4.0, max: 10.0, step: 0.1, unit: 'm', resetOnChange: true },
-      { key: 'massRatio', label: '质量比 m₁:m₂', min: 0.2, max: 5.0, step: 0.1, unit: '', showIf: 'mode', showIfValue: 0 },
+      {
+        key: 'L',
+        label: '天体总距离 L',
+        min: CELESTIAL_MULTI_STAR_RANGES.L.min,
+        max: CELESTIAL_MULTI_STAR_RANGES.L.max,
+        step: 0.1,
+        unit: '×10¹⁰ m',
+        resetOnChange: true,
+      },
+      {
+        key: 'massRatio',
+        label: '质量比 m₁:m₂',
+        min: CELESTIAL_MULTI_STAR_RANGES.massRatio.min,
+        max: CELESTIAL_MULTI_STAR_RANGES.massRatio.max,
+        step: 0.1,
+        unit: '',
+        showIf: 'mode',
+        showIfValue: 0,
+      },
     ],
     controlMeta: [
       {
@@ -236,17 +259,41 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
           { value: 1, label: '三星系统' },
         ],
       },
+      {
+        type: 'preset',
+        label: '⚖ 等质量双星（m₁:m₂=1）',
+        description: '总质量10M☉、间距8×10¹⁰m，载入双星等半径对称圆周运动',
+        params: { mode: 0, L: 8.0, massRatio: 1.0 },
+        restartOnApply: true,
+        showIf: 'mode',
+        showIfValue: 0,
+      },
+      {
+        type: 'preset',
+        label: '🔭 不等质量双星（m₁:m₂=3）',
+        description: '保持L=8×10¹⁰m不变调大质量比，对比两星r、v、a、F的差异',
+        params: { mode: 0, L: 8.0, massRatio: 3.0 },
+        restartOnApply: true,
+        showIf: 'mode',
+        showIfValue: 0,
+      },
+      {
+        type: 'preset',
+        label: '🔺 等边三星（L=8×10¹⁰m）',
+        description: '三颗5M☉恒星构成等边三角形绕质心运动，聚焦星1分引力合成',
+        params: { mode: 1, L: 8.0 },
+        restartOnApply: true,
+        showIf: 'mode',
+        showIfValue: 1,
+      },
       { type: 'storeToggle', label: '显示受力与速度矢量', storeKey: 'toggleVectors', stateKey: 'showVectors', group: '显示辅助' },
-      // 原「教学提示」双星/三星两条已删除：L 与 r 的混淆、ω/T 相等、半径与质量成反比、
-      // 合力指向质心——这些右屏 gaokaoPoints 已逐条给出（quantities/gravitation.ts 双星 3 条 / 三星 2 条）。
-      // 「图表解读」保留但只做读图引导：投影相位关系是右屏没有的图表素养，属于"看哪里"。
       {
         type: 'tip', group: '图表解读', showIf: 'mode', showIfValue: 0,
-        content: '看两条位移波形的相位：始终一正一负相差 180°，振幅与质量成反比——说明连线恒过质心。',
+        content: '先固定 L 改质量比 m₁:m₂，对比两星半径、线速度与波形振幅；再固定质量比改 L，观察周期 T 如何变化。',
       },
       {
         type: 'tip', group: '图表解读', showIf: 'mode', showIfValue: 1,
-        content: '看三条波形的相位互差 120°、幅值完全一致；位移到极值时对应的速度刚过零。',
+        content: '盯住星 1 的两道虚线分引力与合力菱形，对照三条位置波形与速度波形的相位关系。',
       },
     ],
   },
