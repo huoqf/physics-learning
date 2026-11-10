@@ -1,45 +1,25 @@
 /**
- * LC 振荡电路（无阻尼理想回路）— 纯物理计算
+ * LC / 弱阻尼 RLC 振荡电路 — 纯物理计算。
  *
- * 教材依据：人教版选择性必修第二册 第4章「电磁振荡与电磁波」。
+ * 教材依据：人教版选择性必修第二册第 4 章「电磁振荡与电磁波」。
  *
- * ── 符号约定（重要，勿改）────────────────────────────────────────────────
- * 本模块取 **i(t) = dq/dt**，其中 q(t) 为电容器上极板（带正电侧）的电荷量。
- * 由此：
- *   q(t) = Q₀·cos(ωt)
- *   i(t) = dq/dt = −ωQ₀·sin(ωt)
- * 即「电荷最大时电流为零，电荷为零时电流最大」。
+ * ── 唯一符号约定 ─────────────────────────────────────────────────────────
+ * q 为电容器上极板电荷量，逆时针放电为电流正方向（自上极板 A 流出经左回路电感回下极板 B），因此 **i = -dq/dt**。
+ * 初始条件为 q(0) = Q₀、i(0) = 0。理想回路（R = 0）中：
+ *   q(t) = Q₀ cos(ωt)
+ *   i(t) = ωQ₀ sin(ωt)
+ * 场景箭头、螺线管、图象与右屏都直接消费这里的 i，禁止渲染层再取反。
  *
- * ⚠️ 真实回路中「沿导线流动的电流」方向与上述符号存在约定差异（取决于电流
- * 正方向的取法）。教学动画只需保证 q 与 i 保持 90° 相位差、且极值时刻互补，
- * 因此本模块统一采用 i = dq/dt，避免出现「同一物理量两种符号」的分叉。
+ * ── 弱阻尼模型（`damped: true`）─────────────────────────────────────────
+ * 高中只要求定性理解振幅衰减与能量耗散，但程序不能用破坏 i = -dq/dt
+ * 的“理想解乘同一包络”来冒充真实状态。本模块采用欠阻尼串联 RLC 的闭式解：
+ *   β = R/(2L)，ω_d = √(ω₀² − β²)
+ *   q = Q₀e^(−βt)[cos(ω_dt) + (β/ω_d)sin(ω_dt)]
+ *   i = (Q₀ω₀²/ω_d)e^(−βt)sin(ω_dt)
+ * UI 只呈现高中要求的定性结论，不要求学生推导上述解析式。
  *
- * ── 理想化条件（默认，`damped` 未开启）────────────────────────────────────
- * 无阻尼（回路电阻 R = 0），故为等幅振荡，总能量
- *   E总 = Ee + Em = Q₀²/(2C) = ½LI₀²  为常数。
- *
- * ── 阻尼的定性约定（`damped: true`）──────────────────────────────────────
- * 实际回路存在电阻 R，能量逐渐损耗为内能，形成振幅不断减小的阻尼振荡。
- * 高中只要求**定性**判断"振幅逐次减小"，不要求求解二阶 RLC 微分方程
- * （那需要二阶常系数线性微分方程，超出高中要求），因此本模块不作定量建模，
- * 只把**振幅**按指数包络衰减：
- *   q(t) = Q₀·cos(ωt)·e^(−t/τ)
- *   i(t) = −ωQ₀·sin(ωt)·e^(−t/τ)
- * 由此 Ee + Em = (Q₀²/2C)·e^(−2t/τ) —— 总能量单调减少（能量 ∝ 振幅²，
- * 比振幅衰减得更快）。τ 的定义唯一收口在 `lcDampingAmplitude`，
- * 周期仍取理想值 T = 2π√(LC)。
- *
- * ⚠️ 开启阻尼后 q 与 i 都是"理想解析解乘以同一个振幅包络"，
- * 因此严格关系 i = dq/dt **不再成立**（真实 RLC 的解在 i 上还含 (1/τ) 的
- * 修正项）。这里刻意保留"q 与 i 相位差 90°、电荷最大时电流为零"这一
- * **高考核心判据**，画法与教材阻尼振荡图象一致；
- * 但禁止据此推导 i 与 q 的导数关系（可参见测试中对应的边界断言）。
- *
- * ── 单一真源约定（重要，勿改）─────────────────────────────────────────────
- * "阻尼如何作用"只有一处定义：`lcDampingAmplitude`。
- * 画布、归一化波形、能量柱状图、右屏物理量都必须通过本模块的函数取值，
- * **禁止任何消费点自行写 `Math.exp(-t / tau)`**，否则会出现
- * "曲线画了衰减、数值却仍是理想值"的双真源不一致。
+ * 理想 LC 的固有周期仍记为 T = 2π√(LC)；开启阻尼后不得再把 T/4、T/2
+ * 等理想相位点标成“电荷为零 / 电流最大”。电磁能减少量等于回路内能增加量。
  *
  * @module physics/lcOscillation
  */
@@ -72,7 +52,10 @@ export const LC_DEFAULT_PARAMS: Readonly<Required<Omit<LCParams, 'damped'>>> = {
   Q0: 1,
 } as const
 
-/** LC 回路的固有量（与时间无关，**不受 `damped` 影响**） */
+/** 弱阻尼演示的振幅时间常数：τ = 1.5T，保持既有演示节奏。 */
+export const DAMPING_TAU_PERIODS = 1.5
+
+/** LC 回路的固有量与阻尼参数（与时间无关） */
 export interface LCConstants {
   /** 固有角频率 ω = 1/√(LC) (rad/s) */
   omega: number
@@ -80,10 +63,18 @@ export interface LCConstants {
   T: number
   /** 振荡频率 f = 1/T (Hz) */
   f: number
+  /** 能量变化周期 T_E = T/2 (s)：一个振荡周期内电场能与磁场能各自完成两次完整转化 */
+  energyPeriod: number
   /** 总能量 E总 = Q₀²/(2C) (J)：**t = 0 时**的总能量，有阻尼时随时间减少 */
   eTotal: number
-  /** 电流峰值 I₀ = ωQ₀ (A)：**理想**峰值，有阻尼时实际峰值乘以振幅系数 */
+  /** 理想电流峰值参考 I_ref = ω₀Q₀ (A)；阻尼模式仅作归一化参考 */
   iMax: number
+  /** 阻尼系数 β = R/(2L) (s⁻¹)，理想模式为 0 */
+  beta: number
+  /** 弱阻尼角频率 ω_d = √(ω₀²−β²) (rad/s)，理想模式等于 ω₀ */
+  omegaDamped: number
+  /** 与当前弱阻尼演示等效的回路电阻 R (Ω)，理想模式为 0 */
+  resistance: number
 }
 
 /** 采样点：某时刻的电荷与电流 */
@@ -109,12 +100,18 @@ export function calculateLCConstants(params: LCParams): LCConstants {
 
   const omega = 1 / Math.sqrt(L * C)
   const T = (2 * Math.PI) / omega
+  const beta = params.damped ? 1 / (DAMPING_TAU_PERIODS * T) : 0
+  const omegaDamped = Math.sqrt(Math.max(0, omega * omega - beta * beta))
   return {
     omega,
     T,
     f: calculateLCFrequency(L, C),
+    energyPeriod: T / 2,
     eTotal: (Q0 * Q0) / (2 * C),
     iMax: omega * Math.abs(Q0),
+    beta,
+    omegaDamped,
+    resistance: 2 * L * beta,
   }
 }
 
@@ -134,35 +131,129 @@ export const LC_ENERGY_EPSILON = 1e-14
 export const LC_DISPLAY_ENERGY_EPSILON = 1e-4
 
 /**
- * 电容器电荷量 q(t) = Q₀·cos(ωt)。
+ * 波形图固定横向时间窗 (s)。
  *
- * `params.damped` 为真时再乘上阻尼振幅系数（见模块头「阻尼的定性约定」）：
- * q(t) = Q₀·cos(ωt)·e^(−t/τ)。
+ * ⚠️ **必须是与参数无关的常量，禁止改回 `2T`。**
+ * 历史上横轴取 `[0, 2T]`，于是无论 L、C 怎么调，曲线永远只画两个周期、
+ * 永远铺满整块画布 —— "改变 L 后周期变长"这个本页最核心的结论在图上**恒等于零变化**。
+ * 锁定窗口后，同样 6 s 内画出的周期数随 L、C 变化，周期差异直接可读。
  *
- * @param params LC 回路参数（含可选的 damped 开关）
- * @param t 时刻 (s)
+ * 取 6 s 的理由：默认参数 T ≈ 2.51 s，两个周期 ≈ 5.03 s 恰好铺满窗口，
+ * 改动前后默认画面的观感一致（不会突然出现半屏空白）；
+ * 周期更长时窗口顺时间滚动（只显示最近 6 s），周期更短时窗口内周期数增多。
+ * 超出窗口由消费方滚动 `xDomain`，而不是放大窗口。
+ */
+export const LC_CURVE_TIME_WINDOW = 6
+
+/**
+ * 波形图固定纵向半量程 (C)。
+ *
+ * ⚠️ **必须是与参数无关的常量，禁止改回"除以当前 Q₀"。**
+ * 历史上纵轴画 `q / Q₀`，于是 Q₀ 从 0.1 C 拉到 5 C 曲线形状一字不变（振幅恒为满幅），
+ * 学生看不出 Q₀ 只改振幅、不改周期 —— 这正是"归一化抹掉参数效果"的典型错误。
+ *
+ * 取 Q₀ 滑块上限 5 C 再留 10% 余量：Q₀ 的调整直接表现为曲线上下的涨落。
+ */
+export const LC_CURVE_CHARGE_SPAN = 5.5
+
+/**
+ * 电容器电荷量。理想模式为 Q₀cos(ωt)；弱阻尼模式使用满足
+ * q(0)=Q₀、i(0)=0 的欠阻尼解析解。
  */
 export function lcChargeAt(params: LCParams, t: number): number {
-  const { omega, T } = calculateLCConstants(params)
-  const amp = params.damped ? lcDampingAmplitude(t, T) : 1
-  const raw = params.Q0 * Math.cos(omega * t) * amp
+  const { omega, beta, omegaDamped } = calculateLCConstants(params)
+  const raw = params.damped && omegaDamped > 0
+    ? params.Q0 * Math.exp(-beta * t) * (
+        Math.cos(omegaDamped * t) + (beta / omegaDamped) * Math.sin(omegaDamped * t)
+      )
+    : params.Q0 * Math.cos(omega * t)
   return Math.abs(raw) < LC_PHYSICS_EPSILON ? 0 : raw
 }
 
 /**
- * 回路电流 i(t) = −ωQ₀·sin(ωt)。
- *
- * 符号约定见模块头注释（理想情况下 i = dq/dt）。
- * `params.damped` 为真时同样乘以阻尼振幅系数。
- *
- * @param params LC 回路参数（含可选的 damped 开关）
- * @param t 时刻 (s)
+ * 回路电流，统一取逆时针放电为正方向：i = -dq/dt。
+ * 理想模式为 ωQ₀sin(ωt)，弱阻尼模式与 lcChargeAt 严格互为导数。
  */
 export function lcCurrentAt(params: LCParams, t: number): number {
-  const { omega, T } = calculateLCConstants(params)
-  const amp = params.damped ? lcDampingAmplitude(t, T) : 1
-  const raw = -omega * params.Q0 * Math.sin(omega * t) * amp
+  const { omega, beta, omegaDamped } = calculateLCConstants(params)
+  const raw = params.damped && omegaDamped > 0
+    ? (params.Q0 * omega * omega / omegaDamped) * Math.exp(-beta * t) * Math.sin(omegaDamped * t)
+    : omega * params.Q0 * Math.sin(omega * t)
   return Math.abs(raw) < LC_PHYSICS_EPSILON ? 0 : raw
+}
+
+/**
+ * 电容器两极板间瞬时电压 u_C(t) = q(t) / C (V)。
+ * 规定上极板 A 电势高于下极板 B 时为正。
+ */
+export function lcVoltageAt(params: LCParams, t: number): number {
+  const q = lcChargeAt(params, t)
+  const raw = q / params.C
+  return Math.abs(raw) < LC_PHYSICS_EPSILON ? 0 : raw
+}
+
+/**
+ * 回路电流瞬时变化率 di/dt (A/s)。
+ *
+ * 严格满足串联 RLC 回路方程 L·(di/dt) + i·R = q/C（理想模式 R = 0，故 di/dt = q/(LC) = ω²q）。
+ * 与 `lcCurrentAt` 严格互为导数，直接呈现“电流为零时变化率最大、电流最大时变化率为零”的高考核心结论。
+ */
+export function lcCurrentRateAt(params: LCParams, t: number): number {
+  const { omega, beta, omegaDamped } = calculateLCConstants(params)
+  const raw = params.damped && omegaDamped > 0
+    ? (params.Q0 * omega * omega / omegaDamped) * Math.exp(-beta * t) * (
+        omegaDamped * Math.cos(omegaDamped * t) - beta * Math.sin(omegaDamped * t)
+      )
+    : omega * omega * params.Q0 * Math.cos(omega * t)
+  return Math.abs(raw) < LC_PHYSICS_EPSILON ? 0 : raw
+}
+
+/**
+ * 电感线圈瞬时自感电动势大小 |e_L(t)| = L · |di/dt| (V)。
+ * 理想 LC 回路中任意时刻 |e_L| = |u_C|。
+ */
+export function lcInductorEmfMagnitudeAt(params: LCParams, t: number): number {
+  const rate = lcCurrentRateAt(params, t)
+  const raw = params.L * Math.abs(rate)
+  return raw < LC_PHYSICS_EPSILON ? 0 : raw
+}
+
+/**
+ * 判定当前时刻 LC 回路所处的充/放电阶段（基于 d(q²)/dt = -2qi 的严格物理判据，理想与阻尼均适用）。
+ */
+export function lcOscillationStage(
+  params: LCParams,
+  t: number,
+): { stage: string; energyFlow: string } {
+  const q = lcChargeAt(params, t)
+  const i = lcCurrentAt(params, t)
+  const { iMax } = calculateLCConstants(params)
+  const qThresh = Math.max(LC_PHYSICS_EPSILON, Math.abs(params.Q0) * 1e-3)
+  const iThresh = Math.max(LC_PHYSICS_EPSILON, iMax * 1e-3)
+
+  if (Math.abs(i) < iThresh) {
+    return {
+      stage: q >= 0 ? '正向电荷峰值 (i=0)' : '反向电荷峰值 (i=0)',
+      energyFlow: params.damped ? '磁场能归零·变化率极值' : '全为电场能 (Em=0)',
+    }
+  }
+  if (Math.abs(q) < qThresh) {
+    return {
+      stage: i > 0 ? '逆时针电流峰值 (q=0)' : '顺时针电流峰值 (q=0)',
+      energyFlow: params.damped ? '电场能归零·|di/dt|极小' : '全为磁场能 (Ee=0)',
+    }
+  }
+  // d(q²)/dt = -2qi：q 与 i 同号时 |q| 减小 -> 放电；异号时 |q| 增大 -> 充电
+  if (q * i > 0) {
+    return {
+      stage: q > 0 ? '正向放电 (q↓, i↑)' : '反向放电 (|q|↓, |i|↑)',
+      energyFlow: '电场能 → 磁场能',
+    }
+  }
+  return {
+    stage: q < 0 ? '反向充电 (|q|↑, i↓)' : '正向充电 (q↑, |i|↓)',
+    energyFlow: '磁场能 → 电场能',
+  }
 }
 
 /**
@@ -195,9 +286,8 @@ export function lcMagneticEnergy(i: number, L: number): number {
  * 返回的数组长度固定为 `sampleCount + 1`（含首尾），便于直接作为
  * RelationChart / TimeSeriesChart 的完整曲线数据。
  *
- * 与 `lcChargeAt` / `lcCurrentAt` 完全同源：`params.damped` 为真时
- * 逐点乘上同一个 `lcDampingAmplitude`，因此**曲线与被采样的瞬时值
- * 永远一致**（消除"曲线衰减、读数不衰减"的双真源）。
+ * 每个采样点都直接调用 `lcChargeAt` / `lcCurrentAt`，因此曲线、
+ * 场景与右屏瞬时值始终一致。
  *
  * @param params LC 回路参数（含可选的 damped 开关）
  * @param sampleCount 采样区间数（> 0）
@@ -209,11 +299,42 @@ export function sampleLCWaveform(
   cycles = 1,
 ): LCSample[] {
   const { T } = calculateLCConstants(params)
-  const n = Math.max(1, Math.floor(sampleCount))
   const tEnd = cycles * T
+  return sampleLCWaveformRange(params, 0, tEnd, sampleCount)
+}
+
+/**
+ * 在指定时间区间 [tStart, tEnd] 上均匀采样 q(t) 与 i(t)。
+ *
+ * 用于固定时间窗波形展示：确保在 L、C 极大时（周期很长），当前可见时间窗内
+ * 依然保持完整采样密度，避免“整段定点数采样”在局部窗口只剩寥寥数点。
+ *
+ * @param params LC 回路参数（含可选的 damped 开关）
+ * @param tStart 起始时刻 (s)
+ * @param tEnd 结束时刻 (s)
+ * @param sampleCount 采样区间数（> 0）
+ */
+export function sampleLCWaveformRange(
+  params: LCParams,
+  tStart: number,
+  tEnd: number,
+  sampleCount: number,
+): LCSample[] {
+  const safeStart = Math.max(0, tStart)
+  if (!(tEnd > safeStart)) {
+    return [
+      {
+        t: safeStart,
+        q: lcChargeAt(params, safeStart),
+        i: lcCurrentAt(params, safeStart),
+      },
+    ]
+  }
+  const n = Math.max(1, Math.floor(sampleCount))
+  const span = tEnd - safeStart
   const out: LCSample[] = []
   for (let k = 0; k <= n; k++) {
-    const t = (tEnd * k) / n
+    const t = safeStart + (span * k) / n
     out.push({
       t,
       q: lcChargeAt(params, t),
@@ -224,34 +345,10 @@ export function sampleLCWaveform(
 }
 
 /**
- * 阻尼振荡的定性时间常数，以周期为单位：τ = 1.5T。
+ * 弱阻尼振幅参考包络 e^(−t/τ)，仅用于图象叠加。
  *
- * 取 1.5 个周期是为了在 2 个周期的演示窗口内肉眼可见衰减
- * （t = 2T 时振幅约为初始值的 26%，总能量约为 7%）。
- */
-export const DAMPING_TAU_PERIODS = 1.5
-
-/**
- * 阻尼振幅系数（**全链路唯一入口**）。
- *
- * ⚠️ 这是整个项目里唯一一处"阻尼如何作用"的定义：
- * 画布、归一化波形、能量柱状图、右屏物理量都只能经由
- * `lcChargeAt` / `lcCurrentAt` / `sampleLCWaveform`（它们内部调用本函数）
- * 取值，**禁止任何消费点自行写 `Math.exp(-t / tau)`**——
- * 否则会出现"曲线画了衰减、读数却仍是理想值"的双真源不一致。
- *
- * 作用方式：把 e^(−t/τ) 乘在理想解析解的**振幅**上，
- *   q(t) = Q₀·cos(ωt)·e^(−t/τ)
- *   i(t) = −ωQ₀·sin(ωt)·e^(−t/τ)
- * 这是高中要求的"定性"处理（真实 RLC 欠阻尼解的幅值与相位还含 R 的修正项，
- * 不作要求），因此**不求解二阶 RLC 微分方程**。
- *
- * 由此得到的推论与定性结论一致：
- *   Ee + Em = (Q₀²/2C)·e^(−2t/τ) —— 总能量单调减少，即转化为内能。
- *
- * @param t 时刻 (s)，负值夹紧到 0（不回弹放大）
- * @param period 回路固有周期 T (s)，需 > 0；不合法时返回 1（退化为理想振荡）
- * @returns 振幅系数，取值 (0, 1]
+ * 它不是独立的物理状态入口：q、i 必须由 `lcChargeAt/lcCurrentAt`
+ * 的欠阻尼解析解计算，禁止再把本包络直接乘到理想正弦解上。
  */
 export function lcDampingAmplitude(t: number, period: number): number {
   const tau = DAMPING_TAU_PERIODS * period

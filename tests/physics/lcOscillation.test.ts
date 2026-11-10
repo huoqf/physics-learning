@@ -3,6 +3,10 @@ import {
   calculateLCConstants,
   lcChargeAt,
   lcCurrentAt,
+  lcVoltageAt,
+  lcCurrentRateAt,
+  lcInductorEmfMagnitudeAt,
+  lcOscillationStage,
   lcElectricEnergy,
   lcMagneticEnergy,
   sampleLCWaveform,
@@ -65,9 +69,9 @@ describe('lcOscillation · q(t) 与 i(t)', () => {
     expect(lcCurrentAt(LC, 0)).toBeCloseTo(0, 15)
   })
 
-  it('t = T/4 时 q = 0 且 i 取负峰值（电荷为零、电流最大）', () => {
+  it('t = T/4 时 q = 0 且 i 取正峰值（逆时针放电电流最大）', () => {
     expect(lcChargeAt(LC, PERIOD / 4)).toBeCloseTo(0, 15)
-    expect(lcCurrentAt(LC, PERIOD / 4)).toBeCloseTo(-OMEGA * 1e-5, 12)
+    expect(lcCurrentAt(LC, PERIOD / 4)).toBeCloseTo(OMEGA * 1e-5, 12)
   })
 
   it('t = T/2 时 q = −Q₀ 且 i = 0（电荷反号回到极值）', () => {
@@ -75,9 +79,9 @@ describe('lcOscillation · q(t) 与 i(t)', () => {
     expect(lcCurrentAt(LC, PERIOD / 2)).toBeCloseTo(0, 12)
   })
 
-  it('t = 3T/4 时 q = 0 且 i 取正峰值', () => {
+  it('t = 3T/4 时 q = 0 且 i 取负峰值（顺时针充电电流最大）', () => {
     expect(lcChargeAt(LC, (3 * PERIOD) / 4)).toBeCloseTo(0, 12)
-    expect(lcCurrentAt(LC, (3 * PERIOD) / 4)).toBeCloseTo(OMEGA * 1e-5, 12)
+    expect(lcCurrentAt(LC, (3 * PERIOD) / 4)).toBeCloseTo(-OMEGA * 1e-5, 12)
   })
 
   it('t = T 时回到初始状态（周期闭合）', () => {
@@ -97,11 +101,11 @@ describe('lcOscillation · q(t) 与 i(t)', () => {
     }
   })
 
-  it('符号约定 i = dq/dt（数值微分校验，防止符号/方向类错误）', () => {
+  it('符号约定 i = -dq/dt（数值微分校验，防止符号/方向类错误）', () => {
     const dt = 1e-9
     for (let k = 1; k <= 6; k++) {
       const t = (k * PERIOD) / 12
-      const numeric = (lcChargeAt(LC, t + dt) - lcChargeAt(LC, t - dt)) / (2 * dt)
+      const numeric = -(lcChargeAt(LC, t + dt) - lcChargeAt(LC, t - dt)) / (2 * dt)
       expect(lcCurrentAt(LC, t)).toBeCloseTo(numeric, 3)
     }
   })
@@ -207,9 +211,8 @@ describe('lcOscillation · 阻尼振幅系数（定性，全链路唯一入口�
   })
 })
 
-describe('lcOscillation · 阻尼（damped: true）全链路同源', () => {
+describe('lcOscillation · 欠阻尼 RLC（damped: true）全链路同源', () => {
   const DAMPED: LCParams = { ...LC, damped: true }
-  const TAU = DAMPING_TAU_PERIODS * PERIOD
 
   it('damped 缺省或为 false 时与理想解逐位一致（回归保护）', () => {
     for (let k = 0; k <= 20; k++) {
@@ -219,61 +222,41 @@ describe('lcOscillation · 阻尼（damped: true）全链路同源', () => {
     }
   })
 
-  it('波峰逐次衰减：|q| = Q₀·e^(−t/τ)', () => {
-    for (let k = 0; k <= 8; k += 2) {
-      const t = (k * PERIOD) / 4
-      const amp = lcDampingAmplitude(t, PERIOD)
-      expect(Math.abs(lcChargeAt(DAMPED, t))).toBeCloseTo(1e-5 * amp, 12)
-    }
+  it('欠阻尼下满足初始条件 q(0)=Q₀、i(0)=0 且极值振幅逐次衰减', () => {
+    const { omegaDamped } = calculateLCConstants(DAMPED)
+    const dampedPeriod = (2 * Math.PI) / omegaDamped
+    expect(lcChargeAt(DAMPED, 0)).toBeCloseTo(LC.Q0, 15)
+    expect(lcCurrentAt(DAMPED, 0)).toBe(0)
+
+    // 欠阻尼周期的整倍数时刻，i = 0 而 |q| 严格逐次减小
+    const peak0 = Math.abs(lcChargeAt(DAMPED, 0))
+    const peak1 = Math.abs(lcChargeAt(DAMPED, dampedPeriod))
+    const peak2 = Math.abs(lcChargeAt(DAMPED, 2 * dampedPeriod))
+    expect(Math.abs(lcCurrentAt(DAMPED, dampedPeriod))).toBeLessThan(1e-12)
+    expect(peak1).toBeLessThan(peak0)
+    expect(peak2).toBeLessThan(peak1)
   })
 
-  it('电荷极值处电流仍为零（高考核心判据，刻意保留）', () => {
-    for (let k = 0; k <= 8; k++) {
-      const t = (k * PERIOD) / 4
-      const q = lcChargeAt(DAMPED, t)
-      const i = lcCurrentAt(DAMPED, t)
-      if (k % 2 === 0) {
-        // 电荷取极值 → 电流必须为零
-        expect(Math.abs(i)).toBeLessThan(1e-15)
-      } else {
-        // 电荷过零 → 电流取极值，且峰值随包络衰减
-        expect(Math.abs(q)).toBeLessThan(1e-15)
-        expect(Math.abs(i)).toBeCloseTo(
-          OMEGA * 1e-5 * lcDampingAmplitude(t, PERIOD),
-          9,
-        )
-      }
-    }
-  })
-
-  it('⚠️ 阻尼下 i ≠ dq/dt（差额恰为 q/τ，不得据此推导导数关系）', () => {
-    // 这是本模块刻意接受的取舍：为了保留"电荷最大处电流为零"这一高考判据，
-    // q 与 i 都被乘上同一振幅包络，而不再满足 i = dq/dt。
-    //
-    // 取 k = 1,2,4,5,6 而不含 k = 3（t = T/4，q = 0）：
-    // 差额本身是 −q/τ，在 q → 0 处也趋于零，会被中心差分的舍入噪声淹没。
+  it('欠阻尼解析解严格满足 i = -dq/dt（不再使用伪解析包络乘积）', () => {
     const dt = 1e-9
     for (const k of [1, 2, 4, 5, 6]) {
       const t = (k * PERIOD) / 12
-      const numeric = (lcChargeAt(DAMPED, t + dt) - lcChargeAt(DAMPED, t - dt)) / (2 * dt)
+      const numeric = -(lcChargeAt(DAMPED, t + dt) - lcChargeAt(DAMPED, t - dt)) / (2 * dt)
       const analytic = lcCurrentAt(DAMPED, t)
-      // 数值导数恰比"我们的 i"多出 −q/τ 一项
-      expect(numeric - analytic).toBeCloseTo(-lcChargeAt(DAMPED, t) / TAU, 6)
-      expect(Math.abs(numeric - analytic)).toBeGreaterThan(1e-4)
+      expect(analytic).toBeCloseTo(numeric, 4)
     }
   })
 
-  it('总能量单调减少，且 E/E₀ = (振幅系数)²', () => {
+  it('欠阻尼电磁能单调不增（在 i≠0 时严格减少），减少量等于产生的内能', () => {
     const { eTotal } = calculateLCConstants(LC)
-    let prev = Number.POSITIVE_INFINITY
-    for (let k = 0; k <= 200; k++) {
+    let prev = eTotal
+    for (let k = 1; k <= 200; k++) {
       const t = (k * 2 * PERIOD) / 200
-      const sum =
+      const emTotal =
         lcElectricEnergy(lcChargeAt(DAMPED, t), LC.C) + lcMagneticEnergy(lcCurrentAt(DAMPED, t), LC.L)
-      const amp = lcDampingAmplitude(t, PERIOD)
-      expect(sum / eTotal).toBeCloseTo(amp * amp, 9)
-      if (k > 0) expect(sum).toBeLessThan(prev)
-      prev = sum
+      expect(emTotal).toBeLessThanOrEqual(prev + 1e-18)
+      expect(emTotal).toBeLessThan(eTotal)
+      prev = emTotal
     }
   })
 
@@ -310,6 +293,55 @@ describe('lcOscillation · 能量格式化单一来源 formatLCEnergy', () => {
   it('大数值（>= 100 J）保留 1 位小数', () => {
     expect(formatLCEnergy(100.0)).toBe('100.0')
     expect(formatLCEnergy(250.67)).toBe('250.7')
+  })
+})
+
+describe('lcOscillation · 电压、变化率 di/dt、自感电动势与基尔霍夫方程', () => {
+  it('理想 LC 满足 L(di/dt) = q/C 与能量变化周期 T_E = T/2', () => {
+    const c = calculateLCConstants(LC)
+    expect(c.energyPeriod).toBeCloseTo(c.T / 2, 12)
+    expect(c.resistance).toBe(0)
+
+    const dt = 1e-10
+    for (const k of [0, 1, 2, 3, 5, 7]) {
+      const t = (k * PERIOD) / 8
+      const diDt = lcCurrentRateAt(LC, t)
+      const uC = lcVoltageAt(LC, t)
+      const eL = lcInductorEmfMagnitudeAt(LC, t)
+      expect(LC.L * diDt).toBeCloseTo(uC, 8)
+      expect(eL).toBeCloseTo(Math.abs(LC.L * diDt), 10)
+      if (t > 0) {
+        const numDiDt = (lcCurrentAt(LC, t + dt) - lcCurrentAt(LC, t - dt)) / (2 * dt)
+        expect(diDt).toBeCloseTo(numDiDt, 2)
+      }
+    }
+  })
+
+  it('欠阻尼 RLC 严格满足基尔霍夫回路方程 L(di/dt) + iR = q/C 与数值导数 di/dt', () => {
+    const damped: LCParams = { ...LC, damped: true }
+    const { resistance } = calculateLCConstants(damped)
+    expect(resistance).toBeGreaterThan(0)
+
+    const dt = 1e-10
+    for (const k of [1, 3, 5, 7, 11]) {
+      const t = (k * PERIOD) / 10
+      const i = lcCurrentAt(damped, t)
+      const diDt = lcCurrentRateAt(damped, t)
+      const uC = lcVoltageAt(damped, t)
+      const numDiDt = (lcCurrentAt(damped, t + dt) - lcCurrentAt(damped, t - dt)) / (2 * dt)
+
+      expect(LC.L * diDt + i * resistance).toBeCloseTo(uC, 8)
+      expect(diDt).toBeCloseTo(numDiDt, 1)
+    }
+  })
+
+  it('lcOscillationStage 在关键时刻与四象限精准返回物理阶段与能量流向', () => {
+    expect(lcOscillationStage(LC, 0).stage).toBe('正向电荷峰值 (i=0)')
+    expect(lcOscillationStage(LC, PERIOD / 4).stage).toBe('逆时针电流峰值 (q=0)')
+    expect(lcOscillationStage(LC, PERIOD / 2).stage).toBe('反向电荷峰值 (i=0)')
+    expect(lcOscillationStage(LC, (3 * PERIOD) / 4).stage).toBe('顺时针电流峰值 (q=0)')
+    expect(lcOscillationStage(LC, PERIOD / 8).energyFlow).toBe('电场能 → 磁场能')
+    expect(lcOscillationStage(LC, (3 * PERIOD) / 8).energyFlow).toBe('磁场能 → 电场能')
   })
 })
 

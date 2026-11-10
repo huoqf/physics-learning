@@ -1,7 +1,6 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
 import { calculateLCConstants, calculateCapacitanceWithGap, LC_DEFAULT_PARAMS } from '@/physics'
-import { alignCriticalTime } from '@/utils/criticalTime'
 import type { ControlMeta, ParamMeta } from '../types'
 
 /**
@@ -37,24 +36,28 @@ function lcMaxTime(params: Record<string, number>): number {
 /**
  * 4 个相位关键点，供进度条标记与一键吸附定格。
  *
- * 这些是**读数点**（看 t=T/4 时 i 最大、q=0），不是相变点也不是离场点，
- * 所以对齐到播放条刻度时取「就近」：两侧是同一状态的邻域，取最近一格标签最准。
- * 未对齐时 T/4 = 0.6283… 会落在两格之间，点标记与拖滑块得到两个不同的帧。
+ * 这些是**精确读数点**（看 t=T/4 时 i 最大、q=0）。统一播放组件的
+ * 临界点按钮支持直接写入任意 time，因此不做 0.01s 网格近似。
  */
 function lcCriticalTimes(params: Record<string, number>) {
   if (params.scene !== 0 && params.scene !== undefined) return []
+  // 直流充电稳态（开关接 1）及弱阻尼状态不满足理想 LC 周期相位关系，不显示相位标签。
+  if ((params.switchPos ?? 2) === 1) return []
+  if ((params.showDamping ?? 0) === 1) return []
   const L = params.L ?? LC_L_DEFAULT
   const baseC = params.C ?? LC_C_DEFAULT
   const dRatio = params.dRatio ?? 1
   const C = calculateCapacitanceWithGap(baseC, dRatio)
   if (!(L > 0) || !(C > 0)) return []
   const { T } = calculateLCConstants({ L, C, Q0: 1 })
+  // 临界点按钮可以直接写入精确 time；不能为了对齐 0.01s 滑块网格，
+  // 把“电荷为零 / 电流最大”挪到并不满足该条件的近似帧。
   return [
-    { time: alignCriticalTime(T / 4, 'nearest'), label: '电荷为零·电流最大', variant: 'critical' as const },
-    { time: alignCriticalTime(T / 2, 'nearest'), label: '电荷反向最大·电流为零', variant: 'info' as const },
-    { time: alignCriticalTime((3 * T) / 4, 'nearest'), label: '电荷为零·电流反向最大', variant: 'critical' as const },
-    { time: alignCriticalTime(T, 'nearest'), label: '回到初始状态（一个周期）', variant: 'info' as const },
-    { time: alignCriticalTime(2 * T, 'nearest'), label: '第二个周期结束', variant: 'info' as const },
+    { time: T / 4, label: '电荷为零·电流最大', variant: 'critical' as const },
+    { time: T / 2, label: '电荷反向最大·电流为零', variant: 'info' as const },
+    { time: (3 * T) / 4, label: '电荷为零·电流反向最大', variant: 'critical' as const },
+    { time: T, label: '回到初始状态（一个周期）', variant: 'info' as const },
+    { time: 2 * T, label: '第二个周期结束', variant: 'info' as const },
   ]
 }
 
@@ -62,6 +65,7 @@ function lcCriticalTimes(params: Record<string, number>) {
 const sharedParams = {
   scene: 0,
   // ── 场次 0：LC 振荡 ──
+  switchPos: 2, // 1: 直流电源充电稳态, 2: LC/RLC 振荡闭合回路
   L: LC_L_DEFAULT,
   C: LC_C_DEFAULT,
   dRatio: 1.0,
@@ -192,7 +196,34 @@ const sharedControlMeta: ControlMeta[] = [
     type: 'preset' as const,
     label: '⚡ LC充放电能量转化',
     description: 'L=0.4H, C=0.4F, Q₀=1.0C，观察电荷-电流90°相位与能量互换',
-    params: { scene: 0, L: 0.4, C: 0.4, dRatio: 1.0, Q0: 1.0, showDamping: 0 },
+    params: { scene: 0, switchPos: 2, L: 0.4, C: 0.4, dRatio: 1.0, Q0: 1.0, showDamping: 0 },
+    restartOnApply: true,
+    showIf: 'scene',
+    showIfValue: 0,
+  },
+  {
+    type: 'preset' as const,
+    label: '📈 加倍电荷（Q₀=2C）',
+    description: '保持 L、C 不变仅把 Q₀ 增至 2.0C，对比振幅与周期是否变化',
+    params: { scene: 0, switchPos: 2, L: 0.4, C: 0.4, dRatio: 1.0, Q0: 2.0, showDamping: 0 },
+    restartOnApply: true,
+    showIf: 'scene',
+    showIfValue: 0,
+  },
+  {
+    type: 'preset' as const,
+    label: '⏱ 增大电感（L=1.6H）',
+    description: '仅把 L 增大至 4 倍（1.6H），观察振荡周期 T 的变化',
+    params: { scene: 0, switchPos: 2, L: 1.6, C: 0.4, dRatio: 1.0, Q0: 1.0, showDamping: 0 },
+    restartOnApply: true,
+    showIf: 'scene',
+    showIfValue: 0,
+  },
+  {
+    type: 'preset' as const,
+    label: '🔋 弱阻尼振荡（开启阻尼）',
+    description: '引入回路电阻耗散，观察振幅衰减以及电磁能向内能的转化',
+    params: { scene: 0, switchPos: 2, L: 0.4, C: 0.4, dRatio: 1.0, Q0: 1.0, showDamping: 1 },
     restartOnApply: true,
     showIf: 'scene',
     showIfValue: 0,
@@ -216,9 +247,22 @@ const sharedControlMeta: ControlMeta[] = [
     showIfValue: 2,
   },
   {
+    type: 'segmented' as const,
+    key: 'switchPos',
+    label: '开关 S',
+    group: 'LC 回路参数',
+    showIf: 'scene',
+    showIfValue: 0,
+    resetOnChange: true,
+    options: [
+      { value: 1, label: '1 充电' },
+      { value: 2, label: '2 振荡' },
+    ],
+  },
+  {
     type: 'toggle' as const,
     key: 'showDamping',
-    label: '考虑阻尼（定性）',
+    label: '弱阻尼电阻 R',
     group: 'LC 回路参数',
     showIf: 'scene',
     showIfValue: 0,
@@ -261,7 +305,7 @@ const sharedControlMeta: ControlMeta[] = [
     showIf: 'scene',
     showIfValue: 0,
     content:
-      '观察电容器电荷量与回路电流的相位关系：电荷最大时电流为零，电流最大时电荷为零。拉开极板间距 d 可直观看到电容变小、振荡加快。',
+      '① 开关接 1 先给电容充电，拨至 2 开始振荡；② 点击四相位点对照 q、u_C、i 与能量（能量周期为 T/2）；③ 开启电阻 R 观察阻尼衰减。',
   },
   {
     type: 'tip' as const,
@@ -295,7 +339,8 @@ const sharedVisual = {
       return params.radioMode === 1 ? ('loop' as const) : ('param' as const)
     }
     if (params.scene === 1) return 'loop' as const
-    return 'timed' as const // 场次 0（LC 振荡）使用 timed，全面激活进度条、关键相位吸附与定格分析
+    if ((params.switchPos ?? 2) === 1) return 'param' as const
+    return 'timed' as const // 场次 0（开关接 2，LC 振荡）使用 timed，全面激活进度条、关键相位吸附与定格分析
   },
   maxTime: lcMaxTime,
   enableFrameStep: true,

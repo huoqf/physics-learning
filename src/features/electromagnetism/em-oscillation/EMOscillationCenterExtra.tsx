@@ -2,12 +2,13 @@ import { useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationStore } from '@/stores'
 import { RelationChart } from '@/components/Chart'
-import type { RelationDataSeries, RelationMarker } from '@/components/Chart'
+import type { RelationMarker } from '@/components/Chart'
 import { EnergyBars } from '@/components/Physics'
 import type { EnergyBarItem } from '@/components/Physics'
 import {
   CANVAS_COLORS,
   EM_OSCILLATION_COLORS,
+  ENERGY_CHART_COLORS,
   SCENE_COLORS,
   VISIBLE_SPECTRUM_COLORS,
   withAlpha,
@@ -20,6 +21,7 @@ import {
   calculateRadioTuning,
   LC_DEFAULT_PARAMS,
   LC_DISPLAY_ENERGY_EPSILON,
+  LC_CURVE_CHARGE_SPAN,
 } from '@/physics'
 import { useLCPhysics } from './hooks/useLCPhysics'
 import {
@@ -35,7 +37,7 @@ const LC_DEFAULTS = LC_DEFAULT_PARAMS
  * 中屏上半屏图表区（splitV）。
  *
  * 三个场次各自消费自己的图表：
- *   - LC 振荡：q(t)/i(t) 归一化波形 + 能量转化柱状图
+ *   - LC 振荡：q(t)（真实单位 C）+ i(t)（相对峰值）上下两图 + 能量转化柱状图
  *   - 电磁波：λ–f 反比曲线（c = λf 的几何表达）+ 当前工作点
  *   - 电磁波谱：等宽谱段顺序条（补足对数轴上被压窄的谱段）
  */
@@ -62,6 +64,8 @@ function LCPanel() {
   )
 
   const showDamping = (params.showDamping ?? 0) === 1
+  const switchPos = params.switchPos ?? 2
+  const isCharging = switchPos === 1
 
   const physics = useLCPhysics({
     L: params.L ?? LC_DEFAULTS.L,
@@ -70,42 +74,75 @@ function LCPanel() {
     Q0: params.Q0 ?? LC_DEFAULTS.Q0,
     time,
     showDamping,
+    switchPos,
   })
 
   const {
+    q,
     chargeCurve,
     currentCurve,
     dampingCurve,
-    curveSpan,
+    tShow,
+    viewStart,
+    viewEnd,
     T,
+    iMax,
     eElectric,
     eMagnetic,
+    eHeat,
     eTotal,
   } = physics
 
-  const series = useMemo<RelationDataSeries[]>(
-    () => [
-      {
-        points: currentCurve,
-        label: 'i / (ωQ₀)',
-        color: EM_OSCILLATION_COLORS.current,
-        strokeWidth: 1.8,
-      },
-    ],
-    [currentCurve],
+  // 参考线只画落在窗口内的：markers 不受绘图盒 clipPath 约束，越界会把虚线画到坐标轴外侧去；
+  // 同时依据当前周期占绘图宽（约 380px）的像素间距动态降级，防止极端小 L·C 工况下标签挤撞重叠。
+  const markers = useMemo<RelationMarker[]>(() => {
+    if (showDamping || isCharging) return []
+    const span = viewEnd - viewStart
+    if (span <= 0) return []
+    const estPlotW = 380
+    const pxQuarter = (T / 4 / span) * estPlotW
+    const pxHalf = (T / 2 / span) * estPlotW
+    const pxFull = (T / span) * estPlotW
+
+    let raw: RelationMarker[] = []
+    if (pxQuarter >= 34) {
+      raw = [
+        { x: T / 4, label: 'T/4', position: 'top' },
+        { x: T / 2, label: 'T/2', position: 'top' },
+        { x: (3 * T) / 4, label: '3T/4', position: 'top' },
+        { x: T, label: 'T', position: 'top' },
+      ]
+    } else if (pxHalf >= 30) {
+      raw = [
+        { x: T / 2, label: 'T/2', position: 'top' },
+        { x: T, label: 'T', position: 'top' },
+      ]
+    } else if (pxFull >= 24) {
+      raw = [{ x: T, label: 'T', position: 'top' }]
+    }
+
+    return raw.filter(
+      (m): m is RelationMarker & { x: number } =>
+        typeof m.x === 'number' && m.x >= viewStart && m.x <= viewEnd,
+    )
+  }, [T, viewStart, viewEnd, showDamping, isCharging])
+
+  // 下方 i–t 图仅绘制同步竖直参考虚线（无文字），便于对照同一时刻的过零与极值
+  const alignedCurrentMarkers = useMemo<RelationMarker[]>(
+    () => markers.map((m) => ({ x: m.x })),
+    [markers],
   )
 
-  const markers = useMemo<RelationMarker[]>(
-    () => [
-      { axis: 'vertical', x: T / 4, label: 'T/4' },
-      { axis: 'vertical', x: T / 2, label: 'T/2' },
-      { axis: 'vertical', x: T, label: 'T' },
-    ],
-    [T],
-  )
+  const displayChargeCurve = isCharging
+    ? [{ x: viewStart, y: q }, { x: viewEnd, y: q }]
+    : chargeCurve
+  const displayCurrentCurve = isCharging
+    ? [{ x: viewStart, y: 0 }, { x: viewEnd, y: 0 }]
+    : currentCurve
 
   const safeElectric = Math.abs(eElectric) < LC_DISPLAY_ENERGY_EPSILON ? 0 : eElectric
   const safeMagnetic = Math.abs(eMagnetic) < LC_DISPLAY_ENERGY_EPSILON ? 0 : eMagnetic
+  const safeHeat = Math.abs(eHeat) < LC_DISPLAY_ENERGY_EPSILON ? 0 : eHeat
 
   const barItems: EnergyBarItem[] = [
     {
@@ -124,37 +161,72 @@ function LCPanel() {
     },
   ]
 
-  const cursorX = Math.min(time, curveSpan)
+  if (showDamping && !isCharging) {
+    barItems.push({
+      key: 'heat',
+      label: '内能',
+      value: safeHeat,
+      color: ENERGY_CHART_COLORS.thermal,
+      displayValue: formatLCEnergy(safeHeat),
+    })
+  }
 
   return (
     <div className="w-full h-full flex flex-row gap-2 p-2 bg-white rounded-xl border border-neutral-100 shadow-sm">
-      {/* 左：归一化波形（占满中屏上半屏高度）*/}
-      <div className="flex-1 min-w-0 flex flex-col">
-        <div className="shrink-0 flex justify-between items-center mb-0.5">
-          <span className="text-xs font-bold text-neutral-800">归一化波形 q(t) 与 i(t)</span>
-          <span className="text-[9px] text-neutral-400">两者相位相差 90°</span>
-        </div>
+      {/* 左：上下两图共用同一时间轴；理想模式可直接对读 q 与 i 的相位差 */}
+      <div className="flex-1 min-w-0 flex flex-col gap-1.5">
         <div className="flex-1 min-h-0">
           <RelationChart
-            points={chargeCurve}
-            additionalSeries={series}
+            points={displayChargeCurve}
             xLabel="时间 t (s)"
-            yLabel="归一化值"
-            xDomain={[0, curveSpan]}
-            yDomain={[-1.15, 1.15]}
-            cursorX={cursorX}
-            cursorLabel={(_x, y) => (Math.abs(y) < 1e-6 ? 0 : y).toFixed(2)}
+            yLabel="电荷 q (C)"
+            title={
+              isCharging
+                ? `直流充电稳态 q = +${q.toFixed(2)} C（开关接 2 开始振荡）`
+                : `电荷 q–t（纵轴固定 ±${LC_CURVE_CHARGE_SPAN} C，Q₀ 只改振幅）`
+            }
+            variant="mini"
+            initialSize={{ width: 460, height: 145 }}
+            xDomain={[viewStart, viewEnd]}
+            yDomain={[-LC_CURVE_CHARGE_SPAN, LC_CURVE_CHARGE_SPAN]}
+            cursorX={tShow}
+            cursorLabel={(_x, y) => `${y.toFixed(2)} C`}
             showZeroLine
             showGrid
             color={EM_OSCILLATION_COLORS.charge}
             strokeWidth={2.2}
-            mainLabel="q / Q₀"
             markers={markers}
           >
-            {showDamping && dampingCurve.length > 0 ? (
+            {!isCharging && dampingCurve.length > 1 ? (
               <DampingEnvelopeOverlay points={dampingCurve} />
             ) : null}
           </RelationChart>
+        </div>
+
+        <div className="flex-1 min-h-0">
+          <RelationChart
+            points={displayCurrentCurve}
+            xLabel="时间 t (s)"
+            yLabel="i / I_ref"
+            title={
+              isCharging
+                ? '直流充电完成 i = 0（电感 L 支路已断开）'
+                : showDamping
+                  ? `弱阻尼电流 i–t（理想峰值参考 I_ref = ${iMax.toFixed(2)} A）`
+                  : `电流 i–t（与 q 相位差 T/4，I_ref = ${iMax.toFixed(2)} A）`
+            }
+            variant="mini"
+            initialSize={{ width: 460, height: 145 }}
+            xDomain={[viewStart, viewEnd]}
+            yDomain={[-1.2, 1.2]}
+            cursorX={tShow}
+            cursorLabel={(_x, y) => `${y.toFixed(2)} I_ref`}
+            showZeroLine
+            showGrid
+            color={EM_OSCILLATION_COLORS.current}
+            strokeWidth={2.2}
+            markers={alignedCurrentMarkers}
+          />
         </div>
       </div>
 
@@ -166,7 +238,13 @@ function LCPanel() {
           normalizeMax={eTotal}
           showConservationTotal
           conservationFormat={(total) => `${formatLCEnergy(total)} J`}
-          title="能量转化 Ee ⇄ Em"
+          title={
+            isCharging
+              ? '直流充电稳态（电场能满载）'
+              : showDamping
+                ? '电磁能 → 内能（总量守恒）'
+                : '能量转化 Ee ⇄ Em'
+          }
           compact
         />
       </div>

@@ -71,6 +71,8 @@ function LCStage({ font }: { font: FontFn }) {
     Q0: params.Q0 ?? LC_Q0_DEFAULT,
     time,
     showDamping: (params.showDamping ?? 0) === 1,
+    switchPos: params.switchPos ?? 2,
+    includeCurves: false,
   })
 
   return <LCOscillationScene physics={physics} font={font} />

@@ -18,9 +18,11 @@ import {
   calculateLCConstants,
   lcChargeAt,
   lcCurrentAt,
+  lcVoltageAt,
+  lcInductorEmfMagnitudeAt,
+  lcOscillationStage,
   lcElectricEnergy,
   lcMagneticEnergy,
-  lcDampingAmplitude,
   EM_SPECTRUM_BANDS,
   getSpectrumBand,
   wavelengthFromFrequency,
@@ -34,7 +36,7 @@ import {
   LC_PHYSICS_EPSILON,
   LC_DISPLAY_ENERGY_EPSILON,
 } from '@/physics'
-import { CANVAS_COLORS, EM_OSCILLATION_COLORS } from '@/theme/physics'
+import { CANVAS_COLORS, EM_OSCILLATION_COLORS, ENERGY_CHART_COLORS } from '@/theme/physics'
 import type {
   Formula,
   GaokaoPoint,
@@ -90,39 +92,57 @@ function buildLCPanel(params: Record<string, number>, time: number): PhysicsPane
   const effectiveC = calculateCapacitanceWithGap(baseC, dRatio)
   const Q0 = params.Q0 ?? LC_DEFAULTS.Q0
   const showDamping = (params.showDamping ?? 0) === 1
+  const switchPos = params.switchPos ?? 2
+  const isCharging = switchPos === 1
 
-  // damped 标志交给 physics 层：q、i 与画布/波形曲线消费的是同一份取值，
+  // damped 标志交给 physics 层：q、i、u_C、|e_L| 与画布/波形曲线消费的是同一份取值，
   // 杜绝"画布画了衰减、右屏却仍是理想值"的双真源。
   const lc = { L, C: effectiveC, Q0, damped: showDamping }
-  const { omega, T, f, iMax } = calculateLCConstants(lc)
+  const { omega, T, f, energyPeriod, iMax, eTotal } = calculateLCConstants(lc)
 
-  const q = lcChargeAt(lc, time)
-  const i = lcCurrentAt(lc, time)
-  const eElectric = lcElectricEnergy(q, effectiveC)
-  const eMagnetic = lcMagneticEnergy(i, L)
+  const q = isCharging ? Q0 : lcChargeAt(lc, time)
+  const i = isCharging ? 0 : lcCurrentAt(lc, time)
+  const uC = isCharging ? Q0 / effectiveC : lcVoltageAt(lc, time)
+  const eInductor = isCharging ? 0 : lcInductorEmfMagnitudeAt(lc, time)
+  const { stage } = isCharging
+    ? { stage: '直流充电稳态（开关接 1）' }
+    : lcOscillationStage(lc, time)
+  const eElectric = isCharging ? eTotal : lcElectricEnergy(q, effectiveC)
+  const eMagnetic = isCharging ? 0 : lcMagneticEnergy(i, L)
 
-  // 有阻尼时实际峰值 = 理想峰值 × 振幅系数（唯一入口）；
-  // 不修正的话"电荷/电流达到极值"的高亮永远不会触发。
-  const amplitude = showDamping ? lcDampingAmplitude(time, T) : 1
-  const qPeak = Math.abs(Q0) * amplitude
-  const iPeak = iMax * amplitude
-
-  // 极值判定：用于右屏把"当前主导的物理量"高亮
-  const atChargeExtreme = Math.abs(Math.abs(q) - qPeak) < qPeak * EXTREME_EPS
-  const atCurrentExtreme = Math.abs(Math.abs(i) - iPeak) < iPeak * EXTREME_EPS
+  // 只有理想 LC 振荡态才使用“电荷/电压/电动势极值 ↔ 电流为零”的严格相位判据。
+  // 弱阻尼下极值时刻会发生偏移，不能再用同一套高亮规则。
+  const isIdealOsc = !isCharging && !showDamping
+  const atChargeExtreme = isIdealOsc && Math.abs(Math.abs(q) - Math.abs(Q0)) < Math.abs(Q0) * EXTREME_EPS
+  const atCurrentExtreme = isIdealOsc && Math.abs(Math.abs(i) - iMax) < iMax * EXTREME_EPS
 
   const safeElectric = Math.abs(eElectric) < LC_DISPLAY_ENERGY_EPSILON ? 0 : eElectric
   const safeMagnetic = Math.abs(eMagnetic) < LC_DISPLAY_ENERGY_EPSILON ? 0 : eMagnetic
   const safeTotal = safeElectric + safeMagnetic
+  const safeHeat = !isCharging && showDamping ? Math.max(0, eTotal - safeTotal) : 0
 
   // 面板渲染规则为「label + symbol」，故 label 只放中文名，符号统一放 symbol，
   // 避免出现「电容器电荷量 q q」这类符号重复。
   const quantities: PhysicsQuantity[] = [
     {
+      label: '工作阶段',
+      value: stage,
+      unit: '',
+      color: CANVAS_COLORS.labelText,
+    },
+    {
       label: '电容器电荷量',
       symbol: 'q',
       value: Math.abs(q) < 1e-6 ? 0 : q,
       unit: 'C',
+      color: EM_OSCILLATION_COLORS.charge,
+      highlight: atChargeExtreme ? 'extreme' : undefined,
+    },
+    {
+      label: '极板间电压',
+      symbol: 'u_C',
+      value: Math.abs(uC) < 1e-6 ? 0 : uC,
+      unit: 'V',
       color: EM_OSCILLATION_COLORS.charge,
       highlight: atChargeExtreme ? 'extreme' : undefined,
     },
@@ -133,6 +153,14 @@ function buildLCPanel(params: Record<string, number>, time: number): PhysicsPane
       unit: 'A',
       color: EM_OSCILLATION_COLORS.current,
       highlight: atCurrentExtreme ? 'extreme' : undefined,
+    },
+    {
+      label: '自感电动势',
+      symbol: '|e_L|',
+      value: Math.abs(eInductor) < 1e-6 ? 0 : eInductor,
+      unit: 'V',
+      color: EM_OSCILLATION_COLORS.current,
+      highlight: atChargeExtreme ? 'extreme' : undefined,
     },
     {
       label: '电场能',
@@ -151,86 +179,125 @@ function buildLCPanel(params: Record<string, number>, time: number): PhysicsPane
       highlight: atCurrentExtreme ? 'extreme' : undefined,
     },
     {
-      label: '总能量',
-      symbol: 'E',
+      label: !isCharging && showDamping ? '电磁能' : '总能量',
+      symbol: !isCharging && showDamping ? 'E_em' : 'E',
       value: formatLCEnergy(safeTotal),
       unit: 'J',
       color: EM_OSCILLATION_COLORS.totalEnergy,
       highlight: 'positive',
     },
-    { label: '振荡周期', symbol: 'T', value: T, unit: 's' },
-    { label: '振荡频率', symbol: 'f', value: f, unit: 'Hz' },
-    { label: '有效电容', symbol: 'C_eff', value: effectiveC, unit: 'F' },
+    { label: '固有周期', symbol: 'T₀', value: T, unit: 's' },
+    { label: '能量变化周期', symbol: 'T_E', value: energyPeriod, unit: 's' },
+    { label: '固有频率', symbol: 'f₀', value: f, unit: 'Hz' },
   ]
+
+  if (!isCharging && showDamping) {
+    quantities.push({
+      label: '回路内能',
+      symbol: 'Q',
+      value: formatLCEnergy(safeHeat),
+      unit: 'J',
+      color: ENERGY_CHART_COLORS.thermal,
+      highlight: 'positive',
+    })
+  } else {
+    quantities.push({ label: '有效电容', symbol: 'C_eff', value: effectiveC, unit: 'F' })
+  }
 
   const formulas: Formula[] = [
     {
-      name: 'LC 回路振荡周期',
-      latex: 'T = 2\\pi\\sqrt{LC}',
-      condition: '无阻尼理想 LC 回路（回路电阻 R = 0）',
-      note: '周期只由 L、C 决定（固有角频率 ω = 1/√(LC)），与初始电荷量 Q₀ 无关。',
+      name: 'LC 回路振荡周期与能量周期',
+      latex: 'T = 2\\pi\\sqrt{LC}, \\quad T_E = \\frac{T}{2} = \\pi\\sqrt{LC}',
+      condition: '无阻尼理想 LC 回路（开关 S 接 2）',
+      note: '固有周期仅由 L、C 决定，与 Q₀ 无关；电场能与磁场能每周期完成两次完整转化，故能量变化周期为 T/2。',
       level: 'core' as const,
     },
     {
-      name: '平行板电容器电容决定式',
-      latex: 'C = \\frac{\\varepsilon_r S}{4\\pi k d}',
-      condition: '改变极板间距 d 时电容反比变化（C ∝ 1/d），进而改变周期 T',
+      name: '平行板电容器电压与决定式',
+      latex: 'u_C = \\frac{q}{C}, \\quad C = \\frac{\\varepsilon_r S}{4\\pi k d}',
+      condition: '平行板电容器任意时刻（开关接 1 充电稳态时 u_C = E）',
+      note: '充放电过程中 u_C 始终随电荷量 q 同步变化；增大间距 d 时 C 减小、固有周期 T 变短。',
       level: 'important' as const,
     },
     {
-      name: '瞬时电荷与电流关系',
-      latex: 'q = Q_0\\cos(\\omega t), \\quad i = -\\omega Q_0\\sin(\\omega t)',
-      note: '由 i = dq/dt 导出：电流与电荷相位相差 90°，电荷最大时电流为零。',
+      name: '回路自感电动势与动力学方程',
+      latex: '|e_L| = L\\left|\\frac{\\Delta i}{\\Delta t}\\right|, \\quad u_C = L\\frac{di}{dt} + iR',
+      condition: 'LC / 弱阻尼 RLC 闭合回路（开关 S 接 2）',
+      note: '电流 i 为零瞬间（q、u_C 达极值），电流变化率 |di/dt| 与线圈自感电动势 |e_L| 反而达到最大值。',
+      level: 'important' as const,
+    },
+    {
+      name: '理想 LC 瞬时电荷与电流',
+      latex: 'q = Q_0\\cos(\\omega t), \\quad i = -\\frac{dq}{dt} = \\omega Q_0\\sin(\\omega t)',
+      condition: '无阻尼理想 LC；以正电荷自上极板 A 流出经开关 2（左回路逆时针）为正方向',
+      note: '电流与电荷相位差 90°；依据 d(q²)/dt = -2qi，q 与 i 同号为放电过程、异号为充电过程。',
       level: 'core' as const,
     },
     {
       name: '电磁振荡能量守恒',
       latex: 'E = E_e + E_m = \\frac{q^2}{2C} + \\frac{1}{2}Li^2 = \\frac{Q_0^2}{2C}',
-      condition: '无阻尼理想回路',
-      note: '电场能与磁场能在一个周期内各自完成两次完整转化，总能量守恒。',
+      condition: '无阻尼理想回路（开关 S 接 2 且忽略辐射损耗）',
+      note: '电场能与磁场能周期性互换；开关接 1 直流充电稳态下能量全部以电场能储存。',
       level: 'core' as const,
     },
   ]
 
-  if (showDamping) {
+  if (!isCharging && showDamping) {
     formulas.push({
-      name: '阻尼衰减规律（定性）',
-      latex: 'q(t) = Q_0 e^{-t/\\tau}\\cos(\\omega t)',
-      condition: '回路存在电阻 R 时',
-      note: '振幅随时间呈指数递减，电磁能逐渐转化为回路内能。',
+      name: '弱阻尼能量转化',
+      latex: 'E_e + E_m + Q_{\\text{内}} = \\frac{Q_0^2}{2C}',
+      condition: '串联等效阻尼电阻 R > 0（开关 S 接 2）',
+      note: 'q、i 振幅按指数衰减，电磁能减少量全部转化为电阻焦耳内能，计入内能后总能量守恒。',
       level: 'supplementary' as const,
     })
   }
 
   const gaokaoPoints: GaokaoPoint[] = [
     {
-      text: '电容器电荷量最大时电流为零、能量全在电场；电流最大时电荷量为零、能量全在磁场。',
+      text: '极值互补与导数关系：q、u_C、E_e 与 |di/dt|、|e_L| 同步最大（此时 i = 0、E_m = 0）；电流 i、磁感应强度 B 与磁场能 E_m 同步最大（此时 q = 0、u_C = 0、|di/dt| = 0）。',
       importance: 'gaokao' as const,
     },
     {
-      text: 'T = 2π√(LC) 只由 L、C 决定：改变 Q₀ 只改变振幅，不改变周期。',
+      text: '四阶段充放电判据：放电时 |q| 减小、|i| 增大，E_e → E_m（电流从当前正极板流出）；充电时 |q| 增大、|i| 减小，E_m → E_e（电流流入当前正极板）。',
       importance: 'gaokao' as const,
     },
     {
-      text: '电场能与磁场能在一个周期内各自完成两次完整的相互转化（各 2 次最大、2 次为零）。',
+      text: '能量双倍频关系：电荷 q、电流 i 的周期均为 T = 2π√(LC)；而电场能 E_e、磁场能 E_m、电压绝对值及电流强弱每半个周期重复一次，故能量周期 T_E = T/2（频率 f_E = 2f）。',
+      importance: 'gaokao' as const,
+    },
+    {
+      text: '动态电路分析：开关接 1 时电容器接直流电源（u_C = E 恒定），增大 d 则 C 减小、Q 减小；拨至 2 振荡后若外力断开电源下在峰值处拉大极板间距 d，Q 不变而 C 减小，周期 T 变短、电场能增大。',
       importance: 'hard' as const,
     },
     {
-      text: '实际回路存在电阻，形成振幅逐渐减小的阻尼振荡，最终转化为内能。',
+      text: '周期调控规律：增大线圈匝数/插入铁芯增大 L，或减小极板间距 d/插入电介质增大 C，均使 T = 2π√(LC) 增大、固有频率降低；只调电源电压 E 或 Q₀ 仅改振幅与储能，不改周期 T。',
+      importance: 'core' as const,
+    },
+    {
+      text: '电磁波发射条件：闭合小区域 LC 回路场能局限于器件附近，要有效发射电磁波必须改造为开放电路（拉开极板、减少匝数）并提高振荡频率。',
       importance: 'basic' as const,
     },
   ]
 
   const warnings: WarningItem[] = [
     {
-      text: '易错提醒：LC 回路中电流与电荷量相位差 90°，"电荷最大处电流为零"是最常考的判据。',
+      text: '易错提醒一（电流为零 ≠ 电动势为零）：当电流 i = 0 时，极板电压 u_C 与电荷量 q 恰好最大，此时电流变化率 |di/dt| 与线圈自感电动势 |e_L| 反而达到最大值。',
       level: 'danger' as const,
+    },
+    {
+      text: '方向约定：本页取逆时针放电（正电荷自上极板 A 流出经开关 2 绕左回路流过 L）为电流正方向，由此严格满足 i = -dq/dt 与安培右手螺旋定则。',
+      level: 'info' as const,
     },
   ]
 
-  if (showDamping) {
+  if (isCharging) {
     warnings.push({
-      text: '已开启阻尼：电场能与磁场能之和不再守恒（能量总量随振幅平方减小），减少的部分转化为内能。',
+      text: '当前开关接 1：直流电源 E 已将电容器上极板充至 +Q₀，电感支路处于断路；拨至开关 2 即可开始 LC 电磁振荡。',
+      level: 'info' as const,
+    })
+  } else if (showDamping) {
+    warnings.push({
+      text: '已串联阻尼电阻 R：电磁能逐渐转化为焦耳内能，理想 LC 的四分之一周期相位吸附已停用，计入内能后总能量守恒。',
       level: 'info' as const,
     })
   }

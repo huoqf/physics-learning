@@ -170,8 +170,18 @@ describe('buildPhysicsQuantities', () => {
   it('LC 振荡：包含物理量、公式与高考要点', () => {
     const qs = buildPhysicsQuantities('anim-lc-oscillation', { scene: 0, L: 1, C: 1, Q0: 1 }, 0)
     expect(find(qs, '电容器电荷量')).toBeDefined()
+    expect(Number(find(qs, '极板间电压'))).toBeCloseTo(1, 6)
+    expect(Number(find(qs, '自感电动势'))).toBeCloseTo(1, 6)
+    expect(Number(find(qs, '能量变化周期'))).toBeCloseTo(Math.PI, 6)
     expect(qs.formulas && qs.formulas.length > 0).toBe(true)
     expect(qs.gaokaoPoints && qs.gaokaoPoints.length > 0).toBe(true)
+
+    const qsCharging = buildPhysicsQuantities('anim-lc-oscillation', { scene: 0, switchPos: 1, L: 1, C: 0.5, Q0: 2 }, 1.2)
+    expect(Number(find(qsCharging, '电容器电荷量'))).toBeCloseTo(2, 6)
+    expect(Number(find(qsCharging, '极板间电压'))).toBeCloseTo(4, 6)
+    expect(Number(find(qsCharging, '回路电流'))).toBe(0)
+    expect(Number(find(qsCharging, '自感电动势'))).toBe(0)
+    expect(find(qsCharging, '工作阶段')).toContain('直流充电')
   })
 
   it('电磁波：包含波速公式与麦克斯韦理论高考要点', () => {

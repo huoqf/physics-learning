@@ -69,17 +69,19 @@ describe('临界时刻 · 必须落在播放条 0.01 s 网格上', () => {
     for (const point of points) expect(onGrid(point.time)).toBe(true)
   })
 
-  it('LC 振荡：4 个相位点都在网格上，且与 T/4 的偏差不超过半格', () => {
+  it('LC 振荡：理想模式保留精确 T/4 相位读数点（不做 0.01s 近似吸附），阻尼模式取消相位标签', () => {
     const anim = electromagnetismEmOscillationAnimations['anim-lc-oscillation']
-    const points = (anim.criticalTimes as CriticalTimesFn)({ scene: 0, L: 0.4, C: 0.4, dRatio: 1 })
+    const points = (anim.criticalTimes as CriticalTimesFn)({ scene: 0, L: 0.4, C: 0.4, dRatio: 1, showDamping: 0 })
     const { T } = calculateLCConstants({ L: 0.4, C: 0.4, Q0: 1 })
 
     expect(points).toHaveLength(5)
     const expected = [T / 4, T / 2, (3 * T) / 4, T, 2 * T]
     points.forEach((point, idx) => {
-      expect(onGrid(point.time), `${point.label} @ ${point.time}`).toBe(true)
-      expect(Math.abs(point.time - expected[idx])).toBeLessThanOrEqual(CRITICAL_TIME_STEP / 2 + 1e-9)
+      expect(point.time).toBeCloseTo(expected[idx], 12)
     })
+
+    const dampedPoints = (anim.criticalTimes as CriticalTimesFn)({ scene: 0, L: 0.4, C: 0.4, dRatio: 1, showDamping: 1 })
+    expect(dampedPoints).toEqual([])
   })
 
   it('RC 暂态：三点都在窗口内且在网格上，5τ 不越过窗口末端', () => {
