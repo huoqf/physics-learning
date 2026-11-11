@@ -47,7 +47,7 @@ const NEWTON_ACCELERATION_PEAK = Math.max(
 )
 
 const NEWTON_SCENE_PROFILE: SceneLayoutProfile = {
-  mode: 'visibleArea',
+  mode: 'transform',
   designWidth: NEWTON_DESIGN.width,
   designHeight: NEWTON_DESIGN.height,
   refMagnitudes: {
@@ -83,7 +83,7 @@ export default function NewtonSecondAnimation() {
 
   const contextProfile = useAnimationLayout()
   /**
-   * registry 的 sceneLayout 只声明了画布尺寸（visibleArea / 700×400），没有 refMagnitudes；
+   * registry 的 sceneLayout 只声明了画布尺寸（700×400），没有 refMagnitudes；
    * 直接用它就会拿到空对象 → 所有箭头退回恒定 14px。故与本地基准做并集：
    * 注册表若显式给了某个类型的基准则以其为准，其余仍用本页标定值。
    */

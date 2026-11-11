@@ -153,15 +153,8 @@ function getDefaultMaxVectorLength(
 /**
  * 从 ViewportInfo 构造 SceneScale，确保矢量归一化与可视区域对齐。
  *
- * - mode='transform'   : vectorBounds 使用设计坐标 (0,0,designW,designH)
- * - mode='visibleArea' : ⚠️ @deprecated 输出容器像素单位，不适合在 `<g transform={vp.transform}>` 内使用。
- *   请改用 `useSceneScale({ anchor: 'viewport' })`，输出设计坐标。
- * - mode='centerScale' : ⚠️ @deprecated 输出容器像素单位，不适合在 `<g transform={vp.transform}>` 内使用。
- *   请改用 `useSceneScale({ anchor: 'center' })`，输出设计坐标。
- *
- * 注意：此函数不感知 presetCompensation。若组件同时依赖 vp.scale（含补偿）
- * 和 SceneScale（纯几何），需在调用侧对齐坐标系（如 Kepler/Satellite 的
- * worldWidth: vp.visibleW / 物理scale 做法）。
+ * 仅支持 `mode='transform'`（vectorBounds 使用设计坐标 (0,0,designW,designH)）；
+ * 历史 `'visibleArea'` / `'centerScale'` 已在类型层移除，新页面请直接使用 `useSceneScale`。
  *
  * @throws 当 profile 或 layout mode 为 null/undefined 时抛出明确错误（避免旧组件静默失败）
  */
@@ -185,7 +178,7 @@ export function createSceneScaleFromViewport(
   if (!profileOrMode) {
     throw new Error(
       '[createSceneScaleFromViewport] sceneLayout profile 未定义。' +
-      '请在 AnimationConfig.sceneLayout 中声明，或传入布局模式字面量（如 "visibleArea"）。'
+      '请在 AnimationConfig.sceneLayout 中声明，或传入布局模式字面量 "transform"。'
     )
   }
 
@@ -200,32 +193,12 @@ export function createSceneScaleFromViewport(
       }
     : profileOrMode
 
-  const sceneConfig: SceneConfig = (() => {
-    switch (profile.mode) {
-      case 'transform':
-        return {
-          vectorBounds: { x: 0, y: 0, width: profile.designWidth, height: profile.designHeight },
-          originX: 0, originY: 0,
-          worldWidth: profile.designWidth, worldHeight: profile.designHeight,
-          refMagnitudes: profile.refMagnitudes,
-        }
-      case 'visibleArea':
-        return {
-          vectorBounds: { x: vp.visibleX, y: vp.visibleY, width: vp.visibleW, height: vp.visibleH },
-          originX: vp.visibleX, originY: vp.visibleY,
-          worldWidth: vp.visibleW, worldHeight: vp.visibleH,
-          refMagnitudes: profile.refMagnitudes,
-        }
-      case 'centerScale':
-        return {
-          vectorBounds: { x: vp.visibleX, y: vp.visibleY, width: vp.visibleW, height: vp.visibleH },
-          originX: vp.centerX, originY: vp.centerY,
-          worldWidth: profile.worldWidth ?? profile.designWidth,
-          worldHeight: profile.worldHeight ?? profile.designHeight,
-          refMagnitudes: profile.refMagnitudes,
-        }
-    }
-  })()
+  const sceneConfig: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: profile.designWidth, height: profile.designHeight },
+    originX: 0, originY: 0,
+    worldWidth: profile.designWidth, worldHeight: profile.designHeight,
+    refMagnitudes: profile.refMagnitudes,
+  }
 
   // 构造 SceneScale，应用 maxVectorLength 覆盖或 layout-aware 默认算法
   const base = createSceneScale(sceneConfig)

@@ -11,39 +11,36 @@
 ### 0. 一条命令跑完
 
 ```bash
-npm run check        # build → 全量单测 → 架构守卫 → 分段器折行 → 中屏压字（约 8 分钟）
+npm run check        # build → 全量单测 → 架构守卫 → 联合真机巡检（约 4 分钟）
 npm run check:all    # 以上 + 依赖安全审计（audit:deps）
 ```
 
-`npm run check` 里 `check:seg-wrap` / `check:text-overlap` 会自起 `vite preview` 读 `dist/`，
+`npm run check` 里 `check:runtime` 会自起 `vite preview` 读 `dist/`，
 **必须先 build**（脚本自身有前置检查，缺 `dist/` 直接以退出码 2 报出）。
-只需快速回环时用 `npm run check:architecture`（约 20s，纯静态）。
+只需快速回环时用 `npm run check:architecture`（约 11s，纯静态）。
 
 ### 1. 自动守卫与规范的对应关系
 
 | 守卫 | 判定什么 | 对应规范 |
 |------|---------|---------|
-| `npx tsc --noEmit` | `src/` 严格类型（`strict` + `noUnusedLocals`） | 铁律 2、3 |
+| `npx tsc --noEmit` | `src/` 严格类型（`strict` + `noUnusedLocals`；废弃缩放模式已类型层消除） | 铁律 2、3 |
 | `npx tsc -p tsconfig.test.json --noEmit` | `tests/` + `e2e/` 类型（主 tsconfig 不含它们） | 同上 |
 | `npx eslint . --max-warnings 0` | 硬编码颜色（`src/theme/` 与测试除外，全域覆盖）、`physics/` 禁 React/DOM、未用变量与 disable 指令 | 铁律 1-1、2 |
 | `check:single-source` | 动画在算 + 右屏看板又算一遍的双实现 | 物理事实单一真源 |
 | `check:naming` | 同基名双后缀 / `foo.ts` + `foo/index.ts` / 仅大小写不同的同名 | ARCHITECTURE §10 |
 | `check:font-size` | 字号必须走 `font()`/`canvasSize.font` | 铁律 1-7 |
-| `check:viewport-legacy` | 不得再用 `visibleArea`/`centerScale` 等废弃缩放模式 | 铁律 1-3 |
-| `check:large-files` | 单文件行数上限与白名单 | ARCHITECTURE §12.1 |
 | `check:no-raf` | 禁止裸 `requestAnimationFrame` | 铁律 1-4 |
 | `check:no-marker` | 禁止手写 `<marker>` 箭头 | 铁律 1-5 |
 | `check:component-reuse` | 公共组件已导出/注册、无重复私有实现 | 铁律 5 |
 | `check:quantity-labels` | 右屏物理量 label 与 symbol 自洽 | 右屏规范 |
-| `check:control-meta` | 左屏声明式协议、预设字数、tip 边界、分段器宽度 | 铁律 6、`08_THREE_PANEL_RULES.md §2.6` |
+| `check:control-meta` | 左屏声明式协议（禁 TeX / 声明顺序 / 卷别与应试禁词 / 透题） | 铁律 6、`08_THREE_PANEL_RULES.md §2.6` |
 | `check:formula-condition` | 守恒/定律类公式必须声明适用条件 | 右屏规范 |
-| `check:seg-wrap` | 分段器选项贴边折行（真实 DOM 测高，双视口） | `08_THREE_PANEL_RULES.md §2.6.6` |
-| `check:text-overlap` | 中屏 SVG 标注互相压字 / 文字被裁（字符级，双视口） | `07_CANVAS_SVG_CHART_RULES.md §4` |
+| `check:runtime` | 联合真机巡检：分段器选项折行（`--only seg-wrap`）+ 中屏 SVG 标注压字/被裁（`--only text-overlap`），双视口共享单次服务 | `08_THREE_PANEL_RULES.md §2.6.6`、`07 §4` |
 | `audit:deps` | 依赖安全（`npm audit --audit-level=moderate`） | ARCHITECTURE §11 |
 
 > 上表任一失败即 **不得提交**；修脚本还是修代码由失败原因决定，**不要**用
 > `--no-verify`、`// eslint-disable`、或往基线文件里塞条目来绕过。基线只允许"存量与新增分离"的临时用途，
-> 且必须在同一周期内清完（参见 `check-text-overlap.mjs` 头注释里"别让它长期挂账"的教训）。
+> 且必须在同一周期内清完（参见 `check-runtime-ui.mjs`）。
 
 ### 1.1 本地 pre-commit 与 CI 的集合差异（有意为之，不是漏配）
 
@@ -52,7 +49,7 @@ npm run check:all    # 以上 + 依赖安全审计（audit:deps）
 | `eslint` / `tsc --noEmit` / `tsc -p tsconfig.test.json` / `vitest --run` / `check:architecture` | ✅ | ✅ | 一一对应，两边同口径 |
 | `test:coverage`（80/80/70 门槛） | ❌ | ✅ | 覆盖率门槛只在对全量跑时才有意义，提交时跑会拖到 1 分钟以上 |
 | `build` | ❌ | ✅ | 构建约 30s，且 `tsc -b` 已被 `tsc --noEmit` 覆盖大半 |
-| `check:seg-wrap` / `check:text-overlap` | ❌ | ✅ | 需 `dist/` + Playwright 真机，约 8 分钟，只适合 CI（本地要跑用 `npm run check`） |
+| `check:runtime` | ❌ | ✅ | 需 `dist/` + Playwright 真机，约 4 分钟，只适合 CI（本地要跑用 `npm run check`） |
 
 结论：本地漏网的只可能是"覆盖率不足""构建期才暴露的问题""真实 DOM 折行/压字"三类，
 其余在提交时即拦截；**不要**为了对齐把这四项塞进 pre-commit。

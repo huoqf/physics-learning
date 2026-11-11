@@ -84,13 +84,6 @@ const padPx = (cls: string) => Number(cls.slice(2)) * 4
 
 /**
  * 左屏几何链路数值（由 `LEFT_PANEL_PADDING` 换算，勿手写像素）。
- *
- * 分段器能放文字宽 = `PANEL.left.X` − 2 ×(`panelPad` + `sectionPad` + `sectionBorder`
- * + `trackPad`) − `subpixel`（宽屏 225 / 窄屏 185）。
- *
- * `scripts/check-control-meta.mjs` 用同一规则从类名现算，并断言三个组件确实引用了
- * `LEFT_PANEL_PADDING`，所以"改类名不改预算"这条路已被封死。
- * `npm run check:control-meta -- --print-widths` 可打印当前宽度预算表。
  */
 export const LEFT_PANEL_GEOMETRY = {
   panelPad: padPx(LEFT_PANEL_PADDING.panel),
@@ -102,17 +95,11 @@ export const LEFT_PANEL_GEOMETRY = {
 
 // ─── 分段器（SegmentedControl）几何约束 ────────────────────────────────────
 /**
- * 左屏分段器的单格宽度约束，是 §2.6.6 判定的唯一真源。
+ * 左屏分段器的单格宽度约束。
  *
- * `minCell` 取 72px = 6 个汉字（12px/字）：物理术语如「同加速连接体」（5 字）、
- * 「分子撞击」（4 字）、「遏止电压」（4 字）都能单行放下，再窄就要折行。
- * 低于此值时 `SegmentedControl.fitColumns()` 会把 3 列降到 2 列
- * （240px 窄屏下 3 列单格仅 60.3px），宁可多占一行。
- *
- * `gapPx` 对应轨道上的 `gap-0.5` / `p-0.5`；改 Tailwind 类必须同步改这里。
- *
- * ⚠️ `scripts/check-control-meta.mjs` 无法 import TS，改为在运行时正则读取本常量
- * 并与脚本内副本比对，不一致即 CI 失败——不要只改一处。
+ * `minCell` 取 72px = 6 个汉字（12px/字）：低于此值时 `SegmentedControl.fitColumns()`
+ * 会把 3 列降到 2 列（240px 窄屏下 3 列单格仅 60.3px），宁可多占一行。
+ * `gapPx` 对应轨道上的 `gap-0.5` / `p-0.5`；是否折行由真机 `check:runtime` 实测兜底。
  */
 export const SEGMENTED = {
   minCell: 72,
@@ -154,8 +141,6 @@ export const DENSITY = {
   canvasMaxLabels:   5,  // Canvas 内文字标注上限
   leftPanelMaxParams:5,  // 左侧面板最多参数数量
   rightPanelMaxRows: 8,  // 右侧看板最多物理量行数
-  gaokaoMaxTips:     3,  // 高考要点卡片最多条数
-  gaokaoTipMaxChars: 30, // 每条要点最多字符数
   stepMaxOpen:       2,  // AnalysisPage 同时展开步骤数
   wrongCardSummary:  60, // 错题卡片摘要最多字符数
   knowledgeNodeTitle:12, // 知识点链路节点标题最多字符数

@@ -110,7 +110,7 @@ export default [
   // 里面的 `document` / `getComputedStyle` 是合法的浏览器全局，不是 Node 全局。
   // 新增用 Playwright 的质检脚本时，务必把文件名加进这份清单。
   {
-    files: ['scripts/probe-seg-wrap.mjs', 'scripts/check-text-overlap.mjs'],
+    files: ['scripts/probe-seg-wrap.mjs', 'scripts/check-runtime-ui.mjs'],
     languageOptions: {
       globals: { ...globals.node, ...globals.browser },
     },

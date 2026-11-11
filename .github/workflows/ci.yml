@@ -23,9 +23,9 @@ jobs:
       - run: npx tsc -p tsconfig.test.json --noEmit
       # 带 --coverage：vitest.config.ts 里的 80/80/70 门槛只有跑覆盖率时才生效
       - run: npm run test:coverage -- --run
-      # check:architecture 现为 11 项：字号 / viewport 遗留 / 大文件 / rAF / marker / 组件复用 /
+      # check:architecture 现为 9 项：字号 / rAF / marker / 组件复用 /
       # 物理量标签 / controlMeta / 公式适用条件 / 模块命名 / 物理事实单一真源
-      # （颜色字面量由 eslint 统一守，不在这 11 项里）
+      # （颜色字面量由 eslint 统一守，废弃缩放模式已从 TS 类型删除）
       - run: npm run check:architecture
       - run: npm run build
       - uses: actions/upload-artifact@v4
@@ -34,8 +34,8 @@ jobs:
           path: dist
           retention-days: 1
 
-  # 第二段：真机实测（慢，约 8 分钟）。依赖 static 的 dist 产物——
-  # 两个脚本都读 `dist/`，用旧产物会得到假绿。
+  # 第二段：真机实测（共享单次 preview + 双视口遍历，约 4 分钟）。依赖 static 的 dist 产物——
+  # 读 `dist/`，用旧产物会得到假绿。
   runtime:
     needs: static
     runs-on: ubuntu-latest
@@ -51,7 +51,5 @@ jobs:
           name: dist
           path: dist
       - run: npx playwright install --with-deps chromium
-      # 分段器选项折行（真实 DOM 测高，静态字宽模型抓不到的贴边折行）
-      - run: npm run check:seg-wrap
-      # 中屏 SVG 标注压字 / 文字被裁（字符级碰撞，双视口 1440 + 1280）
-      - run: npm run check:text-overlap
+      # 联合真机 DOM 门禁：同一次页面巡检中完成「分段器折行」与「中屏 SVG 压字/被裁」实测
+      - run: npm run check:runtime

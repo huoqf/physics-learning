@@ -18,9 +18,9 @@ pre-commit:
     test:
       run: npx vitest --run
     guards:
-      # 守门脚本合集（字号 / viewport 遗留 / 大文件 / rAF / marker / 组件复用 /
+      # 守门脚本合集（字号 / rAF / marker / 组件复用 /
       # 物理量标签 / controlMeta / 公式适用条件 / 模块命名 / 物理事实单一真源）；
-      # 颜色字面量不在此列——由上面的 lint 任务（eslint 规则 + suppressions 基线）统一守。
-      # 全仓扫描、不接受文件参数，实测约 7s。改动源码时触发。
+      # 颜色字面量由上面的 lint 任务统一守，废弃缩放模式已类型层消除。
+      # 全仓扫描、不接受文件参数。改动源码时触发。
       glob: "{**/,}*.{ts,tsx}"
       run: npm run check:architecture

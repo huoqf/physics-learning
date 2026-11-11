@@ -27,8 +27,7 @@ interface LeftPanelSectionProps {
  * 留给按钮的只剩 208px —— 三档分段器每格仅 65px（约 5 个汉字），
  * 「弹簧与胡克定律」这类 7 字标签被迫折两行，全仓 51% 的分段器都受影响。
  *
- * 类名本身来自 `LEFT_PANEL_PADDING`（theme/spacing.ts），**不要在组件里写 `p-3` 字面量**：
- * 静态守卫 `check-control-meta` 按该 token 现算分段器宽度预算，改内边距只改 token 一处。
+ * 类名本身来自 `LEFT_PANEL_PADDING`（theme/spacing.ts），**不要在组件里写 `p-3` 字面量**。
  */
 export const LeftPanel: React.FC<LeftPanelProps> = ({ children, className = '' }) => {
   return (

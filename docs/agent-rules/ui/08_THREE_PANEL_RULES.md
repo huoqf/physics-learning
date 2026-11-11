@@ -118,10 +118,10 @@ LeftPanel                         ← AnimationPage 左屏唯一顶层容器
    - **绝不锁定滑块**：点击预设注入初态后，所有参数滑块必须保持可自由调节。学生必须能基于该基准点进行**“控制变量法”**单变量微调（例如保持 $f=f_0$ 不变，调节阻尼 $\gamma$ 观察峰值变化），以验证规律与主动证伪。
 2. **§2.6.2 空间紧凑性与文案极简（左屏空间不富裕）**：
    - 预设项（`controlMeta.preset`）采用紧凑药丸/按钮展示，**仅保留简练名称与关键参数标注**（例如 `⚡ 共振工况 (f=f₀)`）。
-   - **字数标准（可机器校验，由 `scripts/check-control-meta.mjs` 强制）**：`名称部分 ≤ 12 字` + `关键参数标注 ≤ 14 字`（参数标注须用 `（）` 或 `/` 与名称分隔），**标签总长 ≤ 22 字**。物理预设的价值就在于把 $v_0$、$\theta$、$\mu$、$f_0$ 这些量锚定到典型工况，所以参数标注是**允许且鼓励**的；要压的不是数字，而是形容词和整句。14 字是"够放两个关键量"的实测上限（如 `vₐ=300, aᵦ=10`）；只放一个量更好（如 `β=0.866`）、能放一个就别放两个，导数/由公式可推出的量（$\gamma$、$T$ 等）一律不进标签。
+   - **字数建议（人工口径，脚本不再卡死）**：`名称部分 ≤ 12 字` + `关键参数标注 ≤ 14 字`（参数标注须用 `（）` 或 `/` 与名称分隔），**标签总长 ≤ 22 字**。物理预设的价值就在于把 $v_0$、$\theta$、$\mu$、$f_0$ 这些量锚定到典型工况，所以参数标注是**允许且鼓励**的；要压的不是数字，而是形容词和整句。
    - **禁止把卷别写进标签**：`2024新课标卷`、`2023全国甲卷` 等来源信息不属于左屏（真题归属 `/practice` 与 `/master-models`，见第 5 条）。溯源信息应留在真题侧（`Problem.targetAnimation.presetDescription`），由真题专区与 Master 专区展示。同理**禁止「高考标准」「真题模型」「压轴题」这类应试化措辞**——标签只描述物理工况（`⚖ 动量守恒基准（v₀=6m/s）`），不描述它的考试出身。
-   - **这条禁令覆盖左屏所有可见文案，不止预设标签**：分组名（`group`）、分段器选项（`options[].label`）、滑块名称与刻度（`paramMeta[].label` / `marks[].label`）、tip 标题（`tip.title`）都会被直接画在左屏上，写成「高考典型情境一键配置」「37°高考常考」「高考考点探究指导」同样违规。`check-control-meta.mjs` 已对上述字段统一扫描（2026-10 补齐；此前只查 `preset.label`，实测漏检 43 处）。
-   - 超过 22 字的补充说明下沉到 `description`（上限 85 字，见 `check-control-meta.mjs`），标签本身只留"名称 + 数字"。
+   - **这条禁令覆盖左屏所有可见文案，不止预设标签**：分组名（`group`）、分段器选项（`options[].label`）、滑块名称与刻度（`paramMeta[].label` / `marks[].label`）、tip 标题（`tip.title`）都会被直接画在左屏上，写成「高考典型情境一键配置」「37°高考常考」「高考考点探究指导」同样违规。`check-control-meta.mjs` 已对上述字段统一扫描。
+   - 超过 22 字的补充说明建议下沉到 `description`（控制在约 85 字内），标签本身只留"名称 + 数字"。
    - **禁止在预设项内书写多行长文本或题解**，严禁把左屏变成大卡片列表。
 3. **§2.6.3 职责分离：观察引导与条件归属于底部 Tip**：
    - 预设的物理条件、探究目的、观察重点（如“观察受迫振幅是否远大于驱动振幅、位移与驱动力的相位差”）统一由 `controlMeta` 置底的 `tip` 承载。
@@ -163,7 +163,7 @@ LeftPanel                         ← AnimationPage 左屏唯一顶层容器
 
    **清理手法：优先"改写"，其次"删除"。** 越界的 tip 多数原本是有用的教学意图，只是写成了结论。正确做法是把它翻成**观察任务**——把"振幅达到峰值"改成"三个预设只差 f，各放一次，只盯振幅读数怎么变"；把"感应磁场总是与原磁场相反"改成"看箭头什么时候同向、什么时候反向"。只有当右屏 `ExamPointSection` / `FormulaSection` 已逐条给出同一内容、且改写成任务后与动画画面无关时，才直接删除，并在原处留一行 `//` 注释说明右屏哪一处已覆盖（便于后人复核，不要删了不留痕）。**严禁**为了让脚本通过而把句子截断成半句。
 
-   以上五条由 `npm run check:control-meta` 强制：预设标签字数、左屏所有文案的卷别与应试化措辞（预设标签 / 分组名 / 选项 / 滑块名称与刻度 / tip 标题）、tip 字数与 C1/C3 关键词、`preset` 与模型选择的声明顺序，任一不合即 CI 失败。字数上限是**代理指标**，不是目的——真正的判据永远是上面那句话；脚本过了但读起来像答案，仍算违规。
+   **机器强制项**：`npm run check:control-meta` 强制检查左屏纯文本面禁 TeX 标记、左屏所有文案的卷别与应试化措辞、tip 透题/C3 关键词，以及 `preset` 与模型选择的声明顺序；字数与教学有效性不再靠字符计数门禁代理，由人工审查把关。
 
 6. **§2.6.6 分段器选项的宽度上限与列数规则（可机器校验）**
 
@@ -177,9 +177,7 @@ LeftPanel                         ← AnimationPage 左屏唯一顶层容器
    | 6 / 7 | 2 / 2 | **90px** | 两列三行（窄屏决定） |
    | 10 | 5 / 5 | **35px** | 仅纯数字/符号（如 `0.02s`，窄屏 35.4px 单格决定） |
 
-   > 上表是**脚本实际卡的上限**，已乘 0.98 安全系数并取两视口的较小值：单格文字宽 × 0.98。写标签时按此表判断，不要按"单格几何宽度"（111.5 / 73.7px）留数——那会贴边即折行。
-   >
-   > **这张表不是手抄的**：`npm run check:control-meta -- --print-widths` 会按当前 token 现算并打印（表里同时给出宽屏/窄屏各自的列数与上限）。改了内边距或 `SEGMENTED` 之后跑一遍，把结果贴回本表——数字对不上就是文档过期。
+   > 上表供人工编写参考；分段器是否真实折行完全由真机 `npm run check:runtime`（含 `seg-wrap` 双视口 DOM 测高）把关，不再在静态脚本里双重维护像素字宽模型。
 
    列数由 `SegmentedControl.columnsFor(n)` 唯一决定，**`MAX_COLS = 3` 是硬上限**。曾经按"几档就几列"实现，结果 5 档时单格仅 44px（3 个汉字都没处放），任何物理标签都必然折行；退成 3 列只多占 1 行（+27px），远优于每个按钮折两行（+40px 且参差）。
 
@@ -191,7 +189,7 @@ LeftPanel                         ← AnimationPage 左屏唯一顶层容器
    - `LEFT_PANEL_GEOMETRY` → 由类名换算的 px（`p-3` → 12）+ `sectionBorder: 1` + `subpixel: 1`（三栏 flex 均分后左屏实测 279 / 239px，比标称窄 1px）；
    - `SEGMENTED` → 单格阈值 72px 与轨道 gap 2px。
    
-   内容宽 = `PANEL.left.X − 2×(panelPad + sectionPad + sectionBorder + trackPad) − subpixel` = **225 / 185px**（Chrome 实测 `getBoundingClientRect()` 同为 225 / 185）。`check-control-meta.mjs` 每次运行都读这几个 token **现算**，并断言组件确实引用了 `LEFT_PANEL_PADDING`：改内边距必须改 token，预算会跟着重算；若有人绕开 token 写死 `p-4`，CI 直接失败。
+   内容宽 = `PANEL.left.X − 2×(panelPad + sectionPad + sectionBorder + trackPad) − subpixel` = **225 / 185px**（Chrome 实测 `getBoundingClientRect()` 同为 225 / 185）。组件仍需引用 `LEFT_PANEL_PADDING` 与 `SEGMENTED` token 保证真实渲染一致。
    
    > 历史故障（这条规则的由来）：内边距从 `p-4` 改成 `p-3` 后，脚本里仍写死 `SEG_CONTENT_WIDTH = 229`，静态守卫全绿、真机全部折行。**派生数字一旦写成字面量副本，就必然与源头分叉。**
 
@@ -206,21 +204,18 @@ LeftPanel                         ← AnimationPage 左屏唯一顶层容器
 
    **豁免机制**：确有必要换行（如含不可拆的长物理符号）时，在该 `options` 上方用 `//` 注释写明理由，并加 `allowWrap: true`。**没有注释的 `allowWrap` 视为违规**——它与"给脚本开后门"只有一线之隔。
 
-   **执行时机**：两道闸都在 CI 里，不需要记着手动跑。
-   - `check-control-meta`（静态模型）在 `check:architecture` 内；
-   - `check:seg-wrap`（真实 DOM 实测）在 `npm run check` 末尾，自带 `vite preview`（端口 5299）+ Playwright，双视口各遍历 124 个页面，**发现折行即退出码 1**。
-   - 手动复验：`npm run check:seg-wrap -- --deep`（额外点开每个分段器的每个选项，覆盖 `showIf` 切换后才渲染的控件）；`-- --width 1600` 换视口。
+   **执行时机**：已合并进联合真机巡检 `npm run check:runtime`（与中屏压字共享同一次 `vite preview` + Playwright 双视口遍历）。
+   - 联合门禁：`npm run check:runtime`（位于 `npm run check` 末尾，**发现折行或压字即退出码 1**）；
+   - 单独调分段器：`npm run check:seg-wrap` / `npm run check:seg-wrap -- --deep`（额外点开每个选项，覆盖 `showIf` 切换后才渲染的控件）；`-- --width 1600` 换视口；
    - 前置：`npm run build`（preview 读 `dist/`）+ `npx playwright install chromium`。缺任一项时脚本以退出码 2 直接报出，不会静默跳过。
 
    > 实测数据（2026-10 全量整改）：189 个 `segmented` 中 **97 个（51%）** 在 280px 下被迫折行、125 个在 240px 下折行，最长选项 20 字使按钮高达 76px；整改后 **1440px 与 1280px 两个视口各跑一遍深度实测（含 355 次状态切换）——124 个页面、398 个按钮、0 处折行**。`anim-experiment-bulb-va` 左屏内容高度 **1381px → 1230px**。
    >
    > 另一个隐藏缺陷：旧版 `colsMap` 只声明了 2/3/4/5 档，**6/7/10 档静默回退 `grid-cols-2`**——8 个控件的列数行为当时是未定义的。当前 `columnsFor()` 对 1–10 档全覆盖，新增档位请同步扩表。
 
-   **静态模型只是第一道闸，边界必须实测**。`charWidthPx` 的字宽来自 `canvas.measureText` 逐字符校准（中文恰好 12.00px，数字 7.4px、小写 `m` 11.78px、`+`/`=` 9.13px），并按"取跨平台较大值"向上取整。校准前它对数字与 `m` 系统性低估 7~12%，放过过 `① 结合能与质量亏损`（模型 111px / 单格 111.5px）与 `固定 100m 量程对比`（模型 104.8px / 单格 111.5px）这类"算得下、实际折"的边界案例。
-   >
-   > 教训：**模型误差要靠校准字宽解决，不能靠放大安全系数掩盖**——把 `SEG_SAFE` 从 0.98 压到 0.93 试过，结果误报 30 处实测正常的短标签（72px / 73.5px），等于逼着人去砍不该砍的词。真正的兜底是 `npm run check:seg-wrap`（自起 preview 服务，用 Playwright 遍历全部动画、按真实 DOM 高度判定折行，已在 CI 内），它同时支持 `--width` 换视口、`--deep` 覆盖 `showIf` 分支。底层探针 `npm run probe:seg-wrap`（`scripts/probe-seg-wrap.mjs`）保留给「已手动起 dev server」的场景，门禁只调它、不重复实现测量。
+   > 历史教训（为何撤掉静态像素字宽模型）：2026-10 曾尝试维护 `charWidthPx` 估算与 `--print-widths`，但估算与真机字形总有偏差，既双重维护又易误杀短词；当前已删去静态字宽估算，直接由 `npm run check:runtime` / `npm run check:seg-wrap` 在真实浏览器 DOM 中兜底，底层探针 `npm run probe:seg-wrap`（`scripts/probe-seg-wrap.mjs`）保留给「已手动起 dev server」的调试场景。
 
-   以上六条由 `npm run check:control-meta` 强制：预设标签字数、左屏所有文案的卷别与应试化措辞（预设标签 / 分组名 / 选项 / 滑块名称与刻度 / tip 标题）、tip 字数与 C1/C3 关键词、`preset` 与模型选择的声明顺序、**分段器选项像素宽度（内容宽由 `PANEL.left` + `LEFT_PANEL_PADDING` 现算 = 225 / 185，× `SEG_SAFE = 0.98`，低于 `SEGMENTED.minCell = 72` 即降列）**，任一不合即 CI 失败；贴边折行的边界由 `npm run check:seg-wrap` 在真实浏览器里兜底。字数上限是**代理指标**，不是目的——真正的判据永远是上面那句话；脚本过了但读起来像答案，仍算违规。
+   以上门禁中，`npm run check:control-meta` 强制纯文本面禁 TeX、左屏全部文案的卷别与应试禁词、tip 透题检验与声明顺序；分段器是否折行则由 `npm run check:runtime`（含 `seg-wrap`）在真实浏览器里兜底。
 
 ### 2.7 中屏标注不得互相压字
 
@@ -236,7 +231,7 @@ LeftPanel                         ← AnimationPage 左屏唯一顶层容器
 
 两者都要求"同文案"，所以不会放过"两个不同标签压在一起"。
 
-**执行**：`npm run check:text-overlap`（在 `npm run check` 末尾，自带 `vite preview` 5300 + Playwright，遍历 124 个页面）。
+**执行**：`npm run check:runtime`（联合真机门禁，共享单次 `vite preview` 5300 + Playwright，遍历全站双视口；单跑压字调试可用 `npm run check:text-overlap`）。
 - **默认跑 1440 与 1280 两个视口，基线取并集**，与 `check-control-meta` 的"双视口取严"同一口径。只跑 1440 会漏掉窄视口才出现的压字——实测 `anim-friction`、`anim-nuclear-decay` 各有一处只在 1280 出现；反过来 65 处里有 20 处只在单一视口出现（输出会标"仅 Npx"）。`-- --width 1280` 可退化为单视口，仅用于调试。
 - **任何页面没能扫到即判不通过**：导航失败（重试 1 次后仍失败）或"导航成功但动画没渲染出来"（渲染了 `<h2>动画未找到</h2>`、或整页没有宽 > 260 的 svg 也没有 canvas）。**跳过某页等于把该页当成"零重叠"，这是最坏的假绿**——实测往 id 列表里塞一个不存在的 `anim-zzz-not-exist`，旧逻辑照样判"✅ 无新增重叠"。连续 5 页失败则判定 preview 服务已死、立即中止（退出码 2），否则剩下的页每页烧满 15s×2 次重试，整轮要静默空转近一小时。
 - `-- --report` 打印全量清单，用于盘点存量；
@@ -430,10 +425,10 @@ Formula
 | 预设选择是否走 `controlMeta.preset`，无手写 `OptionButton` | 是 |
 | 左屏是否出现任何手写按钮组/原生 `<input type="range">` | 否（原子控件只能出现在 ControlPanel/ParamControl 内部） |
 | 是否存在硬编码控件状态色（bg-blue-*、bg-amber-* 等） | 否 |
-| 预设标签是否符合 §2.6.2 字数与卷别约束 | 是 |
+| 预设标签是否符合 §2.6.2 紧凑与卷别约束 | 是 |
 | 左屏 tip 是否符合 §2.6.5 三档内容边界（无结论性数值/矢量方向、无公式搬运） | 是 |
-| 分段器选项是否在 §2.6.6 单格像素预算内（2 档 ≤90px、3/4/5 档 ≤72px、6/7 档 ≤90px、10 档 ≤35px，无 `allowWrap` 时不得折行） | 是 |
-| 中屏标注是否符合 §2.7（无字符级碰撞、同一个量只标一次、无基线外新增） | 是（`npm run check:text-overlap`） |
+| 分段器选项是否实际不折行 | 是（`npm run check:runtime` / `--only seg-wrap`） |
+| 中屏标注是否符合 §2.7（无字符级碰撞、同一个量只标一次、无基线外新增） | 是（`npm run check:runtime` / `--only text-overlap`） |
 | `tip` 分组是否排在左屏最底部 | 是 |
 | 右侧屏是否包含物理量、公式、高考要点三段 | 是 |
 | 公式是否包含适用条件（condition） | 是（如适用） |

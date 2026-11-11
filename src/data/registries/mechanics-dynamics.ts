@@ -167,7 +167,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       { key: 'mu_2', label: '地面摩擦系数 μ₂', min: 0, max: 1, step: 0.05, unit: '', showIf: 'mode', showIfValue: 1 },
     ],
     sceneLayout: {
-      mode: 'visibleArea',
+      mode: 'transform',
       designWidth: 700,
       designHeight: 400,
       refMagnitudes: {
@@ -560,7 +560,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       { key: 'mu', label: '动摩擦系数 μ', min: 0, max: 0.5, step: 0.05, unit: '', showIf: 'modelIdx', showIfValue: 0 },
     ],
     sceneLayout: {
-      mode: 'visibleArea',
+      mode: 'transform',
       designWidth: 700,
       designHeight: 400,
     },

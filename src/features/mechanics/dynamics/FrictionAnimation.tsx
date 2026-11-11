@@ -25,7 +25,7 @@ const FRICTION_LAYOUT = {
 } as const
 
 const FRICTION_SCENE_PROFILE: SceneLayoutProfile = {
-  mode: 'visibleArea',
+  mode: 'transform',
   designWidth: FRICTION_DESIGN.width,
   designHeight: FRICTION_DESIGN.height,
   refMagnitudes: {

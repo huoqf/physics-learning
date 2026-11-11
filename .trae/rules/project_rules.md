@@ -193,7 +193,7 @@
 
 ## 7. 提交 Checklist
 
-- **自动项**：跑 `npm run check`（`build` → 全量单测 → 11 项架构守卫 → 2 项真机实测），全绿才算过；依赖审计另跑 `npm run check:all`。
+- **自动项**：跑 `npm run check`（`build` → 全量单测 → 9 项架构守卫 → 联合真机实测 `check:runtime`），全绿才算过；依赖审计另跑 `npm run check:all`。
   守卫与规范的逐条对应见 [CHECKLIST.md](../docs/agent-rules/process/CHECKLIST.md) 第一节。
 - **人工项**：20 条脚本判不了的内容（教学有效性、三屏分配、文案口味、视觉），见 CHECKLIST.md 第二节。
 

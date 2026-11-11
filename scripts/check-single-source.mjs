@@ -200,9 +200,9 @@ function main() {
 
   for (const file of featureFiles) {
     const isPhysicsCall = importsPhysics(file, ROOT)
-    // 目录取 features 下前两层（features/<domain>/<anim>/）
+    // 目录取 features 下前两层（features/<domain>/<subtopic>/）
     const parts = rel(file).split('/')
-    const key = parts.slice(0, 3).join('/')
+    const key = (parts.length > 4 ? parts.slice(0, 4) : parts.slice(0, 3)).join('/')
     if (!featureDirs.has(key)) featureDirs.set(key, { physicsCalls: 0, files: new Set() })
     if (isPhysicsCall) {
       const entry = featureDirs.get(key)
