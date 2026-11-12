@@ -187,7 +187,7 @@ const files = []
 })(REGISTRY_DIR)
 
 const violations = []
-const stats = { preset: 0, tip: 0, tipTitle: 0, group: 0, mark: 0, arrays: 0 }
+const stats = { title: 0, desc: 0, preset: 0, tip: 0, tipTitle: 0, group: 0, mark: 0, arrays: 0 }
 
 for (const file of files) {
   const relPath = relative(ROOT, file).replaceAll('\\', '/')
@@ -231,7 +231,26 @@ for (const file of files) {
     }
   }
 
-  // ── paramMeta：滑块名称与滑块刻度 marks 的 label 同样是左屏可见文案 ──
+  // ── 禁入交互测试字段守卫：动画页严禁内嵌测验/思考题（归 /practice） ──
+  const discRe = /^\s*(supportsDiscovery|discoverySteps)\s*:/gm
+  let dm
+  while ((dm = discRe.exec(content)) !== null) {
+    violations.push({
+      file: relPath,
+      line: lineOf(dm.index),
+      reason: `注册项不得包含「${dm[1]}」，课堂随测/交互解题已统一迁至 /practice 刷真题模块`,
+    })
+  }
+
+  // ── 顶层动画 title 守卫（4空格缩进，避免重复匹配 tip.title） ──
+  const topTitleRe = /^ {4}title\s*:\s*(['"`])([\s\S]*?)\1/gm
+  let tm
+  while ((tm = topTitleRe.exec(content)) !== null) {
+    stats.title += 1
+    auditScreenText(tm[2], lineOf(tm.index), '动画标题')
+  }
+
+  // ── paramMeta：滑块名称、说明 description 与滑块刻度 marks 的 label 同样是左屏可见文案 ──
   const pRe = /paramMeta\s*:\s*\[/g
   let pm
   while ((pm = pRe.exec(content)) !== null) {
@@ -245,6 +264,10 @@ for (const file of files) {
       for (const lab of stringFieldsAll(chunk, 'label')) {
         const isMark = /marks\s*:/.test(chunk) && chunk.indexOf('marks') < lab.index
         auditScreenText(lab.value, lineOf(part.start + lab.index), isMark ? '滑块刻度' : '滑块名称')
+      }
+      for (const desc of stringFieldsAll(chunk, 'description')) {
+        stats.desc += 1
+        auditScreenText(desc.value, lineOf(part.start + desc.index), '滑块说明')
       }
     }
   }
@@ -288,6 +311,11 @@ for (const file of files) {
         stats.preset += 1
         const label = (stringField(entry.chunk, 'label') ?? '').replace(EMOJI_RE, '').trim()
         auditScreenText(label, entry.line, '预设标签')
+        const desc = stringField(entry.chunk, 'description')
+        if (desc) {
+          stats.desc += 1
+          auditScreenText(desc, entry.line, '预设说明')
+        }
       }
 
       if (type === 'tip') {
@@ -350,7 +378,7 @@ for (const file of files) {
 violations.sort((a, b) => (a.file === b.file ? a.line - b.line : a.file.localeCompare(b.file)))
 
 const summary =
-  `${stats.arrays} 个 controlMeta / ${stats.preset} 条预设 / ${stats.group} 个分组名 / ` +
+  `${stats.arrays} 个 controlMeta / ${stats.title} 个动画标题 / ${stats.preset} 条预设 / ${stats.desc} 条说明 / ${stats.group} 个分组名 / ` +
   `${stats.tip} 条 tip 正文 / ${stats.tipTitle} 个 tip 标题 / ${stats.mark} 组滑块刻度`
 
 if (violations.length > 0) {

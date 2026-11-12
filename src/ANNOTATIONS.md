@@ -9,12 +9,12 @@
 | anim-transformer | 变压器原理 | Transformer | TransformerScene | physics | — |
 | anim-power-transmission | 远距离输电 | PowerTransmission | — | physics | — |
 | anim-ac-lc-impedance | 电感与电容对交变电流的作用 | ac-impedance | — | — | — |
-| anim-combined-fields | 复合场组合场模型（高考三合一级联模型） | CombinedFieldsAnimation | SpectrometerScene | magnetism/forces | CombinedFieldsCenterExtra |
+| anim-combined-fields | 带电粒子在复合场与组合场中的运动 | CombinedFieldsAnimation | SpectrometerScene | magnetism/forces | CombinedFieldsCenterExtra |
 | anim-ohm-law | 部分电路欧姆定律与电表改装 | OhmLaw | — | physics | OhmLawCenterExtra |
 | anim-circuit-analysis | 串并联电路及电路动态分析 | CircuitAnalysis | — | physics | CircuitAnalysisCenterExtra |
 | anim-closed-circuit | 闭合电路欧姆定律与能量分析 | ClosedCircuit | — | physics | ClosedCircuitCenterExtra |
 | anim-multimeter-ohm | 多用电表与欧姆表原理 | Multimeter | — | physics | MultimeterCenterExtra |
-| anim-experiment-er | 高考实验：测定电源电动势与内阻 | ExperimentEr | ExperimentErScene | physics | ExperimentErCenterExtra |
+| anim-experiment-er | 实验：测定电源电动势与内阻 | ExperimentEr | ExperimentErScene | physics | ExperimentErCenterExtra |
 | anim-motor-circuit | 非纯电阻电路与电动机 | NonPureCircuit | — | physics | NonPureCircuitCenterExtra |
 | anim-coulomb-law | 库仑定律 | CoulombLaw | — | — | — |
 | anim-electric-field | 电场强度与比值定义法 | ElectricField | ElectricFieldBasicScene | constants | — |
@@ -70,11 +70,13 @@
 | anim-energy-conservation | 机械能守恒定律 | EnergyConservationAnimation | PendulumScene | energyConservation | — |
 | anim-vertical-spring | 竖直弹簧复合模型 | SpringCompositeAnimation | — | verticalSpring | — |
 | anim-light-rod-rope | 轻杆/轻绳连接体 | LightRodRopeAnimation | LightRodRopeScene | lightRodRope | — |
-| anim-mechanics-experiment-base | 高考力学实验基础与纸带/光电门分析 | MechanicsExperimentAnimation | MechanicsExperimentScene | experimentMechanics | — |
-| anim-experiment-resistivity | 高考实验：测量金属丝的电阻率 | ExperimentResistivityAnimation | ExperimentResistivityScene | experimentResistivity | ExperimentResistivityCenterExtra |
-| anim-multimeter | 高考实验：多用电表的使用与内部原理 | MultimeterAnimation | MultimeterScene | experimentMultimeter | — |
-| anim-experiment-bulb-va | 高考实验：描绘小灯泡的伏安特性曲线 | BulbVAAnimation | BulbVAScene | physics | — |
-| anim-experiment-refraction | 高考实验：测定玻璃的折射率（插针法） | RefractionExperimentAnimation | RefractionExperimentScene | experimentRefraction | — |
+| anim-mechanics-experiment-base | 力学实验基础：纸带与光电门 | MechanicsExperimentAnimation | MechanicsExperimentScene | experimentMechanics | — |
+| anim-experiment-newton-second | 探究加速度与力、质量的关系 | ExperimentNewtonSecondAnimation | — | experimentNewtonSecond | — |
+| anim-experiment-mechanical-energy | 验证机械能守恒定律 | ExperimentMechanicalEnergyAnimation | — | constants | — |
+| anim-experiment-resistivity | 实验：测量金属丝的电阻率 | ExperimentResistivityAnimation | ExperimentResistivityScene | experimentResistivity | ExperimentResistivityCenterExtra |
+| anim-multimeter | 实验：多用电表的使用与内部原理 | MultimeterAnimation | MultimeterScene | experimentMultimeter | — |
+| anim-experiment-bulb-va | 实验：描绘小灯泡的伏安特性曲线 | BulbVAAnimation | BulbVAScene | physics | — |
+| anim-experiment-refraction | 实验：测定玻璃的折射率（插针法） | RefractionExperimentAnimation | RefractionExperimentScene | experimentRefraction | — |
 | anim-force-motion-topic | 力与运动专题 | ForceMotionTopic | — | physics | — |
 | anim-velocity | 速度演示 | VelocityAnimation | — | physics | VelocityCenterExtra |
 | anim-acceleration | 加速度演示 | AccelerationAnimation | — | physics | — |
@@ -83,26 +85,29 @@
 | anim-free-fall | 自由落体运动 | FreeFallWrapper | — | — | — |
 | anim-vertical-throw | 竖直上抛运动 | VerticalThrowAnimation | — | physics | — |
 | anim-projectile | 平抛运动 | ProjectileAnimation | ProjectileScene | — | — |
-| anim-oblique-throw | 斜抛运动（高考压轴模型） | ObliqueThrowAnimation | ObliqueThrowScene | physics | — |
+| anim-oblique-throw | 斜抛运动 | ObliqueThrowAnimation | ObliqueThrowScene | physics | — |
 | anim-kinematics-advanced | 运动学图像扩展 | KinematicsAdvancedAnimation | — | — | — |
 | anim-momentum | 动量 | MomentumAnimation | MomentumScene | momentum | — |
 | anim-impulse-concept | 冲量 | ImpulseAnimation | — | impulse | — |
 | anim-impulse | 动量定理 | MomentumTheoremAnimation | MomentumBasicScene | momentumTheorem | MomentumTheoremChartsExtra |
-| anim-momentum-conservation | 动量守恒定律 | MomentumConservationAnimation | AirTrackExperimentScene | momentumConservation | — |
+| anim-momentum-conservation | 动量守恒定律 | MomentumConservationAnimation | — | momentumConservation | — |
+| anim-experiment-momentum | 验证动量守恒定律（气轨光电门） | ExperimentMomentumAnimation | AirTrackExperimentScene | momentumConservation | — |
 | anim-collision | 弹性碰撞与非弹性碰撞 | CollisionAnimation | CollisionBasicScene | — | — |
 | anim-curved-slot | 弧形槽与滑块模型 | CurvedSlotAnimation | — | momentumApplication/curvedSlot | — |
 | anim-spring-blocks | 弹簧-双滑块模型 | SpringBlocksAnimation | — | momentumApplication/springBlocks | — |
 | anim-bullet-block | 子弹打木块模型 | BulletBlockAnimation | BulletBlockScene | bulletBlock | — |
 | anim-man-boat | 人船模型 | ManBoatAnimation | — | momentumApplication/manBoat | — |
 | anim-alpha-scatter | α 粒子散射实验与核式结构 | AlphaScatterAnimation | — | alphaScatter | — |
-| anim-bohr-theory | 玻尔原子理论与氢光谱能级跃迁 | BohrTheoryAnimation | — | photoelectric | — |
+| anim-bohr-theory | 玻尔原子理论与氢光谱能级跃迁 | BohrTheoryAnimation | — | — | — |
 | anim-photoelectric | 光电效应与光的波粒二象性 | PhotoelectricAnimation | — | photoelectric | — |
 | anim-nuclear-decay | 原子核的组成与天然放射 | NuclearDecayAnimation | NuclearDecayScene | — | — |
+| anim-decay-magnetic-orbit | 静止核衰变磁场径迹 | DecayMagneticOrbitAnimation | DecayMagneticOrbitScene | — | — |
 | anim-nuclear-half-life | 原子核衰变与半衰期 | NuclearHalfLifeAnimation | NuclearHalfLifeScene | — | — |
 | anim-nuclear-reaction | 核反应、结合能与质量亏损 | NuclearReactionAnimation | NuclearReactionScene | — | — |
 | anim-diffraction | 光的衍射与泊松亮斑 | DiffractionAnimation | DiffractionScene | optics | — |
 | anim-dispersion | 光的色散与光谱综合 | DispersionAnimation | DispersionScene | optics | — |
-| anim-double-slit-interference | 光的双缝干涉 | DoubleSlitInterferenceAnimation | DoubleSlitInterferenceScene | optics | — |
+| anim-double-slit-interference | 光的双缝干涉 | DoubleSlitInterferenceAnimation | DoubleSlitTheoryScene | optics | — |
+| anim-experiment-double-slit | 用双缝干涉测光的波长 | ExperimentDoubleSlitAnimation | DoubleSlitEyepieceScene | optics | — |
 | anim-thin-film-interference | 薄膜干涉与增透膜 | ThinFilmInterferenceAnimation | ThinFilmInterferenceScene | optics | — |
 | anim-laser | 激光的特性与应用 | LaserAnimation | LaserScene | laser | — |
 | anim-polarization | 光的偏振 | PolarizationAnimation | PolarizationScene | optics | — |
@@ -124,10 +129,11 @@
 | anim-second-law | 热力学第二定律（方向性与熵增） | SecondLawAnimation | SecondLawScene | secondLaw | SecondLawCenterExtra |
 | anim-simple-harmonic | 简谐运动（弹簧振子） | SimpleHarmonicAnimation | HorizontalSpringScene | oscillation | — |
 | anim-simple-pendulum | 单摆 | SimplePendulumAnimation | — | oscillation | SimplePendulumCenterExtra |
+| anim-experiment-pendulum | 用单摆测重力加速度 | ExperimentPendulumAnimation | — | oscillation | ExperimentPendulumCenterExtra |
 | anim-mechanical-wave | 机械波的形成与传播 | MechanicalWaveAnimation | — | wave | MechanicalWaveCenterExtra |
 | anim-wave-diffraction | 波的衍射 | WaveDiffractionAnimation | — | wave | WaveDiffractionCenterExtra |
 | anim-wave-interference | 波的干涉 | WaveInterferenceAnimation | — | wave | WaveInterferenceCenterExtra |
 | anim-doppler-effect | 多普勒效应 | doppler | — | — | — |
 | anim-forced-resonance | 受迫振动与共振 | forced-resonance | — | — | ForcedResonanceCenterExtra |
 
-共 125 个动画条目。
+共 131 个动画条目。
