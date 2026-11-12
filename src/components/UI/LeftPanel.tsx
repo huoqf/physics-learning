@@ -32,7 +32,7 @@ interface LeftPanelSectionProps {
 export const LeftPanel: React.FC<LeftPanelProps> = ({ children, className = '' }) => {
   return (
     <div
-      className={['relative flex min-h-full flex-col gap-2', LEFT_PANEL_PADDING.panel, className]
+      className={['relative flex min-h-full w-full min-w-0 flex-col gap-2', LEFT_PANEL_PADDING.panel, className]
         .filter(Boolean)
         .join(' ')}
     >
@@ -63,7 +63,7 @@ export const LeftPanelSection: React.FC<LeftPanelSectionProps> = ({
   return (
     <section
       className={[
-        'shrink-0 rounded-xl border border-neutral-200 bg-white shadow-sm',
+        'min-w-0 shrink-0 rounded-xl border border-neutral-200 bg-white shadow-sm',
         padding,
         className,
       ].filter(Boolean).join(' ')}

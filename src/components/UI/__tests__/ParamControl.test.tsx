@@ -116,4 +116,41 @@ describe('ParamControl', () => {
     fireEvent.click(screen.getByRole('button', { name: '恢复默认参数' }))
     expect(onReset).toHaveBeenCalledTimes(1)
   })
+
+  it('边界刻度标签采用边缘自对齐并约束于 overflow-hidden 容器内', () => {
+    const onParamChange = vi.fn()
+    render(
+      <ParamControl
+        params={[
+          {
+            key: 'dRatio',
+            label: '板间距离 d',
+            value: 1,
+            min: 0.5,
+            max: 2.0,
+            step: 0.1,
+            unit: 'd₀',
+            marks: [
+              { value: 0.5, label: '0.5d₀' },
+              { value: 1.25, label: '基准' },
+              { value: 2.0, label: '2d₀(C减半/f升√2倍)', variant: 'critical' },
+            ],
+          },
+        ]}
+        onParamChange={onParamChange}
+      />,
+    )
+
+    const leftMark = screen.getByText('0.5d₀')
+    const midMark = screen.getByText('基准')
+    const rightMark = screen.getByText('2d₀(C减半/f升√2倍)')
+
+    expect(leftMark.style.left).toBe('0%')
+    expect(leftMark.style.transform).toBe('translateX(-0%)')
+    expect(midMark.style.left).toBe('50%')
+    expect(midMark.style.transform).toBe('translateX(-50%)')
+    expect(rightMark.style.left).toBe('100%')
+    expect(rightMark.style.transform).toBe('translateX(-100%)')
+    expect(rightMark.parentElement?.className).toContain('overflow-hidden')
+  })
 })
