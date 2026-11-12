@@ -249,23 +249,9 @@ export const mechanicsExperimentAnimations = defineAnimations({
     ],
     controlMeta: [
       {
-        type: 'preset',
-        label: '🎯 真实纸带（含 2% 阻力）',
-        description: '竖直自由下落打点：纸带阻力 2%，逐点比对 mgh 与 ½mv²，动能增量略小于势能减少量',
-        params: { freq: 50, m: 0.2, friction: 2 },
-        restartOnApply: true,
-      },
-      {
-        type: 'preset',
-        label: '✨ 理想无阻对比',
-        description: '阻力调 0：ΔEₖ 与 ΔEₚ 严格相等，对照实际实验中阻力产生的能量差额',
-        params: { freq: 50, m: 0.2, friction: 0 },
-        restartOnApply: true,
-      },
-      {
         type: 'tip',
         group: '操作提示',
-        content: '对比「真实纸带」与「理想无阻」下两曲线的差距，再看纸带首两点间距是否接近 2 mm。',
+        content: '拖动纸带阻力滑块（对比「理想无阻」与「真实纸带」刻度），观察两曲线差距及纸带首两点间距是否接近 2 mm。',
       },
     ],
   },
@@ -331,18 +317,6 @@ export const mechanicsExperimentAnimations = defineAnimations({
         key: 'showTheoretical',
         label: '显示理论真实 R-L 图线',
         group: '误差分析辅助',
-      },
-      {
-        type: 'preset',
-        label: '⚡ 外接法 (小电阻推荐)',
-        group: '典型实验情境',
-        params: { L: 0.5, d_mm: 0.6, wiring: 0, R_slider: 20, showTheoretical: 1 },
-      },
-      {
-        type: 'preset',
-        label: '⚠️ 内接法 (电流表分压)',
-        group: '典型实验情境',
-        params: { L: 0.5, d_mm: 0.6, wiring: 1, R_slider: 20, showTheoretical: 1 },
       },
       {
         type: 'tip',
@@ -562,12 +536,6 @@ export const mechanicsExperimentAnimations = defineAnimations({
       },
       {
         type: 'preset',
-        label: '💡 分压外接法 (0V起调)',
-        group: '典型电路情境',
-        params: { circuitMode: 0, meterMode: 0, sliderRatio: 0.6, showLoadLine: 0 },
-      },
-      {
-        type: 'preset',
         label: '⚠️ 误选限流接法对比',
         group: '典型电路情境',
         params: { circuitMode: 1, meterMode: 0, sliderRatio: 0.05, showLoadLine: 0 },
@@ -680,12 +648,6 @@ export const mechanicsExperimentAnimations = defineAnimations({
           { label: '单位圆作图法', value: 1 },
           { label: '图像斜率法', value: 2 },
         ],
-      },
-      {
-        type: 'preset',
-        label: '📐 标准45°入射测量',
-        group: '典型实验情境',
-        params: { theta1: 45, n: 1.5, d_mm: 50, pinDist: 45, errorOffset: 0, step: 4, method: 0 },
       },
       {
         type: 'preset',

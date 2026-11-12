@@ -121,8 +121,6 @@ export const electromagnetismDcCircuitsAnimations = defineAnimations({
         params: { switchClosed: 1, wiring: 0, showReal: 1, showEquivalent: 1, R_slider: 10 } },
       { type: 'preset', label: '② 内接法误差对比（E等r偏大）', group: '典型实验情境',
         params: { switchClosed: 1, wiring: 1, showReal: 1, showEquivalent: 1, R_slider: 10 } },
-      { type: 'preset', label: '③ 仿真打点拟合探究', group: '典型实验情境',
-        params: { switchClosed: 1, wiring: 0, showReal: 0, showEquivalent: 0, R_slider: 20 } },
     ],
     paramMeta: [
       { key: 'R_slider', label: '滑动变阻器阻值 R', min: 1, max: 50, step: 0.5, unit: 'Ω' },

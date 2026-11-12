@@ -542,53 +542,7 @@ export const vibrationOscillationAnimations = defineAnimations({
           { value: 2, label: '不同阻尼' },
         ],
       },
-      // 2A. 「衰减到稳定 (mode=0)」专属情境预设
-      {
-        type: 'preset',
-        label: '🔄 偏频起振收敛 (f = 0.5Hz)',
-        group: '典型物理情境',
-        showIf: 'mode',
-        showIfValue: 0,
-        restartOnApply: true,
-        params: () => ({ mode: 0, m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 0.5, showForces: 1 }),
-      },
-      {
-        type: 'preset',
-        label: '⚡ 同频共振起振 (f = f₀ = 1.0Hz)',
-        group: '典型物理情境',
-        showIf: 'mode',
-        showIfValue: 0,
-        restartOnApply: true,
-        params: () => ({ mode: 0, m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 1.0, showForces: 1 }),
-      },
-      // 2B. 「共振曲线 (mode=1)」专属情境预设（探究频率 f 与固有频率 f₀ 关系）
-      {
-        type: 'preset',
-        label: '⚡ 强烈共振 (f = f₀ = 1.0Hz)',
-        group: '典型物理情境',
-        showIf: 'mode',
-        showIfValue: 1,
-        restartOnApply: true,
-        params: () => ({ mode: 1, m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 1.0, showForces: 1 }),
-      },
-      {
-        type: 'preset',
-        label: '🔄 低频随动 (f = 0.5Hz < f₀)',
-        group: '典型物理情境',
-        showIf: 'mode',
-        showIfValue: 1,
-        restartOnApply: true,
-        params: () => ({ mode: 1, m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 0.5, showForces: 1 }),
-      },
-      {
-        type: 'preset',
-        label: '🛡️ 高频避振 (f = 2.2Hz >> f₀)',
-        group: '典型物理情境',
-        showIf: 'mode',
-        showIfValue: 1,
-        restartOnApply: true,
-        params: () => ({ mode: 1, m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 2.2, showForces: 1 }),
-      },
+      // 2. 仅保留需 m、f 协同匹配的耦合预设（单调 f / γ 由下方滑块与 marks 直接控制）
       {
         type: 'preset',
         label: '🏭 共振筛增重调频 (m: 1.0→1.6kg)',
@@ -597,34 +551,6 @@ export const vibrationOscillationAnimations = defineAnimations({
         showIfValue: 1,
         restartOnApply: true,
         params: () => ({ mode: 1, m: 1.6, k: 39.5, gamma: 0.6, F0: 2.0, f: 0.79, showForces: 1 }),
-      },
-      // 2C. 「不同阻尼 (mode=2)」专属情境预设（探究阻尼系数 γ 对共振峰与稳态振幅的影响）
-      {
-        type: 'preset',
-        label: '🟢 弱阻尼尖锐共振 (γ = 0.3)',
-        group: '典型物理情境',
-        showIf: 'mode',
-        showIfValue: 2,
-        restartOnApply: true,
-        params: () => ({ mode: 2, m: 1.0, k: 39.5, gamma: 0.3, F0: 2.0, f: 1.0, showForces: 1 }),
-      },
-      {
-        type: 'preset',
-        label: '🔵 中阻尼标准共振 (γ = 0.6)',
-        group: '典型物理情境',
-        showIf: 'mode',
-        showIfValue: 2,
-        restartOnApply: true,
-        params: () => ({ mode: 2, m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 1.0, showForces: 1 }),
-      },
-      {
-        type: 'preset',
-        label: '🟠 强阻尼平缓抑振 (γ = 1.2)',
-        group: '典型物理情境',
-        showIf: 'mode',
-        showIfValue: 2,
-        restartOnApply: true,
-        params: () => ({ mode: 2, m: 1.0, k: 39.5, gamma: 1.2, F0: 2.0, f: 1.0, showForces: 1 }),
       },
       // 3. 显示辅助开关
       {
@@ -648,7 +574,7 @@ export const vibrationOscillationAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 1,
         content:
-          '依次点击强烈共振、低频随动、高频避振预设，观察驱动频率 f 接近固有频率 f₀ 时的剧烈共振现象及远离 f₀ 时的明显减振效应。',
+          '拖动驱动频率 f 滑块（对比 f₀ 共振点与高频避振区），或点「共振筛增重调频」观察质量增大后固有频率左移与幅频响应。',
       },
       {
         type: 'tip',
@@ -656,7 +582,7 @@ export const vibrationOscillationAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 2,
         content:
-          '切换弱/中/强阻尼预设或拖动阻尼系数 γ 滑块，同步观察左半区阻尼液浓度与小球振幅、右上图共振峰高度、右下图三条稳态波形幅度的变化。',
+          '拖动阻尼系数 γ 滑块（对比弱/中/强阻尼刻度），同步观察阻尼液浓度、共振峰高度与三条稳态波形幅度的变化。',
       },
     ],
     paramMeta: [
@@ -669,7 +595,8 @@ export const vibrationOscillationAnimations = defineAnimations({
         step: 0.05,
         unit: 'Hz',
         marks: [
-          { value: 1.0, label: '固有频率 f₀ (m=1kg)' },
+          { value: 0.5, label: '低频 0.5Hz' },
+          { value: 1.0, label: 'f₀ (m=1kg)', variant: 'critical' },
           { value: 2.2, label: '高频避振区' },
         ],
         group: '驱动力参数',
@@ -677,7 +604,20 @@ export const vibrationOscillationAnimations = defineAnimations({
       { key: 'F0', label: '驱动力幅值 F₀', min: 0.5, max: 5.0, step: 0.5, unit: 'N', group: '驱动力参数' },
       { key: 'm', label: '振子质量 m', min: 0.5, max: 2.5, step: 0.1, unit: 'kg', group: '系统固有属性' },
       { key: 'k', label: '弹簧劲度 k', min: 10, max: 80, step: 5, unit: 'N/m', group: '系统固有属性' },
-      { key: 'gamma', label: '阻尼系数 γ', min: 0.1, max: 1.5, step: 0.05, unit: 'N·s/m', group: '系统固有属性' },
+      {
+        key: 'gamma',
+        label: '阻尼系数 γ',
+        min: 0.1,
+        max: 1.5,
+        step: 0.05,
+        unit: 'N·s/m',
+        marks: [
+          { value: 0.3, label: '弱阻尼', variant: 'recommended' },
+          { value: 0.6, label: '中阻尼' },
+          { value: 1.2, label: '强阻尼', variant: 'critical' },
+        ],
+        group: '系统固有属性',
+      },
     ],
   },
 })

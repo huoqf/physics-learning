@@ -136,32 +136,25 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
       r: 2.0,
     } as const,
     paramMeta: [
-      { key: 'r', label: '分子间距 r', min: 0.5, max: 4.0, step: 0.01, unit: 'r₀' },
+      {
+        key: 'r',
+        label: '分子间距 r',
+        min: 0.5,
+        max: 4.0,
+        step: 0.01,
+        unit: 'r₀',
+        marks: [
+          { value: 1.0, label: 'r₀(平衡)', variant: 'recommended' },
+          { value: 1.11, label: '1.11r₀', variant: 'critical' },
+        ],
+      },
     ],
     controlMeta: [
-      {
-        type: 'preset',
-        label: '平衡位置 r = r₀ (F合=0, Ep极小)',
-        group: '特征间距预设',
-        params: { r: 1.0 },
-      },
-      {
-        type: 'preset',
-        label: '斥力区间 r = 0.7 r₀ (F斥强, Ep陡增)',
-        group: '特征间距预设',
-        params: { r: 0.7 },
-      },
       {
         type: 'preset',
         label: '引力极值 r ≈ 1.11 r₀ (Ep反弯拐点)',
         group: '特征间距预设',
         params: { r: 1.11 },
-      },
-      {
-        type: 'preset',
-        label: '远距离 r = 3.0 r₀ (相互作用弱, Ep→0)',
-        group: '特征间距预设',
-        params: { r: 3.0 },
       },
       {
         type: 'tip',
@@ -188,12 +181,6 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
     ],
     controlMeta: [
       { type: 'toggle', key: 'showCompare', label: '显示 T₂ 对比曲线', group: '显示辅助' },
-      {
-        type: 'preset',
-        label: '常温与高温对照 (300K vs 600K)',
-        group: '典型对比',
-        params: { temperature1: 300, temperature2: 600, showCompare: 1 },
-      },
       {
         type: 'preset',
         label: '低温与极温对照 (150K vs 800K)',
@@ -247,12 +234,6 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
           { value: 1, label: '偏厚·d偏大' },
           { value: 2, label: '偏薄·易展开' },
         ],
-      },
-      {
-        type: 'preset',
-        label: '🧪 标准配比 (1:500)',
-        group: '典型实验配比',
-        params: { step: 3, ratio: 500, dropsPerMl: 80, powderDensity: 0 },
       },
       {
         type: 'preset',

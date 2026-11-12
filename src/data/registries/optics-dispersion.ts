@@ -39,18 +39,6 @@ export const opticsDispersionAnimations = defineAnimations({
         params: { mode: 1, incidenceAngle: 49 },
       },
       {
-        type: 'preset',
-        label: '大入射角极限光路',
-        group: '典型光路预设',
-        params: { mode: 1, incidenceAngle: 70 },
-      },
-      {
-        type: 'preset',
-        label: '经典白光色散演示',
-        group: '典型光路预设',
-        params: { mode: 0, incidenceAngle: 50 },
-      },
-      {
         type: 'tip',
         content:
           '白光经三棱镜后按 红→橙→黄→绿→蓝→靛→紫 展开为连续光谱：红光偏折最小（落最上方），紫光偏折最大（落最下方）。',

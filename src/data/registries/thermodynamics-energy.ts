@@ -121,30 +121,11 @@ export const thermodynamicsEnergyAnimations = defineAnimations({
       },
       {
         type: 'preset',
-        label: '☀️ 新能源消纳（储能充裕）',
-        description: '光伏 200 kW、储能 1500 kWh：午间富余全部存下，弃光几乎为零，自给率最高',
-        params: { scene: 0, pv: 200, load: 90, cap: 1500 },
-        restartOnApply: true,
-      },
-      {
-        type: 'preset',
         label: '⚠️ 储能不足（大面积弃光）',
         description: '储能只有 100 kWh：午间富余光伏无处可存，只能弃掉；傍晚仍要电网补电',
         params: { scene: 0, pv: 260, load: 90, cap: 100 },
-        restartOnApply: true,
-      },
-      {
-        type: 'preset',
-        label: '💧 抽水蓄能（120 m 落差）',
-        description: '8 万 m³ 提升 120 m：往返效率约 79%，用 4 度电发回约 3.2 度',
-        params: { scene: 1, head: 120, vol: 8 },
-        restartOnApply: true,
-      },
-      {
-        type: 'preset',
-        label: '🚗 燃油 vs 电动（同输入 100 MJ）',
-        description: '燃油 30%、电动 85%：输入相同能量，有用功差 55 MJ，另一半变成了热',
-        params: { scene: 2, fuelEff: 30, evEff: 85 },
+        showIf: 'scene',
+        showIfValue: 0,
         restartOnApply: true,
       },
       {
