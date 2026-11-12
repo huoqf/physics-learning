@@ -22,6 +22,8 @@ export interface SolenoidFieldLinesProps {
   intensity?: number
   /** 磁感线基准色，默认 PHYSICS_COLORS.magneticField */
   lineColor?: string
+  /** 外部闭合磁感线外扩跨度缩放系数（默认 1.0，紧凑电路图中可适当收紧防止被画布边缘裁切） */
+  spreadScale?: number
   /** 自定义类名 */
   className?: string
 }
@@ -43,6 +45,7 @@ export const SolenoidFieldLines: React.FC<SolenoidFieldLinesProps> = ({
   current,
   intensity,
   lineColor = PHYSICS_COLORS.magneticField,
+  spreadScale = 1,
   className = '',
 }) => {
   const level = intensity !== undefined ? intensity : Math.min(1, Math.abs(current))
@@ -60,9 +63,9 @@ export const SolenoidFieldLines: React.FC<SolenoidFieldLinesProps> = ({
 
   // 外部闭合磁感线层级配置（膨胀跨度与外扩距离）
   const externalLayers = [
-    { yRatio: 0.5, dx: 36, dy: 24, strokeW: 1.2, arrow: true },
-    { yRatio: 0.75, dx: 58, dy: 46, strokeW: 1.0, arrow: true },
-    { yRatio: 0.9, dx: 86, dy: 72, strokeW: 0.8, arrow: false },
+    { yRatio: 0.5, dx: 36 * spreadScale, dy: 24 * spreadScale, strokeW: 1.2, arrow: true },
+    { yRatio: 0.75, dx: 58 * spreadScale, dy: 46 * spreadScale, strokeW: 1.0, arrow: true },
+    { yRatio: 0.9, dx: 86 * spreadScale, dy: 72 * spreadScale, strokeW: 0.8, arrow: false },
   ]
 
   const arrowSize = 4.2

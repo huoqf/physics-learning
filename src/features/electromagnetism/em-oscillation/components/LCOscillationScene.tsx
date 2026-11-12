@@ -46,10 +46,13 @@ const RESISTOR_X = 295
 const RESISTOR_W = 54
 const RESISTOR_H = 16
 
-const COIL = { cx: 295, cy: BOTTOM_Y, turns: 6, rx: 13, ry: 22 } as const
+const COIL = { cx: 295, cy: BOTTOM_Y, turns: 5, rx: 6, ry: 20 } as const
 const COIL_TOTAL_WIDTH = 160
 const COIL_LEFT = COIL.cx - COIL_TOTAL_WIDTH / 2 // 215
 const COIL_RIGHT = COIL.cx + COIL_TOTAL_WIDTH / 2 // 375
+/** 螺旋主体实际有效宽度（与 CoilBase horizontal 模式 coilW = width * 0.84 对齐，确保磁感线从线圈管口穿出） */
+const COIL_HELIX_WIDTH = COIL_TOTAL_WIDTH * 0.84
+const COIL_HELIX_HEIGHT = COIL.ry * 2 * 0.9
 
 /** 电荷量低于该占比时视为"极板不带电"，不再绘制电荷符号与电场线 */
 const NEUTRAL_THRESHOLD = 0.02
@@ -95,26 +98,16 @@ export function LCOscillationScene({ physics, font }: LCOscillationSceneProps) {
 
   return (
     <>
-      {/* ── 0. 螺线管磁场能辉光与闭合磁感线（仅开关接 2 且存在电流时呈现）── */}
+      {/* ── 0. 螺线管磁场能辉光（仅开关接 2 且存在电流时呈现；磁感线分层穿行于线圈内部）── */}
       {currentLevel > 0.03 && (
-        <g pointerEvents="none">
-          <ellipse
-            cx={COIL.cx}
-            cy={COIL.cy}
-            rx={COIL_TOTAL_WIDTH / 2 + 26 * currentLevel}
-            ry={COIL.ry + 20 * currentLevel}
-            fill={withAlpha(EM_OSCILLATION_COLORS.magneticEnergy, 0.14 * currentLevel)}
-          />
-          <SolenoidFieldLines
-            x={COIL.cx}
-            y={COIL.cy}
-            width={COIL_TOTAL_WIDTH}
-            height={COIL.ry * 2}
-            current={coilCurrent}
-            intensity={currentLevel}
-            lineColor={PHYSICS_COLORS.magneticField}
-          />
-        </g>
+        <ellipse
+          cx={COIL.cx}
+          cy={COIL.cy}
+          rx={COIL_TOTAL_WIDTH / 2 + 24 * currentLevel}
+          ry={COIL.ry + 18 * currentLevel}
+          fill={withAlpha(EM_OSCILLATION_COLORS.magneticEnergy, 0.14 * currentLevel)}
+          pointerEvents="none"
+        />
       )}
 
       {/* ── 1. 电容器极板间电场能柔和辉光 ── */}
@@ -234,20 +227,35 @@ export function LCOscillationScene({ physics, font }: LCOscillationSceneProps) {
           </g>
         )}
 
-        {/* 底部横置通电螺线管电感 */}
+        {/* 底部横置通电螺线管电感（连续三维螺旋线，磁感线穿插在背面与正面绕线之间） */}
         <Solenoid
           x={COIL.cx}
           y={COIL.cy}
           width={COIL_TOTAL_WIDTH}
           height={COIL.ry * 2}
+          rx={COIL.rx}
           turns={COIL.turns}
           current={coilCurrent}
           leadType="horizontal"
           leadEndpointRadius={0}
-          showPolarity={!isChargingMode}
-          showWindingArrows={!isChargingMode}
+          showPolarity={!isChargingMode && currentLevel > 0.03}
+          showWindingArrows={!isChargingMode && currentLevel > 0.03}
           showIronCore={false}
           animated={false}
+          innerOverlay={
+            currentLevel > 0.03 ? (
+              <SolenoidFieldLines
+                x={0}
+                y={0}
+                width={COIL_HELIX_WIDTH}
+                height={COIL_HELIX_HEIGHT}
+                current={coilCurrent}
+                intensity={currentLevel}
+                lineColor={PHYSICS_COLORS.magneticField}
+                spreadScale={0.74}
+              />
+            ) : undefined
+          }
         />
       </g>
 
