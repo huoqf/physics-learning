@@ -1,5 +1,7 @@
 import { useMemo, useCallback } from 'react'
 import {
+  AC_VALUES_VISUAL_PERIOD,
+  AC_WAVEFORM_MAP,
   getTheoreticalThermalState,
   checkEquivalence,
   getEffectiveCurrent,
@@ -7,14 +9,9 @@ import {
 } from '@/physics/rmsCalculator'
 import type { WaveformType } from '@/physics/rmsCalculator'
 
-export const WAVEFORM_MAP: Record<number, WaveformType> = {
-  0: 'sine',
-  1: 'square',
-  2: 'pulse',
-  3: 'half_sine',
-}
+export const WAVEFORM_MAP = AC_WAVEFORM_MAP
 
-export const VISUAL_PERIOD = 2
+export const VISUAL_PERIOD = AC_VALUES_VISUAL_PERIOD
 export const INITIAL_TEMP = 20
 export const MAX_TEMP = 80
 

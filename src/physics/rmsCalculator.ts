@@ -7,6 +7,20 @@
  * @category M4
  */
 
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
+/** 有效值实验视觉周期 (s, SSOT) */
+export const AC_VALUES_VISUAL_PERIOD = 2
+
+/** 波形索引到波形枚举映射 (SSOT) */
+export const AC_WAVEFORM_MAP: Record<number, WaveformType> = {
+  0: 'sine',
+  1: 'square',
+  2: 'pulse',
+  3: 'half_sine',
+}
+
 /** 波形类型枚举 */
 export type WaveformType = 'sine' | 'square' | 'pulse' | 'half_sine'
 
@@ -217,4 +231,46 @@ export function checkEquivalence(
   const currentError = Math.abs(dcCurrent - I_eff)
   const tolerance = Math.max(0.02 * I_eff, 0.02)
   return currentError <= tolerance && isNearPeriodEnd(time, period)
+}
+
+export interface ACValuesCriticalParams {
+  waveform?: number
+  duty?: number
+}
+
+/**
+ * 计算有效值与峰值实验关键时刻（SSOT）
+ * 严格有效值等效校验在整数周期 T、2T 终点成立，同时标出半周期/占空比截断时刻。
+ */
+export function getACValuesCriticalTimes(
+  params: ACValuesCriticalParams = {},
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const T = AC_VALUES_VISUAL_PERIOD
+  const waveformType = AC_WAVEFORM_MAP[params.waveform ?? 0] ?? 'sine'
+  const duty = Math.min(0.95, Math.max(0.05, params.duty ?? 0.5))
+  const events: CriticalTimePoint[] = []
+
+  if (waveformType === 'pulse') {
+    const tOff = alignCriticalTime(duty * T, 'nearest')
+    if (tOff > 0 && tOff < T - 0.04 && tOff <= maxTime) {
+      events.push({ time: tOff, label: '脉冲关断瞬间', variant: 'warning', autoPause: false })
+    }
+  } else if (waveformType === 'half_sine') {
+    events.push({ time: alignCriticalTime(T / 2, 'nearest'), label: '进入截止半周 (T/2)', variant: 'warning', autoPause: false })
+  } else {
+    events.push({ time: alignCriticalTime(T / 2, 'nearest'), label: '电流换向 (T/2)', variant: 'info', autoPause: false })
+  }
+
+  const t1 = alignCriticalTime(T, 'nearest')
+  if (t1 <= maxTime) {
+    events.push({ time: t1, label: '完成1个周期 T (热量对等校验)', variant: 'warning', autoPause: false })
+  }
+
+  const t2 = alignCriticalTime(2 * T, 'nearest')
+  if (t2 <= maxTime) {
+    events.push({ time: t2, label: '完成2个周期 2T', variant: 'info', autoPause: false })
+  }
+
+  return events.filter((e) => e.time > 0 && e.time <= maxTime).sort((a, b) => a.time - b.time)
 }

@@ -1,6 +1,7 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
 import { rcTauFromParams, rcWindowFromParams } from '@/physics'
+import { getChargeInEFieldCriticalTimes } from '@/physics/electrostatics'
 import { alignCriticalTime } from '@/utils/criticalTime'
 
 // ===== 电磁学 · 静电场（[M4-1]）=====
@@ -71,6 +72,7 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
     title: '带电粒子在匀强电场中运动',
     knowledgeId: 'electricity-1-3',
     Component: lazy(() => import('@/features/electromagnetism/electrostatics/ChargeInEField')),
+    criticalTimes: (p) => getChargeInEFieldCriticalTimes(p, 30),
     defaultParams: { U: 150, v0: 15, q: 2, freq: 30, isAC: 0, useGravity: 0, phi0: 0 } as const,
     paramMeta: [
       { key: 'U', label: '板间电压 U', min: 50, max: 300, step: 10, unit: 'V' },

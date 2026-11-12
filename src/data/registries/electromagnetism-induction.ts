@@ -1,5 +1,9 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
+import { getSingleRodCriticalTimes } from '@/physics/singleRod'
+import { getDualRodsCriticalTimes } from '@/physics/dualRods'
+import { getLoopPassFieldCriticalTimes } from '@/physics/loopPassField'
+import { getSelfInductionCriticalTimes } from '@/physics/electromagnetism/selfInduction'
 
 // ===== 电磁学 · 电磁感应（[M4-1]）=====
 export const electromagnetismInductionAnimations = defineAnimations({
@@ -289,6 +293,7 @@ export const electromagnetismInductionAnimations = defineAnimations({
     centerExtraHeight: 'h-1/2',
     controlsMode: 'timed' as const,
     maxTime: 12,
+    criticalTimes: (p) => getSingleRodCriticalTimes(p, 12),
     defaultParams: {
       startMechanism: 0,
       driveForce: 1.2,
@@ -368,6 +373,7 @@ export const electromagnetismInductionAnimations = defineAnimations({
     title: '电磁感应双杆模型',
     knowledgeId: 'electricity-4-6',
     Component: lazy(() => import('@/features/electromagnetism/induction/InductionDualRods')),
+    criticalTimes: (p) => getDualRodsCriticalTimes(p, 30),
     defaultParams: {
       scenario: 0,
       massA: 0.2,
@@ -426,6 +432,7 @@ export const electromagnetismInductionAnimations = defineAnimations({
     title: '电磁感应线框模型',
     knowledgeId: 'electricity-4-7',
     Component: lazy(() => import('@/features/electromagnetism/induction/InductionLoopField')),
+    criticalTimes: (p) => getLoopPassFieldCriticalTimes(p, 30),
     defaultParams: {
       dimensionPreset: 0,
       domainAxis: 0,
@@ -471,7 +478,8 @@ export const electromagnetismInductionAnimations = defineAnimations({
     CenterExtra: lazy(() => import('@/features/electromagnetism/induction/self-induction/SelfInductionCenterExtra')),
     centerExtraHeight: 'h-1/2',
     controlsMode: 'timed' as const,
-    maxTime: 6,
+    maxTime: (p) => ((p.mode ?? 0) === 2 ? 8 : 4),
+    criticalTimes: (p) => getSelfInductionCriticalTimes(p, (p.mode ?? 0) === 2 ? 8 : 4),
     defaultParams: {
       mode: 0,
       E: 12,

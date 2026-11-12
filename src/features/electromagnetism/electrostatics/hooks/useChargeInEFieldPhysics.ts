@@ -6,8 +6,8 @@
 import { useMemo, useEffect } from 'react'
 import { useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import {
+  CHARGE_EFIELD_GEOMETRY,
   calculateChargeInEFieldTrajectory,
   getChargeInEFieldTimeScale,
 } from '@/physics/electromagnetism'
@@ -15,11 +15,11 @@ import { calculateVectorPixelLength } from '@/utils/vectorLength'
 import type { SceneScale } from '@/scene'
 import type { ViewportInfo } from '@/utils/useViewport'
 
-// ── 物理几何常数 (SI) ──
-export const PLATE_LENGTH = 0.4 // m
-export const PLATE_GAP = 0.2 // m
+// ── 物理几何常数 (SI, 复用物理层真源) ──
+export const PLATE_LENGTH = CHARGE_EFIELD_GEOMETRY.plateLength // m
+export const PLATE_GAP = CHARGE_EFIELD_GEOMETRY.plateGap // m
 export const HALF_GAP = PLATE_GAP / 2
-export const PARTICLE_MASS = 10 * 1e-6 // 10 mg (10e-6 kg)
+export const PARTICLE_MASS = CHARGE_EFIELD_GEOMETRY.particleMass // 10 mg (10e-6 kg)
 
 // ── SVG 几何常量 ──
 export const TERMINAL_CORE_RADIUS = 4   // 发射口圆半径
@@ -112,8 +112,15 @@ export interface ChargeInEFieldPhysicsResult {
     theta: number
     alpha: number
   } | null
-  // 网格线 JSX
-  gridLines: React.ReactNode
+  // 网格线数据
+  gridLineSpecs: Array<{
+    key: string
+    x1: number
+    y1: number
+    x2: number
+    y2: number
+    isCenterRef?: boolean
+  }>
 }
 
 export function useChargeInEFieldPhysics(
@@ -281,52 +288,26 @@ export function useChargeInEFieldPhysics(
     }
   }, [currentState, isAC, useGravity, showVectors])
 
-  // 9. 网格线 JSX
-  const gridLines = useMemo(() => {
-    if (!showGrid) return null
-    const lines = []
+  // 9. 网格线纯数据（零 JSX）
+  const gridLineSpecs = useMemo(() => {
+    if (!showGrid) return []
+    const lines: ChargeInEFieldPhysicsResult['gridLineSpecs'] = []
     for (let i = 0; i <= 8; i++) {
       const gx = startX + i * 65
-      lines.push(
-        <line
-          key={`gx-${i}`}
-          x1={gx}
-          y1={topPlateY}
-          x2={gx}
-          y2={bottomPlateY}
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={CANVAS_STYLE.stroke.grid}
-          strokeDasharray="4,4"
-        />,
-      )
+      lines.push({ key: `gx-${i}`, x1: gx, y1: topPlateY, x2: gx, y2: bottomPlateY })
     }
     for (let i = 0; i <= 4; i++) {
       const gy = topPlateY + i * 65
-      lines.push(
-        <line
-          key={`gy-${i}`}
-          x1={startX}
-          y1={gy}
-          x2={startX + 520}
-          y2={gy}
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={CANVAS_STYLE.stroke.grid}
-          strokeDasharray="4,4"
-        />,
-      )
+      lines.push({ key: `gy-${i}`, x1: startX, y1: gy, x2: startX + 520, y2: gy })
     }
-    lines.push(
-      <line
-        key="mid"
-        x1={startX}
-        y1={midY}
-        x2={840}
-        y2={midY}
-        stroke={PHYSICS_COLORS.grid}
-        strokeWidth={CANVAS_STYLE.stroke.reference}
-        strokeDasharray="2,4"
-      />,
-    )
+    lines.push({
+      key: 'mid',
+      x1: startX,
+      y1: midY,
+      x2: 840,
+      y2: midY,
+      isCenterRef: true,
+    })
     return lines
   }, [showGrid, topPlateY, bottomPlateY])
 
@@ -356,6 +337,6 @@ export function useChargeInEFieldPhysics(
     vxPxLen,
     vyPxLen,
     tangentData,
-    gridLines,
+    gridLineSpecs,
   }
 }

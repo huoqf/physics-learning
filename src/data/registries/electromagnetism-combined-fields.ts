@@ -1,5 +1,6 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
+import { getCombinedFieldsCriticalTimes } from '@/features/electromagnetism/magnetism/combined-fields/model/combinedFieldsModel'
 
 // ===== 电磁学 · 复合场与组合场（级联模型）=====
 export const combinedFieldsAnimations = defineAnimations({
@@ -15,6 +16,7 @@ export const combinedFieldsAnimations = defineAnimations({
     centerExtraHeight: 'h-[250px]',
     controlsMode: 'timed' as const,
     maxTime: 10,
+    criticalTimes: (p) => getCombinedFieldsCriticalTimes(p, 10),
     defaultParams: {
       mode: 0,
       electricE: 300,

@@ -2,6 +2,10 @@ import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
 import { PENDULUM_EXP_DEFAULTS } from '@/physics/experimentPendulum'
 import { GRAVITY } from '@/physics/constants'
+import {
+  getSimpleHarmonicCriticalTimes,
+  getSimplePendulumCriticalTimes,
+} from '@/physics/oscillation'
 
 // ===== 机械振动与波 =====
 export const vibrationOscillationAnimations = defineAnimations({
@@ -11,6 +15,7 @@ export const vibrationOscillationAnimations = defineAnimations({
     Component: lazy(() => import('@/features/vibration/simpleHarmonic/SimpleHarmonicAnimation')),
     controlsMode: 'timed' as const,
     maxTime: 20,
+    criticalTimes: (p) => getSimpleHarmonicCriticalTimes(p, 20),
     defaultParams: {
       A: 0.06,
       mass: 0.5,
@@ -85,6 +90,7 @@ export const vibrationOscillationAnimations = defineAnimations({
     centerLayout: 'splitH',
     controlsMode: 'timed' as const,
     maxTime: 20,
+    criticalTimes: (p) => getSimplePendulumCriticalTimes(p, 20),
     defaultParams: {
       L: 1.5,
       g: GRAVITY,
