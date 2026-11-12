@@ -56,8 +56,6 @@ export const thermodynamicsGasLawsAnimations = defineAnimations({
       { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 2,
         content: '卡槽销钉锁定活塞保持容积不变，拖动温度 T，观察压强 P 变化与 p-T 直线' },
     ],
-    supportsDiscovery: true,
-    discoverySteps: () => import('@/features/thermodynamics/gasLaws/discoverySteps'),
     CenterExtra: lazy(() => import('@/features/thermodynamics/gasLaws/GasLawsCenterExtra')),
     centerLayout: 'splitH',
   },

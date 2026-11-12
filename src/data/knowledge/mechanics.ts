@@ -230,7 +230,6 @@ export const mechanicsKnowledge: KnowledgeNode[] = [
     animationIds: ['anim-block-board'],
     problemIds: [],
     prerequisites: ['mechanics-4-2', 'mechanics-3-3'],
-    animationParams: { advancedMode: 1 },
   },
   {
     id: 'mechanics-4-9',
@@ -275,7 +274,7 @@ export const mechanicsKnowledge: KnowledgeNode[] = [
   },
   {
     id: 'mechanics-5-3',
-    title: '斜抛运动（高考压轴模型）',
+    title: '斜抛运动',
     chapter: '第5章 曲线运动与万有引力',
     module: 'mechanics',
     importance: 'gaokao',

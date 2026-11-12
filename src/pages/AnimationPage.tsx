@@ -528,10 +528,10 @@ export default function AnimationPage() {
       <ThreePanel
         left={(paramControlParams.length > 0 || (config?.controlMeta || []).length > 0 || siblingAnimations.length > 1) ? (
           <LeftPanel>
-            {/* 1. 关联模型切换 Tab (高考考点变式切换) */}
+            {/* 1. 同知识点关联演示切换 Tab */}
             {siblingAnimations.length > 1 && (
               <LeftPanelSection
-                title="💡 高考同考点经典模型切换"
+                title="关联演示切换"
                 compact
                 className="bg-neutral-100/80"
                 bodyClassName="grid gap-1 p-0.5"

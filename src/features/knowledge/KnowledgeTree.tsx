@@ -4,6 +4,7 @@ import { ChevronRight, ChevronDown, CheckCircle2, Circle, Info } from 'lucide-re
 import { knowledgeTree } from '@/data/knowledgeTree'
 import { buildKnowledgeTree, buildModuleGroups, countDescendants } from '@/data/buildKnowledgeTree'
 import { getAnimationConfigAsync } from '@/data/animationRegistry'
+import { getProblemsByKnowledgeId } from '@/data/problems'
 import { useProgressStore } from '@/stores'
 import { colors } from '@/theme/colors'
 import { duration } from '@/theme/motion'
@@ -78,6 +79,20 @@ const KnowledgeNodeItem: React.FC<{
 
   const { mastered: childMastered } = useMemo(() => countDescendants(node), [node])
 
+  const relatedProblemCount = useMemo(() => {
+    if (hasChildren) return 0
+    const ids = new Set(node.problemIds)
+    for (const p of getProblemsByKnowledgeId(node.id)) {
+      ids.add(p.id)
+    }
+    return ids.size
+  }, [hasChildren, node.id, node.problemIds])
+
+  const handleOpenProblems = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    navigate(`/practice?knowledge=${encodeURIComponent(node.id)}`)
+  }
+
   return (
     <div>
       <div
@@ -120,6 +135,20 @@ const KnowledgeNodeItem: React.FC<{
           <span className="text-xs text-neutral-400">
             {childMastered}/{countDescendants(node).total}
           </span>
+        )}
+        {!hasChildren && relatedProblemCount > 0 && (
+          <button
+            type="button"
+            onClick={handleOpenProblems}
+            className="text-xs px-2 py-0.5 rounded-full font-medium transition-transform active:scale-[0.97] hover:opacity-90 cursor-pointer"
+            style={{
+              backgroundColor: colors.accent[100],
+              color: colors.accent[700]
+            }}
+            title={`前往练习该知识点的 ${relatedProblemCount} 道真题`}
+          >
+            真题 ({relatedProblemCount})
+          </button>
         )}
         {!hasChildren && node.animationIds.length > 0 && (
           <div

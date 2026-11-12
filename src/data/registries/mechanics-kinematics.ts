@@ -399,7 +399,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     ],
   },
   'anim-oblique-throw': {
-    title: '斜抛运动（高考压轴模型）',
+    title: '斜抛运动',
     knowledgeId: 'mechanics-5-3',
     Component: lazy(() => import('@/features/mechanics/oblique-throw/ObliqueThrowAnimation')),
     controlsMode: 'timed',

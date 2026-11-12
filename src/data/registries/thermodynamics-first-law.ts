@@ -26,15 +26,15 @@ export const thermodynamicsFirstLawAnimations = defineAnimations({
       // §1 模型选择
       { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '沙箱探索' }, { value: 1, label: '循环热机' }] },
-      // §3 高考真题联动
+      // §3 典型工况
       {
         type: 'preset',
         label: '📋 典型工况·等压吸热做功',
         group: '典型工况',
         hideIf: 'mode',
         hideIfValue: 1,
-        description: '等压吸热做功模型 (1:10等比缩放演示)：吸热 500J→50J，膨胀对外做功 240J→24J (W=-24J)，内能净增加 260J→26J。',
-        params: { W: -24, Q: 50, adiabatic: 0 },
+        description: '等压吸热膨胀工况：吸热 50 J，膨胀对外做功 20 J (W = -20 J)，内能净增加 30 J。',
+        params: { W: -20, Q: 50, adiabatic: 0 },
       },
       // §4 显示辅助
       { type: 'toggle', key: 'adiabatic', label: '绝热气缸', group: '显示辅助',
