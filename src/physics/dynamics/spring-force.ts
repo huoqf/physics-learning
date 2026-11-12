@@ -12,6 +12,8 @@
  */
 
 import { GRAVITY } from '../constants'
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 // ─── 通用常量 ───────────────────────────────────────────────────────────
 
@@ -567,4 +569,76 @@ export function calculateElasticTensionState(
   const tensionForce = gravityForce // 平衡状态下绳拉力等于重力
   const displacement = tensionForce / kRope
   return { tensionForce, gravityForce, displacement }
+}
+
+/**
+ * 轻质物体突变模型（anim-light-weight-mutation）临界时刻列表。
+ * t = 0.02s 为剪断后第一帧（绳断、弹簧弹力尚来不及突变），fallTime 为 B 球落地前。
+ */
+export function getLightWeightMutationCriticalTimes(
+  params: Record<string, number> = {},
+  maxTime = 3,
+): CriticalTimePoint[] {
+  const m = params.m ?? 1
+  const k = params.k ?? 100
+  const rawFallTime = calculateBallBFallTime(
+    m,
+    k,
+    CUT_ROPE_ANCHORS.ceilY,
+    CUT_ROPE_ANCHORS.groundY,
+  )
+  const fallTime = alignCriticalTime(rawFallTime, 'before')
+  const events: CriticalTimePoint[] = [
+    {
+      time: 0.02,
+      label: '⚡ 剪断瞬间·绳断簧不断',
+      variant: 'critical',
+      autoPause: true,
+    },
+  ]
+  if (Number.isFinite(fallTime) && fallTime > 0.02 && fallTime <= maxTime) {
+    events.push({
+      time: fallTime,
+      label: '🎯 B 球落地前瞬间',
+      variant: 'info',
+      autoPause: false,
+    })
+  }
+  return events
+}
+
+/**
+ * 弹力演示（anim-spring-force）临界时刻列表：仅胡克定律模式（mode === 0）为简谐振动。
+ */
+export function getSpringForceCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 5,
+): CriticalTimePoint[] {
+  if ((params.mode ?? 0) !== 0) return []
+  const k = params.k ?? 100
+  const m = params.m ?? 1.5
+  if (!(k > 0) || !(m > 0)) return []
+
+  const T = 2 * Math.PI * Math.sqrt(m / k)
+  const events: CriticalTimePoint[] = []
+
+  const tPeak = alignCriticalTime(T / 4, 'nearest')
+  if (tPeak > 0 && tPeak <= maxTime) {
+    events.push({
+      time: tPeak,
+      label: '⚡ 最大拉伸极值 (F最大)',
+      variant: 'critical',
+      autoPause: false,
+    })
+  }
+  const tEq = alignCriticalTime(T / 2, 'nearest')
+  if (tEq > 0 && tEq <= maxTime) {
+    events.push({
+      time: tEq,
+      label: '回到原长平衡点 (F = 0)',
+      variant: 'info',
+      autoPause: false,
+    })
+  }
+  return events.sort((a, b) => a.time - b.time)
 }

@@ -1,6 +1,6 @@
 import { PhysicsGround, PhysicsVectorArrow, VectorDefs, Ball } from '@/components/Physics'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import {
@@ -29,11 +29,10 @@ const STAGE_LEFT = 58
 const AXIS_LABEL_X = 52
 
 export default function VerticalThrowAnimation() {
-  const { params, time, isPlaying, showVectors, setIsPlaying, setTime } = useAnimationStore(
+  const { params, time, showVectors, setIsPlaying, setTime } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
       time: s.time,
-      isPlaying: s.isPlaying,
       showVectors: s.showVectors,
       setIsPlaying: s.setIsPlaying,
       setTime: s.setTime,
@@ -127,34 +126,12 @@ export default function VerticalThrowAnimation() {
     }
   }, [isLanded, time, setIsPlaying])
 
-  // ── 最高点自动暂停 1 秒后继续 ──
   /**
    * `g` 标签的纵向位置：跟在重力箭头中段。
    * 小球快落地时 `currentBallY` 已经贴近地面线，往下半个箭头长度就掉到画布外
    * （实测 bottom 溢出 8px）。夹到地面线以上。
    */
   const gLabelY = Math.min(currentBallY + vtSceneScale.maxVectorLength * 0.5, groundY - 6)
-
-  const hasPausedAtPeakRef = useRef(false)
-  const peakTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  useEffect(() => {
-    if (isAtPeak && isPlaying && !hasPausedAtPeakRef.current) {
-      setIsPlaying(false)
-      hasPausedAtPeakRef.current = true
-      peakTimerRef.current = setTimeout(() => {
-        setIsPlaying(true)
-      }, 1000)
-    }
-    if (!isAtPeak) {
-      hasPausedAtPeakRef.current = false
-    }
-  }, [isAtPeak, isPlaying, setIsPlaying])
-
-  useEffect(() => {
-    return () => {
-      if (peakTimerRef.current) clearTimeout(peakTimerRef.current)
-    }
-  }, [])
 
   // ── 渲染 ──
   return (

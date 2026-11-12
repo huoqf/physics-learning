@@ -7,16 +7,16 @@
 import { useMemo } from 'react'
 import { getPointsUpToTime, PX_PER_METER } from '@/utils'
 import {
-  calculateCollisionVelocities,
-  calculateCommonVelocity,
-  calculateCommonVelocityTime,
+  MC_SCENE_DEFAULTS,
+  computeTwoBallCollisionTiming,
+  computeSliderBoardTiming,
 } from '@/physics/momentumConservation'
 
 /** 动量守恒动画布局常量 */
 export const MC_LAYOUT = {
   canvasPadding: 30,
-  ballBaseRadius: 16,
-  massRadiusScale: 2,
+  ballBaseRadius: MC_SCENE_DEFAULTS.ballBaseRadius,
+  massRadiusScale: MC_SCENE_DEFAULTS.massRadiusScale,
   vectorMaxLength: 80,
   /** 木板高度 (px) */
   boardHeight: 18,
@@ -27,7 +27,7 @@ export const MC_LAYOUT = {
   /** 动量条最大长度 (px) */
   momentumBarMaxLength: 120,
   /** 重力加速度 (m/s²) */
-  g: 9.8,
+  g: MC_SCENE_DEFAULTS.g,
 } as const
 
 // ─── 基础模式（两球碰撞）──────────────────────────────────────────────────
@@ -61,33 +61,12 @@ interface BasicModeResult {
 function computeBasicMode(p: BasicModeParams): BasicModeResult {
   const { m1, v1, m2, v2, collisionType, e_coefficient, time, designWidth } = p
 
-  const R_A = MC_LAYOUT.ballBaseRadius + m1 * MC_LAYOUT.massRadiusScale
-  const R_B = MC_LAYOUT.ballBaseRadius + m2 * MC_LAYOUT.massRadiusScale
-
-  const initPosAx = designWidth * 0.28
-  const initPosBx = designWidth * 0.58
-
-  const rPhysA = R_A / PX_PER_METER
-  const rPhysB = R_B / PX_PER_METER
-  const initPhysX_A = 0
-  const initPhysX_B = (initPosBx - initPosAx) / PX_PER_METER
-
-  let eVal = 1.0
-  if (collisionType === 1) eVal = 0.0
-  else if (collisionType === 2) eVal = e_coefficient
-
-  const approachSpeed = v1 - v2
-  const gapPhys = initPhysX_B - rPhysB - (initPhysX_A + rPhysA)
-  let collisionTime = Infinity
-  let v1After = v1
-  let v2After = v2
-
-  if (approachSpeed > 0 && gapPhys > 0) {
-    collisionTime = gapPhys / approachSpeed
-    const { v1After: v1A, v2After: v2A } = calculateCollisionVelocities(m1, v1, m2, v2, eVal)
-    v1After = v1A
-    v2After = v2A
-  }
+  const {
+    R_A, R_B, initPosAx, initPhysX_A, initPhysX_B,
+    collisionTime, v1After, v2After,
+  } = computeTwoBallCollisionTiming({
+    m1, v1, m2, v2, collisionType, e_coefficient, designWidth,
+  })
 
   let xPhysA = 0
   let xPhysB = initPhysX_B
@@ -160,28 +139,11 @@ function computeAdvancedMode(p: AdvancedModeParams): AdvancedModeResult {
   const { m_slider, M_board, v0, mu, L, time, groundY, designWidth } = p
   const g = MC_LAYOUT.g
 
-  const vCommon = calculateCommonVelocity(m_slider, v0, M_board)
-  const a_rel = mu * g * (1 + m_slider / M_board)
-  const tCommon = calculateCommonVelocityTime(M_board, vCommon, mu, m_slider, g)
-
-  const x1AtCommon = v0 * tCommon - 0.5 * mu * g * tCommon * tCommon
-  const x2AtCommon = 0.5 * (mu * m_slider * g / M_board) * tCommon * tCommon
-  const deltaXAtCommon = x1AtCommon - x2AtCommon
-  const isFallen = deltaXAtCommon > L
-
-  let tFall = Infinity
-  let vSliderFall = v0
-  let vBoardFall = 0
-  let x1AtFall = 0
-  let x2AtFall = 0
-
-  if (isFallen) {
-    tFall = (v0 - Math.sqrt(v0 * v0 - 2 * a_rel * L)) / a_rel
-    vSliderFall = v0 - mu * g * tFall
-    vBoardFall = (mu * m_slider * g / M_board) * tFall
-    x1AtFall = v0 * tFall - 0.5 * mu * g * tFall * tFall
-    x2AtFall = 0.5 * (mu * m_slider * g / M_board) * tFall * tFall
-  }
+  const {
+    vCommon, tCommon, isFallen, tFall,
+    vSliderFall, vBoardFall,
+    x1AtCommon, x2AtCommon, x1AtFall, x2AtFall,
+  } = computeSliderBoardTiming({ m_slider, M_board, v0, mu, L, g })
 
   let currentXSlider = 0
   let currentXBoard = 0

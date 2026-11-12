@@ -2,8 +2,11 @@ import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import {
   CELESTIAL_MULTI_STAR_RANGES,
   MULTI_STAR_DEFAULT_PARAMS,
+  getKeplerCriticalTimes,
   multiStarMaxAnimTime,
 } from '@/physics/celestial'
+import { getVerticalCircularCriticalTimes } from '@/physics/dynamics/dynamics-advanced'
+import { getOrbitTransferCriticalTimes } from '@/physics/orbitTransfer'
 import { defineAnimations } from '../defineAnimations'
 
 export const mechanicsCircularGravitationAnimations = defineAnimations({
@@ -92,6 +95,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     knowledgeId: 'mechanics-5-6',
     Component: lazy(() => import('@/features/mechanics/circular/VerticalCircularAnimation')),
     controlsMode: 'timed',
+    criticalTimes: (p) => getVerticalCircularCriticalTimes(p, 30),
     defaultParams: { r: 3, v0: 5, m: 1, trackType: 0, showAcceleration: 1 } as const,
     paramMeta: [
       { key: 'r', label: '半径 r', min: 3, max: 5, step: 0.1, unit: 'm' },
@@ -145,6 +149,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     knowledgeId: 'mechanics-6-1',
     Component: lazy(() => import('@/features/mechanics/gravitation/KeplerAnimation')),
     controlsMode: 'timed',
+    criticalTimes: (p) => getKeplerCriticalTimes(p, 30),
     defaultParams: { a: 4.5, e: 0.75, mass: 36, mode: 0, a2: 7.5, e2: 0.6 } as const,
     paramMeta: [
       { key: 'a', label: '内轨半长轴 a₁', min: 2.5, max: 5.5, step: 0.1, unit: '' },
@@ -295,6 +300,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     Component: lazy(() => import('@/features/mechanics/gravitation/OrbitTransferAnimation')),
     controlsMode: 'timed',
     maxTime: 120,
+    criticalTimes: (p) => getOrbitTransferCriticalTimes(p, 120),
     defaultParams: {
       r1: 7.0,
       r3: 14.0,

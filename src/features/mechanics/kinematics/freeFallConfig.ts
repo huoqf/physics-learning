@@ -3,13 +3,10 @@
  * 自由落体（牛顿管）动画 — 专属业务配置
  */
 
-// ─── 物体材质参数 ──────────────────────────────────────────────────────
-export const MATERIAL = {
-  ironBall: { mass: 0.5,   baseDragK: 0.001, label: '铁球' },
-  coin:     { mass: 0.01,  baseDragK: 0.01,  label: '硬币' },
-  feather:  { mass: 0.003, baseDragK: 0.02,  label: '羽毛' },
-  paper:    { mass: 0.005, baseDragK: 0.015, label: '纸片' },
-} as const
+import { FREE_FALL_MATERIALS, FREE_FALL_TUBE_HEIGHT } from '@/physics/kinematics/trajectory'
+
+// ─── 物体材质参数 (复用物理层真源) ────────────────────────────────────────
+export const MATERIAL = FREE_FALL_MATERIALS
 
 export type MaterialA = keyof Pick<typeof MATERIAL, 'ironBall' | 'coin'>
 export type MaterialB = keyof Pick<typeof MATERIAL, 'feather' | 'paper'>
@@ -56,7 +53,7 @@ export const DATA_LAYOUT = {
 
 // ─── 撞击波纹视觉参数 ──────────────────────────────────────────────────
 /** 牛顿管物理高度 (m) */
-export const TUBE_PHYSICAL_HEIGHT = 2.0
+export const TUBE_PHYSICAL_HEIGHT = FREE_FALL_TUBE_HEIGHT
 
 /** 撞击波纹持续时间（s） */
 export const RIPPLE_DURATION = 0.5

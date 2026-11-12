@@ -3,6 +3,10 @@
  * 机械能守恒定律物理计算模块 — 纯函数，无副作用
  */
 
+import { GRAVITY } from './constants'
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 export interface ECModelState {
   /** 时间 (s) */
   t: number
@@ -234,4 +238,82 @@ export function getECStateAtTime(
     Etot: p0.Etot + (p1.Etot - p0.Etot) * ratio,
     phase: p1.phase
   }
+}
+
+/**
+ * 机械能守恒定律（anim-energy-conservation）临界时刻列表。
+ */
+export function getEnergyConservationCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 15,
+): CriticalTimePoint[] {
+  const mode = params.mode ?? 0
+  const m = params.m ?? 2.0
+  const g = params.g ?? GRAVITY
+  const theta0 = params.theta0 ?? 45
+  if (Math.abs(theta0) < 1e-3) return []
+
+  const L = params.L ?? 5.0
+  const R = params.R ?? 5.0
+  const mu = params.mu ?? 0.0
+
+  const traj =
+    mode === 0
+      ? precomputePendulumTrajectory(m, L, theta0, g, maxTime, 0.02)
+      : precomputeValleyTrajectory(m, R, mu, theta0, g, maxTime, 0.02)
+
+  if (traj.length < 2) return []
+
+  const events: CriticalTimePoint[] = []
+
+  // 1. 首次到达最低点（theta 跨越 0）
+  for (let i = 1; i < traj.length; i++) {
+    const prev = traj[i - 1]
+    const curr = traj[i]
+    if ((prev.theta > 0 && curr.theta <= 0) || (prev.theta < 0 && curr.theta >= 0)) {
+      const tLow = alignCriticalTime(curr.t, 'nearest')
+      if (tLow > 0 && tLow <= maxTime) {
+        events.push({
+          time: tLow,
+          label: '⚡ 首次到达最低点 (v最大)',
+          variant: 'critical',
+          autoPause: false,
+        })
+      }
+      break
+    }
+  }
+
+  // 2. 首次摆至对侧最高点（速度首次过零，t > 0.1）
+  for (let i = 2; i < traj.length; i++) {
+    const prev = traj[i - 1]
+    const curr = traj[i]
+    if (curr.phase === 0 && ((prev.v > 0 && curr.v <= 0) || (prev.v < 0 && curr.v >= 0))) {
+      const tPeak = alignCriticalTime(curr.t, 'nearest')
+      if (tPeak > 0 && tPeak <= maxTime) {
+        events.push({
+          time: tPeak,
+          label: '对侧最高点 (v = 0)',
+          variant: 'info',
+          autoPause: false,
+        })
+      }
+      break
+    }
+  }
+
+  // 3. 阻尼山谷静止终态
+  if (mode === 1 && mu > 0) {
+    const stopped = traj.find((pt) => pt.phase === 1)
+    if (stopped && stopped.t > 0 && stopped.t <= maxTime) {
+      events.push({
+        time: alignCriticalTime(stopped.t, 'after'),
+        label: '🛑 阻尼耗散静止',
+        variant: 'critical',
+        autoPause: true,
+      })
+    }
+  }
+
+  return events.sort((a, b) => a.time - b.time)
 }

@@ -14,15 +14,17 @@ import {
   collisionWithEnergyLoss,
   isVelocitySwapCase,
   isHeavyLightCase,
+  COLLISION_SCENE_GEOMETRY,
+  computeCollisionTiming,
 } from '@/physics/collision'
 
 /** 碰撞动画布局常量（基于 CANVAS_PRESETS.splitV 840×325 设计空间） */
 export const COL_LAYOUT = {
   canvasPadding: 30,
-  ballBaseRadius: 16,
-  massRadiusScale: 2,
-  velocityScale: 25,
-  designWidth: 840,
+  ballBaseRadius: COLLISION_SCENE_GEOMETRY.ballBaseRadius,
+  massRadiusScale: COLLISION_SCENE_GEOMETRY.massRadiusScale,
+  velocityScale: COLLISION_SCENE_GEOMETRY.velocityScale,
+  designWidth: COLLISION_SCENE_GEOMETRY.designWidth,
 } as const
 
 interface BasicModeParams {
@@ -58,18 +60,15 @@ export function computeBasicMode(
   const R_A = COL_LAYOUT.ballBaseRadius + m1 * COL_LAYOUT.massRadiusScale
   const R_B = COL_LAYOUT.ballBaseRadius + m2 * COL_LAYOUT.massRadiusScale
 
-  const initPosAx = COL_LAYOUT.designWidth * 0.28
-  const initPosBx = COL_LAYOUT.designWidth * 0.58
+  const initPosAx = COL_LAYOUT.designWidth * COLLISION_SCENE_GEOMETRY.initPosARatio
+  const initPosBx = COL_LAYOUT.designWidth * COLLISION_SCENE_GEOMETRY.initPosBRatio
 
-  const gap = initPosBx - R_B - (initPosAx + R_A)
-  const approachSpeed = (v1 - v2) * COL_LAYOUT.velocityScale
-  let collisionTime = Infinity
+  const collisionTime = computeCollisionTiming({ mLeft: m1, vLeft: v1, mRight: m2, vRight: v2 })
   let v1After = v1
   let v2After = v2
   let isSticking = false
 
-  if (approachSpeed > 0 && gap > 0) {
-    collisionTime = gap / approachSpeed
+  if (Number.isFinite(collisionTime)) {
     if (isElastic === 1) {
       const [va, vb] = elasticCollision(m1, v1, m2, v2)
       v1After = va
@@ -170,14 +169,9 @@ export function computeAdvancedMode(
 
   const R_Adv = COL_LAYOUT.ballBaseRadius + mA * COL_LAYOUT.massRadiusScale
   const R_Bdv = COL_LAYOUT.ballBaseRadius + mB * COL_LAYOUT.massRadiusScale
-  const initPosAAdv = COL_LAYOUT.designWidth * 0.28
-  const initPosBAdv = COL_LAYOUT.designWidth * 0.58
-  const gapAdv = initPosBAdv - R_Bdv - (initPosAAdv + R_Adv)
-  const approachAdv = vA * COL_LAYOUT.velocityScale
-  let colTimeAdv = Infinity
-  if (approachAdv > 0 && gapAdv > 0) {
-    colTimeAdv = gapAdv / approachAdv
-  }
+  const initPosAAdv = COL_LAYOUT.designWidth * COLLISION_SCENE_GEOMETRY.initPosARatio
+  const initPosBAdv = COL_LAYOUT.designWidth * COLLISION_SCENE_GEOMETRY.initPosBRatio
+  const colTimeAdv = computeCollisionTiming({ mLeft: mA, vLeft: vA, mRight: mB, vRight: 0 })
 
   const scale = COL_LAYOUT.velocityScale
   let posAAdv: number, posBAdv: number, curVA: number, curVB: number

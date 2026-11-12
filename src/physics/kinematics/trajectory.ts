@@ -1,4 +1,19 @@
 import { calculateVariableAcceleration, type VariableMotionModel, type VariableMotionParams } from './base'
+import { calcGByLatitude, calcGByAltitude } from './acceleration'
+import { GRAVITY } from '../constants'
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
+/** 自由落体 / 滴水法物理高度 (m) */
+export const FREE_FALL_TUBE_HEIGHT = 2.0
+
+/** 牛顿管实验物体材质参数 (SSOT) */
+export const FREE_FALL_MATERIALS = {
+  ironBall: { mass: 0.5,   baseDragK: 0.001, label: '铁球' },
+  coin:     { mass: 0.01,  baseDragK: 0.01,  label: '硬币' },
+  feather:  { mass: 0.003, baseDragK: 0.02,  label: '羽毛' },
+  paper:    { mass: 0.005, baseDragK: 0.015, label: '纸片' },
+} as const
 
 export interface FreeFallTrajectoryPoint {
   t: number
@@ -438,4 +453,201 @@ export function precomputeObliqueThrowWithDrag(
     range: k === 0 ? rangeVac : range,
     rangeVac,
   }
+}
+
+export interface ProjectileTimeline {
+  groundTime: number
+  inclineLandingT: number
+  inclinePerpendicularT: number
+  inclineFarPointT: number
+}
+
+/**
+ * 平抛 / 斜面平抛关键时刻解算（与 useProjectilePhysics 共用同一真源）
+ */
+export function computeProjectileTimeline(params: {
+  v0x?: number
+  g?: number
+  height?: number
+  inclineAngle?: number
+}): ProjectileTimeline {
+  const safeV0 = Math.max(params.v0x ?? 10, 0.1)
+  const safeG = Math.max(params.g ?? 9.8, 0.1)
+  const safeH = Math.max(params.height ?? 10, 1)
+  const inclineAngle = params.inclineAngle ?? 30
+
+  const groundTime = Math.sqrt((2 * safeH) / safeG)
+  const phiRad = (inclineAngle * Math.PI) / 180
+  const tanPhi = Math.tan(phiRad)
+
+  const rawInclineLandingT = (2 * safeV0 * tanPhi) / safeG
+  const inclineLandingT = Math.min(rawInclineLandingT, groundTime)
+  const inclinePerpendicularT = tanPhi > 0.01 ? safeV0 / (safeG * tanPhi) : 0
+  const inclineFarPointT = (safeV0 * tanPhi) / safeG
+
+  return {
+    groundTime,
+    inclineLandingT,
+    inclinePerpendicularT,
+    inclineFarPointT,
+  }
+}
+
+/**
+ * 平抛运动（anim-projectile）临界时刻列表。
+ */
+export function getProjectileCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const modelMode = params.modelMode ?? 0
+  const tl = computeProjectileTimeline({
+    v0x: params.v0x,
+    g: params.g,
+    height: 10,
+    inclineAngle: params.inclineAngle,
+  })
+
+  if (modelMode !== 2) {
+    const tGround = alignCriticalTime(tl.groundTime, 'before')
+    if (tGround > 0 && tGround <= maxTime) {
+      return [
+        {
+          time: tGround,
+          label: '🎯 落地前瞬间',
+          variant: 'critical',
+          autoPause: false,
+        },
+      ]
+    }
+    return []
+  }
+
+  const events: CriticalTimePoint[] = []
+  if (tl.inclineFarPointT > 0 && tl.inclineFarPointT < tl.inclineLandingT) {
+    const tFar = alignCriticalTime(tl.inclineFarPointT, 'nearest')
+    if (tFar > 0 && tFar <= maxTime) {
+      events.push({
+        time: tFar,
+        label: '⚡ 距斜面最远 (v∥斜面)',
+        variant: 'critical',
+        autoPause: true,
+      })
+    }
+  }
+  if (tl.inclinePerpendicularT > 0 && tl.inclinePerpendicularT <= tl.inclineLandingT) {
+    const tPerp = alignCriticalTime(tl.inclinePerpendicularT, 'nearest')
+    if (tPerp > 0 && tPerp <= maxTime) {
+      events.push({
+        time: tPerp,
+        label: '速度垂直斜面时刻',
+        variant: 'info',
+        autoPause: false,
+      })
+    }
+  }
+  const tLand = alignCriticalTime(tl.inclineLandingT, 'before')
+  if (tLand > 0 && tLand <= maxTime) {
+    events.push({
+      time: tLand,
+      label: '🎯 落到斜面上',
+      variant: 'critical',
+      autoPause: true,
+    })
+  }
+  return events.sort((a, b) => a.time - b.time)
+}
+
+export interface FreeFallCriticalParams {
+  v0?: number
+  g?: number
+  pressure?: number
+  objectA?: number
+  objectB?: number
+  advancedMode?: number
+  dripPeriod?: number
+  latitude?: number
+  altitude?: number
+}
+
+/**
+ * 计算自由落体（牛顿管 / 滴水法测 g）关键时刻（SSOT）
+ */
+export function getFreeFallCriticalTimes(
+  params: FreeFallCriticalParams = {},
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const advancedMode = params.advancedMode ?? 0
+  const events: CriticalTimePoint[] = []
+
+  if (advancedMode === 1) {
+    const dripPeriod = params.dripPeriod ?? 0.5
+    const latitude = params.latitude ?? 45
+    const altitudeKm = params.altitude ?? 0
+    const g0 = calcGByLatitude(latitude)
+    const g = calcGByAltitude(g0, altitudeKm)
+    const fallTime = g > 0 ? Math.sqrt((2 * FREE_FALL_TUBE_HEIGHT) / g) : 0
+    const t1 = alignCriticalTime(fallTime, 'before')
+    if (t1 > 0 && t1 <= maxTime) {
+      events.push({
+        time: t1,
+        label: '第1滴到达管底',
+        variant: 'critical',
+        autoPause: false,
+      })
+    }
+    const t2 = alignCriticalTime(fallTime + dripPeriod, 'before')
+    if (t2 > t1 + 0.05 && t2 <= maxTime) {
+      events.push({
+        time: t2,
+        label: '第2滴到达管底',
+        variant: 'info',
+        autoPause: false,
+      })
+    }
+    return events
+  }
+
+  const v0 = params.v0 ?? 0
+  const g = params.g ?? GRAVITY
+  const pressure = params.pressure ?? 0
+  const matA = params.objectA === 1 ? FREE_FALL_MATERIALS.coin : FREE_FALL_MATERIALS.ironBall
+  const matB = params.objectB === 1 ? FREE_FALL_MATERIALS.paper : FREE_FALL_MATERIALS.feather
+
+  const { groundTime: gtA } = precomputeFreeFallWithDrag(
+    v0, g, pressure * matA.baseDragK, matA.mass, FREE_FALL_TUBE_HEIGHT,
+  )
+  const { groundTime: gtB } = precomputeFreeFallWithDrag(
+    v0, g, pressure * matB.baseDragK, matB.mass, FREE_FALL_TUBE_HEIGHT,
+  )
+
+  const tA = alignCriticalTime(gtA, 'before')
+  const tB = alignCriticalTime(gtB, 'before')
+
+  if (Math.abs(tA - tB) <= 0.02) {
+    if (tA > 0 && tA <= maxTime) {
+      events.push({
+        time: tA,
+        label: `${matA.label}与${matB.label}同时落地`,
+        variant: 'critical',
+        autoPause: false,
+      })
+    }
+  } else {
+    const first = tA <= tB
+      ? { t: tA, label: `${matA.label}先落地` }
+      : { t: tB, label: `${matB.label}先落地` }
+    const second = tA <= tB
+      ? { t: tB, label: `${matB.label}后落地` }
+      : { t: tA, label: `${matA.label}后落地` }
+
+    if (first.t > 0 && first.t <= maxTime) {
+      events.push({ time: first.t, label: first.label, variant: 'critical', autoPause: false })
+    }
+    if (second.t > first.t + 0.02 && second.t <= maxTime) {
+      events.push({ time: second.t, label: second.label, variant: 'info', autoPause: false })
+    }
+  }
+
+  return events.sort((a, b) => a.time - b.time)
 }

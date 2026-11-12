@@ -1,3 +1,6 @@
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 /**
  * src/physics/experimentMomentum.ts
  * 高考实验：验证动量守恒定律（气垫导轨双滑块光电门碰撞测速）纯物理计算模块
@@ -603,5 +606,38 @@ export function computeMomentumExperimentDuration(
   input: MomentumExperimentInput = {},
 ): number {
   return experimentDurationFromResult(computeMomentumExperiment(input))
+}
+
+/**
+ * 计算验证动量守恒定律（气轨光电门）实验关键时刻（SSOT）
+ */
+export function getExperimentMomentumCriticalTimes(
+  params: Record<string, number>,
+): CriticalTimePoint[] {
+  const input = momentumExperimentInputFromParams(params)
+  const res = computeMomentumExperiment(input)
+  const maxTime = experimentDurationFromResult(res)
+  const events: CriticalTimePoint[] = []
+
+  const add = (
+    rawT: number,
+    label: string,
+    variant: CriticalTimePoint['variant'],
+    autoPause: boolean,
+    align: 'after' | 'before' | 'nearest' = 'nearest',
+  ) => {
+    if (!Number.isFinite(rawT) || rawT <= 0) return
+    const t = alignCriticalTime(rawT, align)
+    if (t > 0 && t <= maxTime && !events.some((e) => Math.abs(e.time - t) < 0.05)) {
+      events.push({ time: t, label, variant, autoPause })
+    }
+  }
+
+  add(res.t_gate1_enter, '滑块1 过光电门1 (碰前)', 'info', false, 'nearest')
+  add(res.t_collision, '两滑块发生碰撞', 'critical', true, 'after')
+  add(res.t_gate2_enter, '滑块2 过光电门2 (碰后)', 'info', false, 'nearest')
+  add(res.t_gate1_rebound_enter, '滑块1 反弹再过门1', 'warning', false, 'nearest')
+
+  return events.sort((a, b) => a.time - b.time)
 }
 

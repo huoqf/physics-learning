@@ -1,4 +1,6 @@
 import { GRAVITY } from './constants'
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 /**
  * src/physics/kineticEnergy.ts
@@ -312,4 +314,56 @@ export function getKEStateAtTime(
     W: p0.W + (p1.W - p0.W) * ratio,
     phase: p1.phase,
   }
+}
+
+export interface KineticEnergyCriticalParams {
+  m?: number
+  v0?: number
+  F?: number
+  s?: number
+  R?: number
+  mu?: number
+  mode?: number
+}
+
+/**
+ * 计算动能定理关键时刻（SSOT）
+ * - 模式0（恒力做功）：拉力撤去瞬间 t_c
+ * - 模式1（曲面变力）：到达圆弧底端（或曲轨途中停下）瞬间 t_c
+ */
+export function getKineticEnergyCriticalTimes(
+  params: KineticEnergyCriticalParams = {},
+  maxTime = 15,
+): CriticalTimePoint[] {
+  const mode = params.mode ?? 0
+  const m = params.m ?? 2
+  const v0 = params.v0 ?? 0
+  const F_pull = params.F ?? 15
+  const s_target = params.s ?? 6
+  const R = params.R ?? 5
+  const mu = params.mu ?? 0.15
+
+  const res =
+    mode === 0
+      ? precomputeConstantKETrajectory(m, v0, F_pull, s_target, s_target * 1.6)
+      : precomputeCurvedTrackTrajectory(m, v0, R, mu, R * 2.0)
+
+  const tCrit = alignCriticalTime(res.t_c, 'after')
+  if (!(tCrit > 0 && tCrit <= maxTime)) return []
+
+  const label =
+    mode === 0
+      ? '拉力 F 撤去瞬间'
+      : res.v_c <= 1e-6
+        ? '物块滑行停下'
+        : '到达圆弧最低点'
+
+  return [
+    {
+      time: tCrit,
+      label,
+      variant: 'critical',
+      autoPause: true,
+    },
+  ]
 }

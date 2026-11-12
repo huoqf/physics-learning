@@ -2,6 +2,11 @@
  * 弹簧双滑块模型 (Spring Double Blocks Model)
  */
 
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
+export const SPRING_BLOCKS_SIM = { L0: 1.5, xB0: 3.5, duration: 3.5, dt: 0.016 } as const
+
 export interface SpringBlocksState {
   t: number
   xA: number       // 滑块A绝对位置 (m)
@@ -189,4 +194,92 @@ export function interpolateSpringBlocks(states: SpringBlocksState[], currentTime
     Ep: s0.Ep + ratio * (s1.Ep - s0.Ep),
     Etotal: s0.Etotal + ratio * (s1.Etotal - s0.Etotal)
   }
+}
+
+export interface SpringBlocksKeyTimes {
+  tTouch: number
+  tShortest: number
+  tRestore: number
+}
+
+/**
+ * 从预计算轨迹提取接触、最短（共速）、恢复原长时刻（供图表阶段标注与临界点共用）
+ */
+export function computeSpringBlocksKeyTimes(
+  states: SpringBlocksState[],
+  totalDuration: number = SPRING_BLOCKS_SIM.duration,
+): SpringBlocksKeyTimes {
+  let tTouch = 0
+  let tShortest = 0
+  let maxDelta = 0
+
+  for (let i = 0; i < states.length; i++) {
+    const pt = states[i]
+    if (tTouch === 0 && pt.delta > 0.001) {
+      tTouch = pt.t
+    }
+    if (pt.delta > maxDelta) {
+      maxDelta = pt.delta
+      tShortest = pt.t
+    }
+  }
+
+  const restorePt = states.find((pt) => pt.t > tShortest && pt.delta <= 0.001)
+  const tRestore = restorePt ? restorePt.t : totalDuration
+
+  return { tTouch, tShortest, tRestore }
+}
+
+/**
+ * 计算弹簧双滑块模型的临界时刻列表（单一真源，注册表直接调用）
+ */
+export function getSpringBlocksCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const mA = params.mA_spring ?? 2
+  const mB = params.mB_spring ?? 3
+  const v0 = params.v0_spring ?? 5
+  const k = params.k_spring ?? 20
+  const connectionMode = params.connectionMode_spring ?? 0
+
+  const states = precomputeSpringBlocks(
+    mA,
+    mB,
+    v0,
+    k,
+    SPRING_BLOCKS_SIM.L0,
+    SPRING_BLOCKS_SIM.xB0,
+    SPRING_BLOCKS_SIM.duration,
+    SPRING_BLOCKS_SIM.dt,
+    connectionMode,
+  )
+  const { tTouch, tShortest, tRestore } = computeSpringBlocksKeyTimes(states, SPRING_BLOCKS_SIM.duration)
+
+  const events: CriticalTimePoint[] = []
+  if (tTouch > 0 && tTouch <= maxTime) {
+    events.push({
+      time: alignCriticalTime(tTouch, 'after'),
+      label: '开始压缩弹簧',
+      variant: 'info',
+      autoPause: false,
+    })
+  }
+  if (tShortest > 0 && tShortest <= maxTime) {
+    events.push({
+      time: alignCriticalTime(tShortest, 'after'),
+      label: '⚡ 弹簧最短·两块共速',
+      variant: 'critical',
+      autoPause: true,
+    })
+  }
+  if (tRestore > tShortest && tRestore < SPRING_BLOCKS_SIM.duration && tRestore <= maxTime) {
+    events.push({
+      time: alignCriticalTime(tRestore, 'after'),
+      label: connectionMode === 0 ? '⚡ 恢复原长·两块分离' : '首次恢复原长',
+      variant: connectionMode === 0 ? 'critical' : 'info',
+      autoPause: connectionMode === 0,
+    })
+  }
+  return events.sort((a, b) => a.time - b.time)
 }

@@ -5,7 +5,11 @@ import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics';
 import { Ball, PhysicsGround, PhysicsVectorArrow, Spring } from '@/components/Physics';
 
 import { createSceneScaleFromDesignCenter } from '@/scene/SceneScale';
-import { precomputeVerticalSpringTrajectory, getVSStateAtTime } from '@/physics/verticalSpring';
+import {
+  precomputeVerticalSpringTrajectory,
+  getVSStateAtTime,
+  getVerticalSpringCycleTimes,
+} from '@/physics/verticalSpring';
 import { BasePhysicsChart } from '@/components/Chart';
 import { GRAVITY } from '@/physics/constants';
 import { clientToContainerPoint } from '@/utils';
@@ -95,21 +99,8 @@ export default function SpringCompositeAnimation() {
     springBottomY = y_ground;
   }
 
-  // ── 自动暂停 ──
-  const omega = Math.sqrt(k / m);
-  let T: number;
-  let t_cross: number;
-  if (mode === 1) {
-    T = (2 * Math.PI) / omega;
-    t_cross = Math.PI / (2 * omega);
-  } else {
-    const t0 = Math.sqrt((2 * h) / g);
-    const v0 = g * t0;
-    const phi = Math.PI + Math.atan(v0 / (omega * xC_phys));
-    const tSpring = (2 * (2 * Math.PI - phi)) / omega;
-    T = 2 * t0 + tSpring;
-    t_cross = t0 + (1.5 * Math.PI - phi) / omega;
-  }
+  // ── 自动暂停（与物理层同一真源）──
+  const { T, tCross: t_cross } = getVerticalSpringCycleTimes({ m, k, h, mode, g });
 
   // ── 矢量归一化 ──
   const vMax = useMemo(() => {

@@ -1,7 +1,8 @@
 import { PhysicsVectorArrow, SportsCar, PhysicsGround } from '@/components/Physics'
-import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
+import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { calculatePoliceChase, calculateMeeting } from '@/physics'
+import { CHASE_MEETING_BASE_MAX_TIME, computeChaseMeetingMaxTime } from '@/physics/kinematics/acceleration'
 import { PHYSICS_COLORS, STROKE, DASH } from '@/theme/physics'
 
 import { RelationChart, VelocityTimeChart } from '@/components/Chart'
@@ -16,7 +17,7 @@ const LAYOUT = {
   ROAD_Y_RATIO: 0.72,
   VEHICLE_WIDTH: 56,
   VEHICLE_HEIGHT: 26,
-  MAX_TIME: 20,
+  MAX_TIME: CHASE_MEETING_BASE_MAX_TIME,
 } as const
 
 /**
@@ -32,10 +33,6 @@ const LAYOUT = {
 export default function AccelerationCenterExtra() {
   const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
-  const isPlaying = useAnimationStore((s) => s.isPlaying)
-  const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
-  const [showWarning, setShowWarning] = useState(false)
-  const [warningText, setWarningText] = useState('')
   const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font, width, height } = canvasSize
 
@@ -65,119 +62,42 @@ export default function AccelerationCenterExtra() {
 
   const state = chaseMode === 0 ? chaseState : meetState
 
-  // ── 动态计算最大时间 ──
-  const effectiveMaxTime = useMemo(() => {
+  // ── 动态计算最大时间（复用物理层真源） ──
+  const maxTime = useMemo(
+    () =>
+      computeChaseMeetingMaxTime({
+        chaseMode,
+        vA,
+        deltaX0,
+        t0,
+        aB: aB_chase,
+        vMax,
+        vL,
+        aB_meet,
+      }),
+    [chaseMode, vA, vMax, deltaX0, t0, aB_chase, vL, aB_meet],
+  )
+
+  // ── 临界点气泡提示（纯净时间窗口派生，不抢占框架 autoPause 引擎） ──
+  const warningText = useMemo(() => {
+    const WINDOW = 0.5
     if (chaseMode === 0) {
-      // 追及模式
-      if (vMax <= vA) return LAYOUT.MAX_TIME
-      const t1 = t0 + vMax / aB_chase
-      const xB_t1 = 0.5 * aB_chase * (vMax / aB_chase) ** 2
-      const gapAtT1 = deltaX0 + vA * t1 - xB_t1
-      if (gapAtT1 <= 0) return t1
-      const tCatchUp = t1 + gapAtT1 / (vMax - vA)
-      return Math.min(Math.ceil(tCatchUp) + 2, 120)
-    } else {
-      // 相遇模式
-      const tMeet = meetState.tMeet
-      if (tMeet !== null) return Math.min(Math.ceil(tMeet) + 2, 60)
-      return LAYOUT.MAX_TIME
-    }
-  }, [chaseMode, vA, vMax, deltaX0, t0, aB_chase, meetState.tMeet])
-
-  const maxTime = Math.max(LAYOUT.MAX_TIME, effectiveMaxTime)
-
-  // ── 自动暂停检测 ──
-  const prevTimeRef = useRef(0)
-  const hasShownEqualWarningRef = useRef(false)
-  const hasShownMeetWarningRef = useRef(false)
-  const warningTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-
-  const clearAutoPauseTimer = useCallback(() => {
-    if (warningTimerRef.current) {
-      clearTimeout(warningTimerRef.current)
-      warningTimerRef.current = undefined
-    }
-    setShowWarning(false)
-  }, [])
-
-  useEffect(() => {
-    if (time === 0) {
-      hasShownEqualWarningRef.current = false
-      hasShownMeetWarningRef.current = false
-      prevTimeRef.current = 0
-      return
-    }
-    if (!isPlaying) {
-      prevTimeRef.current = time
-      return
-    }
-
-    if (chaseMode === 0) {
-      // 追及模式：检测共速时刻和相遇时刻
       const { tEqual, tMeet } = chaseState
-      if (
-        !hasShownEqualWarningRef.current &&
-        tEqual > 0 && tEqual <= maxTime &&
-        prevTimeRef.current < tEqual && time >= tEqual
-      ) {
-        hasShownEqualWarningRef.current = true
-        setIsPlaying(false)
-        setWarningText(`共速时刻：此时两车距离最大！Δx = ${chaseState.deltaX.toFixed(1)} m`)
-        setShowWarning(true)
-        warningTimerRef.current = setTimeout(() => {
-          setShowWarning(false)
-          setIsPlaying(true)
-        }, 1500)
+      if (tMeet !== null && tMeet > 0 && tMeet <= maxTime && Math.abs(time - tMeet) <= WINDOW) {
+        return `警车追上轿车！t = ${tMeet.toFixed(1)} s`
       }
-      if (
-        !hasShownMeetWarningRef.current &&
-        tMeet !== null && tMeet > 0 && tMeet <= maxTime &&
-        prevTimeRef.current < tMeet && time >= tMeet
-      ) {
-        hasShownMeetWarningRef.current = true
-        setIsPlaying(false)
-        setWarningText(`警车追上轿车！t = ${tMeet.toFixed(1)} s`)
-        setShowWarning(true)
-        warningTimerRef.current = setTimeout(() => {
-          setShowWarning(false)
-          setIsPlaying(true)
-        }, 2000)
+      if (tEqual > 0 && tEqual <= maxTime && Math.abs(time - tEqual) <= WINDOW) {
+        return `共速时刻：此时两车距离最大！Δx = ${chaseState.deltaX.toFixed(1)} m`
       }
     } else {
-      // 相遇模式：检测相遇时刻
       const { tMeet } = meetState
-      if (
-        !hasShownMeetWarningRef.current &&
-        tMeet !== null && tMeet > 0 && tMeet <= maxTime &&
-        prevTimeRef.current < tMeet && time >= tMeet
-      ) {
-        hasShownMeetWarningRef.current = true
-        setIsPlaying(false)
-        setWarningText(`两车相遇！t = ${tMeet.toFixed(1)} s`)
-        setShowWarning(true)
-        warningTimerRef.current = setTimeout(() => {
-          setShowWarning(false)
-          setIsPlaying(true)
-        }, 2000)
+      if (tMeet !== null && tMeet > 0 && tMeet <= maxTime && Math.abs(time - tMeet) <= WINDOW) {
+        return `两车相遇！t = ${tMeet.toFixed(1)} s`
       }
     }
-
-    prevTimeRef.current = time
-  }, [time, isPlaying, chaseMode, chaseState, meetState, maxTime, setIsPlaying])
-
-  useEffect(() => {
-    return () => {
-      if (warningTimerRef.current) clearTimeout(warningTimerRef.current)
-    }
-  }, [])
-
-  const prevParamsRef = useRef(params)
-  useEffect(() => {
-    if (prevParamsRef.current !== params) {
-      clearAutoPauseTimer()
-      prevParamsRef.current = params
-    }
-  }, [params, clearAutoPauseTimer])
+    return ''
+  }, [chaseMode, chaseState, meetState, maxTime, time])
+  const showWarning = warningText.length > 0 && time > 0.05
 
   // ── 布局计算 ──
   const padding = width * LAYOUT.CHART_PADDING_RATIO

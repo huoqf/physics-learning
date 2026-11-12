@@ -1,3 +1,6 @@
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 /**
  * 双物体加速度对比计算（基础版）。
  * 飞机A做匀速运动（a=0），跑车B从静止做匀加速运动。
@@ -310,4 +313,108 @@ export function calcGByLatitude(latitude: number): number {
 export function calcGByAltitude(g0: number, altitude: number): number {
   const EARTH_RADIUS_KM = 6371
   return g0 * (EARTH_RADIUS_KM / (EARTH_RADIUS_KM + altitude)) ** 2
+}
+
+/** 追及相遇模型基础时间轴下限 (s, SSOT) */
+export const CHASE_MEETING_BASE_MAX_TIME = 20
+
+/**
+ * 计算追及相遇模型（anim-chase-meeting）动态时间轴总时长 (s, SSOT)
+ */
+export function computeChaseMeetingMaxTime(
+  params: Record<string, number>,
+): number {
+  const chaseMode = params.chaseMode ?? 0
+  const vA = params.vA ?? 30
+  if (chaseMode === 0) {
+    const deltaX0 = params.deltaX0 ?? 50
+    const t0 = params.t0 ?? 1
+    const aB = params.aB ?? 3
+    const vMax = params.vMax ?? 40
+    if (vMax <= vA || aB <= 0) return CHASE_MEETING_BASE_MAX_TIME
+    const t1 = t0 + vMax / aB
+    const xB_t1 = 0.5 * aB * (vMax / aB) * (vMax / aB)
+    const gapAtT1 = deltaX0 + vA * t1 - xB_t1
+    const effective = gapAtT1 <= 0 ? t1 : Math.min(Math.ceil(t1 + gapAtT1 / (vMax - vA)) + 2, 120)
+    return Math.max(CHASE_MEETING_BASE_MAX_TIME, effective)
+  }
+
+  const vL = params.vL ?? 200
+  const aB_meet = params.aB_meet ?? 2
+  const st = calculateMeeting(vA, vL, aB_meet, 0)
+  const effective =
+    st.tMeet !== null ? Math.min(Math.ceil(st.tMeet) + 2, 60) : CHASE_MEETING_BASE_MAX_TIME
+  return Math.max(CHASE_MEETING_BASE_MAX_TIME, effective)
+}
+
+/**
+ * 追及相遇模型（anim-chase-meeting）临界时刻列表。
+ * 单一真源：复用 calculatePoliceChase / calculateMeeting。
+ */
+export function getChaseMeetingCriticalTimes(
+  params: Record<string, number>,
+  maxTime = computeChaseMeetingMaxTime(params),
+): CriticalTimePoint[] {
+  const chaseMode = params.chaseMode ?? 0
+  const vA = params.vA ?? 30
+  const events: CriticalTimePoint[] = []
+
+  if (chaseMode === 0) {
+    const deltaX0 = params.deltaX0 ?? 50
+    const t0 = params.t0 ?? 1
+    const aB = params.aB ?? 3
+    const vMax = params.vMax ?? 40
+    const st = calculatePoliceChase(vA, deltaX0, t0, aB, vMax, 0)
+
+    if (t0 > 0) {
+      const tReact = alignCriticalTime(t0, 'after')
+      if (tReact > 0 && tReact <= maxTime) {
+        events.push({
+          time: tReact,
+          label: '反应结束·开始加速',
+          variant: 'info',
+          autoPause: false,
+        })
+      }
+    }
+    if (Number.isFinite(st.tEqual) && st.tEqual > 0) {
+      const tEq = alignCriticalTime(st.tEqual, 'nearest')
+      if (tEq > 0 && tEq <= maxTime) {
+        events.push({
+          time: tEq,
+          label: '⚡ 共速·两车间距最大',
+          variant: 'critical',
+          autoPause: true,
+        })
+      }
+    }
+    if (st.tMeet !== null && Number.isFinite(st.tMeet) && st.tMeet > 0) {
+      const tMeet = alignCriticalTime(st.tMeet, 'nearest')
+      if (tMeet > 0 && tMeet <= maxTime) {
+        events.push({
+          time: tMeet,
+          label: '🎯 警车追上轿车',
+          variant: 'critical',
+          autoPause: true,
+        })
+      }
+    }
+  } else {
+    const vL = params.vL ?? 200
+    const aB_meet = params.aB_meet ?? 2
+    const st = calculateMeeting(vA, vL, aB_meet, 0)
+    if (st.tMeet !== null && Number.isFinite(st.tMeet) && st.tMeet > 0) {
+      const tMeet = alignCriticalTime(st.tMeet, 'nearest')
+      if (tMeet > 0 && tMeet <= maxTime) {
+        events.push({
+          time: tMeet,
+          label: '🎯 两车相遇',
+          variant: 'critical',
+          autoPause: true,
+        })
+      }
+    }
+  }
+
+  return events.sort((a, b) => a.time - b.time)
 }
