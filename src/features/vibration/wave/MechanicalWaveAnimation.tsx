@@ -2,7 +2,6 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { useAnimationFrame } from '@/utils/animation'
 import { useViewportPointer } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, CANVAS_COLORS, STROKE } from '@/theme/physics'
@@ -27,12 +26,10 @@ function cmToM(cm: number): number {
 }
 
 export default function MechanicalWaveAnimation() {
-  const { params, isPlaying, time, speed } = useAnimationStore(
+  const { params, time } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
-      isPlaying: s.isPlaying,
       time: s.time,
-      speed: s.speed,
     })),
   )
 
@@ -70,14 +67,6 @@ export default function MechanicalWaveAnimation() {
   // 手动拖拽振源位移（m）；null 表示跟随时钟驱动
   const [manualY, setManualY] = useState<number | null>(null)
   const draggingRef = useRef(false)
-
-  const handleFrame = useCallback((deltaMs: number) => {
-    const dt = deltaMs / 1000
-    if (dt <= 0 || dt > 0.1) return
-    const store = useAnimationStore.getState()
-    store.setTime(store.time + dt * store.direction)
-  }, [])
-  useAnimationFrame(handleFrame, { playing: isPlaying && !draggingRef.current, speed })
 
   const particles = useMemo(
     () =>

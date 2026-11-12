@@ -28,7 +28,7 @@ import type { DeepLinkFreezeHint } from '@/utils/animationDeepLink'
 import { WRONG_REASONS } from '@/data/wrongReasons'
 
 import { AnimationLayoutContext } from '@/context/AnimationLayoutContext'
-import type { AnimationConfig } from '@/data/types'
+import type { AnimationConfig, CriticalTimePoint } from '@/data/types'
 
 /**
  * 中心动画区域 — 订阅 time（每帧更新），与左侧/右侧面板隔离。
@@ -39,6 +39,7 @@ function AnimationCenter({
   canvasDimmed,
   handleReset,
   effectiveControlsMode,
+  criticalTimes,
   deepLinkHint,
 }: {
   config: AnimationConfig
@@ -46,19 +47,24 @@ function AnimationCenter({
   canvasDimmed: boolean
   handleReset: () => void
   effectiveControlsMode: 'timed' | 'loop' | 'param' | 'pause-only'
+  criticalTimes: CriticalTimePoint[] | undefined
   deepLinkHint: DeepLinkFreezeHint | null
 }) {
-  const { time, isPlaying, speed, params } = useAnimationStore(
+  const { time, isPlaying, speed, params, repeatLoop, autoPauseOnCritical } = useAnimationStore(
     useShallow((s) => ({
       time: s.time,
       isPlaying: s.isPlaying,
       speed: s.speed,
       params: s.params,
+      repeatLoop: s.repeatLoop,
+      autoPauseOnCritical: s.autoPauseOnCritical,
     }))
   )
   const setTime = useAnimationStore((s) => s.setTime)
   const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
   const setSpeed = useAnimationStore((s) => s.setSpeed)
+  const toggleRepeatLoop = useAnimationStore((s) => s.toggleRepeatLoop)
+  const toggleAutoPauseOnCritical = useAnimationStore((s) => s.toggleAutoPauseOnCritical)
 
   const AnimationComponent = config.Component
   const CenterExtraComponent = config.CenterExtra
@@ -74,11 +80,6 @@ function AnimationCenter({
   const isSpringForceCutMode = config.id === 'anim-spring-force' && params.mode === 1
   const isLightWeightMutation = config.id === 'anim-light-weight-mutation'
   const isSplitH = config.centerLayout === 'splitH' || isSpringForceCutMode || isLightWeightMutation
-
-  const criticalTimes = useMemo(() => {
-    if (!config.criticalTimes) return undefined
-    return typeof config.criticalTimes === 'function' ? config.criticalTimes(params) : config.criticalTimes
-  }, [config, params])
 
   /**
    * 定格提示的显示条件由 `shouldShowFreezeHint` 统一裁定（纯函数，已单测覆盖）：
@@ -102,6 +103,10 @@ function AnimationCenter({
         controlsMode={effectiveControlsMode}
         criticalTimes={criticalTimes}
         enableFrameStep={config.enableFrameStep}
+        repeatLoop={repeatLoop}
+        onToggleRepeatLoop={toggleRepeatLoop}
+        autoPauseCritical={autoPauseOnCritical}
+        onToggleAutoPauseCritical={toggleAutoPauseOnCritical}
         deepLinkHint={visibleDeepLinkHint}
       />
     </div>
@@ -317,6 +322,7 @@ export default function AnimationPage() {
     canvasDimmed,
     handleReset,
     effectiveControlsMode,
+    criticalTimes,
     discoverySteps,
     discoveryStep,
     setDiscoveryStep,
@@ -620,6 +626,7 @@ export default function AnimationPage() {
               canvasDimmed={canvasDimmed}
               handleReset={handleReset}
               effectiveControlsMode={effectiveControlsMode}
+              criticalTimes={criticalTimes}
               deepLinkHint={deepLinkHint}
             />
           </div>

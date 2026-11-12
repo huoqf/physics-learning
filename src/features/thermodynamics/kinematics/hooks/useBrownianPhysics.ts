@@ -1,4 +1,5 @@
 import { useRef, useCallback, useState, useEffect } from 'react'
+import { useAnimationStore } from '@/stores'
 import { useAnimationFrame } from '@/utils/animation'
 import { stepBrownianMotion } from '@/physics/brownianMotion'
 import type { SceneScale } from '@/scene'
@@ -45,6 +46,7 @@ interface UseBrownianPhysicsParams {
 export function useBrownianPhysics({
   mode, temperature, particleD, isPlaying, sceneScale,
 }: UseBrownianPhysicsParams): BrownianPhysicsResult {
+  const speed = useAnimationStore((s) => s.speed)
   const R_phys = 1.6 + 0.32 * particleD
   const r_phys = 0.8
   const pollenRadius = R_phys * sceneScale.scaleX
@@ -207,7 +209,7 @@ export function useBrownianPhysics({
     [temperature, particleD, mode, vTarget, R_phys, r_phys],
   )
 
-  useAnimationFrame(handleFrame, { playing: isPlaying })
+  useAnimationFrame(handleFrame, { playing: isPlaying, speed })
 
   return {
     particleWorld: particleRef.current,

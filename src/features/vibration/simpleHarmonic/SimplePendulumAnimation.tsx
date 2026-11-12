@@ -1,8 +1,7 @@
-import { useCallback, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { useAnimationFrame } from '@/utils/animation'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, CANVAS_COLORS } from '@/theme/physics'
 import { PhysicsVectorArrow, PhysicsGround, Ball } from '@/components/Physics'
@@ -16,12 +15,10 @@ import {
 import { AnimationSvgCanvas } from '@/components/Layout'
 
 export default function SimplePendulumAnimation() {
-  const { params, isPlaying, time, speed, showVectors, showFormulas } = useAnimationStore(
+  const { params, time, showVectors, showFormulas } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
-      isPlaying: s.isPlaying,
       time: s.time,
-      speed: s.speed,
       showVectors: s.showVectors,
       showFormulas: s.showFormulas,
     })),
@@ -76,15 +73,6 @@ export default function SimplePendulumAnimation() {
       restoringForce,
     }
   }, [realTrajectory, T_real, time, phiDeg, omegaReal, L, g, mass])
-
-  // ── 动画时钟：以 store.time 为规范时钟 ──
-  const handleFrame = useCallback((deltaMs: number) => {
-    const dt = deltaMs / 1000
-    if (dt <= 0 || dt > 0.1) return
-    const store = useAnimationStore.getState()
-    store.setTime(store.time + dt * store.direction)
-  }, [])
-  useAnimationFrame(handleFrame, { playing: isPlaying, speed })
 
   // 依据当前模式确定要渲染的主状态（模式 0 与 模式 3 均使用小角近似简谐状态）
   const activeState = mode === 1 ? stateReal : stateSHM
