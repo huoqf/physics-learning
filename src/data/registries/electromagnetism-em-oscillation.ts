@@ -191,7 +191,7 @@ const sharedControlMeta: ControlMeta[] = [
       { value: 2, label: '电磁波谱' },
     ],
   },
-  // ── 高考真题与经典模型一键预设（gaokao-enhancement Skill 规范） ──
+  // ── 经典物理场景预设 ──
   {
     type: 'preset' as const,
     label: '⚡ LC充放电能量转化',

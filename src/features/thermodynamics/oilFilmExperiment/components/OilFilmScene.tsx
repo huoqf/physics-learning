@@ -342,7 +342,7 @@ export function OilFilmScene({
               fontWeight="bold"
               fill={CANVAS_COLORS.labelText}
             >
-              高考数格法则：满半格算一格，不满半格舍去
+              数格估算规则：满半格算一格，不满半格舍去
             </text>
           </g>
         </g>

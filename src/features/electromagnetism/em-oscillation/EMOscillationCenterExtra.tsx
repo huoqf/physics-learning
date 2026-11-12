@@ -482,7 +482,7 @@ function RadioTuningPanel() {
       </div>
       <div className="shrink-0 mt-0.5 px-1 py-1 rounded bg-neutral-50 border border-neutral-100 flex items-center justify-between text-[10px]">
         <span className="text-neutral-600">
-          高考题眼：调节可变电容器使 <span className="font-mono font-bold">f₀ = 1/(2π√(LC))</span> 与电台频率相等，发生电谐振。
+          电谐振条件：调节可变电容器使 <span className="font-mono font-bold">f₀ = 1/(2π√(LC))</span> 与电台频率相等。
         </span>
         <span
           className={`px-1.5 py-0.5 rounded font-bold ${

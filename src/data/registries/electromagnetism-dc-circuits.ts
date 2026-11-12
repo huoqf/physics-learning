@@ -106,7 +106,7 @@ export const electromagnetismDcCircuitsAnimations = defineAnimations({
     defaultParams: { opMode: 0, multiplier: 1, R_adjust: 1399, Rx: 1500 } as const,
   },
   'anim-experiment-er': {
-    title: '高考实验：测定电源电动势与内阻',
+    title: '实验：测定电源电动势与内阻',
     knowledgeId: 'electricity-2-5',
     Component: lazy(() => import('@/features/electromagnetism/dc-circuits/ExperimentEr')),
     CenterExtra: lazy(() => import('@/features/electromagnetism/dc-circuits/ExperimentErCenterExtra')),

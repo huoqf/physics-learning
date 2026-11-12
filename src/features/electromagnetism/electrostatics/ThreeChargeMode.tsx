@@ -317,7 +317,7 @@ export default function ThreeChargeMode({
       <div className="absolute top-4 right-4 z-10 pointer-events-none select-none">
         <div className="flex flex-col bg-white/70 backdrop-blur-md border border-neutral-100 rounded-lg p-2.5 shadow-sm text-[10px] gap-1.5 w-36">
           <div className="font-bold text-neutral-800 border-b border-neutral-100 pb-1 flex items-center justify-between">
-            <span>🎓 平衡判定指标</span>
+            <span>平衡判定条件</span>
             {isAllThreeBalanced && <span className="text-success-600 animate-pulse text-[9px]">已平衡</span>}
           </div>
           <div className="space-y-1">

@@ -293,7 +293,7 @@ export function ThinFilmInterferenceScene({
 
         {/* 下方：俯视等厚干涉条纹 */}
         <text x={pivotX} y={fringeTopY - 15} fontSize={font(14)} fill={CANVAS_COLORS.labelText} fontWeight="bold">
-          二、俯视等厚干涉条纹（高考核心判据：同一条纹膜厚相等）
+          二、俯视等厚干涉条纹
         </text>
 
         {/* 条纹外框 */}
@@ -365,16 +365,7 @@ export function ThinFilmInterferenceScene({
           {`条纹间距 Δx = ${physics.wedgeSpacing_mm.toFixed(3)} mm`}
         </text>
 
-        {/* 高考口诀高亮牌 */}
-        <g transform={`translate(${tipX - 180}, ${fringeTopY + fringeH + 30})`}>
-          <text x={0} y={0} fontSize={font(13)} fill={CANVAS_COLORS.labelText} fontWeight="bold">
-            {defect === 1
-              ? '🎯 判据：凹向薄端（条纹向左弯说明局部凹陷）'
-              : defect === 2
-              ? '🎯 判据：凸向厚端（条纹向右弯说明局部凸起）'
-              : '🎯 判据：平整表面对应平行等间距直条纹'}
-          </text>
-        </g>
+        {/* 方向图例 */}
       </g>
     )
   }
@@ -429,9 +420,8 @@ export function ThinFilmInterferenceScene({
           )
         })}
 
-        {/* 高考核心考点提示标签 */}
         <text x={cx} y={cy + maxR + 45} fontSize={font(13)} fill={CANVAS_COLORS.labelText} textAnchor="middle">
-          考点规律：圆环半径 r_m ∝ √m；中心为暗斑；由内向外条纹由疏变密
+          牛顿环等厚干涉条纹（中心为暗斑，外圈逐渐变密）
         </text>
       </g>
     )

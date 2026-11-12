@@ -174,7 +174,7 @@ export default function ConveyorChart() {
     <div className="w-full h-full p-2.5 flex flex-col gap-2 bg-neutral-50 rounded-xl">
       {/* 标题栏 */}
       <div className="shrink-0 flex items-center justify-between px-1">
-        <span className="text-xs font-bold text-neutral-700">高考物理解析图表联展：速度、受力与能量随时间同步演化</span>
+        <span className="text-xs font-bold text-neutral-700">物理过程图表联展：速度、受力与能量随时间同步演化</span>
         <span className="text-[10px] text-neutral-400 font-medium">当前时间 t = {time.toFixed(2)} s</span>
       </div>
 

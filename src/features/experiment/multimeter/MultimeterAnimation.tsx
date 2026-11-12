@@ -112,7 +112,7 @@ export default function MultimeterAnimation() {
         <div className="p-2 bg-slate-50 rounded-lg border border-slate-200 flex flex-col gap-1">
           <div className="font-bold text-[11px] text-slate-800 flex items-center justify-between">
             <span>🔬 欧姆挡内部等效电路</span>
-            <span className="text-[9px] font-normal text-slate-500">高考核心考点</span>
+            <span className="text-[9px] font-normal text-slate-500">闭合回路模型</span>
           </div>
           {/* 原理图 SVG 矢量微缩电路：串联闭合回路（电池 → R_Ω → 表头 G → 红表笔 → Rx → 黑表笔） */}
           <div className="w-full bg-white rounded border border-slate-200 p-1 flex justify-center">
