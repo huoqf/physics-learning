@@ -78,10 +78,9 @@ export const WRONG_REASONS: WrongReasonMeta[] = [
     behavior: '只管套向心力公式，没检验弹力 N 是否已降到 0，忘记「单面约束会脱轨」。',
     scenes: ['竖直圆（绳模型）', '弧形轨道', '凹槽最高点'],
     benchmark: {
-      // 用竖直圆而非弧形槽：这里的脱离判据就是 N=0，且默认参数可复现。
-      // r=3、v0=9 落在 [√(2gr), √(5gr)) 区间，必然中途脱轨（v0=5 只会摆动，看不到脱离）。
+      // r=3、v0=9 落在 [√(2gr), √(5gr)) 区间，临界点 first 精确对应 N 降为 0 的脱轨瞬间（≈0.84s）。
       animId: 'anim-vertical-circular',
-      t: 0.84,
+      critical: 'first',
       presetParams: { r: 3, v0: 9, m: 1, trackType: 0 },
       highlight: 'N 降为 0 的瞬间：此后小球做斜抛运动，向心力公式立刻失效。',
     },
@@ -92,9 +91,9 @@ export const WRONG_REASONS: WrongReasonMeta[] = [
     behavior: '不检验合外力是否为零、是否有摩擦生热，见到碰撞/连接体就直接写动量或机械能守恒。',
     scenes: ['弧形槽（固定 vs 自由）', '有摩擦的板块', '电磁感应安培力做功'],
     benchmark: {
-      // 固定轨道：地面对槽有水平外力，系统水平动量不守恒，只有机械能守恒。
+      // 固定轨道：临界点 first 对应滑块滑至槽底并滑出的瞬间（≈0.72s），此时地面外力冲量清晰可见。
       animId: 'anim-curved-slot',
-      t: 0.72,
+      critical: 'first',
       presetParams: { m_block: 2, M_slot: 5, R_slot: 1.5, isFixed: 1, slotShape: 0 },
       highlight: '轨道固定：槽位移恒为 0，系统水平动量不守恒——右屏「适用条件」正对着这一帧。',
     },
@@ -105,10 +104,9 @@ export const WRONG_REASONS: WrongReasonMeta[] = [
     behavior: '一开始没规定正方向，动量、速度、冲量带符号代入时把反向的量写成正值。',
     scenes: ['弹性碰撞', '反弹', '一维碰撞求末速'],
     benchmark: {
-      // 碰撞时刻由布局几何决定（gap / 接近速度 = 1.68s），
-      // 取 1.70s 落在碰后，才看得到「A 减速、B 加速」的符号反转。
+      // 碰撞时刻由几何间距决定（1.68s），临界点 first 对齐到碰后分离首帧（1.69s）。
       animId: 'anim-collision',
-      t: 1.7,
+      critical: 'first',
       presetParams: { m1: 3, v1: 5, m2: 2, v2: 0, isElastic: 1, advancedMode: 0 },
       highlight: '碰后瞬间：A 仍向右但变慢、B 从静止被撞出——先定正方向，四个速度才能同号入式。',
     },
@@ -119,10 +117,9 @@ export const WRONG_REASONS: WrongReasonMeta[] = [
     behavior: '把 v-t 图的面积当加速度、斜率当位移，或不知道微元 Δt 累加才是位移。',
     scenes: ['v-t 图像', 'x-t 图像', '微元法求位移'],
     benchmark: {
-      // 默认参数 deltaT=2，t=2 恰好是第一个微元区间的右端点：
-      // 「面积≈位移」的近似在这里第一次闭合，切线/割线也在这一点对比。
+      // 临界点 first 对应第一个 Δt 微元区间右端点（默认 Δt = 2s）。
       animId: 'anim-velocity',
-      t: 2.0,
+      critical: 'first',
       highlight: '第一个 Δt 微元收尾：梯形面积累加＝位移，而切线斜率才是该时刻加速度。',
     },
   },
@@ -132,16 +129,9 @@ export const WRONG_REASONS: WrongReasonMeta[] = [
     behavior: '漏读「轻质」「缓慢」「恰好」「光滑」等关键词，把特殊约束当普通条件代入。',
     scenes: ['剪断轻绳/轻弹簧', '轻杆', '恰好离开'],
     benchmark: {
-      // 该动画物理层（physics/dynamics/spring-force.ts 的 precomputeCutRopeTrajectory）
-      // 写死 isCut=1、tCutStart=0 —— 整条时间轴从「已剪断」起算，t=0 就是剪断那一刻。
-      // 取 0.02s = 剪断后第一帧：绳力 fA_rope 已归零，弹簧力 mg(1+cos ωt) = mg(1+cos 0.2)
-      // ≈ 1.98mg，仍是剪断前的 2mg ——「一个突变、一个不突变」在同一帧里同时可见。
-      //
-      // ⚠ 不要取 1.0s：B 球自由落体 fallTime = √(2×1.44/9.8) ≈ 0.54s 就已落地，
-      //    t=1.0 的画面是「球砸在地上、A 球振荡了 1.6 个周期（a_A 已在随机相位）」，
-      //    与「细绳消失的瞬间」差了一整秒。
+      // 该动画物理层从「已剪断」起算，临界点 first 即剪断后第一帧 t = 0.02s（< B 球落地 0.54s）。
       animId: 'anim-light-weight-mutation',
-      t: 0.02,
+      critical: 'first',
       presetParams: { m: 1 },
       highlight: '剪断后的第一帧：绳的拉力已归零，弹簧的弹力仍是原来的 2mg——形变来不及恢复，弹力不突变。',
     },
