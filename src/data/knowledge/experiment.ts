@@ -1,6 +1,4 @@
 import type { KnowledgeNode } from '../types'
-import { DOUBLE_SLIT_DEFAULT_PARAMS } from '@/physics/optics'
-import { SIMPLE_PENDULUM_DEFAULT_PARAMS } from '@/physics/experimentPendulum'
 
 export const experimentKnowledge: KnowledgeNode[] = [
   // ── 力学实验专题 ─────────────────────────────────────────────────────────────
@@ -20,7 +18,7 @@ export const experimentKnowledge: KnowledgeNode[] = [
     chapter: '实验专题',
     module: 'experiment',
     importance: 'gaokao',
-    animationIds: ['anim-mechanics-experiment-base'],
+    animationIds: ['anim-experiment-newton-second'],
     problemIds: ['prob-2024-quanguo-exp-tape'],
     prerequisites: ['experiment-1-1'],
   },
@@ -30,13 +28,7 @@ export const experimentKnowledge: KnowledgeNode[] = [
     chapter: '实验专题',
     module: 'experiment',
     importance: 'gaokao',
-    animationIds: ['anim-mechanics-experiment-base'],
-    // mode 3 下 v0 恒为 0、加速度由 g(1−阻力) 解析得出，故这两个参数不传（传了也不生效）
-    animationParams: {
-      mode: 3,
-      freq: 50,
-      friction: 2,
-    },
+    animationIds: ['anim-experiment-mechanical-energy'],
     problemIds: [],
     prerequisites: ['experiment-1-1'],
   },
@@ -46,16 +38,7 @@ export const experimentKnowledge: KnowledgeNode[] = [
     chapter: '实验专题',
     module: 'experiment',
     importance: 'gaokao',
-    animationIds: ['anim-momentum-conservation'],
-    animationParams: {
-      advancedMode: 2,
-      m1_exp: 0.4,
-      m2_exp: 0.2,
-      v1_exp: 0.8,
-      plateWidth_mm: 20.0,
-      collisionType_exp: 0,
-      timing_err: 0,
-    },
+    animationIds: ['anim-experiment-momentum'],
     problemIds: ['prob-2022-quanguo-exp-momentum'],
     prerequisites: ['experiment-1-1'],
   },
@@ -65,11 +48,7 @@ export const experimentKnowledge: KnowledgeNode[] = [
     chapter: '实验专题',
     module: 'experiment',
     importance: 'gaokao',
-    animationIds: ['anim-simple-pendulum'],
-    animationParams: {
-      ...SIMPLE_PENDULUM_DEFAULT_PARAMS,
-      mode: 3,
-    },
+    animationIds: ['anim-experiment-pendulum'],
     problemIds: [],
     prerequisites: ['experiment-1-1'],
   },
@@ -133,11 +112,7 @@ export const experimentKnowledge: KnowledgeNode[] = [
     chapter: '实验专题',
     module: 'experiment',
     importance: 'gaokao',
-    animationIds: ['anim-double-slit-interference'],
-    animationParams: {
-      ...DOUBLE_SLIT_DEFAULT_PARAMS,
-      mode: 1,
-    },
+    animationIds: ['anim-experiment-double-slit'],
     problemIds: ['prob-2023-quanguo-exp-doubleslit'],
     prerequisites: [],
   },

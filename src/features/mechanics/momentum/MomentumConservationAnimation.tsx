@@ -16,7 +16,6 @@ import {
   MC_LAYOUT,
 } from './hooks/useMomentumConservationPhysics'
 import MomentumConservationCharts from './MomentumConservationCharts'
-import { AirTrackExperimentScene } from './components/AirTrackExperimentScene'
 
 const DESIGN_WIDTH = CANVAS_PRESETS.splitV.width
 
@@ -35,10 +34,7 @@ export default function MomentumConservationAnimation() {
   const {
     basic,
     advanced,
-    experiment,
-    trackSliders,
     isAdvanced,
-    isExperiment,
     chartData,
     p1,
     p2,
@@ -56,11 +52,8 @@ export default function MomentumConservationAnimation() {
     customOriginX: 0,
     customOriginY: groundY,
     maxVectorLength: MC_LAYOUT.vectorMaxLength,
-    refMagnitudes: { velocity: isExperiment ? 2 : 10 },
+    refMagnitudes: { velocity: 10 },
   })
-
-  // 气垫导轨像素映射函数 (1.2m 对应 760px，起点 40)
-  const toTrackPx = (m: number) => 40 + (m / 1.2) * 760
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
@@ -69,7 +62,6 @@ export default function MomentumConservationAnimation() {
         chartData={chartData}
         currentTime={time}
         isAdvanced={isAdvanced}
-        isExperiment={isExperiment}
         tMax={tMax}
       />
 
@@ -94,31 +86,16 @@ export default function MomentumConservationAnimation() {
             <stop offset="70%" stopColor={SCENE_COLORS.materials.labWoodGrad[2]} />
             <stop offset="100%" stopColor={SCENE_COLORS.materials.labWoodGrad[3]} />
           </linearGradient>
-          {/* 气垫导轨铝合金拉丝金属渐变 */}
-          <linearGradient id="air-track-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.aluminumMetalGrad[0]} />
-            <stop offset="35%" stopColor={SCENE_COLORS.materials.aluminumMetalGrad[1]} />
-            <stop offset="70%" stopColor={SCENE_COLORS.materials.aluminumMetalGrad[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.aluminumMetalGrad[3]} />
-          </linearGradient>
-          {/* 光电门黑色磨砂工程塑料渐变 */}
-          <linearGradient id="photogate-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.insulationBakelite[1]} />
-            <stop offset="50%" stopColor={SCENE_COLORS.materials.insulationBakelite[0]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.insulationBakelite[2]} />
-          </linearGradient>
         </defs>
 
-        {!isExperiment && (
-          <PhysicsGround
-            x={MC_LAYOUT.canvasPadding} y={groundY}
-            width={DESIGN_WIDTH - 2 * MC_LAYOUT.canvasPadding}
-            appearance={{ color: PHYSICS_COLORS.labelText }}
-          />
-        )}
+        <PhysicsGround
+          x={MC_LAYOUT.canvasPadding} y={groundY}
+          width={DESIGN_WIDTH - 2 * MC_LAYOUT.canvasPadding}
+          appearance={{ color: PHYSICS_COLORS.labelText }}
+        />
 
         {/* 基础模式：两球碰撞 */}
-        {!isAdvanced && !isExperiment && (
+        {!isAdvanced && (
           <g>
             <circle
               cx={basic.posAx} cy={groundY - basic.R_A} r={basic.R_A}
@@ -208,7 +185,7 @@ export default function MomentumConservationAnimation() {
         )}
 
         {/* 进阶模式：滑块-木板 */}
-        {isAdvanced && !isExperiment && (
+        {isAdvanced && (
           <g>
             <rect
               x={advanced.boardPixelX} y={advanced.boardTopY}
@@ -323,24 +300,6 @@ export default function MomentumConservationAnimation() {
               </g>
             )}
           </g>
-        )}
-
-        {/* ─── 高考实验模式：气垫导轨双滑块光电门碰撞测速 ─── */}
-        {isExperiment && (
-          <AirTrackExperimentScene
-            time={time}
-            groundY={groundY}
-            designWidth={DESIGN_WIDTH}
-            canvasSize={canvasSize}
-            showVectors={showVectors}
-            vectorSceneScale={vectorSceneScale}
-            experiment={experiment}
-            trackSliders={trackSliders}
-            p1={p1}
-            p2={p2}
-            pTotal={pTotal}
-            toTrackPx={toTrackPx}
-          />
         )}
       </AnimationSvgCanvas>
     </div>

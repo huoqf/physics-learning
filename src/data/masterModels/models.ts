@@ -345,9 +345,9 @@ export const masterModels: MasterModel[] = [
     summary: '爱因斯坦光电效应方程、遏止电压及 I-U 伏安特性与 Ekm-ν 关系直线。斜率表示普朗克常数 h，横截距为截止频率 ν₀。',
     knowledgeId: 'modern-1-2',
     animId: 'anim-photoelectric',
-    secondaryAnimId: 'anim-nuclear-decay',
+    secondaryAnimId: 'anim-decay-magnetic-orbit',
     presetParams: { mode: 1, frequency: 6.5, voltage: 0 },
-    secondaryPresetParams: { mode: 2, decayType: 0, bField: 1.5 },
+    secondaryPresetParams: { decayType: 0, bField: 1.5 },
     quickFormula: {
       title: '光电效应方程与双图像规律',
       latex: 'E_{km} = h \\nu - W_0 = e U_c, \\quad \\nu_0 = \\frac{W_0}{h}',

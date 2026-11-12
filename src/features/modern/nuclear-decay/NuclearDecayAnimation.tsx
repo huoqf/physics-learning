@@ -6,7 +6,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { RelationChart } from '@/components/Chart'
 import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
-import { useNuclearDecayPhysics, DECAY_CHARGES } from './hooks/useNuclearDecayPhysics'
+import { useNuclearDecayPhysics } from './hooks/useNuclearDecayPhysics'
 import { refFromPeak } from '@/utils/vectorRefs'
 import { NuclearDecayScene } from './components/NuclearDecayScene'
 import { COULOMB_REF_PEAK } from './model/coulombArrow'
@@ -131,7 +131,6 @@ export default function NuclearDecayAnimation() {
   const eField = params.eField ?? 5.0
   const initVelocity = params.initVelocity ?? 4.0
   const showObstacles = params.showObstacles ?? 0
-  const decayType = params.decayType ?? 0
 
   // ── 4. 物理计算 (无条件调用 hooks) ──
   const physics = useNuclearDecayPhysics({
@@ -143,7 +142,6 @@ export default function NuclearDecayAnimation() {
     eField,
     initVelocity,
     showObstacles,
-    decayType,
     time,
   })
 
@@ -183,51 +181,6 @@ export default function NuclearDecayAnimation() {
     return pts
   }, [])
 
-  // 模式2专属：轨迹半径与核电荷反比关系曲线 R = p/(|q|B) ∝ 1/|q|
-  //
-  // 横坐标取真实电荷量绝对值 |q|（单位 e）；纵轴以「新核半径 = 1」归一化，
-  // 于是微粒散点的 y 值恰等于半径比本身（α → 45，β → 7），
-  // 图上两点的高度比与右屏文案 R_微粒 : R_新核 数值完全一致，不再出现
-  // 「图里 4.5 : 1、文案 45 : 1」这类两处各自写死导致的漂移。
-  // 电荷量一律取自 DECAY_CHARGES 唯一真源。
-  const decayCharges = decayType === 0 ? DECAY_CHARGES.alpha : DECAY_CHARGES.beta
-  const radiusChart = useMemo(() => {
-    const { particle, daughter } = decayCharges
-    const ratio = daughter / particle
-    const isAlpha = decayType === 0
-
-    // R(|q|) = daughter / |q|：从微粒电荷量（半径最大）采样到新核电荷量（半径最小）
-    const curve: { x: number; y: number }[] = []
-    const step = Math.max(0.05, (daughter - particle) / 240)
-    for (let q = particle; q <= daughter + 1e-9; q += step) {
-      curve.push({ x: q, y: daughter / q })
-    }
-
-    return {
-      ratio,
-      curve,
-      // x 轴右侧留 50% 余量：既避免反冲核标签被 SVG 视口裁掉，也让新核散点不贴边框
-      xDomain: [0, daughter * 1.5] as [number, number],
-      yDomain: [0, ratio * 1.15] as [number, number],
-      markers: [
-        {
-          axis: 'point' as const,
-          x: particle,
-          y: ratio,
-          label: `${isAlpha ? 'α 粒子' : 'β 粒子'} |q|=${particle}e`,
-          color: isAlpha ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge,
-        },
-        {
-          axis: 'point' as const,
-          x: daughter,
-          y: 1,
-          label: `${isAlpha ? '反冲钍核' : '反冲氮核'} |q|=${daughter}e`,
-          color: PHYSICS_COLORS.appliedForce,
-        },
-      ],
-    }
-  }, [decayCharges, decayType])
-
   // ── 7. 渲染 ──
   return (
     <div className="w-full h-full flex flex-col gap-2 p-1">
@@ -251,20 +204,8 @@ export default function NuclearDecayAnimation() {
             color={PHYSICS_COLORS.work}
             strokeWidth={2}
           />
-        ) : mode === 1 ? (
-          <IonizationPenetrationChart font={canvasSize.font} />
         ) : (
-          <RelationChart
-            points={radiusChart.curve}
-            xLabel="核电荷量绝对值 |q| (e)"
-            yLabel="轨迹半径 R (以新核为 1)"
-            title={`匀强磁场衰变径迹半径与电荷反比曲线 R ∝ 1/|q| — ${decayType === 0 ? 'α 衰变 (外切圆)' : 'β 衰变 (内切圆)'}`}
-            xDomain={radiusChart.xDomain}
-            yDomain={radiusChart.yDomain}
-            showGrid={true}
-            markers={radiusChart.markers}
-            series="primary"
-          />
+          <IonizationPenetrationChart font={canvasSize.font} />
         )}
       </div>
 
@@ -272,19 +213,12 @@ export default function NuclearDecayAnimation() {
       <div className="flex-1 min-h-0 bg-white rounded-lg border border-neutral-200/60 overflow-hidden relative">
         {/* 电磁场参数标签浮层 (仅在偏转模式下) */}
         {mode === 1 && fieldType !== 2 && (
-          <div className="absolute top-2 left-2 z-10 bg-slate-900/90 text-slate-200 fontSize-[11px] px-2 py-1 rounded border border-slate-700/80 font-mono shadow">
+          <div className="absolute top-2 left-2 z-10 bg-slate-900/90 text-slate-200 text-[11px] px-2 py-1 rounded border border-slate-700/80 font-mono shadow">
             {fieldType === 0 ? (
               <span>外加磁场 B = <span className="text-emerald-400 font-bold">{bField.toFixed(1)} T</span></span>
             ) : (
               <span>外加电场 E = <span className="text-amber-400 font-bold">{eField.toFixed(1)} kV/m</span></span>
             )}
-          </div>
-        )}
-
-        {mode === 2 && (
-          <div className="absolute top-2 left-2 z-10 bg-slate-900/90 text-slate-200 fontSize-[11px] px-2 py-1 rounded border border-slate-700/80 font-mono shadow flex gap-3">
-            <span>垂直纸面向里磁场 B = <span className="text-emerald-400 font-bold">{bField.toFixed(1)} T</span></span>
-            <span>切向几何：<span className={decayType === 0 ? "text-amber-400 font-bold" : "text-sky-400 font-bold"}>{decayType === 0 ? "外切圆 (α 衰变)" : "内切圆 (β 衰变)"}</span></span>
           </div>
         )}
 

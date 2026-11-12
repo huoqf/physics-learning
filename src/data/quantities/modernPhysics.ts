@@ -1,5 +1,4 @@
 import type { PhysicsPanelData } from './types'
-import { SODIUM_WORK_FUNCTION } from '@/physics/photoelectric'
 
 export function buildModernPhysicsQuantities(
   animId: string,
@@ -228,112 +227,6 @@ export function buildModernPhysicsQuantities(
       gaokaoPoints,
       warnings,
       mnemonic: '一群氢原子 C(n,2)，一个氢原子 n-1；光子照射必须准，电子碰撞超差行。',
-    }
-  }
-
-  if (mode === 2) {
-    // 阶段三：高考综合应用（跃迁辐射光子激发光电效应）
-    const radiationPhotonIndex = params.radiationPhotonIndex ?? 1
-    const workFunction = params.workFunction ?? SODIUM_WORK_FUNCTION
-    const stoppingVoltage = params.stoppingVoltage ?? 0
-
-    const photonEnergies = [0.66, 2.55, 12.75, 1.89, 12.09, 10.20]
-    const photonLabels = ['4→3 跃迁 (0.66 eV)', '4→2 跃迁 (2.55 eV)', '4→1 跃迁 (12.75 eV)', '3→2 跃迁 (1.89 eV)', '3→1 跃迁 (12.09 eV)', '2→1 跃迁 (10.20 eV)']
-
-    const hv = photonEnergies[radiationPhotonIndex]
-    const isPhotoelectric = hv >= workFunction
-    const Ekm = isPhotoelectric ? hv - workFunction : 0
-    const Uc = Ekm
-
-    let currentStatus = ''
-    if (!isPhotoelectric) {
-      currentStatus = '未发生光电效应 (光子能量 hν < 逸出功 W₀)'
-    } else if (stoppingVoltage >= Uc) {
-      currentStatus = '发生光电效应，光电流已被反向遏止电压拦截'
-    } else {
-      currentStatus = '发生光电效应，形成稳定光电流'
-    }
-
-    const quantities: PhysicsPanelData['quantities'] = [
-      {
-        label: '照射光子来源',
-        value: photonLabels[radiationPhotonIndex],
-        unit: '',
-      },
-      {
-        label: '光子能量',
-        symbol: 'hν',
-        value: hv.toFixed(2),
-        unit: 'eV',
-      },
-      {
-        label: '金属逸出功',
-        symbol: 'W_0',
-        value: workFunction.toFixed(2),
-        unit: 'eV',
-      },
-      {
-        label: '光电子最大初动能',
-        symbol: 'E_km',
-        value: isPhotoelectric ? Ekm.toFixed(2) : '—',
-        unit: 'eV',
-        highlight: isPhotoelectric ? 'positive' : undefined,
-      },
-      {
-        label: '理论遏止电压',
-        symbol: 'U_c',
-        value: isPhotoelectric ? Uc.toFixed(2) : '—',
-        unit: 'V',
-        highlight: isPhotoelectric ? 'extreme' : undefined,
-      },
-      {
-        label: '回路工作状态',
-        value: currentStatus,
-        unit: '',
-        highlight: isPhotoelectric && stoppingVoltage < Uc ? 'positive' : 'negative',
-      },
-    ]
-
-    const formulas: PhysicsPanelData['formulas'] = [
-      {
-        name: '能级跃迁辐射方程',
-        latex: 'h\\nu = E_m - E_n',
-        level: 'core',
-      },
-      {
-        name: '爱因斯坦光电效应方程',
-        latex: 'E_{\\text{km}} = h\\nu - W_0',
-        level: 'core',
-      },
-      {
-        name: '遏止电压关系式',
-        latex: 'eU_c = E_{\\text{km}}',
-        level: 'core',
-      },
-      {
-        name: '高考综合联立方程',
-        latex: 'eU_c = (E_m - E_n) - W_0',
-        level: 'important',
-      },
-    ]
-
-    const gaokaoPoints: PhysicsPanelData['gaokaoPoints'] = [
-      { text: '光电效应发生条件：入射光子能量 hν ≥ 逸出功 W₀。', importance: 'gaokao' },
-      { text: '能级跃迁产生的光子照射金属板时，跃迁能级差越大，发射光电子初动能越大，遏止电压越高。', importance: 'gaokao' },
-      { text: '遏止电压判定：加反向电压 U 时，当 U ≥ Uc，最大初动能的光电子也无法到达阳极，电流为零。', importance: 'core' },
-    ]
-
-    const warnings = []
-    if (!isPhotoelectric) {
-      warnings.push({ text: '光子能量不足以克服金属逸出功，无法发生光电效应！', level: 'warning' as const })
-    }
-
-    return {
-      quantities,
-      formulas,
-      gaokaoPoints,
-      warnings,
-      mnemonic: '跃迁发出高能光，照射金属电子狂；逸出功外是动能，反向电压截止强。',
     }
   }
 

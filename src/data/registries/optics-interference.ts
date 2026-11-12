@@ -8,24 +8,78 @@ export const opticsInterferenceAnimations = defineAnimations({
     knowledgeId: 'wave-optics-1-1',
     Component: lazy(() => import('@/features/optics/double-slit-interference/DoubleSlitInterferenceAnimation')),
     controlsMode: 'loop' as const,
-    defaultParams: DOUBLE_SLIT_DEFAULT_PARAMS,
+    defaultParams: {
+      wavelength: DOUBLE_SLIT_DEFAULT_PARAMS.wavelength,
+      slitDistance: DOUBLE_SLIT_DEFAULT_PARAMS.slitDistance,
+      screenDistance: DOUBLE_SLIT_DEFAULT_PARAMS.screenDistance,
+    } as const,
     controlMeta: [
       {
-        type: 'segmented',
-        key: 'mode',
-        group: '实验模式',
-        resetOnChange: false,
-        options: [
-          { value: 0, label: '理论演示' },
-          { value: 1, label: '实验操作' },
-        ],
+        type: 'preset',
+        label: '🔴 经典红光干涉 (650nm)',
+        description: 'd=0.30mm, L=0.8m，红光波长较长，干涉条纹间距更宽',
+        params: { wavelength: 650, slitDistance: 0.3, screenDistance: 0.8 },
       },
+      {
+        type: 'preset',
+        label: '🟢 绿光干涉对比 (532nm)',
+        description: 'd=0.30mm, L=0.8m，绿光波长更短，对比亮暗条纹间距疏密变化',
+        params: { wavelength: 532, slitDistance: 0.3, screenDistance: 0.8 },
+      },
+      {
+        type: 'tip',
+        content: '分别调节波长 λ、双缝间距 d 与缝屏距离 L，观察屏幕上相干亮暗条纹间距与光波波前分布的变化规律。',
+      },
+    ],
+    paramMeta: [
+      {
+        key: 'wavelength',
+        label: '光的波长 λ',
+        min: 400,
+        max: 700,
+        step: 1,
+        unit: 'nm',
+        group: '基本参数',
+      },
+      {
+        key: 'slitDistance',
+        label: '双缝间距 d',
+        min: 0.1,
+        max: 0.5,
+        step: 0.01,
+        unit: 'mm',
+        group: '基本参数',
+      },
+      {
+        key: 'screenDistance',
+        label: '缝屏距离 L',
+        min: 0.5,
+        max: 2.0,
+        step: 0.1,
+        unit: 'm',
+        group: '基本参数',
+      },
+    ],
+  },
+
+  'anim-experiment-double-slit': {
+    title: '用双缝干涉测光的波长',
+    knowledgeId: 'experiment-3-4',
+    Component: lazy(() => import('@/features/optics/double-slit-interference/ExperimentDoubleSlitAnimation')),
+    controlsMode: 'loop' as const,
+    defaultParams: {
+      wavelength: DOUBLE_SLIT_DEFAULT_PARAMS.wavelength,
+      slitDistance: DOUBLE_SLIT_DEFAULT_PARAMS.slitDistance,
+      screenDistance: DOUBLE_SLIT_DEFAULT_PARAMS.screenDistance,
+      targetFringe: DOUBLE_SLIT_DEFAULT_PARAMS.targetFringe,
+      currentFringe: DOUBLE_SLIT_DEFAULT_PARAMS.currentFringe,
+      handwheelOffset: DOUBLE_SLIT_DEFAULT_PARAMS.handwheelOffset,
+    } as const,
+    controlMeta: [
       {
         type: 'segmented',
         key: 'currentFringe',
         group: '分划板十字丝对准',
-        showIf: 'mode',
-        showIfValue: 1,
         options: [
           { value: 1, label: '第1条亮纹' },
           { value: 4, label: '第4条亮纹' },
@@ -35,17 +89,17 @@ export const opticsInterferenceAnimations = defineAnimations({
         type: 'preset',
         label: '🔴 经典红光实验 (650nm)',
         description: 'd=0.30mm, L=0.8m，条纹清晰宽大，适合目视读数',
-        params: { mode: 1, wavelength: 650, slitDistance: 0.3, screenDistance: 0.8, targetFringe: 4, currentFringe: 1, handwheelOffset: 0 },
+        params: { wavelength: 650, slitDistance: 0.3, screenDistance: 0.8, targetFringe: 4, currentFringe: 1, handwheelOffset: 0 },
       },
       {
         type: 'preset',
         label: '🟢 灵敏绿光实验 (532nm)',
         description: 'd=0.30mm, L=0.9m，人眼敏感波长，对比条纹疏密',
-        params: { mode: 1, wavelength: 532, slitDistance: 0.3, screenDistance: 0.9, targetFringe: 4, currentFringe: 4, handwheelOffset: 0 },
+        params: { wavelength: 532, slitDistance: 0.3, screenDistance: 0.9, targetFringe: 4, currentFringe: 4, handwheelOffset: 0 },
       },
       {
         type: 'tip',
-        content: '操作指引：转动测量头手轮使分划板十字丝对准亮纹中心；可切换不同波长对比条纹间距。',
+        content: '操作指引：转动测量头手轮使分划板十字丝分别对准第 1 条与第 4 条亮纹中心，用逐差法测得条纹间距并反求光波长。',
       },
     ],
     paramMeta: [
@@ -84,8 +138,6 @@ export const opticsInterferenceAnimations = defineAnimations({
         step: 0.005,
         unit: 'mm',
         group: '测微手轮调节',
-        showIf: 'mode',
-        showIfValue: 1,
       },
     ],
   },
@@ -101,7 +153,7 @@ export const opticsInterferenceAnimations = defineAnimations({
       filmThickness: 100,
       n_film: 1.38,
       wedgeAngle_mrad: 0.3,
-      defect: 1, // 劈尖模式默认展示高考高频考点：局部凹坑 (0=平整, 1=凹陷, 2=凸起)
+      defect: 0, // 劈尖模式默认平整表面 (0=平整, 1=凹陷, 2=凸起)
     } as const,
     controlMeta: [
       {
@@ -130,12 +182,16 @@ export const opticsInterferenceAnimations = defineAnimations({
       {
         type: 'preset',
         label: '🔍 工件表面凹坑检测',
+        showIf: 'mode',
+        showIfValue: 1,
         description: '劈尖干涉条纹向薄端（左侧）弯曲，指示局部存在凹坑',
         params: { mode: 1, wavelength: 600, wedgeAngle_mrad: 0.3, defect: 1 },
       },
       {
         type: 'preset',
         label: '✨ 550nm 理想增透膜',
+        showIf: 'mode',
+        showIfValue: 0,
         description: 'd = λ/(4n) = 99.6 nm，反射光强近乎为零，透射率最大',
         params: { mode: 0, wavelength: 550, filmThickness: 99.6, n_film: 1.38, defect: 0 },
       },

@@ -381,7 +381,7 @@ function drawFormulaCard(ctx: CanvasRenderingContext2D, prev: number, next: numb
 
   ctx.fillStyle = colors.neutral[900]
   ctx.font = 'bold 10px sans-serif'
-  ctx.fillText('高考重点：跃迁吸能/放能计算', px + 10, py + 18)
+  ctx.fillText('跃迁能量差计算', px + 10, py + 18)
 
   const isEmission = prev > next
   const dirTxt = isEmission

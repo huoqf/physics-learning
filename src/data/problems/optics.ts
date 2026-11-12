@@ -76,7 +76,7 @@ export const opticsGaokaoProblems: Problem[] = [
     knowledgeIds: ['wave-optics-1-1', 'experiment-3-4'],
     tags: ['高考真题', '光的干涉', '双缝干涉', '测定波长', '五星实验'],
     targetAnimation: {
-      animId: 'anim-double-slit-interference',
+      animId: 'anim-experiment-double-slit',
       presetParams: { wavelength: 650, slitDistance: 0.2, screenDistance: 1.0 },
       presetDescription: '载入2023全国乙卷真题参数：双缝间距 0.2mm，屏距 1.0m，验证条纹间距与波长',
     },

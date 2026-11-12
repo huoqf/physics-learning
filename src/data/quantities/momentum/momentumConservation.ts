@@ -1,10 +1,6 @@
-import type { PhysicsPanelData, PhysicsQuantity, ParamDefs, WarningItem } from '../types'
+import type { PhysicsPanelData, PhysicsQuantity, ParamDefs } from '../types'
 import { normalizeParams } from '../types'
 import { GRAVITY } from '@/physics/constants'
-import {
-  computeMomentumExperiment,
-  momentumExperimentInputFromParams,
-} from '@/physics/experimentMomentum'
 
 interface MomentumConservationParams {
   advancedMode: number
@@ -19,13 +15,6 @@ interface MomentumConservationParams {
   mu: number
   L: number
   v0: number
-  // 高考实验参数
-  m1_exp: number
-  m2_exp: number
-  v1_exp: number
-  plateWidth_mm: number
-  collisionType_exp: number
-  timing_err: number
 }
 
 const DEFAULTS: ParamDefs<MomentumConservationParams> = {
@@ -41,12 +30,6 @@ const DEFAULTS: ParamDefs<MomentumConservationParams> = {
   mu: { default: 0.3 },
   L: { default: 2 },
   v0: { default: 6 },
-  m1_exp: { default: 0.4 },
-  m2_exp: { default: 0.2 },
-  v1_exp: { default: 0.8 },
-  plateWidth_mm: { default: 20.0 },
-  collisionType_exp: { default: 0 },
-  timing_err: { default: 0.0 },
 }
 
 export function handleMomentumConservation(
@@ -58,100 +41,6 @@ export function handleMomentumConservation(
   if (animId !== 'anim-momentum-conservation') return null
   const p = normalizeParams(params, DEFAULTS)
   const advancedMode = p.advancedMode ?? 0
-
-  // ─── 模式 2: 高考实验·气垫导轨双车光电门碰撞测速 ───
-  if (advancedMode === 2) {
-    const expRes = computeMomentumExperiment(momentumExperimentInputFromParams(p))
-
-    const reboundLabel =
-      expRes.isRebounded === 1
-        ? `反弹向左 (${expRes.v1_after_measured.toFixed(3)} m/s)`
-        : Math.abs(expRes.v1_after_measured) < 1e-4
-          ? '碰后静止 (速度交换)'
-          : `同向向右 (+${expRes.v1_after_measured.toFixed(3)} m/s)`
-
-    return {
-      quantities: [
-        ...base,
-        { label: '碰撞端面类型', value: expRes.collisionTypeName, unit: '' },
-        { label: '挡光片宽度 Δx', value: expRes.plateWidth_mm.toFixed(1), unit: 'mm' },
-        ...(Math.abs(expRes.timing_err) > 1e-4
-          ? [{ label: '计时测量误差 Δt_err', value: `${expRes.timing_err > 0 ? '+' : ''}${expRes.timing_err.toFixed(1)}`, unit: 'ms', highlight: 'extreme' as const }]
-          : []),
-        { label: '滑块1质量 m₁', value: expRes.m1.toFixed(3), unit: 'kg' },
-        { label: '滑块2质量 m₂', value: expRes.m2.toFixed(3), unit: 'kg' },
-        { label: '碰前门1挡光时间 Δt₁', value: expRes.dt1_before_measured.toFixed(4), unit: 's' },
-        { label: '碰前初速度 v₁', value: expRes.v1_measured.toFixed(3), unit: 'm/s' },
-        { label: '碰前滑块1动量 p₁', value: expRes.p1_before_measured.toFixed(3), unit: 'kg·m/s' },
-        { label: '碰前总动量 p_前', value: expRes.p_total_before_measured.toFixed(3), unit: 'kg·m/s', highlight: 'positive' },
-        { label: '碰后门2挡光时间 Δt₂\'', value: expRes.dt2_after_measured > 0 ? expRes.dt2_after_measured.toFixed(4) : '--', unit: 's' },
-        { label: '滑块2碰后速度 v₂\'', value: expRes.v2_after_measured.toFixed(3), unit: 'm/s' },
-        { label: '滑块2碰后动量 p₂\'', value: expRes.p2_after_measured.toFixed(3), unit: 'kg·m/s' },
-        ...(expRes.isRebounded === 1
-          ? [
-              { label: '反弹门1挡光时间 Δt₁\'', value: expRes.dt1_after_measured.toFixed(4), unit: 's' },
-              { label: '滑块1碰后速度 v₁\'', value: expRes.v1_after_measured.toFixed(3), unit: 'm/s', highlight: 'negative' as const },
-              { label: '滑块1碰后动量 p₁\'', value: expRes.p1_after_measured.toFixed(3), unit: 'kg·m/s', highlight: 'negative' as const },
-            ]
-          : [
-              ...(expRes.collisionType === 0 && expRes.v1_after_measured > 1e-4
-                ? [{ label: '碰后门2挡光时间(滑块1) Δt₁\'', value: expRes.dt1_after_measured.toFixed(4), unit: 's' }]
-                : []),
-              { label: '滑块1碰后速度 v₁\'', value: expRes.v1_after_measured.toFixed(3), unit: 'm/s' },
-              { label: '滑块1碰后动量 p₁\'', value: expRes.p1_after_measured.toFixed(3), unit: 'kg·m/s' },
-            ]),
-        { label: '滑块1碰后运动方向', value: reboundLabel, unit: '' },
-        { label: '碰后总动量 p_后', value: expRes.p_total_after_measured.toFixed(3), unit: 'kg·m/s', highlight: 'positive' },
-        {
-          label: '动量守恒相对偏差',
-          value: `${expRes.momentumErrorPercent >= 0 ? '+' : ''}${expRes.momentumErrorPercent.toFixed(2)}%`,
-          unit: '',
-          highlight: Math.abs(expRes.momentumErrorPercent) > 0.05 ? ('extreme' as const) : undefined,
-        },
-        { label: '机械能损失 ΔE_k', value: `${expRes.Ek_loss.toFixed(3)} J (${expRes.Ek_lossPercent.toFixed(1)}%)`, unit: '', highlight: expRes.Ek_loss > 0.001 ? 'extreme' : undefined },
-      ],
-      formulas: [
-        {
-          name: '动量守恒定律',
-          latex: 'm_1 v_1 + m_2 v_2 = m_1 v_1\' + m_2 v_2\'',
-          level: 'core' as const,
-          condition: '系统所受合外力为零（气轨气垫已消除摩擦阻力）',
-          note: '系统所受外力之和为零（气轨微孔气垫消除摩擦阻力）',
-        },
-        {
-          name: '光电门平均速度测瞬时速度',
-          latex: 'v = \\dfrac{\\Delta x}{\\Delta t}',
-          level: 'core' as const,
-          note: '挡光片宽度 Δx 较窄时，平均速度极高精度逼近经过光电门时的瞬时速度',
-        },
-        {
-          name: '完全非弹性碰撞粘合公式',
-          latex: 'v_{\\text{共}} = \\dfrac{m_1 v_1}{m_1 + m_2}',
-          level: 'important' as const,
-          condition: '碰撞端面装有橡皮泥/魔术贴，碰后合为一体',
-        },
-        {
-          name: '弹性碰撞恢复系数',
-          latex: 'e = -\\dfrac{v_1\' - v_2\'}{v_1 - v_2} = 1',
-          level: 'derived' as const,
-          condition: '碰撞端面装有轻质弹性弹簧片，动能守恒',
-        },
-      ],
-      gaokaoPoints: [
-        { text: '【气轨调平检验】开气源后轻推滑块，滑块能匀速穿过两光电门（两门挡光时间相等）；若导轨倾斜，重力分力做功会导致动量不守恒。', importance: 'core' as const },
-        { text: '【挡光片宽度选择】挡光片必须较窄（通常 1~2 cm），用游标卡尺精确测定其宽度 Δx；过宽会导致平均速度偏离瞬时速度。', importance: 'gaokao' as const },
-        { text: '【反弹与矢量负号】当 m₁ < m₂ 发生弹性碰撞时，滑块 1 碰后反向回穿光电门 1（v₁\' < 0），计算碰后动量必须严格带负号：p_后 = -m₁|v₁\'| + m₂v₂\'。', importance: 'hard' as const },
-        { text: '【光电门测速误差分析】毫秒计计时误差或挡光片测量偏差会使反算的速度偏离真实值，导致实测动量守恒出现相对偏差（通常控制在 ±2% 以内即视为验证成功）。', importance: 'gaokao' as const },
-        { text: '【两碰撞机制对比】弹簧圈碰为弹性碰撞（动能守恒）；橡皮泥碰为完全非弹性碰撞（碰后同速，机械能损失最大）。', importance: 'gaokao' as const },
-      ],
-    }
-  }
-
-  // 模式提示（替代恒定强警告）：指示可切换至高考实验模式
-  const scopeNotice: WarningItem = {
-    text: '【提示】当前为碰撞原理演示。如需查看气垫导轨、光电门测速、动量守恒验证及数据分析，请在左屏切换至「气轨实验」模式。',
-    level: 'info',
-  }
 
   const isAdvanced = advancedMode === 1
 
@@ -202,9 +91,8 @@ export function handleMomentumConservation(
       gaokaoPoints: [
         { text: '系统所受合外力为零，总动量在碰撞前后严格守恒', importance: 'core' as const },
         { text: '弹性碰撞 (e=1) 机械能守恒；完全非弹性碰撞 (e=0) 机械能损失最大', importance: 'gaokao' as const },
-        { text: '高考常考恢复系数 e 在 0 到 1 之间的一般碰撞，此时动量守恒，动能减少', importance: 'gaokao' as const },
+        { text: '一般碰撞恢复系数 e 介于 0 到 1 之间，碰撞过程动量守恒而动能减少', importance: 'gaokao' as const },
       ],
-      warnings: [scopeNotice],
     }
   } else {
     const m_slider = p.m_slider ?? 1
@@ -252,9 +140,8 @@ export function handleMomentumConservation(
         gaokaoPoints: [
           { text: '当木板长度 L 小于达到共速所需的相对位移时，滑块会从木板上滑落', importance: 'gaokao' as const },
           { text: '滑落后，由于不受摩擦力，滑块与木板均做匀速直线运动，系统总动量守恒', importance: 'gaokao' as const },
-          { text: '滑落临界问题是高考物理压轴题的高频考点，需注意相对位移与板长关系', importance: 'gaokao' as const },
+          { text: '滑落临界分析需结合相对位移与板长 L 关系及运动过程分段求解', importance: 'gaokao' as const },
         ],
-        warnings: [scopeNotice],
       }
     } else {
       const Q = mu * m_slider * g * deltaXAtCommon
@@ -280,7 +167,6 @@ export function handleMomentumConservation(
           { text: '达到共同速度是相对运动结束、内能损失最大的临界点', importance: 'gaokao' as const },
           { text: '系统内摩擦生热公式为 Q = f·Δx_相对', importance: 'gaokao' as const },
         ],
-        warnings: [scopeNotice],
       }
     }
   }

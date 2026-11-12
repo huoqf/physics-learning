@@ -32,7 +32,12 @@ export function buildDoubleSlitInterferenceQuantities(
   params: Record<string, number>,
   _time: number,
 ): PhysicsPanelData | null {
-  if (animId !== 'anim-double-slit-interference') return null
+  if (
+    animId !== 'anim-double-slit-interference' &&
+    animId !== 'anim-experiment-double-slit'
+  ) {
+    return null
+  }
 
   const p = normalizeParams(params, DOUBLE_SLIT_DEFAULTS)
 
@@ -58,7 +63,7 @@ export function buildDoubleSlitInterferenceQuantities(
   } = state
 
   const wavelengthColor = wavelengthToHex(p.wavelength)
-  const isExperimentMode = p.mode === 1
+  const isExperimentMode = animId === 'anim-experiment-double-slit'
 
   // 2. 物理量列表（规范声明：包含 label, symbol, value, unit, color, highlight）
   const quantities: PhysicsPanelData['quantities'] = [
@@ -176,35 +181,50 @@ export function buildDoubleSlitInterferenceQuantities(
         },
       ]
 
-  // 4. 高考要点区 (5级重要性标签: gaokao/hard/core/basic/extend)
-  const gaokaoPoints: PhysicsPanelData['gaokaoPoints'] = [
-    {
-      text: '高考实验大题必考：光具座元件排列顺序为「光源→凸透镜→滤光片→单缝→双缝→遮光筒→测量头」，单缝与双缝必须平行。',
-      importance: 'gaokao',
-    },
-    {
-      text: `逐差法防错：禁止直接测量单个相邻条纹间距 Δx，必须测出第 1 条与第 ${targetFringe} 条间距再除以 (${targetFringe}-1)。`,
-      importance: 'gaokao',
-    },
-    {
-      text: '测微手轮操作规范：转动手轮使分划板向同一方向移动，切忌中途反向转动，避免产生齿轮回程间隙误差。',
-      importance: 'hard',
-    },
-    {
-      text: '各元件作用分工：凸透镜聚光成平行光；滤光片获得单色光；单缝获得线光源；双缝获得相干光；遮光筒阻隔杂散光。',
-      importance: 'core',
-    },
-  ]
+  // 4. 核心要点区
+  const gaokaoPoints: PhysicsPanelData['gaokaoPoints'] = isExperimentMode
+    ? [
+        {
+          text: '光具座元件排列顺序：光源→凸透镜→滤光片→单缝→双缝→遮光筒→测量头，单缝与双缝必须平行。',
+          importance: 'gaokao',
+        },
+        {
+          text: `逐差法测间距：不能直接只测相邻两纹间距，应测出第 1 条与第 ${targetFringe} 条亮纹间距再除以 (${targetFringe}-1) 求平均值。`,
+          importance: 'gaokao',
+        },
+        {
+          text: '测微手轮操作规范：转动手轮使分划板向同一方向移动，切忌中途反向转动，避免产生齿轮回程间隙误差。',
+          importance: 'hard',
+        },
+        {
+          text: '各元件作用分工：凸透镜聚光成平行光；滤光片获得单色光；单缝获得线光源；双缝获得相干光；遮光筒阻隔杂散光。',
+          importance: 'core',
+        },
+      ]
+    : [
+        {
+          text: '条纹特点：相邻亮条纹（或暗条纹）间距相等，等间距分布；白光照射时中央为白色亮纹，两侧为内紫外红彩色条纹。',
+          importance: 'core',
+        },
+        {
+          text: '间距变化规律：根据 Δx = (L/d)λ，条纹间距与波长 λ、缝屏距离 L 成正比，与双缝间距 d 成反比。',
+          importance: 'core',
+        },
+        {
+          text: '明暗判断条件：空间某点到两狭缝的光程差 δ 为波长的整数倍时干涉加强（亮纹），为半波长的奇数倍时干涉减弱（暗纹）。',
+          importance: 'hard',
+        },
+      ]
 
-  // 5. 易错警示区 (含高考仪器量程考点 B1-c 警示与对准误差警示)
+  // 5. 提示与警示区
   const warnings: WarningItem[] = []
 
   if (isExperimentMode) {
     if (isOverRange) {
       const isUnderZero = x1 < 0 || xn < 0 || state.currentReading < 0
       const overRangeText = isUnderZero
-        ? '⚠️ 读数低于螺旋测微器零刻度基准！高考实验考点：测量头读数必须落在 0~10 mm 有效刻度内，请反向转动手轮微调或调整双缝参数。'
-        : `⚠️ 读数超过螺旋测微器量程（10.000 mm）！高考实验考点：测量头螺旋测微手轮量程为 0~10 mm，条纹过宽 (Δx = ${fringeSpacing.toFixed(2)} mm) 时需增大双缝间距 d 或减小遮光筒长度 L，防止超出量程。`
+        ? '⚠️ 读数低于螺旋测微器零刻度基准！测量头读数必须落在 0~10 mm 有效刻度内，请反向转动手轮微调或调整双缝参数。'
+        : `⚠️ 读数超过螺旋测微器量程（10.000 mm）！测量头螺旋测微手轮量程为 0~10 mm，条纹过宽 (Δx = ${fringeSpacing.toFixed(2)} mm) 时需增大双缝间距 d 或减小遮光筒长度 L，防止超出量程。`
       warnings.push({
         text: overRangeText,
         level: 'warning',
@@ -216,7 +236,7 @@ export function buildDoubleSlitInterferenceQuantities(
       })
     } else {
       warnings.push({
-        text: '十字分划板已精确对准条纹中心，螺旋测微手轮读数准确，符合高考实验数据记录规范。',
+        text: '十字分划板已精确对准条纹中心，螺旋测微手轮读数稳定。',
         level: 'info',
       })
     }

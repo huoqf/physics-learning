@@ -1,6 +1,6 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
-import { SIMPLE_PENDULUM_DEFAULT_PARAMS } from '@/physics/experimentPendulum'
+import { PENDULUM_EXP_DEFAULTS } from '@/physics/experimentPendulum'
 import { GRAVITY } from '@/physics/constants'
 
 // ===== 机械振动与波 =====
@@ -84,29 +84,21 @@ export const vibrationOscillationAnimations = defineAnimations({
     CenterExtra: lazy(() => import('@/features/vibration/simpleHarmonic/SimplePendulumCenterExtra')),
     centerLayout: 'splitH',
     controlsMode: 'timed' as const,
-    maxTime: (params) => {
-      if (params?.mode === 3) {
-        const l = params.l_line ?? 0.985
-        const d = (params.d_mm ?? 20.0) / 2000
-        const L = l + d
-        const g = params.g ?? GRAVITY
-        const n = params.n_cycles ?? 40
-        const T = 2 * Math.PI * Math.sqrt(L / g)
-        return Math.ceil(n * T) + 2
-      }
-      return 20
-    },
-    defaultParams: SIMPLE_PENDULUM_DEFAULT_PARAMS,
+    maxTime: 20,
+    defaultParams: {
+      L: 1.5,
+      g: GRAVITY,
+      theta0: 8,
+      phiDeg: 0,
+      mode: 0,
+      showGraph: 1,
+      showHelper: 1,
+    } as const,
     paramMeta: [
-      { key: 'L', label: '摆长 L', min: 1.0, max: 2.0, step: 0.1, unit: 'm', group: '摆参数', hideIf: 'mode', hideIfValue: 3 },
-      { key: 'g', label: '重力加速度 g', min: 2.0, max: 20.0, step: 0.1, unit: 'm/s²', group: '环境参数', hideIf: 'mode', hideIfValue: 3 },
-      { key: 'theta0', label: '最大摆角 θ₀', min: 2, max: 60, step: 1, unit: '°', group: '摆参数', hideIf: 'mode', hideIfValue: 3 },
-      { key: 'phiDeg', label: '初相位 φ', min: 0, max: 360, step: 5, unit: '°', group: '摆参数', hideIf: 'mode', hideIfValue: 3 },
-      { key: 'l_line', label: '摆线长 l', min: 0.7, max: 1.3, step: 0.005, unit: 'm', group: '实验测量', showIf: 'mode', showIfValue: 3 },
-      { key: 'd_mm', label: '摆球直径 d', min: 12.0, max: 28.0, step: 0.1, unit: 'mm', group: '实验测量', showIf: 'mode', showIfValue: 3 },
-      { key: 'theta0_exp', label: '摆角 θ₀ (≤5°)', min: 1, max: 5, step: 0.5, unit: '°', group: '实验测量', showIf: 'mode', showIfValue: 3 },
-      { key: 'n_cycles', label: '全振动次数 N', min: 20, max: 60, step: 5, unit: '次', group: '实验测量', showIf: 'mode', showIfValue: 3 },
-      { key: 'timing_err', label: '秒表计时误差 Δt', min: -0.5, max: 0.5, step: 0.05, unit: 's', group: '误差探究', showIf: 'mode', showIfValue: 3 },
+      { key: 'L', label: '摆长 L', min: 1.0, max: 2.0, step: 0.1, unit: 'm', group: '摆参数' },
+      { key: 'g', label: '重力加速度 g', min: 2.0, max: 20.0, step: 0.1, unit: 'm/s²', group: '环境参数' },
+      { key: 'theta0', label: '最大摆角 θ₀', min: 2, max: 60, step: 1, unit: '°', group: '摆参数' },
+      { key: 'phiDeg', label: '初相位 φ', min: 0, max: 360, step: 5, unit: '°', group: '摆参数' },
     ],
     controlMeta: [
       {
@@ -118,33 +110,13 @@ export const vibrationOscillationAnimations = defineAnimations({
           { value: 0, label: '小角简谐' },
           { value: 1, label: '大角对比' },
           { value: 2, label: '能量守恒' },
-          { value: 3, label: '单摆测 g' },
         ],
       },
       {
         type: 'preset',
-        label: '⏱️ 标准摆长测 g（l=0.985m）',
-        description: '标准单摆实验 (l=0.985m, d=20mm, N=40, θ₀=4°)',
-        params: { mode: 3, l_line: 0.985, d_mm: 20.0, n_cycles: 40, timing_err: 0, theta0_exp: 4, theta0: 4, g: 9.8 },
-        restartOnApply: true,
-      },
-      {
-        type: 'preset',
-        label: '⌛ 停表滞后（+0.4s）',
-        description: '模拟人工反应慢停 0.4s 导致测得周期偏大、g 偏小',
-        params: { mode: 3, l_line: 0.985, d_mm: 20.0, n_cycles: 40, timing_err: 0.4, theta0_exp: 4, theta0: 4, g: 9.8 },
-        restartOnApply: true,
-      },
-      {
-        type: 'preset',
-        label: '📏 短摆长测 g（l=0.69m）',
-        description: '测量不同摆长数据 (l=0.690m, d=20mm, N=40)',
-        params: { mode: 3, l_line: 0.69, d_mm: 20.0, n_cycles: 40, timing_err: 0, theta0_exp: 4, theta0: 4, g: 9.8 },
-        restartOnApply: true,
-      },
-      {
-        type: 'preset',
         label: '📋 简谐基础：小角单摆 (θ₀=5°)',
+        showIf: 'mode',
+        showIfValue: 0,
         description: '基础小角等时性单摆演示 (L=1.0m, g=9.8m/s²)',
         params: { mode: 0, L: 1.0, g: 9.8, theta0: 5, phiDeg: 0 },
         restartOnApply: true,
@@ -174,7 +146,6 @@ export const vibrationOscillationAnimations = defineAnimations({
         group: '教学提示',
         showIf: 'mode',
         showIfValue: 0,
-        // 原 F_t = −mg sinθ ≈ −mgθ 属公式搬运（§2.6.5 C2），右屏 FormulaSection 已给出
         content: '把起始摆角从 5° 慢慢加到 30°：盯周期读数，它在哪个角度之后开始明显偏离小角值？',
       },
       {
@@ -189,17 +160,66 @@ export const vibrationOscillationAnimations = defineAnimations({
         group: '教学提示',
         showIf: 'mode',
         showIfValue: 2,
-        // 原「高考高频结论 + F_拉,max 公式」属考点结论与公式搬运（§2.6.5 C2/C3），
-        // 右屏 quantities/vibration.ts 的 F_拉,max 公式已给出同一结论
         content: '盯两条曲线：动能与势能此消彼长、总和是不是一条水平线？再把拉力读数与最低点对齐，看它是否出现峰值。',
+      },
+    ],
+  },
+  'anim-experiment-pendulum': {
+    title: '用单摆测重力加速度',
+    knowledgeId: 'experiment-2-4',
+    Component: lazy(() => import('@/features/vibration/simpleHarmonic/ExperimentPendulumAnimation')),
+    CenterExtra: lazy(() => import('@/features/vibration/simpleHarmonic/ExperimentPendulumCenterExtra')),
+    centerLayout: 'splitH',
+    controlsMode: 'timed' as const,
+    maxTime: (params) => {
+      const l = params.l_line ?? PENDULUM_EXP_DEFAULTS.l_line
+      const d = (params.d_mm ?? PENDULUM_EXP_DEFAULTS.d_mm) / 2000
+      const L = l + d
+      const g = params.g ?? PENDULUM_EXP_DEFAULTS.g_true
+      const n = params.n_cycles ?? PENDULUM_EXP_DEFAULTS.n_cycles
+      const T = 2 * Math.PI * Math.sqrt(L / g)
+      return Math.ceil(n * T) + 2
+    },
+    defaultParams: {
+      l_line: PENDULUM_EXP_DEFAULTS.l_line,
+      d_mm: PENDULUM_EXP_DEFAULTS.d_mm,
+      n_cycles: PENDULUM_EXP_DEFAULTS.n_cycles,
+      g: PENDULUM_EXP_DEFAULTS.g_true,
+      timing_err: PENDULUM_EXP_DEFAULTS.timing_err,
+      theta0_exp: PENDULUM_EXP_DEFAULTS.theta0,
+    } as const,
+    paramMeta: [
+      { key: 'l_line', label: '摆线长 l', min: 0.7, max: 1.3, step: 0.005, unit: 'm', group: '实验测量' },
+      { key: 'd_mm', label: '摆球直径 d', min: 12.0, max: 28.0, step: 0.1, unit: 'mm', group: '实验测量' },
+      { key: 'theta0_exp', label: '摆角 θ₀ (≤5°)', min: 1, max: 5, step: 0.5, unit: '°', group: '实验测量' },
+      { key: 'n_cycles', label: '全振动次数 N', min: 20, max: 60, step: 5, unit: '次', group: '实验测量' },
+      { key: 'timing_err', label: '秒表计时误差 Δt', min: -0.5, max: 0.5, step: 0.05, unit: 's', group: '误差探究' },
+    ],
+    controlMeta: [
+      {
+        type: 'preset',
+        label: '⏱️ 标准摆长测 g（l=0.985m）',
+        description: '标准单摆实验 (l=0.985m, d=20mm, N=40, θ₀=4°)',
+        params: { l_line: 0.985, d_mm: 20.0, n_cycles: 40, timing_err: 0, theta0_exp: 4, g: 9.8 },
+        restartOnApply: true,
+      },
+      {
+        type: 'preset',
+        label: '⌛ 停表滞后（+0.4s）',
+        description: '模拟人工反应慢停 0.4s 导致测得周期偏大、g 偏小',
+        params: { l_line: 0.985, d_mm: 20.0, n_cycles: 40, timing_err: 0.4, theta0_exp: 4, g: 9.8 },
+        restartOnApply: true,
+      },
+      {
+        type: 'preset',
+        label: '📏 短摆长测 g（l=0.69m）',
+        description: '测量不同摆长数据 (l=0.690m, d=20mm, N=40)',
+        params: { l_line: 0.69, d_mm: 20.0, n_cycles: 40, timing_err: 0, theta0_exp: 4, g: 9.8 },
+        restartOnApply: true,
       },
       {
         type: 'tip',
         group: '操作提示',
-        showIf: 'mode',
-        showIfValue: 3,
-        // 原「高考实验要点」三条（摆长算至球心、累积计时、小角近似）属实验考点（§2.6.5 C3），
-        // 右屏 gaokaoPoints 已有累积计时与摆长测量要点；左屏只留这一模式的操作顺序。
         content: '按顺序走一遍：量摆长到球心 → 从最低点开始计时、数够 30 次以上 → 再故意让秒表晚停 0.4s，看 g 偏大还是偏小。',
       },
     ],

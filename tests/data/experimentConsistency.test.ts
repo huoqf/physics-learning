@@ -74,65 +74,54 @@ describe('高考实验专题 · 高中物理规范与知识体系守卫', () => 
     }
   })
 
-  it('双缝干涉知识树直达参数与注册表物理参数保持严格一致 (守卫 N3)', async () => {
+  it('双缝干涉测波长知识树节点与独立实验动画默认参数严格一致 (守卫 N3)', async () => {
     await ensureExtendedRegistry()
     const node = experimentKnowledge.find((k) => k.id === 'experiment-3-4')
     expect(node).toBeDefined()
-    expect(node?.animationParams).toBeDefined()
+    expect(node?.animationIds).toEqual(['anim-experiment-double-slit'])
 
-    const config = await getAnimationConfigAsync('anim-double-slit-interference')
+    const config = await getAnimationConfigAsync('anim-experiment-double-slit')
     expect(config).toBeDefined()
-
-    // 验证知识树直达参数的物理量 (除 mode 外) 与注册表默认值严格一致
-    const expParams = node!.animationParams!
     const defaultParams = config!.defaultParams as Record<string, unknown>
-
-    expect(expParams.mode).toBe(1)
-    expect(expParams.wavelength).toBe(defaultParams.wavelength)
-    expect(expParams.slitDistance).toBe(defaultParams.slitDistance)
-    expect(expParams.screenDistance).toBe(defaultParams.screenDistance)
-    expect(expParams.targetFringe).toBe(defaultParams.targetFringe)
+    expect(defaultParams.wavelength).toBe(650)
+    expect(defaultParams.slitDistance).toBe(0.3)
+    expect(defaultParams.screenDistance).toBe(0.8)
+    expect(defaultParams.targetFringe).toBe(4)
   })
 
-  it('单摆测重力加速度知识树直达参数、无coverageNote与注册表严格一致', async () => {
+  it('用单摆测重力加速度知识树节点与独立实验动画默认参数严格一致', async () => {
     await ensureExtendedRegistry()
     const node = experimentKnowledge.find((k) => k.id === 'experiment-2-4')
     expect(node).toBeDefined()
-    expect(node?.animationParams).toBeDefined()
-    // 验证 coverageNote 已随高考实验模式内生落地而移除
+    expect(node?.animationIds).toEqual(['anim-experiment-pendulum'])
     expect(node?.coverageNote).toBeUndefined()
 
-    const config = await getAnimationConfigAsync('anim-simple-pendulum')
+    const config = await getAnimationConfigAsync('anim-experiment-pendulum')
     expect(config).toBeDefined()
-
-    const expParams = node!.animationParams!
     const defaultParams = config!.defaultParams as Record<string, unknown>
-
-    expect(expParams.mode).toBe(3)
-    expect(expParams.l_line).toBe(defaultParams.l_line)
-    expect(expParams.d_mm).toBe(defaultParams.d_mm)
-    expect(expParams.n_cycles).toBe(defaultParams.n_cycles)
-    expect(expParams.timing_err).toBe(defaultParams.timing_err)
+    expect(defaultParams.l_line).toBe(0.985)
+    expect(defaultParams.d_mm).toBe(20.0)
+    expect(defaultParams.n_cycles).toBe(40)
+    expect(defaultParams.timing_err).toBe(0)
   })
 
-  it('动量守恒高考实验时长：注册表 maxTime 与物理层 SSOT 在全参数网格上严格一致', async () => {
+  it('动量守恒实验时长：注册表 maxTime 与物理层 SSOT 在全参数网格上严格一致', async () => {
     await ensureExtendedRegistry()
-    const config = await getAnimationConfigAsync('anim-momentum-conservation')
-    expect(config).toBeDefined()
+    const expConfig = await getAnimationConfigAsync('anim-experiment-momentum')
+    expect(expConfig).toBeDefined()
 
-    const maxTime = config!.maxTime
-    expect(typeof maxTime, 'maxTime 必须为函数形式才能随实验参数自适应').toBe('function')
-    const resolve = maxTime as (p: Record<string, number>) => number
+    const expMaxTime = expConfig!.maxTime
+    expect(typeof expMaxTime, 'maxTime 必须为函数形式才能随实验参数自适应').toBe('function')
+    const resolveExp = expMaxTime as (p: Record<string, number>) => number
 
-    // 曾经的分歧根因：注册表另写一套硬编码距离公式，且完全遗漏「滑块 1 同向穿门 2」，
-    // 导致 8.7% 的参数组合下时间轴被截断、滑块 1 穿门演示不可达。此处把两处锁死。
+    // 全参数网格与 SSOT 保持一致
     let checked = 0
     for (const collisionType_exp of [0, 1]) {
       for (const m1_exp of [0.1, 0.4, 0.7, 1.0]) {
         for (const m2_exp of [0.1, 0.4, 0.7, 1.0]) {
           for (const v1_exp of [0.2, 0.5, 0.8, 1.1, 1.4, 1.7, 2.0]) {
-            const caseParams = { advancedMode: 2, m1_exp, m2_exp, v1_exp, collisionType_exp, timing_err: 0 }
-            const registryMaxTime = resolve(caseParams)
+            const caseParams = { m1_exp, m2_exp, v1_exp, collisionType_exp, timing_err: 0 }
+            const registryMaxTime = resolveExp(caseParams)
             const ssot = computeMomentumExperimentDuration(
               momentumExperimentInputFromParams(caseParams),
             )
@@ -147,9 +136,9 @@ describe('高考实验专题 · 高中物理规范与知识体系守卫', () => 
     }
     expect(checked).toBe(4 * 4 * 7 * 2)
 
-    // 非实验模式（基础两球 / 滑块-木板）沿用固定 30s 时间轴
-    expect(resolve({ advancedMode: 0 })).toBe(30)
-    expect(resolve({ advancedMode: 1 })).toBe(30)
+    // 动量守恒定律原理页面沿用固定 30s 时间轴
+    const baseConfig = await getAnimationConfigAsync('anim-momentum-conservation')
+    expect(baseConfig?.maxTime).toBe(30)
   })
 })
 

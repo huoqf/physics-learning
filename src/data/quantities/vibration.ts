@@ -2,7 +2,7 @@
  * 机械振动与波（vibration）物理量看板数据构建。
  */
 import { PHYSICS_COLORS } from '@/theme/physics'
-import type { PhysicsPanelData, WarningItem } from './types'
+import type { PhysicsPanelData } from './types'
 import {
   computeAngularFrequency,
   computePendulumState,
@@ -42,81 +42,75 @@ export function buildVibrationQuantities(
   params: Record<string, number>,
   time: number,
 ): PhysicsPanelData | null {
+  if (animId === 'anim-experiment-pendulum') {
+    const theta0Deg = Math.min(5, params.theta0_exp ?? params.theta0 ?? 4)
+    const expRes = computePendulumExperiment({
+      l_line: params.l_line,
+      d_mm: params.d_mm,
+      n_cycles: params.n_cycles,
+      g_true: params.g ?? GRAVITY,
+      timing_err: params.timing_err,
+      theta0: theta0Deg,
+    })
+
+    return {
+      quantities: [
+        { label: '摆线长 l', value: expRes.l_line.toFixed(4), unit: 'm', color: PHYSICS_COLORS.position },
+        { label: '摆球直径 d', value: expRes.d_mm.toFixed(2), unit: 'mm' },
+        { label: '有效摆长 L', value: expRes.effectiveLength.toFixed(4), unit: 'm', color: PHYSICS_COLORS.displacement },
+        { label: '全振动次数 N', value: `${expRes.n_cycles}`, unit: '次' },
+        { label: '累计时间 t', value: expRes.measuredTotalTime.toFixed(2), unit: 's' },
+        { label: '单摆周期 T', value: expRes.measuredPeriod.toFixed(3), unit: 's', color: PHYSICS_COLORS.period },
+        { label: '测得重力加速度 g_测', value: expRes.measuredG.toFixed(3), unit: 'm/s²', color: PHYSICS_COLORS.gravity, highlight: 'extreme' },
+        { label: '真实重力加速度 g_真', value: expRes.trueG.toFixed(3), unit: 'm/s²' },
+        { label: '相对误差 η', value: `${expRes.relativeErrorPercent >= 0 ? '+' : ''}${expRes.relativeErrorPercent.toFixed(2)}%`, unit: '', color: Math.abs(expRes.relativeErrorPercent) > 1 ? PHYSICS_COLORS.accelerationX : PHYSICS_COLORS.velocity },
+        { label: '漏加球半径偏差', value: `${expRes.wrongRelativeErrorPercent.toFixed(2)}%`, unit: '', color: PHYSICS_COLORS.accelerationX },
+        { label: '小角理论偏差', value: `+${expRes.smallAngleErrorPercent.toFixed(2)}%`, unit: '', color: PHYSICS_COLORS.period },
+      ],
+      formulas: [
+        {
+          name: '单摆测 g 核心公式',
+          latex: 'g = \\dfrac{4\\pi^2 L}{T^2}',
+          level: 'core',
+          note: '由单摆周期公式 T = 2π√(L/g) 变形得出',
+        },
+        {
+          name: '有效摆长公式',
+          latex: 'L = l + \\dfrac{d}{2}',
+          level: 'core',
+          note: 'l 为悬点到球上端线长（米尺测），d 为小球直径（游标卡尺测）',
+        },
+        {
+          name: '累积计时周期平均值',
+          latex: 'T = \\dfrac{t}{N}',
+          level: 'important',
+          note: '测量 N 次全振动（通常 30~50 次），大幅降低秒表人工反应时间误差',
+        },
+        {
+          name: 'T²-L 图像斜率关系',
+          latex: 'T^2 = \\dfrac{4\\pi^2}{g} L \\implies k = \\dfrac{4\\pi^2}{g}',
+          level: 'important',
+          note: 'T²-L 图线为过原点直线，由斜率 k 可得 g = 4π²/k',
+        },
+      ],
+      gaokaoPoints: [
+        { text: '【计时位置】从小球经过最低平衡位置时开始计时。此处小球速度最大，视觉判断最准，带来的时间误差远小于在最高点开始计时。', importance: 'core' },
+        { text: '【累积计时】单次周期仅约 2s，人脑反应时间约 0.2s（单次测量误差超 10%）；测 30~50 次全振动可将相对误差稀释至 0.3% 以内。', importance: 'core' },
+        { text: '【摆长定义】摆长 L 是悬点到摆球重心的距离，必须使用 L = l + d/2；若未计球半径，测得的 g 将系统性偏小。', importance: 'gaokao' },
+        { text: '【T²-L 图像法】若误将线长 l 当作摆长作 T²-l 图像，图线虽不经过原点（纵轴截距 b = 4π²r/g），但图线斜率仍为 4π²/g，求出的 g 依然准确。', importance: 'gaokao' },
+        { text: '【小角近似】最大摆角必须满足 θ ≤ 5°，以保证回复力 F_回 = -mg sinθ ≈ -mgθ 满足简谐运动条件。', importance: 'hard' },
+      ],
+    }
+  }
+
   if (animId === 'anim-simple-pendulum') {
-    const mode = params.mode ?? 0 // 0: 简谐运动, 1: 大角对比, 2: 能量守恒, 3: 高考实验
+    const mode = params.mode ?? 0 // 0: 简谐运动, 1: 大角对比, 2: 能量守恒
     const L = params.L ?? 1.0
     const g = params.g ?? GRAVITY
-    const theta0Deg = mode === 3 ? (params.theta0_exp ?? params.theta0 ?? 4) : (params.theta0 ?? 8)
+    const theta0Deg = params.theta0 ?? 8
     const phiDeg = params.phiDeg ?? 0
     const phi = (phiDeg * Math.PI) / 180
     const mass = 1.0 // 摆球质量固定为 1.0 kg 用于受力展示
-
-    // ─── 模式 3: 高考实验·用单摆测重力加速度 ───
-    if (mode === 3) {
-      const expRes = computePendulumExperiment({
-        l_line: params.l_line,
-        d_mm: params.d_mm,
-        n_cycles: params.n_cycles,
-        g_true: params.g ?? GRAVITY,
-        timing_err: params.timing_err,
-        theta0: theta0Deg,
-      })
-
-      return {
-        quantities: [
-          { label: '摆线长 l', value: expRes.l_line.toFixed(4), unit: 'm', color: PHYSICS_COLORS.position },
-          { label: '摆球直径 d', value: expRes.d_mm.toFixed(2), unit: 'mm' },
-          { label: '有效摆长 L', value: expRes.effectiveLength.toFixed(4), unit: 'm', color: PHYSICS_COLORS.displacement },
-          { label: '全振动次数 N', value: `${expRes.n_cycles}`, unit: '次' },
-          { label: '累计时间 t', value: expRes.measuredTotalTime.toFixed(2), unit: 's' },
-          { label: '单摆周期 T', value: expRes.measuredPeriod.toFixed(3), unit: 's', color: PHYSICS_COLORS.period },
-          { label: '测得重力加速度 g_测', value: expRes.measuredG.toFixed(3), unit: 'm/s²', color: PHYSICS_COLORS.gravity, highlight: 'extreme' },
-          { label: '真实重力加速度 g_真', value: expRes.trueG.toFixed(3), unit: 'm/s²' },
-          { label: '相对误差 η', value: `${expRes.relativeErrorPercent >= 0 ? '+' : ''}${expRes.relativeErrorPercent.toFixed(2)}%`, unit: '', color: Math.abs(expRes.relativeErrorPercent) > 1 ? PHYSICS_COLORS.accelerationX : PHYSICS_COLORS.velocity },
-          { label: '漏加球半径偏差', value: `${expRes.wrongRelativeErrorPercent.toFixed(2)}%`, unit: '', color: PHYSICS_COLORS.accelerationX },
-          { label: '小角理论偏差', value: `+${expRes.smallAngleErrorPercent.toFixed(2)}%`, unit: '', color: PHYSICS_COLORS.period },
-        ],
-        formulas: [
-          {
-            name: '单摆测 g 核心公式',
-            latex: 'g = \\dfrac{4\\pi^2 L}{T^2}',
-            level: 'core',
-            note: '由单摆周期公式 T = 2π√(L/g) 变形得出',
-          },
-          {
-            name: '有效摆长公式',
-            latex: 'L = l + \\dfrac{d}{2}',
-            level: 'core',
-            note: 'l 为悬点到球上端线长（米尺测），d 为小球直径（游标卡尺测）',
-          },
-          {
-            name: '累积计时周期平均值',
-            latex: 'T = \\dfrac{t}{N}',
-            level: 'important',
-            note: '测量 N 次全振动（通常 30~50 次），大幅降低秒表人工反应时间误差',
-          },
-          {
-            name: 'T²-L 图像斜率关系',
-            latex: 'T^2 = \\dfrac{4\\pi^2}{g} L \\implies k = \\dfrac{4\\pi^2}{g}',
-            level: 'important',
-            note: 'T²-L 图线为过原点直线，由斜率 k 可得 g = 4π²/k',
-          },
-        ],
-        gaokaoPoints: [
-          { text: '【计时位置】从小球经过最低平衡位置时开始计时。此处小球速度最大，视觉判断最准，带来的时间误差远小于在最高点开始计时。', importance: 'core' },
-          { text: '【累积计时】单次周期仅约 2s，人脑反应时间约 0.2s（单次测量误差超 10%）；测 30~50 次全振动可将相对误差稀释至 0.3% 以内。', importance: 'core' },
-          { text: '【摆长定义】摆长 L 是悬点到摆球重心的距离，必须使用 L = l + d/2；若未计球半径，测得的 g 将系统性偏小。', importance: 'gaokao' },
-          { text: '【T²-L 图像法】若误将线长 l 当作摆长作 T²-l 图像，图线虽不经过原点（纵轴截距 b = 4π²r/g），但图线斜率仍为 4π²/g，求出的 g 依然完全准确！', importance: 'gaokao' },
-          { text: '【小角近似】最大摆角必须满足 θ ≤ 5°，以保证回复力 F_回 = -mg sinθ ≈ -mgθ 满足简谐运动条件。', importance: 'hard' },
-        ],
-      }
-    }
-
-    // 模式提示（替代恒定强警告）：指示可切换至高考实验模式
-    const modeNotice: WarningItem = {
-      text: '【提示】当前为单摆原理演示。如需查看摆长 L = l + d/2 测量、全振动累积计时及 g 测定数据分析，请在左屏切换至「实验：单摆测 g」模式。',
-      level: 'info',
-    }
 
     // 1. 基础简谐运动周期及状态计算
     const T0 = 2 * Math.PI * Math.sqrt(L / g)
@@ -172,7 +166,6 @@ export function buildVibrationQuantities(
           { text: '【大角偏离】大偏角（如 60°）单摆周期变长，其主要原因是随着摆角增大，切向回复力 -mg sinθ 的增长速度慢于简谐所需的线性增长速度。', importance: 'hard' },
           { text: '【等时性破坏】在精密计时工具中，必须对摆幅大小进行限制或采用摆轮补偿，以克服因振幅改变导致的周期漂移（非等时性）。', importance: 'gaokao' },
         ],
-        warnings: [modeNotice],
       }
     } else if (mode === 2) {
       // ─── 模式 2: 能量守恒分析 ───
@@ -218,7 +211,6 @@ export function buildVibrationQuantities(
           { text: '【拉力极值】单摆经过最低点时拉力最大。高考极频考点结论：从 θ₀ 释放时，最低点拉力 F_拉 = mg(3 - 2cosθ₀)。特别地，从 60° 释放时最低点拉力为 2mg。', importance: 'gaokao' },
           { text: '【合力辨析】在最低点，小球加速度切向分量为 0，法向（向心）加速度最大；因此最低点合力方向严格竖直向上，不为 0。', importance: 'hard' },
         ],
-        warnings: [modeNotice],
       }
     } else {
       // ─── 模式 0: 基础简谐运动 ───
@@ -255,7 +247,6 @@ export function buildVibrationQuantities(
           { text: '【等时性质】单摆周期具有等时性，只与 L 和 g 有关。在超重电梯中 g_等效 > g，周期变小；失重时变大；完全失重时不摆动。', importance: 'gaokao' },
           { text: '【受力分析】单摆的回复力是重力切向分力提供的；在最低点，小球合外力不为零（绳子拉力和重力径向分力之合提供向心力）。', importance: 'hard' },
         ],
-        warnings: [modeNotice],
       }
     }
   }

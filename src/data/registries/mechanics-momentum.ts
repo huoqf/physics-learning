@@ -82,10 +82,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
     title: '动量守恒定律',
     knowledgeId: 'mechanics-8-4',
     Component: lazy(() => import('@/features/mechanics/momentum/MomentumConservationAnimation')),
-    maxTime: (params) =>
-      params?.advancedMode === 2
-        ? computeMomentumExperimentDuration(momentumExperimentInputFromParams(params))
-        : MOMENTUM_BASE_MAX_TIME,
+    maxTime: MOMENTUM_BASE_MAX_TIME,
     defaultParams: {
       m1: 3,
       v1: 5,
@@ -99,13 +96,6 @@ export const mechanicsMomentumAnimations = defineAnimations({
       advancedMode: 0,
       collisionType: 0,
       e_coefficient: 0.5,
-      // 高考实验：气垫导轨双滑块碰撞测速
-      m1_exp: 0.4,
-      m2_exp: 0.2,
-      v1_exp: 0.8,
-      plateWidth_mm: 20.0,
-      collisionType_exp: 0,
-      timing_err: 0.0,
     } as const,
     paramMeta: [
       { key: 'm1', label: 'A球质量 m₁', min: 0.5, max: 10, step: 0.5, unit: 'kg', showIf: 'advancedMode', showIfValue: 0 },
@@ -117,12 +107,6 @@ export const mechanicsMomentumAnimations = defineAnimations({
       { key: 'v0', label: '滑块初速度 v₀', min: 1, max: 10, step: 0.5, unit: 'm/s', showIf: 'advancedMode', showIfValue: 1 },
       { key: 'mu', label: '动摩擦因数 μ', min: 0.1, max: 0.6, step: 0.05, unit: '', showIf: 'advancedMode', showIfValue: 1 },
       { key: 'L', label: '木板长度 L', min: 0.5, max: 5, step: 0.5, unit: 'm', showIf: 'advancedMode', showIfValue: 1 },
-      // 高考实验参数
-      { key: 'm1_exp', label: '滑块1质量 m₁', min: 0.1, max: 1.0, step: 0.01, unit: 'kg', showIf: 'advancedMode', showIfValue: 2 },
-      { key: 'm2_exp', label: '滑块2质量 m₂', min: 0.1, max: 1.0, step: 0.01, unit: 'kg', showIf: 'advancedMode', showIfValue: 2 },
-      { key: 'v1_exp', label: '碰前初速度 v₁', min: 0.2, max: 2.0, step: 0.1, unit: 'm/s', showIf: 'advancedMode', showIfValue: 2 },
-      { key: 'plateWidth_mm', label: '挡光片宽度 Δx', min: 10, max: 40, step: 2, unit: 'mm', showIf: 'advancedMode', showIfValue: 2 },
-      { key: 'timing_err', label: '计时误差 Δt_err', min: -2.0, max: 2.0, step: 0.1, unit: 'ms', showIf: 'advancedMode', showIfValue: 2 },
     ],
     controlMeta: [
       {
@@ -133,7 +117,6 @@ export const mechanicsMomentumAnimations = defineAnimations({
         options: [
           { value: 0, label: '两球碰撞' },
           { value: 1, label: '滑块木板' },
-          { value: 2, label: '气轨实验' },
         ],
       },
       {
@@ -163,13 +146,53 @@ export const mechanicsMomentumAnimations = defineAnimations({
         resetOnChange: true,
       },
       {
+        type: 'preset',
+        label: '📋 两球弹性碰撞',
+        showIf: 'advancedMode',
+        showIfValue: 0,
+        description: '完全弹性两球一维碰撞情景 (m₁=3kg, m₂=2kg)',
+        params: { advancedMode: 0, m1: 3, v1: 5, m2: 2, v2: 0, collisionType: 0 },
+        restartOnApply: true,
+      },
+      {
+        type: 'preset',
+        label: '📋 滑块木板共速',
+        showIf: 'advancedMode',
+        showIfValue: 1,
+        description: '滑块在木板上滑动并因动摩擦最终达到共速 (m=1kg, M=3kg)',
+        params: { advancedMode: 1, m_slider: 1, M_board: 3, v0: 6, mu: 0.3, L: 2 },
+        restartOnApply: true,
+      },
+    ],
+  },
+  'anim-experiment-momentum': {
+    title: '验证动量守恒定律（气轨光电门）',
+    knowledgeId: 'experiment-2-3',
+    Component: lazy(() => import('@/features/mechanics/momentum/ExperimentMomentumAnimation')),
+    maxTime: (params) =>
+      computeMomentumExperimentDuration(momentumExperimentInputFromParams(params)),
+    defaultParams: {
+      m1_exp: 0.4,
+      m2_exp: 0.2,
+      v1_exp: 0.8,
+      plateWidth_mm: 20.0,
+      collisionType_exp: 0,
+      timing_err: 0.0,
+    } as const,
+    paramMeta: [
+      { key: 'm1_exp', label: '滑块1质量 m₁', min: 0.1, max: 1.0, step: 0.01, unit: 'kg' },
+      { key: 'm2_exp', label: '滑块2质量 m₂', min: 0.1, max: 1.0, step: 0.01, unit: 'kg' },
+      { key: 'v1_exp', label: '碰前初速度 v₁', min: 0.2, max: 2.0, step: 0.1, unit: 'm/s' },
+      { key: 'plateWidth_mm', label: '挡光片宽度 Δx', min: 10, max: 40, step: 2, unit: 'mm' },
+      { key: 'timing_err', label: '计时误差 Δt_err', min: -2.0, max: 2.0, step: 0.1, unit: 'ms' },
+    ],
+    controlMeta: [
+      {
         type: 'segmented',
         key: 'collisionType_exp',
         label: '碰撞端面',
         group: '实验设置',
         resetOnChange: true,
-        showIf: 'advancedMode',
-        showIfValue: 2,
         options: [
           { value: 0, label: '弹性·弹簧片' },
           { value: 1, label: '完全非弹性' },
@@ -179,42 +202,28 @@ export const mechanicsMomentumAnimations = defineAnimations({
         type: 'preset',
         label: '🔵 弹性碰撞（m₁>m₂）',
         description: '碰后两滑块均向右运动、速度不同，系统总动量与动能严格守恒',
-        params: { advancedMode: 2, m1_exp: 0.4, m2_exp: 0.2, v1_exp: 0.8, plateWidth_mm: 20.0, collisionType_exp: 0, timing_err: 0.0 },
+        params: { m1_exp: 0.4, m2_exp: 0.2, v1_exp: 0.8, plateWidth_mm: 20.0, collisionType_exp: 0, timing_err: 0.0 },
         restartOnApply: true,
       },
       {
         type: 'preset',
         label: '🧲 完全非弹性碰（粘合成一体）',
         description: '碰后两滑块粘合成一体同速滑行，机械能损失达到理论最大',
-        params: { advancedMode: 2, m1_exp: 0.3, m2_exp: 0.3, v1_exp: 0.9, plateWidth_mm: 20.0, collisionType_exp: 1, timing_err: 0.0 },
+        params: { m1_exp: 0.3, m2_exp: 0.3, v1_exp: 0.9, plateWidth_mm: 20.0, collisionType_exp: 1, timing_err: 0.0 },
         restartOnApply: true,
       },
       {
         type: 'preset',
-        label: '💥 反弹碰撞验证（m₁=0.30kg）',
-        description: 'm₁=0.304kg碰撞m₂=0.510kg反向弹回，验证动量守恒与弹性碰撞判据',
-        params: { advancedMode: 2, m1_exp: 0.304, m2_exp: 0.510, v1_exp: 0.8, plateWidth_mm: 20.0, collisionType_exp: 0, timing_err: 0.0 },
+        label: '💥 质量差反弹碰撞（m₁<m₂）',
+        description: '轻滑块撞击静止重滑块后反向弹回，验证动量守恒与矢量负号',
+        params: { m1_exp: 0.2, m2_exp: 0.6, v1_exp: 0.8, plateWidth_mm: 20.0, collisionType_exp: 0, timing_err: 0.0 },
         restartOnApply: true,
       },
       {
         type: 'preset',
         label: '📋 误差探究：光电门测速误差',
         description: '模拟光电门毫秒计 +0.5ms 系统计时偏差对速度反算及动量守恒验证的影响',
-        params: { advancedMode: 2, m1_exp: 0.4, m2_exp: 0.2, v1_exp: 0.8, plateWidth_mm: 20.0, collisionType_exp: 0, timing_err: 0.5 },
-        restartOnApply: true,
-      },
-      {
-        type: 'preset',
-        label: '📋 基础模型：两球弹性碰撞',
-        description: '基础完全弹性两球一维碰撞情景 (m₁=3kg, m₂=2kg)',
-        params: { advancedMode: 0, m1: 3, v1: 5, m2: 2, v2: 0, collisionType: 0 },
-        restartOnApply: true,
-      },
-      {
-        type: 'preset',
-        label: '📋 进阶模型：滑块木板共速',
-        description: '滑块在木板上滑动并因动摩擦最终达到共速 (m=1kg, M=3kg)',
-        params: { advancedMode: 1, m_slider: 1, M_board: 3, v0: 6, mu: 0.3, L: 2 },
+        params: { m1_exp: 0.4, m2_exp: 0.2, v1_exp: 0.8, plateWidth_mm: 20.0, collisionType_exp: 0, timing_err: 0.5 },
         restartOnApply: true,
       },
     ],

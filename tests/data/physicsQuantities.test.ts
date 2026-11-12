@@ -11,6 +11,9 @@ function find(qs: ReturnType<typeof buildPhysicsQuantities>, label: string) {
 // 预加载所有测试涉及的构建器
 const TEST_ANIM_IDS = [
   'anim-momentum-conservation',
+  'anim-experiment-momentum',
+  'anim-experiment-mechanical-energy',
+  'anim-experiment-newton-second',
   'anim-coulomb-law',
   'anim-electric-field',
   'anim-charge-in-efield',
@@ -27,7 +30,11 @@ const TEST_ANIM_IDS = [
   'anim-bullet-block',
   'anim-forced-resonance',
   'anim-double-slit-interference',
+  'anim-experiment-double-slit',
   'anim-simple-pendulum',
+  'anim-experiment-pendulum',
+  'anim-nuclear-decay',
+  'anim-decay-magnetic-orbit',
 ]
 
 describe('buildPhysicsQuantities', () => {
@@ -54,11 +61,10 @@ describe('buildPhysicsQuantities', () => {
     expect(find(qs, '碰前总动量')).toBeCloseTo(find(qs, '碰后总动量') as number, 10)
   })
 
-  it('动量守恒动画高考实验模式（模式2）正确输出光电门挡光时间、速度与守恒动量', () => {
+  it('气轨验证动量守恒实验物理量构建器正确输出光电门挡光时间、速度与守恒动量', () => {
     const qs = buildPhysicsQuantities(
-      'anim-momentum-conservation',
+      'anim-experiment-momentum',
       {
-        advancedMode: 2,
         m1_exp: 0.4,
         m2_exp: 0.2,
         v1_exp: 0.8,
@@ -217,11 +223,11 @@ describe('buildPhysicsQuantities', () => {
     expect(qs.formulas?.some((f) => f.latex.includes('m v_1 + M v_2'))).toBe(true)
   })
 
-  // ===== 光学 · 双缝干涉实验看板防除零与量程保护 =====
-  it('双缝干涉看板：即使 slitDistance=0 也能安全防除零，绝不产生 NaN', () => {
+  // ===== 光学 · 双缝干涉测波长实验看板防除零与量程保护 =====
+  it('双缝干涉实验看板：即使 slitDistance=0 也能安全防除零，绝不产生 NaN', () => {
     const qs = buildPhysicsQuantities(
-      'anim-double-slit-interference',
-      { mode: 1, slitDistance: 0, screenDistance: 0 },
+      'anim-experiment-double-slit',
+      { slitDistance: 0, screenDistance: 0 },
       0
     )
     expect(qs.quantities.length).toBeGreaterThan(0)
@@ -231,20 +237,20 @@ describe('buildPhysicsQuantities', () => {
     })
   })
 
-  it('双缝干涉看板：极端宽条纹时正确触发螺旋测微器超量程警示', () => {
+  it('双缝干涉实验看板：极端宽条纹时正确触发螺旋测微器超量程警示', () => {
     // d=0.1, L=2.0 -> x4 > 50mm -> 超量程
     const qs = buildPhysicsQuantities(
-      'anim-double-slit-interference',
-      { mode: 1, slitDistance: 0.1, screenDistance: 2.0, targetFringe: 4 },
+      'anim-experiment-double-slit',
+      { slitDistance: 0.1, screenDistance: 2.0, targetFringe: 4 },
       0
     )
     expect(qs.warnings?.some((w) => w.text.includes('超过螺旋测微器量程'))).toBe(true)
   })
 
-  it('双缝干涉看板：大负向偏置导致读数 < 0 时正确触发低于零刻度警示', () => {
+  it('双缝干涉实验看板：大负向偏置导致读数 < 0 时正确触发低于零刻度警示', () => {
     const qs = buildPhysicsQuantities(
-      'anim-double-slit-interference',
-      { mode: 1, currentFringe: 1, handwheelOffset: -5.0 },
+      'anim-experiment-double-slit',
+      { currentFringe: 1, handwheelOffset: -5.0 },
       0
     )
     expect(qs.warnings?.some((w) => w.text.includes('低于螺旋测微器零刻度基准'))).toBe(true)
@@ -262,11 +268,10 @@ describe('buildPhysicsQuantities', () => {
     expect(Number(find(qs2, '总机械能 E'))).toBeGreaterThan(0)
   })
 
-  it('单摆物理量构建器：高考实验模式（mode 3）正确解析参数并输出自洽重力加速度与小角偏差', () => {
+  it('单摆实验物理量构建器正确解析参数并输出自洽重力加速度与小角偏差', () => {
     const qsExp = buildPhysicsQuantities(
-      'anim-simple-pendulum',
+      'anim-experiment-pendulum',
       {
-        mode: 3,
         l_line: 0.99,
         d_mm: 20.0,
         n_cycles: 40,
@@ -283,13 +288,12 @@ describe('buildPhysicsQuantities', () => {
     expect(String(find(qsExp, '小角理论偏差'))).toContain('%')
   })
 
-  // ===== 动量守恒定律与高考实验（含模式 0、1、2）=====
-  it('动量守恒物理量构建器：高考气轨实验模式（advancedMode: 2）正确输出动量对比表与反弹负动量', () => {
+  // ===== 验证动量守恒气轨实验物理量构建器 =====
+  it('气轨实验物理量构建器正确输出动量对比表与反弹负动量', () => {
     // 1. 标准同向碰撞 (m1 > m2)
     const qsNormal = buildPhysicsQuantities(
-      'anim-momentum-conservation',
+      'anim-experiment-momentum',
       {
-        advancedMode: 2,
         m1_exp: 0.4,
         m2_exp: 0.2,
         v1_exp: 0.8,
@@ -308,9 +312,8 @@ describe('buildPhysicsQuantities', () => {
 
     // 2. 反弹模式 (m1 < m2)
     const qsRebound = buildPhysicsQuantities(
-      'anim-momentum-conservation',
+      'anim-experiment-momentum',
       {
-        advancedMode: 2,
         m1_exp: 0.2,
         m2_exp: 0.6,
         v1_exp: 0.8,
@@ -324,6 +327,24 @@ describe('buildPhysicsQuantities', () => {
     expect(find(qsRebound, '反弹门1挡光时间 Δt₁\'')).toBeDefined()
     expect(Number(find(qsRebound, '碰前总动量 p_前'))).toBeCloseTo(0.16, 3)
     expect(Number(find(qsRebound, '碰后总动量 p_后'))).toBeCloseTo(0.16, 3)
+  })
+
+  it('力学实验拆分：验证机械能守恒与牛顿第二定律实验看板正常输出', () => {
+    const qsEnergy = buildPhysicsQuantities(
+      'anim-experiment-mechanical-energy',
+      { freq: 50, m: 0.2, friction: 2 },
+      0.3
+    )
+    expect(qsEnergy.quantities.length).toBeGreaterThan(0)
+    expect(Number(find(qsEnergy, '纸带实测加速度'))).toBeCloseTo(9.8 * 0.98, 2)
+
+    const qsNewton = buildPhysicsQuantities(
+      'anim-experiment-newton-second',
+      { mode: 0, M_cart: 0.4, m_hook: 0.05, balanceMode: 0, freq: 50 },
+      0.8
+    )
+    expect(Number(find(qsNewton, '细绳真实拉力'))).toBeGreaterThan(0)
+    expect(Number(find(qsNewton, '小车实测加速度'))).toBeCloseTo((0.05 * 9.8) / 0.45, 2)
   })
 })
 

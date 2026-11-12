@@ -229,7 +229,7 @@ export const experimentProblems: Problem[] = [
     knowledgeIds: ['experiment-3-4'],
     tags: ['高考真题', '2023全国甲卷', '双缝干涉', '波长测量', '条纹间距'],
     targetAnimation: {
-      animId: 'anim-double-slit-interference',
+      animId: 'anim-experiment-double-slit',
       presetParams: { wavelength: 650, slitDistance: 0.2, screenDistance: 0.7 },
       presetDescription: '载入2023全国甲卷双缝干涉情境：双缝间距d=0.2mm，L=0.7m，验证条纹间距与波长关系',
     },
@@ -310,9 +310,8 @@ export const experimentProblems: Problem[] = [
     knowledgeIds: ['experiment-2-3'],
     tags: ['高考真题', '2022全国甲卷', '动量守恒', '气垫导轨', '弹性碰撞', '反弹测速'],
     targetAnimation: {
-      animId: 'anim-momentum-conservation',
+      animId: 'anim-experiment-momentum',
       presetParams: {
-        advancedMode: 2,
         m1_exp: 0.304,
         m2_exp: 0.510,
         v1_exp: 0.8,
