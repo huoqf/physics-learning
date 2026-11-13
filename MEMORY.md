@@ -6,7 +6,7 @@
 
 ## 动画映射表
 
-> **生成时间**：2026-11-12
+> **生成时间**：2026-11-13
 > **生成命令**：`node scripts/gen-annotations.mjs`
 > **数据来源**：`src/ANNOTATIONS.md`（自动生成，请勿手动编辑）
 > **更新方式**：修改 `src/data/registries/*.ts` 后运行 `node scripts/gen-annotations.mjs` 重新生成
@@ -28,7 +28,7 @@
 | anim-motor-circuit | 非纯电阻电路与电动机 | NonPureCircuit | — | physics | NonPureCircuitCenterExtra |
 | anim-coulomb-law | 库仑定律 | CoulombLaw | — | — | — |
 | anim-electric-field | 电场强度与比值定义法 | ElectricField | ElectricFieldBasicScene | constants | — |
-| anim-charge-in-efield | 带电粒子在匀强电场中运动 | ChargeInEField | — | magnetism/forces | — |
+| anim-charge-in-efield | 带电粒子在匀强电场中运动 | ChargeInEField | — | electromagnetism | — |
 | anim-capacitor | 平行板电容器 | Capacitor | — | physics | — |
 | anim-field-lines | 电场线与等势面关系 | FieldLines | — | constants | — |
 | anim-electric-potential | 电势与电势差 | ElectricPotential | ElectricPotentialChartScene | physics | — |
@@ -182,4 +182,4 @@ node scripts/gen-annotations.mjs
 
 ---
 
-*最后更新：2026-11-12 | 生成命令：`node scripts/gen-annotations.mjs`*
+*最后更新：2026-11-13 | 生成命令：`node scripts/gen-annotations.mjs`*
