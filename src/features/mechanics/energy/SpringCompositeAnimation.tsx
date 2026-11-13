@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useAnimationStore } from '@/stores';
 import { useShallow } from 'zustand/react/shallow';
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics';
@@ -23,12 +23,11 @@ const DW = 840;
 const DH_BASE = 650;
 
 export default function SpringCompositeAnimation() {
-  const { params, time, isPlaying, setIsPlaying, setTime } = useAnimationStore(
+  const { params, time, isPlaying, setTime } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
       time: s.time,
       isPlaying: s.isPlaying,
-      setIsPlaying: s.setIsPlaying,
       setTime: s.setTime,
     }))
   );
@@ -48,7 +47,6 @@ export default function SpringCompositeAnimation() {
   const g = GRAVITY;
   const mode = params.mode ?? 0;
   const showVectors = params.showVectors !== 0;
-  const autoPause = params.autoPause !== 0;
   const viewMode: 'y-E' | 'E-x' = (params.viewMode ?? 1) === 0 ? 'y-E' : 'E-x';
 
   // ── Y 坐标缩放因子（650 → DH） ──
@@ -127,32 +125,14 @@ export default function SpringCompositeAnimation() {
     [m, g, k, xD_phys, vMax, chartHeight, DH]
   );
 
-  const lastTimeRef = useRef(time);
-  const lastCrossTimeRef = useRef(-1);
-  const [showPauseTip, setShowPauseTip] = useState(false);
-
-  useEffect(() => {
-    if (!autoPause || !isPlaying) { lastTimeRef.current = time; return; }
-    const Tp = T;
-    const cS = Math.floor(lastTimeRef.current / Tp);
-    const cE = Math.floor(time / Tp);
-    for (let c = cS; c <= cE; c++) {
-      const tc = c * Tp + t_cross;
-      if (lastTimeRef.current < tc && time >= tc && lastCrossTimeRef.current !== tc) {
-        lastCrossTimeRef.current = tc;
-        setTime(tc);
-        setIsPlaying(false);
-        setShowPauseTip(true);
-        break;
-      }
-    }
-    lastTimeRef.current = time;
-  }, [time, autoPause, isPlaying, T, t_cross, setTime, setIsPlaying]);
-
-  useEffect(() => { if (isPlaying) setShowPauseTip(false); }, [isPlaying]);
+  const [dismissedTipTime, setDismissedTipTime] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const currentTipKey = `${mode}-${time.toFixed(3)}`;
+  const atBalancePoint =
+    !isPlaying && !isDragging && T > 0 && time > 0.05 && Math.abs((time % T) - t_cross) <= 0.025;
+  const showPauseTip = atBalancePoint && dismissedTipTime !== currentTipKey;
 
   // ── 拖拽 ──
-  const [isDragging, setIsDragging] = useState(false);
 
   const getDesignCoords = (e: React.MouseEvent<SVGSVGElement> | MouseEvent) => {
     const rect = svgRef.current?.getBoundingClientRect();
@@ -166,7 +146,6 @@ export default function SpringCompositeAnimation() {
     const { x, y } = getDesignCoords(e);
     if (Math.hypot(x - centerX, y - ballY) <= 25) {
       setIsDragging(true);
-      setShowPauseTip(false);
     }
   };
 
@@ -347,7 +326,7 @@ export default function SpringCompositeAnimation() {
           <div className='leading-normal'>
             <strong>已在平衡位置（C点）自动定格：</strong>重力等于弹力，合外力为零，速度与动能达到最大值。点击播放继续。
           </div>
-          <button onClick={() => setShowPauseTip(false)} className='shrink-0 text-amber-400 hover:text-amber-600 ml-1 font-bold text-base leading-none transition-colors'>×</button>
+          <button onClick={() => setDismissedTipTime(currentTipKey)} className='shrink-0 text-amber-400 hover:text-amber-600 ml-1 font-bold text-base leading-none transition-colors'>×</button>
         </div>
       )}
     </div>

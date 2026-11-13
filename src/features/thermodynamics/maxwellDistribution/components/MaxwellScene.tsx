@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useAnimationStore } from '@/stores'
 import { useAnimationFrame } from '@/utils/animation'
 import { CANVAS_COLORS, PHYSICS_COLORS, THERMO_COLORS, withAlpha } from '@/theme/physics'
 import { calcMostProbableSpeed } from '@/physics/maxwellDistribution'
@@ -41,8 +42,9 @@ export function MaxwellScene({
 
   // 粒子状态引用保持
   const particlesRef = useRef<MoleculeParticle[]>([])
+  const [, setFrameTick] = useState(0)
 
-  useEffect(() => {
+  const resetParticles = useCallback(() => {
     // 依据温度重新初始化粒子群速度分布（符合麦克斯韦特征分布）
     const pts: MoleculeParticle[] = []
     for (let i = 0; i < PARTICLE_COUNT; i++) {
@@ -55,7 +57,7 @@ export function MaxwellScene({
       const baseScale = Math.sqrt(temperature / 300) * 1.5
       const vx = z0 * baseScale
       const vy = z1 * baseScale
-      const speed = Math.sqrt(vx * vx + vy * vy)
+      const speedVal = Math.sqrt(vx * vx + vy * vy)
 
       pts.push({
         x: boxX + 20 + Math.random() * (boxW - 40),
@@ -63,14 +65,26 @@ export function MaxwellScene({
         vx,
         vy,
         radius: 4.5,
-        speedRatio: speed / (baseScale * 1.414),
+        speedRatio: speedVal / (baseScale * 1.414),
       })
     }
     particlesRef.current = pts
   }, [temperature, boxW, boxH, boxX, boxY])
 
+  useEffect(() => {
+    resetParticles()
+  }, [resetParticles])
+
+  useEffect(() => {
+    return useAnimationStore.subscribe((state, prevState) => {
+      if (state.time === 0 && prevState.time > 0) {
+        resetParticles()
+        setFrameTick((t) => t + 1)
+      }
+    })
+  }, [resetParticles])
+
   // 动画状态循环帧更新（严格遵循 useAnimationFrame 铁律）
-  const [, setFrameTick] = useState(0)
 
   useAnimationFrame(
     (deltaMs) => {

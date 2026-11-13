@@ -339,7 +339,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
     knowledgeId: 'mechanics-7-6-1',
     Component: lazy(() => import('@/features/mechanics/energy/SpringCompositeAnimation')),
     criticalTimes: (p) => getVerticalSpringCriticalTimes(p, 15),
-    defaultParams: { m: 0.5, k: 50, h: 0.8, mode: 0, showVectors: 1, autoPause: 0, viewMode: 1 } as const,
+    defaultParams: { m: 0.5, k: 50, h: 0.8, mode: 0, showVectors: 1, viewMode: 1 } as const,
     paramMeta: [
       { key: 'm', label: '质量 m', min: 0.2, max: 0.8, step: 0.1, unit: 'kg' },
       { key: 'k', label: '劲度系数 k', min: 30, max: 80, step: 10, unit: 'N/m' },
@@ -360,8 +360,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
         options: [
           { value: 0, label: '下落砸弹簧' },
           { value: 1, label: '原长释放挂球' },
-        ],
-        onChangeSideEffect: { resetParams: ['time'] } },
+        ] },
       // §2 图像视图
       { type: 'segmented', key: 'viewMode', group: '图像视图',
         options: [
@@ -370,7 +369,6 @@ export const mechanicsEnergyAnimations = defineAnimations({
         ] },
       // §4 显示辅助
       { type: 'toggle', key: 'showVectors', label: '显示物理矢量', group: '显示辅助' },
-      { type: 'toggle', key: 'autoPause', label: '平衡位置自动暂停高亮', group: '显示辅助' },
       // §6 教学提示
       // 点位说明保留（学生不知道 A/B/C/D 是哪一点就没法看动画），
       // 但 mg=kx、x_D=2mg/k 这些式子交回右屏 gaokaoPoints（quantities/energyCases/verticalSpring.ts）。

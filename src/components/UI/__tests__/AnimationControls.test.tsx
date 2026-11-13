@@ -128,4 +128,30 @@ describe('AnimationControls', () => {
     fireEvent.click(screen.getByText('遇临界暂停').closest('button')!)
     expect(onToggleAutoPause).toHaveBeenCalledTimes(1)
   })
+
+  it('过滤非有限值或超出 [0, maxTime] 的临界时刻，防止越界跳转', () => {
+    render(
+      <AnimationControls
+        isPlaying={false}
+        speed={1}
+        time={0}
+        maxTime={5}
+        onPlayPause={vi.fn()}
+        onReset={vi.fn()}
+        onSpeedChange={vi.fn()}
+        onTimeChange={vi.fn()}
+        criticalTimes={[
+          { time: -1, label: '负时刻' },
+          { time: Infinity, label: '永不发生' },
+          { time: 2.5, label: '有效时刻', variant: 'critical' },
+          { time: 8, label: '超窗时刻' },
+        ]}
+      />,
+    )
+
+    expect(screen.getByText('有效时刻')).toBeTruthy()
+    expect(screen.queryByText('负时刻')).toBeNull()
+    expect(screen.queryByText('永不发生')).toBeNull()
+    expect(screen.queryByText('超窗时刻')).toBeNull()
+  })
 })

@@ -169,8 +169,17 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
 
   const sortedCriticals = useMemo(() => {
     if (!criticalTimes || criticalTimes.length === 0) return []
-    return [...criticalTimes].sort((a, b) => a.time - b.time)
-  }, [criticalTimes])
+    return criticalTimes
+      .filter(
+        (ct) =>
+          ct &&
+          Number.isFinite(ct.time) &&
+          ct.time >= 0 &&
+          (!(maxTime > 0) || ct.time <= maxTime),
+      )
+      .slice()
+      .sort((a, b) => a.time - b.time)
+  }, [criticalTimes, maxTime])
 
   const percentage = maxTime > 0 ? Math.min(100, Math.max(0, (time / maxTime) * 100)) : 0
 
@@ -189,7 +198,8 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
 
   const jumpToTime = (targetTime: number) => {
     if (isPlaying) onPlayPause()
-    onTimeChange(targetTime)
+    const clamped = maxTime > 0 ? Math.min(maxTime, Math.max(0, targetTime)) : Math.max(0, targetTime)
+    onTimeChange(clamped)
   }
 
   // ── param 型：不渲染底部控制栏 ──

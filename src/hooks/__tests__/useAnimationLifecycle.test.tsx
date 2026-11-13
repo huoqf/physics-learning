@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useAnimationLifecycle } from '../useAnimationLifecycle'
 import { useAnimationStore } from '@/stores'
@@ -246,5 +246,63 @@ describe('useAnimationLifecycle', () => {
     })
     expect(useAnimationStore.getState().time).toBe(0)
     expect(useAnimationStore.getState().isPlaying).toBe(true)
+  })
+
+  it('已挂载从 timed 动画路由跳转到静态 loop 动画带 ?t= 深链时保持定格暂停不被覆盖', () => {
+    const timedCfg = makeConfig({ id: 'timed-a', controlsMode: 'timed', defaultParams: { a: 1 } })
+    const loopCfg = makeConfig({ id: 'loop-b', controlsMode: 'loop', defaultParams: { b: 2 } })
+    vi.mocked(getAnimationConfig).mockImplementation((animId) =>
+      animId === 'loop-b' ? loopCfg : timedCfg,
+    )
+
+    function useTestHarness() {
+      const lifecycle = useAnimationLifecycle()
+      const navigate = useNavigate()
+      return { lifecycle, navigate }
+    }
+
+    const { result } = renderHook(() => useTestHarness(), {
+      wrapper: createWrapper('/animation/timed-a'),
+    })
+    expect(useAnimationStore.getState().isPlaying).toBe(false)
+
+    act(() => {
+      result.current.navigate('/animation/loop-b?t=1.2')
+    })
+
+    expect(useAnimationStore.getState().animationType).toBe('loop-b')
+    expect(useAnimationStore.getState().time).toBeCloseTo(1.2, 5)
+    expect(useAnimationStore.getState().isPlaying).toBe(false)
+  })
+
+  it('开启 repeatLoop 时，位于 maxTime 的临界点不会拦截循环重播；handleReset 同步 t=0 物理状态', () => {
+    const updatePhysics = vi.fn(() => ({ position: { x: 3, y: 4 } }))
+    vi.mocked(getAnimationConfig).mockReturnValue(
+      makeConfig({
+        maxTime: 5,
+        updatePhysics,
+        criticalTimes: [{ time: 5, label: '终点', variant: 'info' }],
+      }),
+    )
+
+    const { result } = renderHook(() => useAnimationLifecycle(), { wrapper: createWrapper() })
+    act(() => {
+      useAnimationStore.getState().setAutoPauseOnCritical(true)
+      useAnimationStore.getState().setRepeatLoop(true)
+      useAnimationStore.getState().setTime(4.9)
+      useAnimationStore.getState().setIsPlaying(true)
+    })
+
+    act(() => { stepFrame(0) })
+    act(() => { stepFrame(200) })
+
+    expect(useAnimationStore.getState().time).toBe(0)
+    expect(useAnimationStore.getState().isPlaying).toBe(true)
+
+    act(() => {
+      result.current.handleReset()
+    })
+    expect(useAnimationStore.getState().isPlaying).toBe(false)
+    expect(useAnimationStore.getState().physicsState.position).toEqual({ x: 3, y: 4 })
   })
 })

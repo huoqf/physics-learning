@@ -64,8 +64,7 @@ export function useBrownianPhysics({
 
   const [, setTick] = useState(0)
 
-  // 初始化或重置分子
-  useEffect(() => {
+  const resetMolecules = useCallback(() => {
     if (mode === 1) {
       moleculesRef.current = Array.from({ length: MOLECULE_COUNT }, () => {
         const angle = Math.random() * Math.PI * 2
@@ -80,15 +79,36 @@ export function useBrownianPhysics({
       moleculesRef.current = []
     }
     collisionPointsRef.current = []
-  }, [mode, temperature, vTarget])
+  }, [mode, vTarget])
 
-  // 重置粒子位置
+  // 初始化或重置分子
+  useEffect(() => {
+    resetMolecules()
+  }, [mode, temperature, resetMolecules])
+
+  // 挂载及点击控制条「重置」归零时同步复位花粉粒子与轨迹
+  const resetSimulation = useCallback(() => {
+    particleRef.current = { x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2, vx: 0, vy: 0 }
+    trajectoryRef.current = []
+    forceRef.current = { fx: 0, fy: 0 }
+    resetMolecules()
+    setTick((t) => t + 1)
+  }, [resetMolecules])
+
   useEffect(() => {
     particleRef.current = { x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2, vx: 0, vy: 0 }
     trajectoryRef.current = []
     forceRef.current = { fx: 0, fy: 0 }
     collisionPointsRef.current = []
   }, [])
+
+  useEffect(() => {
+    return useAnimationStore.subscribe((state, prevState) => {
+      if (state.time === 0 && prevState.time > 0) {
+        resetSimulation()
+      }
+    })
+  }, [resetSimulation])
 
   const handleFrame = useCallback(
     (deltaMs: number) => {

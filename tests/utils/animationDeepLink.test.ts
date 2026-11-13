@@ -5,6 +5,7 @@ import {
   shouldShowFreezeHint,
   pickCriticalTimes,
   parseUrlParamOverrides,
+  resolveUrlMergedParams,
 } from '@/utils/animationDeepLink'
 import type { CriticalTimePoint } from '@/data/types'
 
@@ -110,6 +111,23 @@ describe('animationDeepLink · 深链定格帧解析', () => {
 
     it('无查询串时返回空对象', () => {
       expect(parseUrlParamOverrides('', defaults)).toEqual({})
+    })
+  })
+
+  describe('resolveUrlMergedParams · 合并平铺与 JSON 参数', () => {
+    const defaults = { v0: 5, m: 1, t: 0 }
+
+    it('JSON ?params= 覆盖平铺参数，且过滤未知键与保留键', () => {
+      const search = '?v0=8&params=' + encodeURIComponent(JSON.stringify({ v0: 12, unknown: 99, t: 3, m: NaN }))
+      const res = resolveUrlMergedParams(search, defaults)
+      expect(res.hasOverrides).toBe(true)
+      expect(res.mergedParams).toEqual({ v0: 12, m: 1, t: 0 })
+    })
+
+    it('支持合法百分号字符，不因二次 decode 失败', () => {
+      const search = '?params=' + encodeURIComponent(JSON.stringify({ v0: 7, note: '100%' }))
+      const res = resolveUrlMergedParams(search, defaults)
+      expect(res.mergedParams).toEqual({ v0: 7, m: 1, t: 0 })
     })
   })
 

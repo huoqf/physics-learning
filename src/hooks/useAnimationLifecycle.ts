@@ -70,6 +70,8 @@ function useAnimationConfig() {
   const prevConfigIdRef = useRef<string | undefined>(undefined)
   const prevSearchRef = useRef<string>('')
   const appliedInitParamsRef = useRef<Record<string, number> | null>(null)
+  const initializedKeyRef = useRef<string>('')
+  const appliedInitIsLoopRef = useRef<boolean>(false)
 
   // 异步加载 config（extended 动画走此路径）
   useEffect(() => {
@@ -125,6 +127,8 @@ function useAnimationConfig() {
       const initMode = typeof config.controlsMode === 'function'
         ? config.controlsMode(mergedParams)
         : (config.controlsMode ?? 'timed')
+      initializedKeyRef.current = `${config.id}::${location.search}`
+      appliedInitIsLoopRef.current = initMode === 'loop'
 
       if (deepLinkTarget) {
         setTime(deepLinkTarget.time)
@@ -142,7 +146,13 @@ function useAnimationConfig() {
         currentTimeRef.current = 0
         // loop 型加载即自动播放；其余型（timed/param/pause-only）初始为暂停
         setIsPlaying(initMode === 'loop')
-        setPhysicsState({ position: { x: 0, y: 0 }, velocity: { vx: 0, vy: 0 }, trajectory: [] })
+        const initState = config.updatePhysics?.(mergedParams, 0, 0)
+        setPhysicsState({
+          position: { x: 0, y: 0 },
+          velocity: { vx: 0, vy: 0 },
+          trajectory: [],
+          ...(initState ?? {}),
+        })
       }
 
       setMode('animation')
@@ -151,7 +161,7 @@ function useAnimationConfig() {
     }
   }, [config, location.search, setAnimationType, setParams, setTime, setIsPlaying, setPhysicsState, setRepeatLoop, setAutoPauseOnCritical, setMode, markAnimationViewed])
 
-  return { config, configLoading, currentTimeRef, appliedInitParamsRef }
+  return { config, configLoading, currentTimeRef, appliedInitParamsRef, initializedKeyRef, appliedInitIsLoopRef }
 }
 
 /* ─── 子 hook: 发现模式步骤管理 ─── */
@@ -190,6 +200,8 @@ function usePlaybackLoop(
   config: AnimationConfig | undefined,
   currentTimeRef: RefObject<number>,
   appliedInitParamsRef: RefObject<Record<string, number> | null>,
+  initializedKeyRef: RefObject<string>,
+  appliedInitIsLoopRef: RefObject<boolean>,
 ) {
   const isPlaying = useAnimationStore((s) => s.isPlaying)
   const params = useAnimationStore((s) => s.params)
@@ -234,10 +246,17 @@ function usePlaybackLoop(
 
   const isLoop = effectiveControlsMode === 'loop'
   const prevIsLoopRef = useRef<boolean>(isLoop)
+  const lastSyncedInitKeyRef = useRef<string>('')
   const suppressNextModePauseRef = useRef(false)
 
-  // 仅在运行期（用户交互切换模式）且 isLoop 实际变化时同步播放状态，避免覆盖初始化 / 深链定格 / restartOnApply
+  // 仅在运行期（用户交互切换模式）且 isLoop 实际变化时同步播放状态，避免覆盖初始化 / 跨动画路由跳转 / 深链定格 / restartOnApply
   useEffect(() => {
+    if (lastSyncedInitKeyRef.current !== initializedKeyRef.current) {
+      lastSyncedInitKeyRef.current = initializedKeyRef.current
+      prevIsLoopRef.current = appliedInitIsLoopRef.current
+      suppressNextModePauseRef.current = false
+      return
+    }
     if (params === appliedInitParamsRef.current) {
       prevIsLoopRef.current = isLoop
       suppressNextModePauseRef.current = false
@@ -254,7 +273,7 @@ function usePlaybackLoop(
     } else {
       suppressNextModePauseRef.current = false
     }
-  }, [isLoop, params, appliedInitParamsRef, setIsPlaying])
+  }, [isLoop, params, appliedInitParamsRef, initializedKeyRef, appliedInitIsLoopRef, setIsPlaying])
 
   // rAF 时间循环（注：useAnimationFrame 已将 deltaTime 按 speed 缩放，此处不得再乘 speed）
   useAnimationFrame(
@@ -268,10 +287,15 @@ function usePlaybackLoop(
       const dtSec = deltaTime / 1000
       let nextTime = prevTime + dtSec * direction
 
-      // 临界时刻自动暂停引擎（仅 timed / pause-only 正向播放且开启自动停靠时生效）
+      // 临界时刻自动暂停引擎（仅 timed / pause-only 正向播放且开启自动停靠时生效；开启 repeatLoop 时终点由循环重播接管）
       if (!isLoop && direction === 1 && autoPauseOnCritical && criticalTimes && criticalTimes.length > 0) {
+        const skipEndPointForRepeat = repeatLoop && effectiveControlsMode === 'timed'
         const hit = criticalTimes.find(
-          (ct) => ct.autoPause !== false && ct.time > prevTime + 1e-6 && ct.time <= nextTime + 1e-6
+          (ct) =>
+            ct.autoPause !== false &&
+            (!skipEndPointForRepeat || ct.time < maxTime - 1e-6) &&
+            ct.time > prevTime + 1e-6 &&
+            ct.time <= nextTime + 1e-6
         )
         if (hit) {
           commitTime(hit.time)
@@ -352,12 +376,25 @@ function usePlaybackLoop(
   )
 
   const handleReset = () => {
+    const currentParams = useAnimationStore.getState().params
+    const currentMode = typeof config?.controlsMode === 'function'
+      ? config.controlsMode(currentParams)
+      : (config?.controlsMode ?? 'timed')
+    const currentIsLoop = currentMode === 'loop'
+    prevIsLoopRef.current = currentIsLoop
+    suppressNextModePauseRef.current = false
     setTime(0)
     currentTimeRef.current = 0
     lastLifecycleTimeRef.current = 0
     // loop 型：重置后继续播放（切换模式等触发 reset 不应停播）
-    setIsPlaying(isLoop)
-    setPhysicsState({ position: { x: 0, y: 0 }, velocity: { vx: 0, vy: 0 }, trajectory: [] })
+    setIsPlaying(currentIsLoop)
+    const initState = config?.updatePhysics?.(currentParams, 0, 0)
+    setPhysicsState({
+      position: { x: 0, y: 0 },
+      velocity: { vx: 0, vy: 0 },
+      trajectory: [],
+      ...(initState ?? {}),
+    })
   }
 
   const handleRestart = () => {
@@ -381,9 +418,9 @@ function usePlaybackLoop(
 /* ─── 主 hook: 组合三个子 hook ─── */
 
 export function useAnimationLifecycle(): AnimationLifecycleResult {
-  const { config, configLoading, currentTimeRef, appliedInitParamsRef } = useAnimationConfig()
+  const { config, configLoading, currentTimeRef, appliedInitParamsRef, initializedKeyRef, appliedInitIsLoopRef } = useAnimationConfig()
   const discovery = useDiscoveryMode(config)
-  const playback = usePlaybackLoop(config, currentTimeRef, appliedInitParamsRef)
+  const playback = usePlaybackLoop(config, currentTimeRef, appliedInitParamsRef, initializedKeyRef, appliedInitIsLoopRef)
 
   return {
     config,

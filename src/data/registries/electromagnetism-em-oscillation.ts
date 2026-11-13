@@ -60,7 +60,7 @@ function lcCriticalTimes(params: Record<string, number>) {
     { time: T / 2, label: '电荷反向最大·电流为零', variant: 'info' as const },
     { time: (3 * T) / 4, label: '电荷为零·电流反向最大', variant: 'critical' as const },
     { time: T, label: '回到初始状态（一个周期）', variant: 'info' as const },
-    { time: 2 * T, label: '第二个周期结束', variant: 'info' as const },
+    { time: 2 * T, label: '第二个周期结束', variant: 'info' as const, autoPause: false },
   ]
 }
 

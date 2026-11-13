@@ -1,4 +1,5 @@
 import { useRef, useCallback, useState, useEffect } from 'react'
+import { useAnimationStore } from '@/stores'
 import { useAnimationFrame } from '@/utils/animation'
 import {
   initHeatConductionParticles,
@@ -47,6 +48,7 @@ export function useSecondLawPhysics({
   time,
   isPlaying,
 }: UseSecondLawPhysicsParams): SecondLawPhysicsResult {
+  const speed = useAnimationStore((s) => s.speed)
   const partitionProgressRef = useRef(0)
   const particlesRef = useRef<Particle[]>([])
   const lastSampleTimeRef = useRef(-1)
@@ -142,8 +144,8 @@ export function useSecondLawPhysics({
   // ─── 动画帧回调 ────────────────────────────────────────────────────
   const handleFrame = useCallback(
     (deltaMs: number) => {
-      const dt = deltaMs / 1000
-      if (dt <= 0 || dt > 0.1) return
+      const dt = Math.min(deltaMs / 1000, 0.1)
+      if (dt <= 0) return
 
       stepPhysics(dt)
 
@@ -192,7 +194,7 @@ export function useSecondLawPhysics({
     [stepPhysics, time, scenario],
   )
 
-  useAnimationFrame(handleFrame, { playing: isPlaying, speed: 1 })
+  useAnimationFrame(handleFrame, { playing: isPlaying, speed })
 
   return {
     particlesRef,

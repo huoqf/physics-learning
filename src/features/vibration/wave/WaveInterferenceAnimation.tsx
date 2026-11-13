@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { useAnimationViewport, useCanvasViewport, useSceneScale } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { useAnimationFrame } from '@/utils/animation'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { WAVE_COLORS, CANVAS_COLORS, STROKE, SCENE_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
@@ -89,12 +88,10 @@ function paintInterferenceField(
 }
 
 export default function WaveInterferenceAnimation() {
-  const { params, isPlaying, time, speed } = useAnimationStore(
+  const { params, time } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
-      isPlaying: s.isPlaying,
       time: s.time,
-      speed: s.speed,
     })),
   )
 
@@ -139,8 +136,7 @@ export default function WaveInterferenceAnimation() {
     [s1, s2, lambda, A],
   )
 
-  const paintRef = useRef<() => void>(() => {})
-  paintRef.current = () => {
+  useEffect(() => {
     if (cssW <= 0 || cssH <= 0) return
     paintInterferenceField(
       setupFrame,
@@ -148,19 +144,10 @@ export default function WaveInterferenceAnimation() {
       cssH,
       fieldParams,
       A,
-      useAnimationStore.getState().time,
+      time,
       sceneScale,
     )
-  }
-
-  const handleFrame = useCallback(() => {
-    paintRef.current()
-  }, [])
-  useAnimationFrame(handleFrame, { playing: isPlaying, speed })
-
-  useEffect(() => {
-    paintRef.current()
-  }, [fieldParams, A, time, isPlaying, cssW, cssH, sceneScale])
+  }, [setupFrame, fieldParams, A, time, cssW, cssH, sceneScale])
 
   const p1 = worldToDesign(s1.x, s1.y, sceneScale)
   const p2 = worldToDesign(s2.x, s2.y, sceneScale)

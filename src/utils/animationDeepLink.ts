@@ -59,17 +59,25 @@ export function resolveUrlMergedParams(
   const customParamsStr = sp.get('params')
   let jsonParams: Record<string, number> = {}
   if (customParamsStr) {
+    let parsed: unknown = null
     try {
-      const parsed = JSON.parse(decodeURIComponent(customParamsStr))
-      if (parsed && typeof parsed === 'object') {
-        for (const [k, v] of Object.entries(parsed)) {
-          if (typeof v === 'number' && Number.isFinite(v)) {
-            jsonParams[k] = v
-          }
+      // URLSearchParams.get 已自动完成一次百分号解码，优先直接解析
+      parsed = JSON.parse(customParamsStr)
+    } catch {
+      try {
+        // 兼容极少数外部二次 encodeURIComponent 的历史深链
+        parsed = JSON.parse(decodeURIComponent(customParamsStr))
+      } catch {
+        parsed = null
+      }
+    }
+    if (parsed && typeof parsed === 'object') {
+      for (const [k, v] of Object.entries(parsed)) {
+        if (RESERVED_QUERY_KEYS.has(k) || !(k in defaultParams)) continue
+        if (typeof v === 'number' && Number.isFinite(v)) {
+          jsonParams[k] = v
         }
       }
-    } catch {
-      // 忽略畸形 JSON 参数，降级走默认与平铺参数
     }
   }
   const hasOverrides = Object.keys(flatParams).length > 0 || Object.keys(jsonParams).length > 0
