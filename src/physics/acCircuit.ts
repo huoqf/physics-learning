@@ -3,6 +3,9 @@
  * 无副作用，不依赖 React/DOM/window。单位采用 SI。
  */
 
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 /**
  * 理想变压器（基础变比模型）。
  * U2 = U1·(n2/n1)，I2 = I1·(n1/n2)（功率守恒）
@@ -242,4 +245,46 @@ export function calculatePowerTransmission(
 
     return { P1: P1_real, I_line, deltaU, P_loss, U3, P3, U4, P_user, eta, isOverloaded }
   }
+}
+
+export interface ACGenerationCriticalParams {
+  omega?: number
+  initialPhase?: number
+}
+
+/**
+ * 计算交变电流产生过程的关键时刻（SSOT）
+ * - 峰值面（感应电动势最大，磁通量 Φ=0）
+ * - 中性面（感应电动势 e=0，磁通量 Φ 最大，电流方向切换）
+ * - 完成 1 个周期 T = 2π/ω
+ */
+export function getACGenerationCriticalTimes(
+  params: ACGenerationCriticalParams = {},
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const omega = params.omega ?? 2
+  const theta0 = ((params.initialPhase ?? 0) * Math.PI) / 180
+  if (omega <= 0) return []
+
+  const firstPositiveTime = (targetAngleOffset: number, step: number): number => {
+    const kMin = Math.ceil((theta0 - targetAngleOffset + 0.02 * omega) / step)
+    const thetaTarget = targetAngleOffset + kMin * step
+    return (thetaTarget - theta0) / omega
+  }
+
+  const events: CriticalTimePoint[] = []
+  const candidates: Array<{ rawT: number; label: string; variant: CriticalTimePoint['variant'] }> = [
+    { rawT: firstPositiveTime(Math.PI / 2, Math.PI), label: '首次达峰值面 (e最大)', variant: 'warning' },
+    { rawT: firstPositiveTime(0, Math.PI), label: '首次过中性面 (Φ最大/反向)', variant: 'info' },
+    { rawT: (2 * Math.PI) / omega, label: '完成1个交流周期 T', variant: 'info' },
+  ]
+
+  for (const c of candidates) {
+    const t = alignCriticalTime(c.rawT, 'nearest')
+    if (t > 0.02 && t <= maxTime && !events.some((e) => Math.abs(e.time - t) < 0.04)) {
+      events.push({ time: t, label: c.label, variant: c.variant, autoPause: false })
+    }
+  }
+
+  return events.sort((a, b) => a.time - b.time)
 }

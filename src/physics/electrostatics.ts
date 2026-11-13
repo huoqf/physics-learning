@@ -1,4 +1,13 @@
 import { COULOMB_CONSTANT } from './constants'
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
+/** 带电粒子在匀强电场中偏转默认物理几何与粒子质量常数 (SI, SSOT) */
+export const CHARGE_EFIELD_GEOMETRY = {
+  plateLength: 0.4,
+  plateGap: 0.2,
+  particleMass: 10 * 1e-6,
+} as const
 
 /**
  * 静电场纯函数库。
@@ -596,5 +605,84 @@ export function findEquilibriumX3(
   const result = (a + b) / 2
   if (result < minX || result > maxX) return { x: (x1 + x2) / 2, possible: false }
   return { x: result, possible: true }
+}
+
+export interface ChargeInEFieldCriticalParams {
+  U?: number
+  v0?: number
+  q?: number
+  freq?: number
+  isAC?: number
+  useGravity?: number
+  phi0?: number
+}
+
+/**
+ * 计算带电粒子在匀强电场（含交变电场）中偏转的关键动画时刻（SSOT）
+ * 注意：返回时刻为动画播放轴时间（已按 getChargeInEFieldTimeScale 缩放）
+ */
+export function getChargeInEFieldCriticalTimes(
+  params: ChargeInEFieldCriticalParams = {},
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const U = params.U ?? 150
+  const v0 = params.v0 ?? 15
+  const q = params.q ?? 2
+  const freq = params.freq ?? 30
+  const isAC = (params.isAC ?? 0) === 1
+  const useGravity = params.useGravity ?? 0
+  const phi0 = params.phi0 ?? 0
+
+  const sim = calculateChargeInEFieldTrajectory({
+    U,
+    d: CHARGE_EFIELD_GEOMETRY.plateGap,
+    L: CHARGE_EFIELD_GEOMETRY.plateLength,
+    q: q * 1e-6,
+    m: CHARGE_EFIELD_GEOMETRY.particleMass,
+    v0,
+    g: useGravity === 1 ? 9.8 : 0,
+    isAC,
+    freq,
+    phi0,
+  })
+
+  if (!(sim.tEnd > 0)) return []
+  const timeScale = getChargeInEFieldTimeScale(sim.tEnd, isAC)
+  const events: CriticalTimePoint[] = []
+
+  if (isAC && freq > 0) {
+    const halfT = 1 / (2 * freq)
+    const fracInHalf = (phi0 % 0.5) / 0.5
+    const tFirstSwitchSim = halfT * (1 - fracInHalf)
+    if (tFirstSwitchSim > 0 && tFirstSwitchSim < sim.tEnd * 0.9) {
+      const tSwitchPlay = alignCriticalTime(tFirstSwitchSim / timeScale, 'after')
+      if (tSwitchPlay > 0.02 && tSwitchPlay <= maxTime) {
+        events.push({
+          time: tSwitchPlay,
+          label: '电场初次反向',
+          variant: 'warning',
+          autoPause: false,
+        })
+      }
+    }
+  }
+
+  const tEndPlay = alignCriticalTime(sim.tEnd / timeScale, 'before')
+  if (tEndPlay > 0 && tEndPlay <= maxTime) {
+    const label =
+      sim.hitType === 'top'
+        ? '撞击上极板'
+        : sim.hitType === 'bottom'
+          ? '撞击下极板'
+          : '飞出平行板电场'
+    events.push({
+      time: tEndPlay,
+      label,
+      variant: 'critical',
+      autoPause: true,
+    })
+  }
+
+  return events.sort((a, b) => a.time - b.time)
 }
 

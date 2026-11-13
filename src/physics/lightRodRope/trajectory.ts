@@ -1,4 +1,7 @@
 import type { LRRModelState } from './types'
+import { GRAVITY } from '../constants'
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 /**
  * 预计算双球连接体系统的运动轨迹（数值积分）。
@@ -584,4 +587,63 @@ export function precomputeLightRodRopeTrajectory(
   }
 
   return points
+}
+
+/**
+ * 轻杆/轻绳连接体（anim-light-rod-rope）临界时刻列表。
+ */
+export function getLightRodRopeCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 6,
+): CriticalTimePoint[] {
+  const m1 = params.m1 ?? 1.0
+  const m2 = params.m2 ?? 1.0
+  const constraint = params.constraint ?? 0
+  const L = constraint === 0 ? (params.L ?? 1.2) : 1.2
+  const theta0 = params.theta0 ?? 30
+  const v0 = params.v0 ?? 0.0
+  const theta0Rad = ((90 - theta0) * Math.PI) / 180
+
+  const points = precomputeLightRodRopeTrajectory(m1, m2, L, GRAVITY, constraint, maxTime, 0.02, theta0Rad, v0)
+  if (points.length < 2) return []
+
+  const events: CriticalTimePoint[] = []
+
+  // 1. 轻杆/双绳经过最低点（thetaB 首次跨越 π/2）
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1]
+    const curr = points[i]
+    if (prev.thetaB < Math.PI / 2 && curr.thetaB >= Math.PI / 2) {
+      const tLow = alignCriticalTime(curr.t, 'nearest')
+      if (tLow > 0 && tLow <= maxTime) {
+        events.push({
+          time: tLow,
+          label: '⚡ B 球经过最低点',
+          variant: 'critical',
+          autoPause: false,
+        })
+      }
+      break
+    }
+  }
+
+  // 2. 轻绳松弛或到达终止态
+  const last = points[points.length - 1]
+  if (last.stopReason === 'slack' && last.t > 0 && last.t <= maxTime) {
+    events.push({
+      time: alignCriticalTime(last.t, 'before'),
+      label: '⚡ 轻绳松弛临界 (T = 0)',
+      variant: 'critical',
+      autoPause: true,
+    })
+  } else if (last.stopReason === 'reach_bottom' && last.t > 0 && last.t <= maxTime) {
+    events.push({
+      time: alignCriticalTime(last.t, 'before'),
+      label: '🎯 B 球到达最低点',
+      variant: 'info',
+      autoPause: false,
+    })
+  }
+
+  return events.sort((a, b) => a.time - b.time)
 }

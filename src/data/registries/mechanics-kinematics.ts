@@ -1,6 +1,13 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
 import { GRAVITY } from '@/physics/constants'
+import { getVelocityCriticalTimes } from '@/physics/kinematics/velocity'
+import {
+  computeChaseMeetingMaxTime,
+  getChaseMeetingCriticalTimes,
+} from '@/physics/kinematics/acceleration'
+import { getFreeFallCriticalTimes, getProjectileCriticalTimes } from '@/physics/kinematics/trajectory'
+import { getVerticalThrowCriticalTimes } from '@/physics/kinematics/vertical-throw'
 import { alignCriticalTime } from '@/utils/criticalTime'
 
 export const mechanicsKinematicsAnimations = defineAnimations({
@@ -9,6 +16,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     knowledgeId: 'mechanics-1-3',
     Component: lazy(() => import('@/features/mechanics/kinematics/VelocityAnimation')),
     controlsMode: 'timed',
+    criticalTimes: (p) => getVelocityCriticalTimes(p, 30),
     defaultParams: {
       v: 8, t: 0, scene: 0, deltaT: 2, totalDuration: 10, advancedMode: 0,
       modelIdx: 0, modelK: 1, modelV0: 0, modelA: 5, modelOmega: 2,
@@ -79,6 +87,8 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     title: '追及相遇模型',
     knowledgeId: 'mechanics-2-5',
     Component: lazy(() => import('@/features/mechanics/kinematics/AccelerationCenterExtra')),
+    maxTime: (p) => computeChaseMeetingMaxTime(p),
+    criticalTimes: (p) => getChaseMeetingCriticalTimes(p, computeChaseMeetingMaxTime(p)),
     defaultParams: {
       chaseMode: 0,
       vA: 35, deltaX0: 80, t0: 1, aB: 6, vMax: 40,
@@ -188,6 +198,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     Component: lazy(() => import('@/features/mechanics/kinematics/FreeFallWrapper')),
     defaultParams: { v0: 0, g: GRAVITY, pressure: 0, objectA: 0, objectB: 0, advancedMode: 0, dripPeriod: 0.5, latitude: 45, altitude: 0, t: 0 } as const,
     controlsMode: 'timed',
+    criticalTimes: (p) => getFreeFallCriticalTimes(p, 30),
     paramMeta: [
       { key: 'pressure', label: '管内气压', min: 0, max: 1, step: 0.01, unit: 'atm', showIf: 'advancedMode', showIfValue: 0 },
       { key: 'dripPeriod', label: '滴水周期 T', min: 0.2, max: 2, step: 0.1, unit: 's', showIf: 'advancedMode', showIfValue: 1 },
@@ -236,6 +247,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     knowledgeId: 'mechanics-2-3',
     Component: lazy(() => import('@/features/mechanics/kinematics/VerticalThrowAnimation')),
     controlsMode: 'timed',
+    criticalTimes: (p) => getVerticalThrowCriticalTimes(p, 30),
     defaultParams: { v0: 15, g: GRAVITY, t: 0, advancedMode: 0, sliceDensity: 0, airResistance: 0, targetHeight: 0 } as const,
     paramMeta: [
       { key: 'v0', label: '初速度 v₀', min: 0, max: 30, step: 0.1, unit: 'm/s' },
@@ -259,6 +271,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     knowledgeId: 'mechanics-5-2',
     Component: lazy(() => import('@/features/mechanics/kinematics/ProjectileAnimation')),
     controlsMode: 'timed',
+    criticalTimes: (p) => getProjectileCriticalTimes(p, 30),
     defaultParams: {
       v0x: 10,
       g: GRAVITY,

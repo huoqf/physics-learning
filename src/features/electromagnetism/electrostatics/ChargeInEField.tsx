@@ -57,7 +57,7 @@ export default function ChargeInEField() {
     historyPoints, predictedPoints, tailPoints,
     sceneScale,
     vx_px, vy_px, totalPxLen, vxPxLen, vyPxLen,
-    tangentData, gridLines,
+    tangentData, gridLineSpecs,
   } = physics
 
   const {
@@ -118,7 +118,18 @@ export default function ChargeInEField() {
           </defs>
 
           {/* 网格参考 */}
-          {gridLines}
+          {gridLineSpecs.map((ln) => (
+            <line
+              key={ln.key}
+              x1={ln.x1}
+              y1={ln.y1}
+              x2={ln.x2}
+              y2={ln.y2}
+              stroke={PHYSICS_COLORS.grid}
+              strokeWidth={ln.isCenterRef ? CANVAS_STYLE.stroke.reference : CANVAS_STYLE.stroke.grid}
+              strokeDasharray={ln.isCenterRef ? '2,4' : '4,4'}
+            />
+          ))}
 
           {/* 粒子发射枪 */}
           <rect

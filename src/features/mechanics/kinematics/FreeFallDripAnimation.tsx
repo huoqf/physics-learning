@@ -16,6 +16,7 @@ import {
 } from '@/theme/physics'
 
 import { calcGByLatitude, calcGByAltitude, GRAVITY } from '@/physics'
+import { FREE_FALL_TUBE_HEIGHT } from '@/physics/kinematics/trajectory'
 import { useFreeFallPhysics } from './useFreeFallPhysics'
 import { getPhysicsAtTime } from '@/physics'
 import { DATA_LAYOUT } from './freeFallConfig'
@@ -30,8 +31,8 @@ const DESIGN_WIDTH = 840
 const DESIGN_HEIGHT = 650
 
 // ─── 物理常量 ────────────────────────────────────────────────────────────────
-/** 管高度 (m) */
-const TUBE_HEIGHT = 2.0
+/** 管高度 (m) — 复用物理层真源 */
+const TUBE_HEIGHT = FREE_FALL_TUBE_HEIGHT
 
 /** 最大同时显示水滴数 */
 const MAX_DROPS = 8
@@ -78,10 +79,9 @@ export default function FreeFallDripAnimation() {
   const latitude = params.latitude ?? 45
   const altitude = params.altitude ?? 0
 
-  // ── 计算有效 g (复用纯物理函数，与右侧面板一致) ─────────────────────────────
-  // 注意：params.altitude 单位为 km，calcGByAltitude 接受 m，需转换
+  // ── 计算有效 g (复用纯物理函数，与右侧面板一致；calcGByAltitude 接受 km) ───────
   const g0 = useMemo(() => calcGByLatitude(latitude), [latitude])
-  const g = useMemo(() => calcGByAltitude(g0, altitude * 1000), [g0, altitude])
+  const g = useMemo(() => calcGByAltitude(g0, altitude), [g0, altitude])
 
   // 将计算出的 g 同步回 params，供侧边栏显示
   const updateParam = useAnimationStore((s) => s.updateParam)

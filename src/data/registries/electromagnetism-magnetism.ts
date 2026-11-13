@@ -1,5 +1,6 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
+import { getChargeInBFieldCriticalTimes } from '@/physics/magnetism/forces'
 
 // ===== 电磁学 · 磁场（[M4-1]）=====
 export const electromagnetismMagnetismAnimations = defineAnimations({
@@ -103,6 +104,7 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
     Component: lazy(() => import('@/features/electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField')),
     controlsMode: 'timed' as const,
     maxTime: 8,
+    criticalTimes: (p) => getChargeInBFieldCriticalTimes(p, 8),
     controlMeta: [
       { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '定性边界偏转' }, { value: 1, label: '动态圆族' }] },

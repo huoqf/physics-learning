@@ -1,4 +1,6 @@
 import { GRAVITY } from '../constants'
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 /**
  * 计算地球表面重力、万有引力与自转向心力的矢量分量及夹角关系
@@ -407,4 +409,76 @@ export function precomputeVerticalCircularMotion(
   }
 
   return { trajectory, vSwingLimit, vLoopLimit }
+}
+
+/**
+ * 计算竖直圆模型的临界时刻列表（脱离轨道 / 摆动最高点 / 完整圆周最高点）。
+ * 单一真源：与 useVerticalCircularPhysics 复用 precomputeVerticalCircularMotion。
+ */
+export function getVerticalCircularCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const r = params.r ?? 3
+  const v0 = params.v0 ?? 5
+  const m = params.m ?? 1
+  const trackType = params.trackType ?? 0
+
+  const { trajectory } = precomputeVerticalCircularMotion(r, v0, m, trackType, Math.min(maxTime, 15), 0.002)
+  if (trajectory.length === 0) return []
+
+  const caseType = trajectory[0].caseType
+  const events: CriticalTimePoint[] = []
+
+  if (trackType === 0 && caseType === 'fall') {
+    const firstFly = trajectory.find((pt) => pt.state === 'flying')
+    if (firstFly && firstFly.time > 0 && firstFly.time <= maxTime) {
+      events.push({
+        time: alignCriticalTime(firstFly.time, 'after'),
+        label: '⚡ 脱离轨道 (N = 0)',
+        variant: 'critical',
+        autoPause: true,
+      })
+    }
+    return events
+  }
+
+  if (caseType === 'swing') {
+    for (let i = 1; i < trajectory.length; i++) {
+      if (trajectory[i - 1].omega >= 0 && trajectory[i].omega < 0) {
+        const t = alignCriticalTime(trajectory[i].time, 'nearest')
+        if (t > 0 && t <= maxTime) {
+          events.push({
+            time: t,
+            label: '⚡ 摆动最高点 (v = 0)',
+            variant: 'critical',
+            autoPause: true,
+          })
+        }
+        break
+      }
+    }
+    return events
+  }
+
+  // loop 通关圆周：标出首次经过最高点与首次回到最低点
+  const firstTop = trajectory.find((pt) => pt.theta >= Math.PI)
+  if (firstTop && firstTop.time > 0 && firstTop.time <= maxTime) {
+    events.push({
+      time: alignCriticalTime(firstTop.time, 'nearest'),
+      label: '⚡ 首次经过最高点',
+      variant: 'critical',
+      autoPause: false,
+    })
+  }
+  const firstLoop = trajectory.find((pt) => pt.theta >= 2 * Math.PI)
+  if (firstLoop && firstLoop.time > 0 && firstLoop.time <= maxTime) {
+    events.push({
+      time: alignCriticalTime(firstLoop.time, 'nearest'),
+      label: '回到最低点（一圈）',
+      variant: 'info',
+      autoPause: false,
+    })
+  }
+  return events.sort((a, b) => a.time - b.time)
 }

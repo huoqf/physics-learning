@@ -1,6 +1,10 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload';
 import { defineAnimations } from '../defineAnimations';
 import { GRAVITY } from '@/physics/constants';
+import { getKineticEnergyCriticalTimes } from '@/physics/kineticEnergy';
+import { getEnergyConservationCriticalTimes } from '@/physics/energyConservation';
+import { getVerticalSpringCriticalTimes } from '@/physics/verticalSpring';
+import { getLightRodRopeCriticalTimes } from '@/physics/lightRodRope/trajectory';
 
 export const mechanicsEnergyAnimations = defineAnimations({
   'anim-work': {
@@ -114,6 +118,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
     title: '动能定理',
     knowledgeId: 'mechanics-7-3',
     Component: lazy(() => import('@/features/mechanics/energy/KineticEnergyAnimation')),
+    criticalTimes: (p) => getKineticEnergyCriticalTimes(p, 15),
     defaultParams: { m: 2, v0: 0, F: 15, s: 6, R: 5, mu: 0.15, mode: 0 } as const,
     paramMeta: [
       { key: 'm', label: '质量 m', min: 1, max: 10, step: 0.5, unit: 'kg' },
@@ -249,6 +254,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
     title: '机械能守恒定律',
     knowledgeId: 'mechanics-7-5',
     Component: lazy(() => import('@/features/mechanics/energy/EnergyConservationAnimation')),
+    criticalTimes: (p) => getEnergyConservationCriticalTimes(p, 15),
     defaultParams: { m: 2.0, g: 9.8, L: 5.0, theta0: 45, R: 5.0, mu: 0.1, mode: 0, hRef: 0.0 } as const,
     paramMeta: [
       { key: 'm', label: '质量 m', min: 0.5, max: 5.0, step: 0.5, unit: 'kg' },
@@ -332,6 +338,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
     title: '竖直弹簧复合模型',
     knowledgeId: 'mechanics-7-6-1',
     Component: lazy(() => import('@/features/mechanics/energy/SpringCompositeAnimation')),
+    criticalTimes: (p) => getVerticalSpringCriticalTimes(p, 15),
     defaultParams: { m: 0.5, k: 50, h: 0.8, mode: 0, showVectors: 1, autoPause: 0, viewMode: 1 } as const,
     paramMeta: [
       { key: 'm', label: '质量 m', min: 0.2, max: 0.8, step: 0.1, unit: 'kg' },
@@ -377,6 +384,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
     title: '轻杆/轻绳连接体',
     knowledgeId: 'mechanics-7-6-2',
     maxTime: 6,
+    criticalTimes: (p) => getLightRodRopeCriticalTimes(p, 6),
     Component: lazy(() => import('@/features/mechanics/energy/LightRodRopeAnimation')),
     defaultParams: { m1: 1.0, m2: 1.0, L: 1.2, constraint: 0, showParticles: 1, theta0: 30, v0: 0.0, showGravity: 1, showTension: 1, showResolution: 1, showVelocityDecomp: 0 } as const,
     paramMeta: [

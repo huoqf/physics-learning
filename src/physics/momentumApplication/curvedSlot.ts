@@ -1,4 +1,6 @@
 import { GRAVITY } from '../constants'
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 /**
  * 弧形槽-滑块模型 (Curved Slot & Block Model)
@@ -258,4 +260,67 @@ export function interpolateCurvedSlot(states: CurvedSlotState[], currentTime: nu
     Ek_M: s0.Ek_M + ratio * (s1.Ek_M - s0.Ek_M),
     Ep: s0.Ep + ratio * (s1.Ep - s0.Ep)
   }
+}
+
+/**
+ * 计算弧形槽与滑块模型的临界时刻列表（单一真源，注册表直接调用）
+ */
+export function getCurvedSlotCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 6,
+): CriticalTimePoint[] {
+  const m = params.m_block ?? 2
+  const M = params.M_slot ?? 5
+  const R = params.R_slot ?? 1.5
+  const isFixed = params.isFixed ?? 0
+  const slotShape = params.slotShape ?? 0
+
+  const states = precomputeCurvedSlot(m, M, R, GRAVITY, maxTime, 0.002, isFixed, slotShape)
+  if (states.length === 0) return []
+
+  const events: CriticalTimePoint[] = []
+  const bottomIdx = states.findIndex((pt) => pt.theta <= 0.0001)
+  if (bottomIdx === -1) return []
+
+  const bottomPt = states[bottomIdx]
+  if (slotShape === 0) {
+    const t = alignCriticalTime(bottomPt.t, 'after')
+    if (t > 0 && t <= maxTime) {
+      events.push({
+        time: t,
+        label: '⚡ 滑至槽底并滑出',
+        variant: 'critical',
+        autoPause: true,
+      })
+    }
+    return events
+  }
+
+  const tBottom = alignCriticalTime(bottomPt.t, 'nearest')
+  if (tBottom > 0 && tBottom <= maxTime) {
+    events.push({
+      time: tBottom,
+      label: '⚡ 首次到达槽底 (v最大)',
+      variant: 'critical',
+      autoPause: false,
+    })
+  }
+
+  // 对称半圆槽：寻找滑至左/右对侧最高点（omega 由负转正或归零）
+  for (let i = bottomIdx + 1; i < states.length; i++) {
+    if (states[i - 1].omega < 0 && states[i].omega >= 0) {
+      const tPeak = alignCriticalTime(states[i].t, 'nearest')
+      if (tPeak > tBottom && tPeak <= maxTime) {
+        events.push({
+          time: tPeak,
+          label: '滑至对侧最高点（共速）',
+          variant: 'info',
+          autoPause: true,
+        })
+      }
+      break
+    }
+  }
+
+  return events.sort((a, b) => a.time - b.time)
 }

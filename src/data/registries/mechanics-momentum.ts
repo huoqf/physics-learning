@@ -2,8 +2,15 @@ import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
 import {
   computeMomentumExperimentDuration,
+  getExperimentMomentumCriticalTimes,
   momentumExperimentInputFromParams,
 } from '@/physics/experimentMomentum'
+import { getMomentumConservationCriticalTimes } from '@/physics/momentumConservation'
+import { getCollisionCriticalTimes } from '@/physics/collision'
+import { getCurvedSlotCriticalTimes } from '@/physics/momentumApplication/curvedSlot'
+import { getSpringBlocksCriticalTimes } from '@/physics/momentumApplication/springBlocks'
+import { getBulletBlockCriticalTimes } from '@/physics/bulletBlock'
+import { getManBoatCriticalTimes } from '@/physics/momentumApplication/manBoat'
 
 /**
  * 基础/进阶模式时间轴时长 (s)。
@@ -83,6 +90,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
     knowledgeId: 'mechanics-8-4',
     Component: lazy(() => import('@/features/mechanics/momentum/MomentumConservationAnimation')),
     maxTime: MOMENTUM_BASE_MAX_TIME,
+    criticalTimes: (p) => getMomentumConservationCriticalTimes(p, MOMENTUM_BASE_MAX_TIME),
     defaultParams: {
       m1: 3,
       v1: 5,
@@ -153,6 +161,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
     Component: lazy(() => import('@/features/mechanics/momentum/ExperimentMomentumAnimation')),
     maxTime: (params) =>
       computeMomentumExperimentDuration(momentumExperimentInputFromParams(params)),
+    criticalTimes: (p) => getExperimentMomentumCriticalTimes(p),
     defaultParams: {
       m1_exp: 0.4,
       m2_exp: 0.2,
@@ -208,6 +217,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
     title: '弹性碰撞与非弹性碰撞',
     knowledgeId: 'mechanics-8-5',
     Component: lazy(() => import('@/features/mechanics/momentum/CollisionAnimation')),
+    criticalTimes: (p) => getCollisionCriticalTimes(p, MOMENTUM_BASE_MAX_TIME),
     defaultParams: { m1: 3, v1: 5, m2: 2, v2: 0, isElastic: 1, mA: 3, vA: 5, mB: 2, kLoss: 0, advancedMode: 0 } as const,
     paramMeta: [
       { key: 'm1', label: 'A球质量 m₁', min: 0.5, max: 10, step: 0.5, unit: 'kg', showIf: 'advancedMode', showIfValue: 0 },
@@ -230,6 +240,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
     title: '弧形槽与滑块模型',
     knowledgeId: 'mechanics-8-6-1',
     Component: lazy(() => import('@/features/mechanics/momentum/CurvedSlotAnimation')),
+    criticalTimes: (p) => getCurvedSlotCriticalTimes(p, 6),
     defaultParams: {
       m_block: 2,
       M_slot: 5,
@@ -257,6 +268,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
     title: '弹簧-双滑块模型',
     knowledgeId: 'mechanics-8-6-2',
     Component: lazy(() => import('@/features/mechanics/momentum/SpringBlocksAnimation')),
+    criticalTimes: (p) => getSpringBlocksCriticalTimes(p, MOMENTUM_BASE_MAX_TIME),
     defaultParams: {
       mA_spring: 2,
       mB_spring: 3,
@@ -289,6 +301,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
     title: '子弹打木块模型',
     knowledgeId: 'mechanics-8-7',
     Component: lazy(() => import('@/features/mechanics/momentum/BulletBlockAnimation')),
+    criticalTimes: (p) => getBulletBlockCriticalTimes(p, MOMENTUM_BASE_MAX_TIME),
     defaultParams: { m: 0.1, M: 0.4, v0: 30, f: 10, L: 0.5, showDeltaX: 1 } as const,
     paramMeta: [
       { key: 'm', label: '子弹质量 m', min: 0.05, max: 0.20, step: 0.01, unit: 'kg' },
@@ -327,6 +340,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
     title: '人船模型',
     knowledgeId: 'mechanics-8-6-3',
     Component: lazy(() => import('@/features/mechanics/momentum/ManBoatAnimation')),
+    criticalTimes: (p) => getManBoatCriticalTimes(p, MOMENTUM_BASE_MAX_TIME),
     defaultParams: {
       m_person: 50,
       m_person2: 60,

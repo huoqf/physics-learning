@@ -21,6 +21,10 @@ interface AnimationDataState {
   speed: number
   /** 播放方向：1=正向，-1=逆向（热力学第二定律逆向实验） */
   direction: 1 | -1
+  /** timed 模式下到达终点后是否自动循环重播 */
+  repeatLoop: boolean
+  /** 播放经过关键临界点时是否自动暂停定格 */
+  autoPauseOnCritical: boolean
   showVectors: boolean
   showFormulas: boolean
   showGrid: boolean
@@ -43,6 +47,10 @@ export interface AnimationState extends AnimationDataState {
   setIsPlaying: (isPlaying: boolean) => void
   setSpeed: (speed: number) => void
   setDirection: (direction: 1 | -1) => void
+  setRepeatLoop: (repeatLoop: boolean) => void
+  toggleRepeatLoop: () => void
+  setAutoPauseOnCritical: (autoPause: boolean) => void
+  toggleAutoPauseOnCritical: () => void
   toggleVectors: () => void
   toggleFormulas: () => void
   toggleGrid: () => void
@@ -60,6 +68,8 @@ const initialState: AnimationDataState = {
   isPlaying: false,
   speed: 1,
   direction: 1,
+  repeatLoop: false,
+  autoPauseOnCritical: false,
   showVectors: true,
   showFormulas: true,
   showGrid: true,
@@ -93,6 +103,10 @@ export const useAnimationStore = create<AnimationState>((set) => ({
   setIsPlaying: (isPlaying) => set({ isPlaying }),
   setSpeed: (speed) => set({ speed }),
   setDirection: (direction) => set({ direction }),
+  setRepeatLoop: (repeatLoop) => set({ repeatLoop }),
+  toggleRepeatLoop: () => set((state) => ({ repeatLoop: !state.repeatLoop })),
+  setAutoPauseOnCritical: (autoPauseOnCritical) => set({ autoPauseOnCritical }),
+  toggleAutoPauseOnCritical: () => set((state) => ({ autoPauseOnCritical: !state.autoPauseOnCritical })),
   toggleVectors: () => set((state) => ({ showVectors: !state.showVectors })),
   toggleFormulas: () => set((state) => ({ showFormulas: !state.showFormulas })),
   toggleGrid: () => set((state) => ({ showGrid: !state.showGrid })),

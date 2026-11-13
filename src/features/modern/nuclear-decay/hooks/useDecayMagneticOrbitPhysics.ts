@@ -1,4 +1,11 @@
 import { useMemo } from 'react'
+import {
+  DECAY_START_DELAY,
+  DECAY_CHARGES,
+  DECAY_OMEGA_FACTORS,
+} from '@/physics/nuclearDecay'
+
+export { DECAY_CHARGES }
 
 export interface MagneticDecayModeData {
   decayType: number // 0: α 衰变, 1: β 衰变
@@ -20,16 +27,6 @@ export interface MagneticDecayModeData {
   progress: number
 }
 
-/**
- * 两种典型衰变的粒子电荷量绝对值（单位 e）—— 静止母核磁场衰变模型的唯一真源。
- */
-export const DECAY_CHARGES = {
-  /** α 衰变：⁴₂He 与 ²³⁴₉₀Th */
-  alpha: { particle: 2, daughter: 90 },
-  /** β 衰变：⁰₋₁e 与 ¹⁴₇N */
-  beta: { particle: 1, daughter: 7 },
-} as const
-
 function formatRadiusRatio(c: { particle: number; daughter: number }): string {
   return `${c.daughter} : ${c.particle} = ${c.daughter / c.particle} : 1`
 }
@@ -44,7 +41,7 @@ export function useDecayMagneticOrbitPhysics(
 ): MagneticDecayModeData {
   return useMemo<MagneticDecayModeData>(() => {
     const isAlpha = decayType === 0
-    const decayStartDelay = 0.5
+    const decayStartDelay = DECAY_START_DELAY
     const hasDecayed = time >= decayStartDelay
     const tActive = Math.max(0, time - decayStartDelay)
     const parentPos = { x: 0, y: 0 }
@@ -55,8 +52,8 @@ export function useDecayMagneticOrbitPhysics(
       const particleCenter = { x: 0, y: particleRadius }
       const daughterCenter = { x: 0, y: -daughterRadius }
 
-      const omegaParticle = 1.8 * bField
-      const omegaDaughter = 0.6 * bField
+      const omegaParticle = DECAY_OMEGA_FACTORS.alpha.particle * bField
+      const omegaDaughter = DECAY_OMEGA_FACTORS.alpha.daughter * bField
       const thetaParticle = (omegaParticle * tActive) % (2 * Math.PI)
       const thetaDaughter = (omegaDaughter * tActive) % (2 * Math.PI)
 
@@ -100,8 +97,8 @@ export function useDecayMagneticOrbitPhysics(
     const particleCenter = { x: 0, y: -particleRadius }
     const daughterCenter = { x: 0, y: -daughterRadius }
 
-    const omegaParticle = 2.4 * bField
-    const omegaDaughter = 0.8 * bField
+    const omegaParticle = DECAY_OMEGA_FACTORS.beta.particle * bField
+    const omegaDaughter = DECAY_OMEGA_FACTORS.beta.daughter * bField
     const thetaParticle = (omegaParticle * tActive) % (2 * Math.PI)
     const thetaDaughter = (omegaDaughter * tActive) % (2 * Math.PI)
 

@@ -1,6 +1,7 @@
 import { useMemo, useCallback } from 'react'
 import {
   precomputeVerticalThrowTrajectory,
+  findVerticalThrowHeightIntersections,
   VerticalThrowResult,
   VerticalThrowTrajectoryPoint,
 } from '@/physics'
@@ -136,21 +137,13 @@ export function useVerticalThrowPhysics(
 
   // ── 高级模式：目标高度双解 ──
   const targetHeightIntersections = useMemo(() => {
-    if (advancedMode !== 1 || targetHeight <= 0 || targetHeight >= maxHeight) return null
-    let t1 = 0
-    let t2 = 0
-    let foundFirst = false
-    for (const pt of trajectory.points) {
-      if (pt.y >= targetHeight && !foundFirst) {
-        t1 = pt.t
-        foundFirst = true
-      }
-      if (pt.y < targetHeight && foundFirst && pt.t > maxHeightTime) {
-        t2 = pt.t
-        break
-      }
-    }
-    return foundFirst && t2 > 0 ? { t1, t2 } : null
+    if (advancedMode !== 1) return null
+    return findVerticalThrowHeightIntersections(
+      trajectory.points,
+      targetHeight,
+      maxHeight,
+      maxHeightTime,
+    )
   }, [advancedMode, targetHeight, maxHeight, trajectory.points, maxHeightTime])
 
   // ── 双解时刻对应速度 ──

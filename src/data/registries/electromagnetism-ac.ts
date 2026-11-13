@@ -1,7 +1,12 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
-import { getEffectiveCurrent } from '@/physics/rmsCalculator'
-import type { WaveformType } from '@/physics/rmsCalculator'
+import { getACGenerationCriticalTimes } from '@/physics/acCircuit'
+import {
+  AC_VALUES_VISUAL_PERIOD,
+  AC_WAVEFORM_MAP,
+  getACValuesCriticalTimes,
+  getEffectiveCurrent,
+} from '@/physics/rmsCalculator'
 
 // ===== 电磁学 · 交变电流（[M4-1]）=====
 export const electromagnetismAcAnimations = defineAnimations({
@@ -10,6 +15,7 @@ export const electromagnetismAcAnimations = defineAnimations({
     knowledgeId: 'electricity-5-1',
     Component: lazy(() => import('@/features/electromagnetism/induction/ACGeneration')),
     controlsMode: 'timed',
+    criticalTimes: (p) => getACGenerationCriticalTimes(p, 30),
     defaultParams: {
       mode: 0,
       B: 0.5, S: 0.04, omega: 2, N: 100, initialPhase: 0,
@@ -54,6 +60,7 @@ export const electromagnetismAcAnimations = defineAnimations({
     knowledgeId: 'electricity-5-2',
     Component: lazy(() => import('@/features/electromagnetism/induction/ACValues')),
     controlsMode: 'timed',
+    criticalTimes: (p) => getACValuesCriticalTimes(p, 30),
     defaultParams: {
       mode: 0,
       waveform: 0,
@@ -88,9 +95,8 @@ export const electromagnetismAcAnimations = defineAnimations({
       {
         type: 'tip', group: '教学提示', variant: 'info', showIf: 'showTheoretical', showIfValue: 1,
         content: (p) => {
-          const WAVEFORM_MAP: Record<number, WaveformType> = { 0: 'sine', 1: 'square', 2: 'pulse', 3: 'half_sine' }
-          const type = WAVEFORM_MAP[p.waveform ?? 0] ?? 'sine'
-          const I_eff = getEffectiveCurrent({ type, Im: p.Im ?? 5, R: p.R ?? 10, period: 2, dcCurrent: p.Idc ?? 3, duty: p.duty ?? 0.5 })
+          const type = AC_WAVEFORM_MAP[p.waveform ?? 0] ?? 'sine'
+          const I_eff = getEffectiveCurrent({ type, Im: p.Im ?? 5, R: p.R ?? 10, period: AC_VALUES_VISUAL_PERIOD, dcCurrent: p.Idc ?? 3, duty: p.duty ?? 0.5 })
           return `理论有效值 I_eff = ${I_eff.toFixed(2)} A`
         },
       },

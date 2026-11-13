@@ -5,6 +5,11 @@ import {
   PHOTOELECTRIC_METALS,
   calculateCutoffFrequency,
 } from '@/physics/photoelectric'
+import {
+  NUCLEAR_HALF_LIFE_TMAX,
+  getDecayMagneticOrbitCriticalTimes,
+  getNuclearHalfLifeCriticalTimes,
+} from '@/physics/nuclearDecay'
 import { defineAnimations } from '../defineAnimations'
 
 /**
@@ -493,6 +498,7 @@ export const modernPhysicsAnimations = defineAnimations({
     knowledgeId: 'nuclear-1-1',
     Component: lazy(() => import('@/features/modern/nuclear-decay/DecayMagneticOrbitAnimation')),
     controlsMode: 'timed' as const,
+    criticalTimes: (p) => getDecayMagneticOrbitCriticalTimes(p, 30),
     defaultParams: {
       decayType: 0,
       bField: 1.5,
@@ -535,6 +541,8 @@ export const modernPhysicsAnimations = defineAnimations({
     knowledgeId: 'nuclear-1-2',
     Component: lazy(() => import('@/features/modern/nuclear-decay/NuclearHalfLifeAnimation')),
     controlsMode: 'timed' as const,
+    maxTime: NUCLEAR_HALF_LIFE_TMAX,
+    criticalTimes: (p) => getNuclearHalfLifeCriticalTimes(p, NUCLEAR_HALF_LIFE_TMAX),
     defaultParams: {
       halfLife: 4.0,          // 半衰期 (s)
       initCount: 100,         // 初始原子核个数: 50, 100, 200

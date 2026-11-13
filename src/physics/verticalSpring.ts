@@ -3,6 +3,10 @@
  * 竖直弹簧复合模型物理计算模块 — 基于高精度解析分段解，无漂移
  */
 
+import { GRAVITY } from './constants'
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 export interface VSModelState {
   /** 时间 (s) */
   t: number;
@@ -220,4 +224,86 @@ export function getVSStateAtTime(points: VSModelState[], t: number): VSModelStat
     F_net: p0.F_net + (p1.F_net - p0.F_net) * ratio,
     F_spring: p0.F_spring + (p1.F_spring - p0.F_spring) * ratio,
   };
+}
+
+export interface VerticalSpringCycleTimes {
+  omega: number;
+  T: number;
+  t0: number;
+  tCross: number;
+  tBottom: number;
+}
+
+/**
+ * 计算竖直弹簧复合模型的周期与关键相位时刻（供动画与注册表共用同一真源）
+ */
+export function getVerticalSpringCycleTimes(
+  params: { m?: number; k?: number; h?: number; mode?: number; g?: number },
+): VerticalSpringCycleTimes {
+  const m = params.m ?? 0.5;
+  const k = params.k ?? 50;
+  const h = params.h ?? 0.8;
+  const mode = params.mode ?? 0;
+  const g = params.g ?? GRAVITY;
+
+  const omega = Math.sqrt(k / m);
+  if (mode === 1) {
+    const T = (2 * Math.PI) / omega;
+    return {
+      omega,
+      T,
+      t0: 0,
+      tCross: Math.PI / (2 * omega),
+      tBottom: Math.PI / omega,
+    };
+  }
+
+  const xC = (m * g) / k;
+  const t0 = Math.sqrt((2 * h) / g);
+  const v0 = g * t0;
+  const phi = Math.PI + Math.atan(v0 / (omega * xC));
+  const tSpring = (2 * (2 * Math.PI - phi)) / omega;
+  const T = 2 * t0 + tSpring;
+  const tCross = t0 + (1.5 * Math.PI - phi) / omega;
+  const tBottom = t0 + (2 * Math.PI - phi) / omega;
+
+  return { omega, T, t0, tCross, tBottom };
+}
+
+/**
+ * 竖直弹簧复合模型（anim-vertical-spring）临界时刻列表。
+ */
+export function getVerticalSpringCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 15,
+): CriticalTimePoint[] {
+  const mode = params.mode ?? 0;
+  const { t0, tCross, tBottom } = getVerticalSpringCycleTimes(params);
+  const events: CriticalTimePoint[] = [];
+
+  if (mode === 0 && t0 > 0 && t0 <= maxTime) {
+    events.push({
+      time: alignCriticalTime(t0, 'after'),
+      label: 'B 刚接触弹簧（原长）',
+      variant: 'info',
+      autoPause: false,
+    });
+  }
+  if (tCross > 0 && tCross <= maxTime) {
+    events.push({
+      time: alignCriticalTime(tCross, 'nearest'),
+      label: '⚡ C 平衡位置 (a=0, v最大)',
+      variant: 'critical',
+      autoPause: true,
+    });
+  }
+  if (tBottom > 0 && tBottom <= maxTime) {
+    events.push({
+      time: alignCriticalTime(tBottom, 'nearest'),
+      label: 'D 最低点 (v=0)',
+      variant: 'info',
+      autoPause: false,
+    });
+  }
+  return events.sort((a, b) => a.time - b.time);
 }

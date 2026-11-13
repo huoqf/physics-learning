@@ -4,6 +4,9 @@
  * @category M4 — 天体物理
  */
 
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 /**
  * 计算天体圆周运动的轨道速度、周期与向心加速度
  *
@@ -411,5 +414,71 @@ export function calculateLaunchTrajectory(
 
 // 双星 / 三星多体模型已独立拆分至 multiStar.ts，此处 re-export 保持既有引入路径兼容
 export * from './multiStar'
+
+export interface KeplerCriticalParams {
+  a?: number
+  mass?: number
+  mode?: number
+  a2?: number
+}
+
+/**
+ * 计算开普勒行星运动轨道关键时刻（SSOT）
+ * 从近日点 M=0 开始：T/2 到达远日点，T 完成 1 周期回到近日点。
+ */
+export function getKeplerCriticalTimes(
+  params: KeplerCriticalParams = {},
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const a1 = params.a ?? 4.5
+  const mass = params.mass ?? 36
+  const mode = params.mode ?? 0
+  const a2 = params.a2 ?? 7.5
+
+  const T1 = orbitalPeriodFromMass(a1, mass)
+  if (!Number.isFinite(T1) || T1 <= 0) return []
+
+  const events: CriticalTimePoint[] = []
+  const tHalf = alignCriticalTime(T1 / 2, 'nearest')
+  if (tHalf > 0 && tHalf <= maxTime) {
+    events.push({
+      time: tHalf,
+      label: mode === 1 ? '行星1 到达远日点' : '到达远日点',
+      variant: 'info',
+      autoPause: false,
+    })
+  }
+
+  const tPeriod = alignCriticalTime(T1, 'nearest')
+  if (tPeriod > tHalf + 0.05 && tPeriod <= maxTime) {
+    events.push({
+      time: tPeriod,
+      label: mode === 1 ? '行星1 完成1周期' : '完成1个公转周期',
+      variant: 'warning',
+      autoPause: false,
+    })
+  }
+
+  if (mode === 1 && a2 > 0) {
+    const T2 = orbitalPeriodFromMass(a2, mass)
+    const t2Period = alignCriticalTime(T2, 'nearest')
+    if (
+      Number.isFinite(T2) &&
+      t2Period > 0 &&
+      t2Period <= maxTime &&
+      Math.abs(t2Period - tPeriod) > 0.1 &&
+      Math.abs(t2Period - tHalf) > 0.1
+    ) {
+      events.push({
+        time: t2Period,
+        label: '行星2 完成1周期',
+        variant: 'info',
+        autoPause: false,
+      })
+    }
+  }
+
+  return events.sort((a, b) => a.time - b.time)
+}
 
 

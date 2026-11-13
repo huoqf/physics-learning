@@ -1,4 +1,6 @@
 import { GRAVITY } from './constants'
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 /**
  * 简谐运动（Simple Harmonic Motion, SHM）纯函数库。
@@ -269,5 +271,99 @@ export function getPendulumStateFromTrajectory(
     angle: p1.angle + frac * (p2.angle - p1.angle),
     angularVelocity: p1.angularVelocity + frac * (p2.angularVelocity - p1.angularVelocity)
   }
+}
+
+/**
+ * 基于给定周期 T、初相位 phiDeg 提取「首过平衡/极端位置/完成1周期」关键时刻（共享辅助）
+ */
+function buildPeriodicCriticalTimes(
+  period: number,
+  phiDeg: number,
+  labels: { eq: string; ext: string; cycle: string },
+  maxTime: number,
+): CriticalTimePoint[] {
+  if (!Number.isFinite(period) || period <= 0) return []
+  const omega = computeAngularFrequency(period)
+  const phi = (phiDeg * Math.PI) / 180
+  if (omega <= 0) return []
+
+  const firstPositiveTime = (offset: number, step: number): number => {
+    const kMin = Math.ceil((phi - offset + 0.02 * omega) / step)
+    return (offset + kMin * step - phi) / omega
+  }
+
+  const events: CriticalTimePoint[] = []
+  const candidates: Array<{ rawT: number; label: string; variant: CriticalTimePoint['variant'] }> = [
+    { rawT: firstPositiveTime(Math.PI / 2, Math.PI), label: labels.eq, variant: 'info' },
+    { rawT: firstPositiveTime(0, Math.PI), label: labels.ext, variant: 'warning' },
+    { rawT: period, label: labels.cycle, variant: 'info' },
+  ]
+
+  for (const c of candidates) {
+    const t = alignCriticalTime(c.rawT, 'nearest')
+    if (t > 0.02 && t <= maxTime && !events.some((e) => Math.abs(e.time - t) < 0.04)) {
+      events.push({ time: t, label: c.label, variant: c.variant, autoPause: false })
+    }
+  }
+  return events.sort((a, b) => a.time - b.time)
+}
+
+export interface SimpleHarmonicCriticalParams {
+  mass?: number
+  k?: number
+  phiDeg?: number
+}
+
+/**
+ * 计算简谐运动（弹簧振子）关键时刻（SSOT）
+ */
+export function getSimpleHarmonicCriticalTimes(
+  params: SimpleHarmonicCriticalParams = {},
+  maxTime = 20,
+): CriticalTimePoint[] {
+  const mass = params.mass ?? 0.5
+  const k = params.k ?? 20
+  const phiDeg = params.phiDeg ?? 0
+  if (mass <= 0 || k <= 0) return []
+  const period = 2 * Math.PI * Math.sqrt(mass / k)
+  return buildPeriodicCriticalTimes(
+    period,
+    phiDeg,
+    { eq: '首次过平衡位置 (v最大)', ext: '首次达最大位移 (a最大)', cycle: '完成1个振动周期 T' },
+    maxTime,
+  )
+}
+
+export interface SimplePendulumCriticalParams {
+  L?: number
+  g?: number
+  theta0?: number
+  phiDeg?: number
+  mode?: number
+}
+
+/**
+ * 计算单摆运动关键时刻（SSOT）
+ */
+export function getSimplePendulumCriticalTimes(
+  params: SimplePendulumCriticalParams = {},
+  maxTime = 20,
+): CriticalTimePoint[] {
+  const L = params.L ?? 1.5
+  const g = params.g ?? GRAVITY
+  const theta0 = params.theta0 ?? 8
+  const phiDeg = params.phiDeg ?? 0
+  const mode = params.mode ?? 0
+  if (L <= 0 || g <= 0) return []
+
+  const period =
+    mode === 1 ? computeRealPendulumPeriod(L, g, theta0) : 2 * Math.PI * Math.sqrt(L / g)
+
+  return buildPeriodicCriticalTimes(
+    period,
+    phiDeg,
+    { eq: '首次过最低点 (v最大)', ext: '首次达最大摆角', cycle: '完成1个摆动周期 T' },
+    maxTime,
+  )
 }
 

@@ -42,7 +42,7 @@
 | anim-cutting-emf | 导体切割磁感线 | CuttingEMF | CuttingEMFScene | physics | — |
 | anim-induction-single-rod | 电磁感应单杆模型 | SingleRodAnimation | — | singleRod | SingleRodCharts |
 | anim-induction-dual-rods | 电磁感应双杆模型 | InductionDualRods | DualRodsScene | physics | — |
-| anim-induction-loop-field | 电磁感应线框模型 | InductionLoopField | LoopPassFieldScene | physics | — |
+| anim-induction-loop-field | 电磁感应线框模型 | InductionLoopField | LoopPassFieldScene | loopPassField | — |
 | anim-self-induction-eddy | 自感、互感与电磁阻尼 | SelfInductionAnimation | SelfInductionScene | electromagnetism/selfInduction | SelfInductionCenterExtra |
 | anim-ampere-force | 安培力 F=BIL | AmpereForce | BasicAmpereScene | — | — |
 | anim-lorentz-force | 洛伦兹力 F=qvB | VelocitySelector | VelocitySelectorScene | physics | — |
@@ -90,11 +90,11 @@
 | anim-force-motion-topic | 力与运动专题 | ForceMotionTopic | — | physics | — |
 | anim-velocity | 速度演示 | VelocityAnimation | — | physics | VelocityCenterExtra |
 | anim-acceleration | 加速度演示 | AccelerationAnimation | — | physics | — |
-| anim-chase-meeting | 追及相遇模型 | AccelerationCenterExtra | — | physics | — |
+| anim-chase-meeting | 追及相遇模型 | AccelerationCenterExtra | — | kinematics/acceleration | — |
 | anim-uniform-acceleration | 匀变速直线运动 | UniformAccelerationAnimation | — | physics | UniformAccelerationCenterExtra |
 | anim-free-fall | 自由落体运动 | FreeFallWrapper | — | — | — |
 | anim-vertical-throw | 竖直上抛运动 | VerticalThrowAnimation | — | physics | — |
-| anim-projectile | 平抛运动 | ProjectileAnimation | ProjectileScene | — | — |
+| anim-projectile | 平抛运动 | ProjectileAnimation | ProjectileScene | kinematics/trajectory | — |
 | anim-oblique-throw | 斜抛运动 | ObliqueThrowAnimation | ObliqueThrowScene | physics | — |
 | anim-kinematics-advanced | 运动学图像扩展 | KinematicsAdvancedAnimation | — | — | — |
 | anim-momentum | 动量 | MomentumAnimation | MomentumScene | momentum | — |
@@ -111,8 +111,8 @@
 | anim-bohr-theory | 玻尔原子理论与氢光谱能级跃迁 | BohrTheoryAnimation | — | — | — |
 | anim-photoelectric | 光电效应与光的波粒二象性 | PhotoelectricAnimation | — | photoelectric | — |
 | anim-nuclear-decay | 原子核的组成与天然放射 | NuclearDecayAnimation | NuclearDecayScene | — | — |
-| anim-decay-magnetic-orbit | 静止核衰变磁场径迹 | DecayMagneticOrbitAnimation | DecayMagneticOrbitScene | — | — |
-| anim-nuclear-half-life | 原子核衰变与半衰期 | NuclearHalfLifeAnimation | NuclearHalfLifeScene | — | — |
+| anim-decay-magnetic-orbit | 静止核衰变磁场径迹 | DecayMagneticOrbitAnimation | DecayMagneticOrbitScene | nuclearDecay | — |
+| anim-nuclear-half-life | 原子核衰变与半衰期 | NuclearHalfLifeAnimation | NuclearHalfLifeScene | nuclearDecay | — |
 | anim-nuclear-reaction | 核反应、结合能与质量亏损 | NuclearReactionAnimation | NuclearReactionScene | — | — |
 | anim-diffraction | 光的衍射与泊松亮斑 | DiffractionAnimation | DiffractionScene | optics | — |
 | anim-dispersion | 光的色散与光谱综合 | DispersionAnimation | DispersionScene | optics | — |

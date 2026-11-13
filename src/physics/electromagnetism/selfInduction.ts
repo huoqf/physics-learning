@@ -1,4 +1,6 @@
 import { GRAVITY } from '../constants'
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 /**
  * 自感、互感与涡流电磁阻尼纯物理计算模型 (SSOT)
@@ -133,4 +135,89 @@ export function calcEddyDampingOscillation(
   const energyRatio = Math.max(0, envelope * envelope)
 
   return { theta, omega, energyRatio }
+}
+
+export interface SelfInductionCriticalParams {
+  mode?: number
+  L?: number
+  RL?: number
+  RA?: number
+  B?: number
+  isSlotted?: number
+  switchState?: number
+}
+
+/**
+ * 计算自感与涡流电磁阻尼页面关键时刻（SSOT）
+ * - 模式0（通电自感）：时间常数 τ 与 3τ（接近稳态）
+ * - 模式1（断电自感）：时间常数 τ（闪亮/衰减特征时间）与 3τ（基本熄灭）
+ * - 模式2（电磁阻尼摆动）：首次过最低点与首次摆回另一侧极值
+ */
+export function getSelfInductionCriticalTimes(
+  params: SelfInductionCriticalParams = {},
+  maxTime = 6,
+): CriticalTimePoint[] {
+  const mode = params.mode ?? 0
+  const L = params.L ?? 2.0
+  const RL = params.RL ?? 2.0
+  const RA = params.RA ?? 6.0
+  const B = params.B ?? 1.5
+  const isSlotted = (params.isSlotted ?? 0) === 1
+  const switchClosed = (params.switchState ?? 1) === 1
+  const events: CriticalTimePoint[] = []
+
+  if (mode === 0) {
+    if (!switchClosed) return []
+    const rBranch = RL + RA
+    const tau = rBranch > 0 ? L / rBranch : 0
+    if (tau > 0) {
+      const t1 = alignCriticalTime(tau, 'nearest')
+      if (t1 > 0 && t1 <= maxTime) {
+        events.push({ time: t1, label: 't = τ (达稳态63.2%)', variant: 'info', autoPause: false })
+      }
+      const t3 = alignCriticalTime(3 * tau, 'nearest')
+      if (t3 > t1 + 0.05 && t3 <= maxTime) {
+        events.push({ time: t3, label: 't = 3τ (接近稳态)', variant: 'warning', autoPause: false })
+      }
+    }
+    return events
+  }
+
+  if (mode === 1) {
+    const rTotal = RL + RA
+    const tau = rTotal > 0 ? L / rTotal : 0
+    const { willFlash } = checkFlashCondition(RL, RA)
+    if (tau > 0) {
+      const t1 = alignCriticalTime(tau, 'nearest')
+      if (t1 > 0 && t1 <= maxTime) {
+        events.push({
+          time: t1,
+          label: willFlash ? '闪亮后衰减 τ (降至37%)' : 't = τ (衰减至37%)',
+          variant: 'warning',
+          autoPause: false,
+        })
+      }
+      const t3 = alignCriticalTime(3 * tau, 'nearest')
+      if (t3 > t1 + 0.05 && t3 <= maxTime) {
+        events.push({ time: t3, label: 't = 3τ (基本熄灭)', variant: 'info', autoPause: false })
+      }
+    }
+    return events
+  }
+
+  // 模式2：电磁阻尼摆动 (length = 0.5m, gamma 规则同 calcEddyDampingOscillation)
+  const w0 = Math.sqrt(GRAVITY / 0.5)
+  const baseDamping = 0.15 + B * B * (isSlotted ? 0.08 : 1.25)
+  const gamma = Math.min(baseDamping, 4.0)
+  const dampedOmega = Math.sqrt(Math.max(0.1, w0 * w0 - gamma * gamma))
+
+  const tZero = alignCriticalTime(Math.PI / (2 * dampedOmega), 'nearest')
+  if (tZero > 0 && tZero <= maxTime) {
+    events.push({ time: tZero, label: '首次过平衡位置 (最强涡流)', variant: 'info', autoPause: false })
+  }
+  const tHalf = alignCriticalTime(Math.PI / dampedOmega, 'nearest')
+  if (tHalf > tZero + 0.05 && tHalf <= maxTime) {
+    events.push({ time: tHalf, label: '到达对侧最高点', variant: 'warning', autoPause: false })
+  }
+  return events
 }

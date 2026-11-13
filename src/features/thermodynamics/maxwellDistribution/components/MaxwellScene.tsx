@@ -15,6 +15,7 @@ interface MoleculeParticle {
 interface MaxwellSceneProps {
   temperature: number
   isPlaying: boolean
+  speed?: number
   width: number
   height: number
   font: (size: number) => number
@@ -25,6 +26,7 @@ const PARTICLE_COUNT = 60
 export function MaxwellScene({
   temperature,
   isPlaying,
+  speed = 1,
   width,
   height,
   font,
@@ -72,7 +74,7 @@ export function MaxwellScene({
 
   useAnimationFrame(
     (deltaMs) => {
-      const dt = Math.min(deltaMs / 1000, 0.05)
+      const dt = Math.min(deltaMs / 1000, 0.1)
       const pts = particlesRef.current
       const speedScale = 60 * dt
 
@@ -101,7 +103,7 @@ export function MaxwellScene({
 
       setFrameTick((t) => t + 1)
     },
-    { playing: isPlaying }
+    { playing: isPlaying, speed }
   )
 
   const particles = particlesRef.current

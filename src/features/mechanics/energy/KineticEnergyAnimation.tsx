@@ -1,6 +1,6 @@
 import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { colors } from '@/theme/colors'
@@ -20,19 +20,15 @@ const KE_LAYOUT = {
 } as const
 
 export default function KineticEnergyAnimation() {
-  const { params, time, isPlaying, setIsPlaying, showVectors } = useAnimationStore(
+  const { params, time, showVectors } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
       time: s.time,
-      isPlaying: s.isPlaying,
-      setIsPlaying: s.setIsPlaying,
       showVectors: s.showVectors,
     }))
   )
   const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
-  const [showCriticalTip, setShowCriticalTip] = useState(false)
-  const hasPausedRef = useRef(false)
 
   const mode = params.mode ?? 0
   const m = params.m ?? 2
@@ -68,27 +64,7 @@ export default function KineticEnergyAnimation() {
     [trajectory, time]
   )
 
-  useEffect(() => {
-    if (time < 0.05) {
-      hasPausedRef.current = false
-      setShowCriticalTip(false)
-    }
-  }, [time])
-
-  useEffect(() => {
-    if (isPlaying && t_c > 0.1) {
-      if (time >= t_c && !hasPausedRef.current) {
-        hasPausedRef.current = true
-        setIsPlaying(false)
-        setShowCriticalTip(true)
-        const timer = setTimeout(() => {
-          setIsPlaying(true)
-          setShowCriticalTip(false)
-        }, 800)
-        return () => clearTimeout(timer)
-      }
-    }
-  }, [time, t_c, isPlaying, setIsPlaying])
+  const showCriticalTip = t_c > 0.1 && time >= t_c && time <= t_c + 1.0
 
   const chartHeight = vp.visibleH * (KE_LAYOUT.chartBottomRatio - KE_LAYOUT.chartTopRatio)
   const sceneHeight = vp.visibleH * (1 - KE_LAYOUT.dividerRatio)

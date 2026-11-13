@@ -9,6 +9,7 @@ import {
   ensureExtendedRegistry,
   getAnimationConfigAsync,
 } from '@/data/animationRegistry'
+import { resolveDeepLinkTime } from '@/utils/animationDeepLink'
 
 /**
  * 错因标杆守卫。
@@ -48,11 +49,21 @@ describe('wrongReasons · 错因标杆一致性', () => {
 
       if (benchmark.critical) {
         expect(benchmark.t, `「${reason.label}」同时给了 critical 与 t，语义会打架`).toBeUndefined()
-        // 该动画必须真的声明了临界时刻，否则 critical=first 会退化成「不跳转」
+        // 该动画必须真的声明了临界时刻，且解析出的真实定格时刻落在 (0, maxTime] 内
         expect(
           config!.criticalTimes,
           `「${reason.label}」用了 critical 定位，但 ${benchmark.animId} 未声明 criticalTimes`,
         ).toBeDefined()
+        const target = resolveDeepLinkTime({
+          tParam: null,
+          criticalParam: benchmark.critical,
+          criticalTimes: config!.criticalTimes,
+          params,
+          maxTime,
+        })
+        expect(target, `「${reason.label}」的 critical=${benchmark.critical} 未能解析到有效时刻`).not.toBeNull()
+        expect(target!.time).toBeGreaterThan(0)
+        expect(target!.time).toBeLessThanOrEqual(maxTime)
       } else {
         expect(benchmark.t, `「${reason.label}」缺少定格时刻`).toBeDefined()
         expect(benchmark.t!).toBeGreaterThan(0)
@@ -109,11 +120,25 @@ describe('wrongReasons · 错因标杆一致性', () => {
    * 套通用阈值必然误杀。所以这里只锁这一个已知会踩坑的动画，代价是范围窄，
    * 换来的是不会因为新标杆而假红。
    */
-  it('implicit-condition 定格必须贴着剪断瞬间（t ≤ 0.1s）', () => {
+  it('implicit-condition 定格必须贴着剪断瞬间（t ≤ 0.1s）', async () => {
+    await ensureExtendedRegistry()
     const reason = WRONG_REASONS.find((r) => r.id === 'implicit-condition')
     expect(reason, '错因 implicit-condition 已不存在，本回归锁应随之调整').toBeDefined()
+    const { benchmark } = reason!
+    const config = await getAnimationConfigAsync(benchmark.animId)
+    const params = { ...(config!.defaultParams as Record<string, number>), ...benchmark.presetParams }
+    const maxTime =
+      typeof config!.maxTime === 'function' ? config!.maxTime(params) : (config!.maxTime ?? 30)
+    const resolved = resolveDeepLinkTime({
+      tParam: benchmark.t != null ? String(benchmark.t) : null,
+      criticalParam: benchmark.critical ?? null,
+      criticalTimes: config!.criticalTimes,
+      params,
+      maxTime,
+    })
+    expect(resolved).not.toBeNull()
     expect(
-      reason!.benchmark.t,
+      resolved!.time,
       '剪断后 0.54s B 球就落地了，t 一大画面就不是「瞬间」了',
     ).toBeLessThanOrEqual(0.1)
   })

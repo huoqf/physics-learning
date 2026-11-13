@@ -7,6 +7,8 @@ import {
   computeCyclotronMaxEnergy,
   computeCyclotronTurns,
 } from '@/physics/fieldsCascade'
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 /** 教学用粒子常量（相对物理自洽） */
 export interface ParticleConstants {
@@ -552,4 +554,98 @@ export function getPositionAt(
     v: p0.v + (p1.v - p0.v) * frac,
     ek: p0.ek + (p1.ek - p0.ek) * frac,
   }
+}
+
+/**
+ * 复合场与组合场（anim-combined-fields）临界时刻列表：
+ * 将物理分段切换时刻（进入 B₂ 磁场 / 首圈狭缝 / 离场）精确映射到全局 0~10s 时间轴。
+ */
+export function getCombinedFieldsCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 10,
+): CriticalTimePoint[] {
+  const mode = params.mode ?? 0
+  const E = params.electricE ?? 300
+  const B1 = params.magneticB1 ?? 0.2
+  const B2 = params.magneticB2 ?? 1.5
+  const acFreqkHz = params.acFrequency ?? 24
+  const U = (params.acVoltage ?? 5) * 1000
+  const resonanceLock = !!(params.resonanceLock ?? 1)
+  const particleType = params.particleType ?? 0
+  const vParticle = params.vParticle ?? 1500
+  const events: CriticalTimePoint[] = []
+
+  if (mode === 0) {
+    const sim = buildSpectrometerSimulation(E, B1, B2, vParticle, particleType)
+    if (sim.endTime <= 0) return []
+    if (sim.hitReason === 'film') {
+      const L = (SPECTROMETER.y1 - SPECTROMETER.y0) / SCALE
+      const tSelector = L / vParticle
+      const tAnimSwitch = alignCriticalTime((tSelector / sim.endTime) * maxTime, 'after')
+      if (tAnimSwitch > 0 && tAnimSwitch < maxTime) {
+        events.push({
+          time: tAnimSwitch,
+          label: '⚡ 穿出选择器·进入 B₂',
+          variant: 'critical',
+          autoPause: true,
+        })
+      }
+    }
+    events.push({
+      time: alignCriticalTime(maxTime, 'before'),
+      label: sim.hitReason === 'film' ? '🎯 击中荧光底片' : '🎯 偏转打板终止',
+      variant: 'info',
+      autoPause: false,
+    })
+    return events
+  }
+
+  if (mode === 1) {
+    const sim = buildCyclotronSimulation(B2, U, acFreqkHz * 1000, resonanceLock)
+    if (sim.endTime <= 0) return []
+    if (sim.segments.length > 0) {
+      const firstEnd = (sim.segments[0].tEnd / sim.endTime) * maxTime
+      const tFirst = alignCriticalTime(firstEnd, 'after')
+      if (tFirst > 0 && tFirst < maxTime) {
+        events.push({
+          time: tFirst,
+          label: '首次过狭缝加速',
+          variant: 'info',
+          autoPause: false,
+        })
+      }
+    }
+    if (sim.escaped) {
+      events.push({
+        time: alignCriticalTime(maxTime, 'before'),
+        label: '⚡ 达最大动能 (Ek,max) 逃逸',
+        variant: 'critical',
+        autoPause: false,
+      })
+    }
+    return events
+  }
+
+  const sim = buildDeflectSimulation(E, B2, vParticle, particleType)
+  if (sim.endTime <= 0) return []
+  if (sim.hitReason !== 'plate') {
+    const L = (DEFLECT.xEnd - DEFLECT.xStart) / SCALE
+    const tElec = L / vParticle
+    const tSwitch = alignCriticalTime((tElec / sim.endTime) * maxTime, 'after')
+    if (tSwitch > 0 && tSwitch < maxTime) {
+      events.push({
+        time: tSwitch,
+        label: '⚡ 离开电场·进入磁场 B₂',
+        variant: 'critical',
+        autoPause: true,
+      })
+    }
+  }
+  events.push({
+    time: alignCriticalTime(maxTime, 'before'),
+    label: sim.hitReason === 'plate' ? '🎯 击中偏转极板' : '🎯 磁偏转结束',
+    variant: 'info',
+    autoPause: false,
+  })
+  return events
 }

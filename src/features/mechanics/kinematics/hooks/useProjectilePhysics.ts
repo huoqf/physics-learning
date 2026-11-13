@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { computeProjectileTimeline } from '@/physics/kinematics/trajectory'
 
 export interface UseProjectilePhysicsParams {
   v0x: number
@@ -54,25 +55,15 @@ export function useProjectilePhysics({
     const safeG = Math.max(g, 0.1)
     const safeH = Math.max(height, 1)
 
-    // 基础平抛真空落地时间
-    const groundTime = Math.sqrt((2 * safeH) / safeG)
+    const {
+      groundTime,
+      inclineLandingT,
+      inclinePerpendicularT,
+      inclineFarPointT,
+    } = computeProjectileTimeline({ v0x: safeV0, g: safeG, height: safeH, inclineAngle })
     const range = safeV0 * groundTime
-
-    // 斜面平抛模型 (假定斜面顶端在抛出点 (0, 0)，向右下方倾斜 inclineAngle)
-    const phiRad = (inclineAngle * Math.PI) / 180
-    const tanPhi = Math.tan(phiRad)
-
-    // 落在斜面上的时间：y = -x * tanPhi => 0.5 * g * t^2 = v0x * t * tanPhi => t = (2 * v0x * tanPhi) / g
-    const rawInclineLandingT = (2 * safeV0 * tanPhi) / safeG
-    const inclineLandingT = Math.min(rawInclineLandingT, groundTime)
     const inclineLandingX = safeV0 * inclineLandingT
     const inclineLandingY = -0.5 * safeG * inclineLandingT * inclineLandingT
-
-    // 速度垂直击中斜面时刻: tan(90° - phi) = vy / vx => vy = vx / tanPhi => gt = v0x / tanPhi => t = v0x / (g * tanPhi)
-    const inclinePerpendicularT = tanPhi > 0.01 ? safeV0 / (safeG * tanPhi) : 0
-
-    // 距离斜面最远时刻 (合速度平行于斜面): vy / vx = tanPhi => gt = v0x * tanPhi => t = (v0x * tanPhi) / g
-    const inclineFarPointT = (safeV0 * tanPhi) / safeG
 
     // 最大持续时间
     const maxProcessT = modelMode === 2 ? inclineLandingT : groundTime

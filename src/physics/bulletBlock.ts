@@ -10,6 +10,9 @@
  * 单位制：SI（kg, m, m/s, N, s, J）
  */
 
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 // ─── 参数接口 ──────────────────────────────────────────────────────────────
 
 export interface BulletBlockParam {
@@ -321,4 +324,77 @@ export function generateBulletBlockEnergy(
   }
 
   return points
+}
+
+/** 飞入段在动画轴上固定占 1.0s，物理飞入距离 1.0m */
+const BULLET_FLYING_ANIM_TIME = 1.0
+const BULLET_FLYING_DISTANCE = 1.0
+
+/** 动画时间 → 物理时间（s） */
+export function bulletBlockAnimToPhysicsTime(animTime: number, v0: number): number {
+  if (v0 <= 0) return 0
+  return (animTime - BULLET_FLYING_ANIM_TIME) * (BULLET_FLYING_DISTANCE / v0)
+}
+
+/** 物理时间（s） → 动画时间（s） */
+export function bulletBlockPhysicsToAnimTime(physicsTime: number, v0: number): number {
+  return BULLET_FLYING_ANIM_TIME + physicsTime * v0
+}
+
+/**
+ * 计算子弹打木块模型的临界时刻列表（单一真源，注册表直接调用）
+ */
+export function getBulletBlockCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const param: BulletBlockParam = {
+    m: params.m ?? 0.1,
+    M: params.M ?? 0.4,
+    v0: params.v0 ?? 30,
+    f: params.f ?? 10,
+    L: params.L ?? 0.5,
+  }
+  const vCrit = getCriticalVelocity(param)
+  const mode: BulletBlockMode = param.v0 > vCrit ? 'penetrate' : 'retain'
+  const timeline = getBulletBlockTimeline(param, mode)
+
+  const events: CriticalTimePoint[] = [
+    {
+      time: BULLET_FLYING_ANIM_TIME,
+      label: '⚡ 子弹刚接触木块',
+      variant: 'info',
+      autoPause: false,
+    },
+  ]
+
+  if (mode === 'retain' && Number.isFinite(timeline.tSync)) {
+    const tSyncAnim = alignCriticalTime(
+      bulletBlockPhysicsToAnimTime(timeline.tSync, param.v0),
+      'after',
+    )
+    if (tSyncAnim > 0 && tSyncAnim <= maxTime) {
+      events.push({
+        time: tSyncAnim,
+        label: '⚡ 子弹与木块共速',
+        variant: 'critical',
+        autoPause: true,
+      })
+    }
+  } else if (mode === 'penetrate' && Number.isFinite(timeline.tExit)) {
+    const tExitAnim = alignCriticalTime(
+      bulletBlockPhysicsToAnimTime(timeline.tExit, param.v0),
+      'after',
+    )
+    if (tExitAnim > 0 && tExitAnim <= maxTime) {
+      events.push({
+        time: tExitAnim,
+        label: '⚡ 子弹穿出木块',
+        variant: 'critical',
+        autoPause: true,
+      })
+    }
+  }
+
+  return events.sort((a, b) => a.time - b.time)
 }

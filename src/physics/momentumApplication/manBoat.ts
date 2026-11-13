@@ -2,6 +2,11 @@
  * 人船模型 (Man & Boat Model)
  */
 
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
+export const BOAT_WALK_DURATION = 2.5
+
 export interface ManBoatState {
   s1: number        // 人1相对于船头的距离 (m)，范围 [0, L]
   s2: number        // 人2相对于船头的距离 (m)，范围 [0, L]
@@ -193,4 +198,40 @@ export function calculateManBoatDisplacements(
       person2: endState.x_person2 - x0_person2,
     },
   }
+}
+
+/**
+ * 人船模型（anim-man-boat）临界时刻列表：仅自动演示模式有效。
+ */
+export function getManBoatCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  if ((params.manBoatControl ?? 0) !== 0) return []
+  const mode = params.manBoatMode ?? 0
+  const events: CriticalTimePoint[] = []
+
+  if (mode === 3) {
+    const tHalf = alignCriticalTime(BOAT_WALK_DURATION / 2, 'nearest')
+    if (tHalf > 0 && tHalf <= maxTime) {
+      events.push({
+        time: tHalf,
+        label: '人₁到达·人₂出发',
+        variant: 'info',
+        autoPause: false,
+      })
+    }
+  }
+
+  const tEnd = alignCriticalTime(BOAT_WALK_DURATION, 'before')
+  if (tEnd > 0 && tEnd <= maxTime) {
+    events.push({
+      time: tEnd,
+      label: '⚡ 走到终点（人与船同时停）',
+      variant: 'critical',
+      autoPause: true,
+    })
+  }
+
+  return events.sort((a, b) => a.time - b.time)
 }

@@ -1,4 +1,17 @@
 import { GRAVITY } from './constants'
+import { PX_PER_METER } from '@/utils/coordinate'
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
+/** 动量守恒碰撞动画场景几何基准（设计宽度 840，供组件与关键点计算共源） */
+export const MC_SCENE_DEFAULTS = {
+  designWidth: 840,
+  ballBaseRadius: 16,
+  massRadiusScale: 2,
+  initAxRatio: 0.28,
+  initBxRatio: 0.58,
+  g: 9.8,
+} as const
 
 /**
  * src/physics/momentumConservation.ts
@@ -227,4 +240,203 @@ export function calculateFrictionHeat(
  */
 export function willSliderFallOff(delta_x: number, L: number): boolean {
   return delta_x > L
+}
+
+export interface BasicCollisionTimingResult {
+  R_A: number
+  R_B: number
+  initPosAx: number
+  initPosBx: number
+  initPhysX_A: number
+  initPhysX_B: number
+  collisionTime: number
+  v1After: number
+  v2After: number
+}
+
+/**
+ * 计算两球碰撞时刻与碰后速度（SSOT）
+ */
+export function computeTwoBallCollisionTiming(params: {
+  m1: number
+  v1: number
+  m2: number
+  v2: number
+  collisionType: number
+  e_coefficient: number
+  designWidth?: number
+}): BasicCollisionTimingResult {
+  const {
+    m1, v1, m2, v2, collisionType, e_coefficient,
+    designWidth = MC_SCENE_DEFAULTS.designWidth,
+  } = params
+
+  const R_A = MC_SCENE_DEFAULTS.ballBaseRadius + m1 * MC_SCENE_DEFAULTS.massRadiusScale
+  const R_B = MC_SCENE_DEFAULTS.ballBaseRadius + m2 * MC_SCENE_DEFAULTS.massRadiusScale
+
+  const initPosAx = designWidth * MC_SCENE_DEFAULTS.initAxRatio
+  const initPosBx = designWidth * MC_SCENE_DEFAULTS.initBxRatio
+
+  const rPhysA = R_A / PX_PER_METER
+  const rPhysB = R_B / PX_PER_METER
+  const initPhysX_A = 0
+  const initPhysX_B = (initPosBx - initPosAx) / PX_PER_METER
+
+  let eVal = 1.0
+  if (collisionType === 1) eVal = 0.0
+  else if (collisionType === 2) eVal = e_coefficient
+
+  const approachSpeed = v1 - v2
+  const gapPhys = initPhysX_B - rPhysB - (initPhysX_A + rPhysA)
+  let collisionTime = Infinity
+  let v1After = v1
+  let v2After = v2
+
+  if (approachSpeed > 0 && gapPhys > 0) {
+    collisionTime = gapPhys / approachSpeed
+    const res = calculateCollisionVelocities(m1, v1, m2, v2, eVal)
+    v1After = res.v1After
+    v2After = res.v2After
+  }
+
+  return {
+    R_A, R_B, initPosAx, initPosBx,
+    initPhysX_A, initPhysX_B,
+    collisionTime, v1After, v2After,
+  }
+}
+
+export interface SliderBoardTimingResult {
+  vCommon: number
+  tCommon: number
+  isFallen: boolean
+  tFall: number
+  vSliderFall: number
+  vBoardFall: number
+  x1AtCommon: number
+  x2AtCommon: number
+  x1AtFall: number
+  x2AtFall: number
+}
+
+/**
+ * 计算滑块-木板模型共速 / 滑落临界时刻（SSOT）
+ */
+export function computeSliderBoardTiming(params: {
+  m_slider: number
+  M_board: number
+  v0: number
+  mu: number
+  L: number
+  g?: number
+}): SliderBoardTimingResult {
+  const { m_slider, M_board, v0, mu, L, g = MC_SCENE_DEFAULTS.g } = params
+
+  const vCommon = calculateCommonVelocity(m_slider, v0, M_board)
+  const a_rel = mu * g * (1 + m_slider / M_board)
+  const tCommon = calculateCommonVelocityTime(M_board, vCommon, mu, m_slider, g)
+
+  const x1AtCommon = v0 * tCommon - 0.5 * mu * g * tCommon * tCommon
+  const x2AtCommon = 0.5 * ((mu * m_slider * g) / M_board) * tCommon * tCommon
+  const deltaXAtCommon = x1AtCommon - x2AtCommon
+  const isFallen = deltaXAtCommon > L
+
+  let tFall = Infinity
+  let vSliderFall = v0
+  let vBoardFall = 0
+  let x1AtFall = 0
+  let x2AtFall = 0
+
+  if (isFallen) {
+    tFall = (v0 - Math.sqrt(Math.max(0, v0 * v0 - 2 * a_rel * L))) / a_rel
+    vSliderFall = v0 - mu * g * tFall
+    vBoardFall = ((mu * m_slider * g) / M_board) * tFall
+    x1AtFall = v0 * tFall - 0.5 * mu * g * tFall * tFall
+    x2AtFall = 0.5 * ((mu * m_slider * g) / M_board) * tFall * tFall
+  }
+
+  return {
+    vCommon, tCommon, isFallen, tFall,
+    vSliderFall, vBoardFall,
+    x1AtCommon, x2AtCommon, x1AtFall, x2AtFall,
+  }
+}
+
+export interface MomentumConservationCriticalParams {
+  m1?: number
+  v1?: number
+  m2?: number
+  v2?: number
+  m_slider?: number
+  M_board?: number
+  v0?: number
+  mu?: number
+  L?: number
+  advancedMode?: number
+  collisionType?: number
+  e_coefficient?: number
+}
+
+/**
+ * 计算动量守恒定律页面关键时刻（SSOT）
+ */
+export function getMomentumConservationCriticalTimes(
+  params: MomentumConservationCriticalParams = {},
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const advancedMode = params.advancedMode ?? 0
+
+  if (advancedMode === 1) {
+    const timing = computeSliderBoardTiming({
+      m_slider: params.m_slider ?? 1,
+      M_board: params.M_board ?? 3,
+      v0: params.v0 ?? 6,
+      mu: params.mu ?? 0.3,
+      L: params.L ?? 2,
+    })
+
+    if (timing.isFallen) {
+      const tFall = alignCriticalTime(timing.tFall, 'before')
+      if (tFall > 0 && tFall <= maxTime) {
+        return [{
+          time: tFall,
+          label: '滑块从木板右端滑落',
+          variant: 'critical',
+          autoPause: true,
+        }]
+      }
+      return []
+    }
+
+    const tCommon = alignCriticalTime(timing.tCommon, 'after')
+    if (tCommon > 0 && tCommon <= maxTime) {
+      return [{
+        time: tCommon,
+        label: '滑块与木板达到共速',
+        variant: 'critical',
+        autoPause: true,
+      }]
+    }
+    return []
+  }
+
+  const timing = computeTwoBallCollisionTiming({
+    m1: params.m1 ?? 3,
+    v1: params.v1 ?? 5,
+    m2: params.m2 ?? 2,
+    v2: params.v2 ?? 0,
+    collisionType: params.collisionType ?? 0,
+    e_coefficient: params.e_coefficient ?? 0.5,
+  })
+
+  if (!Number.isFinite(timing.collisionTime)) return []
+  const tCol = alignCriticalTime(timing.collisionTime, 'after')
+  if (!(tCol > 0 && tCol <= maxTime)) return []
+
+  return [{
+    time: tCol,
+    label: 'A、B两球发生碰撞',
+    variant: 'critical',
+    autoPause: true,
+  }]
 }

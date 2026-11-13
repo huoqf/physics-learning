@@ -5,6 +5,9 @@
  * 本文件只包含纯物理计算，无 React/DOM/window 依赖，返回普通可序列化对象。
  */
 
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 export type SingleRodMode = 'constantForce' | 'initialVelocity'
 
 export interface SingleRodParams {
@@ -132,4 +135,43 @@ export function getSingleRodState(params: SingleRodParams, time: number): Single
     terminalVelocity,
     dampingK,
   }
+}
+
+/**
+ * 电磁感应单杆模型（anim-induction-single-rod）临界时刻列表：
+ * 给出弛豫时间常数 τ 与基本收尾稳态 3τ（v 完成 95% 演化）。
+ */
+export function getSingleRodCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 12,
+): CriticalTimePoint[] {
+  const B = safePositive(Math.abs(params.magneticB ?? 1.2), 0.1)
+  const L = safePositive(params.railSpacing ?? 0.8, 0.1)
+  const R = safePositive(params.resistance ?? 1.5, 0.1)
+  const m = safePositive(params.rodMass ?? 0.2, 0.01)
+
+  const k = (B * B * L * L) / R
+  const tau = m / k
+  const isConstForce = (params.startMechanism ?? 0) === 0
+  const events: CriticalTimePoint[] = []
+
+  const t1 = alignCriticalTime(tau, 'nearest')
+  if (t1 > 0 && t1 <= maxTime) {
+    events.push({
+      time: t1,
+      label: '特征时间 τ（演化 63.2%）',
+      variant: 'info',
+      autoPause: false,
+    })
+  }
+  const t3 = alignCriticalTime(3 * tau, 'nearest')
+  if (t3 > t1 && t3 <= maxTime) {
+    events.push({
+      time: t3,
+      label: isConstForce ? '⚡ 基本达收尾速度 (3τ)' : '⚡ 阻尼基本停稳 (3τ)',
+      variant: 'critical',
+      autoPause: false,
+    })
+  }
+  return events
 }

@@ -3,6 +3,7 @@ import { defineAnimations } from '../defineAnimations'
 import { GRAVITY } from '@/physics/constants'
 import { getBoardTimeline } from '@/physics/blockBoard'
 import { getConveyorCriticalTimes } from '@/physics/conveyor'
+import { getLightWeightMutationCriticalTimes, getSpringForceCriticalTimes } from '@/physics/dynamics/spring-force'
 import { alignCriticalTime } from '@/utils/criticalTime'
 
 export const mechanicsDynamicsAnimations = defineAnimations({
@@ -11,6 +12,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     knowledgeId: 'mechanics-3-2',
     Component: lazy(() => import('@/features/mechanics/dynamics/SpringForceAnimation')),
     controlsMode: 'timed',
+    criticalTimes: (p) => getSpringForceCriticalTimes(p, 5),
     defaultParams: { mode: 0, k: 100, m: 1.5, kAtoms: 120, kRope: 150 } as const,
     maxTime: 5,
     paramMeta: [
@@ -61,6 +63,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     Component: lazy(() => import('@/features/mechanics/dynamics/LightWeightMutationAnimation')),
     controlsMode: 'timed',
     maxTime: 3,
+    criticalTimes: (p) => getLightWeightMutationCriticalTimes(p, 3),
     defaultParams: { m: 1 } as const,
     paramMeta: [
       { key: 'm', label: '质量 m', min: 1.0, max: 3.0, step: 0.1, unit: 'kg' },

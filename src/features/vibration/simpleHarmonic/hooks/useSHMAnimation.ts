@@ -1,7 +1,6 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { useAnimationFrame } from '@/utils/animation'
 import { computeAngularFrequency, computeSHMState, computeSHMEnergy } from '@/physics/oscillation'
 
 export interface SHMAnimationResult {
@@ -64,15 +63,6 @@ export function useSHMAnimation(): SHMAnimationResult {
 
   const { displacement: x, velocity: v, acceleration: a } = computeSHMState(A, omega, phase)
   const energy = computeSHMEnergy(mass, A, omega, x)
-
-  // 动画时钟：以 store.time 为规范时钟
-  const handleFrame = useCallback((deltaMs: number) => {
-    const dt = deltaMs / 1000
-    if (dt <= 0 || dt > 0.1) return
-    const store = useAnimationStore.getState()
-    store.setTime(store.time + dt * store.direction)
-  }, [])
-  useAnimationFrame(handleFrame, { playing: isPlaying, speed })
 
   return {
     isPlaying, time, speed, showVectors, showFormulas,

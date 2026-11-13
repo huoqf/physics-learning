@@ -11,7 +11,12 @@ import { colors } from '@/theme/colors'
 
 import { VelocityTimeChart } from '@/components/Chart'
 
-import { precomputeSpringBlocks, interpolateSpringBlocks } from '@/physics/momentumApplication/springBlocks'
+import {
+  precomputeSpringBlocks,
+  interpolateSpringBlocks,
+  computeSpringBlocksKeyTimes,
+  SPRING_BLOCKS_SIM,
+} from '@/physics/momentumApplication/springBlocks'
 import { useChartContext } from '@/components/Chart'
 
 
@@ -91,35 +96,24 @@ export default function SpringBlocksAnimation() {
 
   // 物理数据计算
   const states = useMemo(() => {
-    return precomputeSpringBlocks(mA_spring, mB_spring, v0_spring, k_spring, 1.5, 3.5, SPRING_SIM.duration, SPRING_SIM.dt, connectionMode_spring)
+    return precomputeSpringBlocks(
+      mA_spring,
+      mB_spring,
+      v0_spring,
+      k_spring,
+      SPRING_BLOCKS_SIM.L0,
+      SPRING_BLOCKS_SIM.xB0,
+      SPRING_BLOCKS_SIM.duration,
+      SPRING_BLOCKS_SIM.dt,
+      connectionMode_spring,
+    )
   }, [mA_spring, mB_spring, v0_spring, k_spring, connectionMode_spring])
 
   const springState = useMemo(() => interpolateSpringBlocks(states, time), [states, time])
 
-  // 临界状态时间点计算
+  // 临界状态时间点计算（与物理层单一真源同步）
   const criticalTimes = useMemo(() => {
-    let tTouch = 0
-    let tShortest = 0
-    let tRestore = 0
-    let maxDelta = 0
-
-    for (let i = 0; i < states.length; i++) {
-      const pt = states[i]
-      if (tTouch === 0 && pt.delta > 0.001) {
-        tTouch = pt.t
-      }
-      if (pt.delta > maxDelta) {
-        maxDelta = pt.delta
-        tShortest = pt.t
-      }
-    }
-
-    // 寻找在 tShortest 之后，首次 delta 恢复原长的时刻
-    const postShortest = states.filter((pt) => pt.t > tShortest)
-    const restorePt = postShortest.find((pt) => pt.delta <= 0.001)
-    tRestore = restorePt ? restorePt.t : SPRING_SIM.duration
-
-    return { tTouch, tShortest, tRestore }
+    return computeSpringBlocksKeyTimes(states, SPRING_SIM.duration)
   }, [states])
 
   // 图表多阶段背景配置

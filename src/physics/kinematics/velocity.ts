@@ -1,4 +1,6 @@
 import { calculateVariableAcceleration, type VariableMotionModel, type VariableMotionParams } from './base'
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 /**
  * 计算平均速度
@@ -80,4 +82,24 @@ export function calculateInstantaneousVelocity(
   const { slope: vBar } = calculateSecantSlope(model, params, t0, deltaT)
   const vInst = calculateTangentSlope(model, params, t0)
   return { vBar, vInst, residual: Math.abs(vBar - vInst) }
+}
+
+/**
+ * 速度演示（anim-velocity）临界时刻列表：首个 Δt 微元区间收尾时刻。
+ */
+export function getVelocityCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const deltaT = params.deltaT ?? 2
+  const t = alignCriticalTime(deltaT, 'nearest')
+  if (!(deltaT > 0) || t <= 0 || t > maxTime) return []
+  return [
+    {
+      time: t,
+      label: `⚡ 首个 Δt 微元 (${deltaT}s)`,
+      variant: 'critical',
+      autoPause: false,
+    },
+  ]
 }

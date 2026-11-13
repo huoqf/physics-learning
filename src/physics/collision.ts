@@ -6,6 +6,19 @@
  * 单位制：SI（kg, m/s, J）
  */
 
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
+/** 碰撞动画几何布局常量（基于 splitV 840×325 设计空间，纯数学比例，与渲染共用同一真源） */
+export const COLLISION_SCENE_GEOMETRY = {
+  designWidth: 840,
+  ballBaseRadius: 16,
+  massRadiusScale: 2,
+  velocityScale: 25,
+  initPosARatio: 0.28,
+  initPosBRatio: 0.58,
+} as const
+
 // ─── 基础模式 ──────────────────────────────────────────────────────────
 
 /**
@@ -171,4 +184,64 @@ export function isHeavyLightCase(
   mA: number, mB: number, ratio: number = 5
 ): boolean {
   return mA / mB >= ratio
+}
+
+/**
+ * 计算碰撞发生时刻（与 CollisionAnimation 场景布局共用同一真源）
+ */
+export function computeCollisionTiming(params: {
+  mLeft: number
+  vLeft: number
+  mRight: number
+  vRight: number
+}): number {
+  const { designWidth, ballBaseRadius, massRadiusScale, velocityScale, initPosARatio, initPosBRatio } =
+    COLLISION_SCENE_GEOMETRY
+  const rA = ballBaseRadius + params.mLeft * massRadiusScale
+  const rB = ballBaseRadius + params.mRight * massRadiusScale
+  const initPosAx = designWidth * initPosARatio
+  const initPosBx = designWidth * initPosBRatio
+  const gap = initPosBx - rB - (initPosAx + rA)
+  const approachSpeed = (params.vLeft - params.vRight) * velocityScale
+  if (approachSpeed > 0 && gap > 0) {
+    return gap / approachSpeed
+  }
+  return Infinity
+}
+
+/**
+ * 计算碰撞模型的临界时刻列表（单一真源，注册表直接调用）
+ */
+export function getCollisionCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const isAdvanced = (params.advancedMode ?? 0) === 1
+  const tCol = isAdvanced
+    ? computeCollisionTiming({
+        mLeft: params.mA ?? 3,
+        vLeft: params.vA ?? 5,
+        mRight: params.mB ?? 2,
+        vRight: 0,
+      })
+    : computeCollisionTiming({
+        mLeft: params.m1 ?? 3,
+        vLeft: params.v1 ?? 5,
+        mRight: params.m2 ?? 2,
+        vRight: params.v2 ?? 0,
+      })
+
+  if (!Number.isFinite(tCol) || tCol <= 0) return []
+  // 取碰后 1 帧（+0.01s 后向上对齐），确保定格画面能看清碰后分离与速度反向矢量
+  const tAfter = alignCriticalTime(tCol + 0.01, 'after')
+  if (tAfter <= 0 || tAfter > maxTime) return []
+
+  return [
+    {
+      time: tAfter,
+      label: '⚡ 碰撞分离瞬间',
+      variant: 'critical',
+      autoPause: true,
+    },
+  ]
 }

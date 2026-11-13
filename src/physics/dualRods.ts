@@ -1,3 +1,6 @@
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 /**
  * 电磁感应双杆模型纯物理计算函数库。
  * 无副作用，不依赖 React/DOM/window。单位采用 SI。
@@ -254,4 +257,46 @@ export function computeDualRodsStateAtTime(
       vA, vB, deltaV, aA, aB, xA, xB, emf, currentI, forceAmpere, totalMomentum, kineticEnergy, vCommon: 0, aCommon
     }
   }
+}
+
+/**
+ * 电磁感应双杆模型（anim-induction-dual-rods）临界时刻列表：
+ * 给出弛豫时间常数 τ 与基本收尾共速/等差稳态 3τ。
+ */
+export function getDualRodsCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const scenario = params.scenario ?? 0
+  const mA = params.massA ?? 0.2
+  const mB = params.massB ?? 0.4
+  const B = params.fieldB ?? 1.0
+  const L = params.railL ?? 0.5
+  const R = params.resSum ?? 1.0
+
+  if (!(mA > 0) || !(mB > 0) || !(B > 0) || !(L > 0) || !(R > 0)) return []
+  const totalMass = mA + mB
+  const k = ((B * B * L * L) / R) * (totalMass / (mA * mB))
+  const tau = 1 / k
+
+  const events: CriticalTimePoint[] = []
+  const t1 = alignCriticalTime(tau, 'nearest')
+  if (t1 > 0 && t1 <= maxTime) {
+    events.push({
+      time: t1,
+      label: '弛豫特征时刻 τ',
+      variant: 'info',
+      autoPause: false,
+    })
+  }
+  const t3 = alignCriticalTime(3 * tau, 'nearest')
+  if (t3 > t1 && t3 <= maxTime) {
+    events.push({
+      time: t3,
+      label: scenario === 0 ? '⚡ 两杆基本共速 (3τ)' : '⚡ 达稳定等加速 (3τ)',
+      variant: 'critical',
+      autoPause: false,
+    })
+  }
+  return events
 }

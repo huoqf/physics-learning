@@ -15,6 +15,7 @@ import {
   isNearApoapsis,
   megaMetersToMeters,
   sampleTransferSpeedHistory,
+  ORBIT_TRANSFER_TIME_SCALE,
   type OrbitTransferPhase,
 } from '@/physics/orbitTransfer'
 import { EarthSvg, SatelliteSvg } from './SatelliteShapes'
@@ -23,7 +24,7 @@ import { EarthSvg, SatelliteSvg } from './SatelliteShapes'
 const DW = 650
 const DH = 650
 /** store.time → 物理时间缩放因子；maxTime=120，覆盖低轨一圈+转移半程 */
-const TIME_SCALE = 50
+const TIME_SCALE = ORBIT_TRANSFER_TIME_SCALE
 /** 右下角画中画图表尺寸 */
 const PIP_CHART = {
   width: 360,

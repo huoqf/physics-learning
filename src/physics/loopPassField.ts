@@ -12,6 +12,15 @@
  * 则线框后端边（左侧导线）坐标 x_back = x - d。
  */
 
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
+/** 线框过磁场动画默认起止偏移与缩放因子（与 useLoopPassFieldPhysics 共用同一真源） */
+export const LOOP_PASS_ANIM = {
+  xMin: -0.02,
+  speedScale: 50,
+} as const
+
 export type LoopPassState = 'BEFORE' | 'ENTERING' | 'TOTALLY_IN' | 'LEAVING' | 'AFTER'
 
 export interface LoopPassResult {
@@ -136,4 +145,54 @@ export function evaluateLoopSegment(
     powerMech,
     powerHeat,
   }
+}
+
+/**
+ * 电磁感应线框模型（anim-induction-loop-field）临界时刻列表：
+ * 精确对应前端进入、完全进入/前边出、开始穿出/后边入、完全穿出 4 个边界时刻。
+ */
+export function getLoopPassFieldCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const dimensionPreset = params.dimensionPreset ?? 0
+  let dCm = params.loopWidth ?? 4.0
+  let DCm = params.fieldWidth ?? 8.0
+  if (dimensionPreset === 0 && dCm >= DCm) {
+    dCm = 4.0
+    DCm = 8.0
+  } else if (dimensionPreset === 1 && dCm <= DCm) {
+    dCm = 8.0
+    DCm = 4.0
+  }
+
+  const d = dCm / 100
+  const D = DCm / 100
+  const vReal = Math.max(0.1, params.constantSpeed ?? 1.0)
+  const vAnim = vReal / LOOP_PASS_ANIM.speedScale
+  const toTime = (frontX: number) => (frontX - LOOP_PASS_ANIM.xMin) / vAnim
+
+  const rawPoints =
+    d <= D
+      ? [
+          { t: toTime(0), label: '⚡ 前端进入磁场', variant: 'critical' as const, autoPause: true },
+          { t: toTime(d), label: '完全进入 (Φ=max, I=0)', variant: 'info' as const, autoPause: false },
+          { t: toTime(D), label: '⚡ 前端穿出·电流反向', variant: 'critical' as const, autoPause: true },
+          { t: toTime(d + D), label: '完全离开磁场', variant: 'info' as const, autoPause: false },
+        ]
+      : [
+          { t: toTime(0), label: '⚡ 前端进入磁场', variant: 'critical' as const, autoPause: true },
+          { t: toTime(D), label: '前端穿出 (仅内部稳态)', variant: 'info' as const, autoPause: false },
+          { t: toTime(d), label: '⚡ 后端进入·电流反向', variant: 'critical' as const, autoPause: true },
+          { t: toTime(d + D), label: '完全离开磁场', variant: 'info' as const, autoPause: false },
+        ]
+
+  return rawPoints
+    .map((pt, idx) => ({
+      time: alignCriticalTime(pt.t, idx === 3 ? 'before' : 'after'),
+      label: pt.label,
+      variant: pt.variant,
+      autoPause: pt.autoPause,
+    }))
+    .filter((pt) => pt.time > 0 && pt.time <= maxTime)
 }

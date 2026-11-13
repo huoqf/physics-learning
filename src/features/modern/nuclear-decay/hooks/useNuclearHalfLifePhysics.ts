@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { NUCLEAR_HALF_LIFE_TMAX } from '@/physics/nuclearDecay'
 
 export interface DecayingNuclide {
   id: number
@@ -90,9 +91,9 @@ export function useNuclearHalfLifePhysics(params: UseNuclearHalfLifePhysicsParam
     return nuclides.filter(n => !n.decayed).length
   }, [nuclides])
 
-  // 4. 生成图表折线点数据 (最大时轴 15s)
+  // 4. 生成图表折线点数据 (最大时轴 NUCLEAR_HALF_LIFE_TMAX)
   const theoryPoints = useMemo(() => {
-    const tMax = 15.0
+    const tMax = NUCLEAR_HALF_LIFE_TMAX
     const lambda = Math.log(2) / halfLife
     const pts: { x: number; y: number }[] = []
     for (let t = 0; t <= tMax; t += 0.2) {

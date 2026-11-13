@@ -18,6 +18,11 @@ import {
   GRAVITATIONAL_CONSTANT,
 } from './constants'
 import { solveKeplerEquation } from './celestial'
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
+/** 卫星变轨动画的时间缩放因子（1s 动画时间 = 50s 物理时间） */
+export const ORBIT_TRANSFER_TIME_SCALE = 50
 
 /** 变轨阶段：0 低圆轨，1 转移椭圆，2 高圆轨 */
 export type OrbitTransferPhase = 0 | 1 | 2
@@ -324,6 +329,53 @@ export function megaMetersToMeters(rMm: number): number {
 
 export function metersToMegaMeters(r: number): number {
   return r / 1e6
+}
+
+/**
+ * 卫星变轨（anim-orbit-transfer）临界时刻列表：
+ * - phase === 0：低圆轨周期参考点
+ * - phase === 1：到达远地点（二次点火圆化窗口）
+ */
+export function getOrbitTransferCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 120,
+): CriticalTimePoint[] {
+  const r1 = megaMetersToMeters(params.r1 ?? 7.0)
+  const r3 = megaMetersToMeters(params.r3 ?? 14.0)
+  const phase = params.phase ?? 0
+  const el = computeHohmannElements({ r1, r3 })
+
+  if (phase === 1) {
+    const tApo = (params.tBurn1 ?? 0) + el.halfTransferTime / ORBIT_TRANSFER_TIME_SCALE
+    const aligned = alignCriticalTime(tApo, 'nearest')
+    if (aligned > 0 && aligned <= maxTime) {
+      return [
+        {
+          time: aligned,
+          label: '⚡ 到达远地点（二次点火窗）',
+          variant: 'critical',
+          autoPause: true,
+        },
+      ]
+    }
+    return []
+  }
+
+  if (phase === 0) {
+    const tOrbit1 = alignCriticalTime(el.T1 / ORBIT_TRANSFER_TIME_SCALE, 'nearest')
+    if (tOrbit1 > 0 && tOrbit1 <= maxTime) {
+      return [
+        {
+          time: tOrbit1,
+          label: '低轨运行一圈 (T₁)',
+          variant: 'info',
+          autoPause: false,
+        },
+      ]
+    }
+  }
+
+  return []
 }
 
 export { EARTH_MASS, EARTH_RADIUS, GRAVITATIONAL_CONSTANT }

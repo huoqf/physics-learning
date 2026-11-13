@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { evaluateLoopSegment } from '@/physics'
+import { LOOP_PASS_ANIM } from '@/physics/loopPassField'
 import type { LoopPassState } from '@/physics'
 
 export interface LoopPassFieldParams {
@@ -69,12 +70,12 @@ export function useLoopPassFieldPhysics(
   const d = dCm / 100 // 转为米
   const D = DCm / 100 // 转为米
   const v_real = Math.max(0.1, constantSpeed)
-  const v_anim = v_real / 50
+  const v_anim = v_real / LOOP_PASS_ANIM.speedScale
   const B = magneticB
   const L = 0.05 // 边长 5cm
   const R = 0.5  // 电阻 0.5Ω
 
-  const xMin = -0.02
+  const xMin = LOOP_PASS_ANIM.xMin
   const xMax = D + d + 0.02
   const totalDist = xMax - xMin
   const T_max = useMemo(() => totalDist / v_anim, [totalDist, v_anim])

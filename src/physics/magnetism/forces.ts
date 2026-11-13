@@ -1,3 +1,9 @@
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
+/** 带电粒子在有界磁场中的统一飞入前置时长（s） */
+export const CHARGE_IN_BFIELD_SLIDE_IN = 1.5
+
 /** 安培力 F = BIL·sinθ（N），θ 为电流与磁场夹角 */
 export function calculateAmpereForce(
   B: number,
@@ -302,5 +308,72 @@ export function centripetalForceDir(
   const mag = Math.sqrt(dx * dx + dy * dy)
   if (mag === 0) return { x: 0, y: 0 }
   return { x: dx / mag, y: dy / mag }
+}
+
+/**
+ * 计算带电粒子在有界磁场（anim-charge-in-bfield）的出射时长 tOut（单一真源）
+ */
+export function computeChargeInBFieldTOut(params: Record<string, number>): number {
+  const mode = params.mode ?? 0
+  const boundaryType = params.boundaryType ?? 0
+  const dynamicType = params.dynamicType ?? 0
+  const q = params.q ?? 1
+  const m = params.m ?? 1
+  const v = params.v ?? 12
+  const B = params.B ?? 1.2
+  const bDirection = params.bDirection ?? 1
+  const effectiveB = B * bDirection
+  const thetaParam = params.theta ?? 60
+  const d = params.magneticWidth ?? 5.0
+  const Rb = params.magneticRadius ?? 4.0
+
+  const activeBoundaryType =
+    mode === 0 ? boundaryType : dynamicType === 0 ? 0 : dynamicType === 1 ? 1 : 0
+  const activeTheta = activeBoundaryType === 2 ? 90 : thetaParam
+  const sign = q * effectiveB >= 0 ? 1 : -1
+
+  if (activeBoundaryType === 0) {
+    const thetaRad = (activeTheta * Math.PI) / 180
+    const deltaPhi = sign === 1 ? 2 * Math.PI - 2 * thetaRad : 2 * thetaRad
+    const T = calcParticlePeriod(m, q, effectiveB)
+    return T > 0 ? (deltaPhi / (2 * Math.PI)) * T : 0
+  }
+  if (activeBoundaryType === 1) {
+    return calculateDoubleBoundaryExit(q, m, v, effectiveB, activeTheta, d).t
+  }
+  return calculateCircularBoundaryExit(q, m, v, effectiveB, Rb).t
+}
+
+/**
+ * 带电粒子在磁场中运动（anim-charge-in-bfield）临界时刻列表。
+ */
+export function getChargeInBFieldCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const tOut = computeChargeInBFieldTOut(params)
+  const events: CriticalTimePoint[] = []
+
+  if (CHARGE_IN_BFIELD_SLIDE_IN <= maxTime) {
+    events.push({
+      time: CHARGE_IN_BFIELD_SLIDE_IN,
+      label: '⚡ 进入磁场边界',
+      variant: 'info',
+      autoPause: false,
+    })
+  }
+
+  if (Number.isFinite(tOut) && tOut > 0) {
+    const tExit = alignCriticalTime(CHARGE_IN_BFIELD_SLIDE_IN + tOut, 'before')
+    if (tExit > CHARGE_IN_BFIELD_SLIDE_IN && tExit <= maxTime) {
+      events.push({
+        time: tExit,
+        label: '⚡ 离开磁场边界',
+        variant: 'critical',
+        autoPause: true,
+      })
+    }
+  }
+  return events.sort((a, b) => a.time - b.time)
 }
 

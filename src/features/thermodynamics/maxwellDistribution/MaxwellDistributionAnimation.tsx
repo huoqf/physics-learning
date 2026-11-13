@@ -7,10 +7,11 @@ import { MaxwellScene } from './components/MaxwellScene'
 import MaxwellDistributionChart from './components/MaxwellDistributionChart'
 
 export default function MaxwellDistributionAnimation() {
-  const { params, isPlaying } = useAnimationStore(
+  const { params, isPlaying, speed } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
       isPlaying: s.isPlaying,
+      speed: s.speed,
     }))
   )
 
@@ -30,6 +31,7 @@ export default function MaxwellDistributionAnimation() {
           <MaxwellScene
             temperature={temperature1}
             isPlaying={isPlaying}
+            speed={speed}
             width={vp.visibleW}
             height={vp.visibleH}
             font={canvasSize.font}

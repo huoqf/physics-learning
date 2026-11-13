@@ -6,11 +6,12 @@ import { useAnimationStore } from '@/stores'
 import { worldToDesign } from '@/scene'
 import {
   calcParticleRadius,
-  calcParticlePeriod,
-  calculateDoubleBoundaryExit,
-  calculateCircularBoundaryExit,
   lorentzForceDir,
 } from '@/physics'
+import {
+  CHARGE_IN_BFIELD_SLIDE_IN,
+  computeChargeInBFieldTOut,
+} from '@/physics/magnetism/forces'
 import { PhysicsVectorArrow, drawCanvasParticleTrajectory } from '@/components/Physics'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { useParticleState } from './hooks/useParticleState'
@@ -60,24 +61,28 @@ export function SimulationView() {
   const activeTheta = activeBoundaryType === 2 ? 90 : thetaParam
 
   const R = calcParticleRadius(m, v, q, effectiveB)
-  const sign = (q * effectiveB) >= 0 ? 1 : -1 // 1 为逆时针（向左），-1 为顺时针（向右）
+  const sign = (q * effectiveB) >= 0 ? 1 : -1
 
-  // 计算焦点粒子在磁场中偏转的时间 tOut
-  const tOut = useMemo(() => {
-    if (activeBoundaryType === 0) {
-      const thetaRad = (activeTheta * Math.PI) / 180
-      // 偏转角：逆时针 2π-2θ（长弧），顺时针 2θ（短弧）
-      const deltaPhi = sign === 1 ? 2 * Math.PI - 2 * thetaRad : 2 * thetaRad
-      const T = calcParticlePeriod(m, q, effectiveB)
-      return T > 0 ? (deltaPhi / (2 * Math.PI)) * T : 0
-    } else if (activeBoundaryType === 1) {
-      return calculateDoubleBoundaryExit(q, m, v, effectiveB, activeTheta, d).t
-    } else {
-      return calculateCircularBoundaryExit(q, m, v, effectiveB, Rb).t
-    }
-  }, [q, m, v, effectiveB, activeTheta, activeBoundaryType, d, Rb, sign])
+  // 计算焦点粒子在磁场中偏转的时间 tOut（复用物理层单一真源）
+  const tOut = useMemo(
+    () =>
+      computeChargeInBFieldTOut({
+        mode,
+        boundaryType,
+        dynamicType,
+        q,
+        m,
+        v,
+        B,
+        bDirection,
+        theta: thetaParam,
+        magneticWidth: d,
+        magneticRadius: Rb,
+      }),
+    [mode, boundaryType, dynamicType, q, m, v, B, bDirection, thetaParam, d, Rb],
+  )
 
-  const tSlideIn = 1.5 // 固定 1.5s 飞入，实现全局同步发射
+  const tSlideIn = CHARGE_IN_BFIELD_SLIDE_IN // 固定 1.5s 飞入，实现全局同步发射
   const progressTime = time - tSlideIn
 
   // ── VIEWPORT 架构 ──

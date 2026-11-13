@@ -10,6 +10,7 @@ import {
   getBulletBlockState,
   generateBulletBlockVT,
   generateBulletBlockEnergy,
+  bulletBlockAnimToPhysicsTime,
   type BulletBlockParam,
   type BulletBlockMode,
 } from '@/physics/bulletBlock'
@@ -102,10 +103,9 @@ export function useBulletBlockPhysics(
   const timeScale = useMemo(() => targetDuration / timeline.tMax, [timeline.tMax])
 
   // 飞入段：子弹从屏幕外飞入，v0 越大飞入越快
-  const flyingDistance = 1.0
-  const flyingTime = flyingDistance / param.v0
+  const flyingTime = 1.0 / param.v0
   const tPre = flyingTime
-  const physicsTime = Math.min((time - 1.0) * flyingTime, timeline.tMax)
+  const physicsTime = Math.min(bulletBlockAnimToPhysicsTime(time, param.v0), timeline.tMax)
 
   // 物理状态：物理时间 physicsTime < 0 时为飞入匀速段，>= 0 时为正常碰撞打入段
   const state = useMemo(() => {

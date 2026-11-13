@@ -1,4 +1,7 @@
 import { calculateFreeFall } from './base'
+import { GRAVITY } from '../constants'
+import { alignCriticalTime } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 /**
  * 竖直上抛运动（含空气阻力）——欧拉法数值求解
@@ -149,4 +152,108 @@ export function precomputeVerticalThrowTrajectory(
     landTimeVac,
     maxHeightVac,
   }
+}
+
+/**
+ * 求竖直上抛轨迹上经过给定目标高度 h 的上升/下落两时刻（SSOT）
+ */
+export function findVerticalThrowHeightIntersections(
+  points: VerticalThrowTrajectoryPoint[],
+  targetHeight: number,
+  maxHeight: number,
+  peakTime: number,
+): { t1: number; t2: number } | null {
+  if (targetHeight <= 0 || targetHeight >= maxHeight) return null
+  let t1 = 0
+  let t2 = 0
+  let foundFirst = false
+  for (const pt of points) {
+    if (pt.y >= targetHeight && !foundFirst) {
+      t1 = pt.t
+      foundFirst = true
+    }
+    if (pt.y < targetHeight && foundFirst && pt.t > peakTime) {
+      t2 = pt.t
+      break
+    }
+  }
+  return foundFirst && t2 > 0 ? { t1, t2 } : null
+}
+
+export interface VerticalThrowCriticalParams {
+  v0?: number
+  g?: number
+  airResistance?: number
+  advancedMode?: number
+  targetHeight?: number
+}
+
+/**
+ * 计算竖直上抛运动关键时刻（SSOT）
+ */
+export function getVerticalThrowCriticalTimes(
+  params: VerticalThrowCriticalParams = {},
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const v0 = params.v0 ?? 15
+  const g = params.g ?? GRAVITY
+  const airResistance = params.airResistance ?? 0
+  const advancedMode = params.advancedMode ?? 0
+  const targetHeight = params.targetHeight ?? 0
+
+  if (v0 <= 0 || g <= 0) return []
+
+  const traj = precomputeVerticalThrowTrajectory(v0, g, airResistance)
+  const events: CriticalTimePoint[] = []
+
+  const tPeak = alignCriticalTime(traj.peakTime, 'after')
+  if (tPeak > 0 && tPeak <= maxTime) {
+    events.push({
+      time: tPeak,
+      label: '到达最高点 (v=0)',
+      variant: 'critical',
+      autoPause: true,
+    })
+  }
+
+  if (advancedMode === 1 && targetHeight > 0 && targetHeight < traj.maxHeight) {
+    const inter = findVerticalThrowHeightIntersections(
+      traj.points,
+      targetHeight,
+      traj.maxHeight,
+      traj.peakTime,
+    )
+    if (inter) {
+      const tUp = alignCriticalTime(inter.t1, 'nearest')
+      if (tUp > 0 && tUp < tPeak - 0.03 && tUp <= maxTime) {
+        events.push({
+          time: tUp,
+          label: `上升经过 h=${targetHeight}m`,
+          variant: 'info',
+          autoPause: false,
+        })
+      }
+      const tDown = alignCriticalTime(inter.t2, 'nearest')
+      if (tDown > tPeak + 0.03 && tDown <= maxTime) {
+        events.push({
+          time: tDown,
+          label: `下落经过 h=${targetHeight}m`,
+          variant: 'info',
+          autoPause: false,
+        })
+      }
+    }
+  }
+
+  const tLand = alignCriticalTime(traj.landTime, 'before')
+  if (tLand > tPeak + 0.02 && tLand <= maxTime) {
+    events.push({
+      time: tLand,
+      label: '落回抛出点',
+      variant: 'warning',
+      autoPause: false,
+    })
+  }
+
+  return events.sort((a, b) => a.time - b.time)
 }
