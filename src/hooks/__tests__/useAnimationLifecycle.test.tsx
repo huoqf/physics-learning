@@ -16,10 +16,10 @@ vi.mock('@/data/physicsQuantities', () => ({
   preloadQuantityBuilder: vi.fn(() => Promise.resolve()),
 }))
 
-function createWrapper(animId = 'test-anim') {
+function createWrapper(entry = '/animation/test-anim') {
   return function Wrapper({ children }: { children: ReactNode }) {
     return (
-      <MemoryRouter initialEntries={[`/animation/${animId}`]}>
+      <MemoryRouter initialEntries={[entry]}>
         <Routes>
           <Route path="/animation/:id" element={<>{children}</>} />
         </Routes>
@@ -159,8 +159,9 @@ describe('useAnimationLifecycle', () => {
     expect(useAnimationStore.getState().isPlaying).toBe(true)
   })
 
-  it('timed 模式开启 repeatLoop 后到达 maxTime 自动从 0 继续循环播放', () => {
-    vi.mocked(getAnimationConfig).mockReturnValue(makeConfig({ maxTime: 5 }))
+  it('timed 模式开启 repeatLoop 后到达 maxTime 自动从 0 继续循环并同步 t=0 物理状态', () => {
+    const updatePhysics = vi.fn(() => ({ position: { x: 1, y: 2 } }))
+    vi.mocked(getAnimationConfig).mockReturnValue(makeConfig({ maxTime: 5, updatePhysics }))
 
     renderHook(() => useAnimationLifecycle(), { wrapper: createWrapper() })
     act(() => {
@@ -172,6 +173,77 @@ describe('useAnimationLifecycle', () => {
     act(() => { stepFrame(0) })
     act(() => { stepFrame(200) })
 
+    expect(useAnimationStore.getState().time).toBe(0)
+    expect(useAnimationStore.getState().isPlaying).toBe(true)
+    expect(updatePhysics).toHaveBeenLastCalledWith({ v: 10 }, 0, 0)
+  })
+
+  it('动态 controlsMode 下通过 ?params=...&t=... 深链进入 loop 场次，定格并保持暂停不被覆盖', () => {
+    vi.mocked(getAnimationConfig).mockReturnValue(
+      makeConfig({
+        defaultParams: { scene: 0 },
+        controlsMode: (p) => (p.scene === 1 ? 'loop' : 'timed'),
+        maxTime: (p) => (p.scene === 0 ? 5 : undefined),
+      }),
+    )
+
+    renderHook(() => useAnimationLifecycle(), {
+      wrapper: createWrapper('/animation/test-anim?params=%7B%22scene%22%3A1%7D&t=1.2'),
+    })
+
+    expect(useAnimationStore.getState().params.scene).toBe(1)
+    expect(useAnimationStore.getState().time).toBeCloseTo(1.2, 5)
+    expect(useAnimationStore.getState().isPlaying).toBe(false)
+  })
+
+  it('动态 maxTime 返回 undefined 的 loop 场次不会每 5s/30s 强制归零跳变', () => {
+    vi.mocked(getAnimationConfig).mockReturnValue(
+      makeConfig({
+        defaultParams: { scene: 1 },
+        controlsMode: (p) => (p.scene === 1 ? 'loop' : 'timed'),
+        maxTime: (p) => (p.scene === 0 ? 5 : undefined),
+      }),
+    )
+
+    renderHook(() => useAnimationLifecycle(), { wrapper: createWrapper() })
+    expect(useAnimationStore.getState().isPlaying).toBe(true)
+
+    act(() => { useAnimationStore.getState().setTime(5.0) })
+    act(() => { stepFrame(0) })
+    act(() => { stepFrame(200) })
+    expect(useAnimationStore.getState().time).toBeCloseTo(5.2, 5)
+
+    act(() => { useAnimationStore.getState().setTime(29.9) })
+    act(() => { stepFrame(0) })
+    act(() => { stepFrame(200) })
+    expect(useAnimationStore.getState().time).toBeCloseTo(30.1, 5)
+  })
+
+  it('运行期从 loop 切到 timed 自动暂停；通过 handleRestart 切出时保持播放', () => {
+    vi.mocked(getAnimationConfig).mockReturnValue(
+      makeConfig({
+        defaultParams: { scene: 1 },
+        controlsMode: (p) => (p.scene === 1 ? 'loop' : 'timed'),
+      }),
+    )
+
+    const { result } = renderHook(() => useAnimationLifecycle(), { wrapper: createWrapper() })
+    expect(useAnimationStore.getState().isPlaying).toBe(true)
+
+    act(() => {
+      useAnimationStore.getState().updateParam('scene', 0)
+    })
+    expect(useAnimationStore.getState().isPlaying).toBe(false)
+
+    act(() => {
+      useAnimationStore.getState().updateParam('scene', 1)
+    })
+    expect(useAnimationStore.getState().isPlaying).toBe(true)
+
+    act(() => {
+      useAnimationStore.getState().setParams({ scene: 0 })
+      result.current.handleRestart()
+    })
     expect(useAnimationStore.getState().time).toBe(0)
     expect(useAnimationStore.getState().isPlaying).toBe(true)
   })

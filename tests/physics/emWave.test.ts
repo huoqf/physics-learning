@@ -160,11 +160,20 @@ describe('emWave · sampleRadioModulationWaves (无线电调制与检波)', () =
     }
   })
 
-  it('调幅 AM 信号严格满足振幅包络 A(t) = 1 + 0.65 * audio', () => {
-    const samples = sampleRadioModulationWaves(200, 0)
+  it('调幅 AM 信号与正向包络 amEnvelope 严格同形且检测到脉冲不越出包络', () => {
+    const samples = sampleRadioModulationWaves(540, 0)
     for (const s of samples) {
-      const maxPossibleAm = 1 + 0.65 + 1e-6
-      expect(Math.abs(s.am)).toBeLessThanOrEqual(maxPossibleAm)
+      const expectedEnv = 1 + 0.65 * s.audio
+      expect(s.amEnvelope).toBeCloseTo(expectedEnv, 6)
+      expect(Math.abs(s.am)).toBeLessThanOrEqual(s.amEnvelope + 1e-6)
+      expect(s.detected).toBeLessThanOrEqual(s.amEnvelope + 1e-6)
+    }
+  })
+
+  it('调频 FM 信号始终等幅（振幅不超过 1）', () => {
+    const samples = sampleRadioModulationWaves(540, 0.8)
+    for (const s of samples) {
+      expect(Math.abs(s.fm)).toBeLessThanOrEqual(1 + 1e-6)
     }
   })
 })

@@ -7,7 +7,7 @@ import { useAnimationStore, useProgressStore, type PhysicsState } from '@/stores
 import { useAppStore } from '@/stores/useAppStore'
 import type { DiscoveryStepData } from '@/components/UI'
 import { useAnimationFrame } from '@/utils/animation'
-import { parseUrlParamOverrides } from '@/utils/animationDeepLink'
+import { resolveDeepLinkTime, resolveUrlMergedParams } from '@/utils/animationDeepLink'
 import { duration } from '@/theme/motion'
 import type { AnimationConfig, CriticalTimePoint } from '@/data/types'
 
@@ -17,6 +17,7 @@ export interface AnimationLifecycleResult {
   isDiscoveryMode: boolean
   canvasDimmed: boolean
   handleReset: () => void
+  handleRestart: () => void
   /** 当前实际生效的控制模式（已解析函数形式） */
   effectiveControlsMode: 'timed' | 'loop' | 'param' | 'pause-only'
   /** 当前参数下解析后的临界时刻列表 */
@@ -68,6 +69,7 @@ function useAnimationConfig() {
   })
   const prevConfigIdRef = useRef<string | undefined>(undefined)
   const prevSearchRef = useRef<string>('')
+  const appliedInitParamsRef = useRef<Record<string, number> | null>(null)
 
   // 异步加载 config（extended 动画走此路径）
   useEffect(() => {
@@ -94,38 +96,62 @@ function useAnimationConfig() {
     return () => { cancelled = true }
   }, [id])
 
-  // config 变更时初始化 store
+  // config 或 URL 查询串变更时统一初始化 store（合并平铺参数与 ?params= JSON，以及深链定格帧）
   useEffect(() => {
     if (config && (config.id !== prevConfigIdRef.current || location.search !== prevSearchRef.current)) {
       prevConfigIdRef.current = config.id
       prevSearchRef.current = location.search
-      // 读取 URL search params，覆盖 defaultParams 中的同名参数。
-      // 走 parseUrlParamOverrides 这个唯一真源：它会跳过 `t` / `critical` / `params`
-      // 等保留键，并只接受该动画声明过的参数（否则 `?t=1.84` 会被当成参数 `t`）。
       const defaultParams = config.defaultParams as Record<string, number>
-      const urlOverrides = parseUrlParamOverrides(location.search, defaultParams)
-      const mergedInitParams = { ...config.defaultParams, ...urlOverrides }
+      const { mergedParams } = resolveUrlMergedParams(location.search, defaultParams)
+      appliedInitParamsRef.current = mergedParams
       setAnimationType(config.id)
-      setParams(mergedInitParams)
-      setTime(0)
-      currentTimeRef.current = 0
+      setParams(mergedParams)
       setRepeatLoop(false)
-      const initCriticals = resolveCriticalTimes(config, mergedInitParams as Record<string, number>)
+
+      const initCriticals = resolveCriticalTimes(config, mergedParams)
       setAutoPauseOnCritical(Boolean(initCriticals?.some((ct) => ct.autoPause === true)))
-      // 解析函数式 controlsMode：初始化时用 defaultParams
+
+      const rawInitMaxTime = typeof config.maxTime === 'function' ? config.maxTime(mergedParams) : config.maxTime
+      const initDuration = rawInitMaxTime ?? 30
+      const sp = new URLSearchParams(location.search)
+      const deepLinkTarget = resolveDeepLinkTime({
+        tParam: sp.get('t'),
+        criticalParam: sp.get('critical'),
+        criticalTimes: config.criticalTimes,
+        params: mergedParams,
+        maxTime: initDuration,
+      })
+
       const initMode = typeof config.controlsMode === 'function'
-        ? config.controlsMode(mergedInitParams as Record<string, number>)
+        ? config.controlsMode(mergedParams)
         : (config.controlsMode ?? 'timed')
-      // loop 型加载即自动播放；其余型（timed/param/pause-only）初始为暂停
-      setIsPlaying(initMode === 'loop')
-      setPhysicsState({ position: { x: 0, y: 0 }, velocity: { vx: 0, vy: 0 }, trajectory: [] })
+
+      if (deepLinkTarget) {
+        setTime(deepLinkTarget.time)
+        currentTimeRef.current = deepLinkTarget.time
+        setIsPlaying(false)
+        const initState = config.updatePhysics?.(mergedParams, deepLinkTarget.time, 0)
+        setPhysicsState({
+          position: { x: 0, y: 0 },
+          velocity: { vx: 0, vy: 0 },
+          trajectory: [],
+          ...(initState ?? {}),
+        })
+      } else {
+        setTime(0)
+        currentTimeRef.current = 0
+        // loop 型加载即自动播放；其余型（timed/param/pause-only）初始为暂停
+        setIsPlaying(initMode === 'loop')
+        setPhysicsState({ position: { x: 0, y: 0 }, velocity: { vx: 0, vy: 0 }, trajectory: [] })
+      }
+
       setMode('animation')
       markAnimationViewed(config.id)
       preloadQuantityBuilder(config.id)
     }
   }, [config, location.search, setAnimationType, setParams, setTime, setIsPlaying, setPhysicsState, setRepeatLoop, setAutoPauseOnCritical, setMode, markAnimationViewed])
 
-  return { config, configLoading, currentTimeRef }
+  return { config, configLoading, currentTimeRef, appliedInitParamsRef }
 }
 
 /* ─── 子 hook: 发现模式步骤管理 ─── */
@@ -163,6 +189,7 @@ function useDiscoveryMode(config: AnimationConfig | undefined) {
 function usePlaybackLoop(
   config: AnimationConfig | undefined,
   currentTimeRef: RefObject<number>,
+  appliedInitParamsRef: RefObject<Record<string, number> | null>,
 ) {
   const isPlaying = useAnimationStore((s) => s.isPlaying)
   const params = useAnimationStore((s) => s.params)
@@ -174,9 +201,10 @@ function usePlaybackLoop(
   const repeatLoop = useAnimationStore((s) => s.repeatLoop)
   const autoPauseOnCritical = useAnimationStore((s) => s.autoPauseOnCritical)
   const [canvasDimmed, setCanvasDimmed] = useState(false)
-  const hasExplicitMaxTime = config?.maxTime != null
-  // 每个动画可在 config 中通过 maxTime 覆盖播放上限；不传则走全局默认 30s（loop 型未声明 maxTime 时不强制截断归零）
-  const maxTime = typeof config?.maxTime === 'function' ? config.maxTime(params) : (config?.maxTime ?? 30)
+  const rawMaxTime = typeof config?.maxTime === 'function' ? config.maxTime(params) : config?.maxTime
+  const hasExplicitMaxTime = rawMaxTime != null
+  // 每个动画可在 config 中通过 maxTime 覆盖播放上限；不传（或函数返回 undefined）则走全局默认 30s（loop 型未声明时持续递增）
+  const maxTime = rawMaxTime ?? 30
   const criticalTimes = useMemo(() => resolveCriticalTimes(config, params), [config, params])
 
   // 暂停时延迟 dimmed
@@ -205,12 +233,28 @@ function usePlaybackLoop(
     : (config?.controlsMode ?? 'timed')
 
   const isLoop = effectiveControlsMode === 'loop'
+  const prevIsLoopRef = useRef<boolean>(isLoop)
+  const suppressNextModePauseRef = useRef(false)
 
-  // 动态 controlsMode 切换时同步播放状态：
-  // loop → 自动开始播放；非 loop（timed/param/pause-only）→ 暂停（由用户手动触发或场景触发）
+  // 仅在运行期（用户交互切换模式）且 isLoop 实际变化时同步播放状态，避免覆盖初始化 / 深链定格 / restartOnApply
   useEffect(() => {
-    setIsPlaying(isLoop)
-  }, [isLoop, setIsPlaying])
+    if (params === appliedInitParamsRef.current) {
+      prevIsLoopRef.current = isLoop
+      suppressNextModePauseRef.current = false
+      return
+    }
+    if (prevIsLoopRef.current !== isLoop) {
+      prevIsLoopRef.current = isLoop
+      if (!isLoop && suppressNextModePauseRef.current) {
+        suppressNextModePauseRef.current = false
+        return
+      }
+      suppressNextModePauseRef.current = false
+      setIsPlaying(isLoop)
+    } else {
+      suppressNextModePauseRef.current = false
+    }
+  }, [isLoop, params, appliedInitParamsRef, setIsPlaying])
 
   // rAF 时间循环（注：useAnimationFrame 已将 deltaTime 按 speed 缩放，此处不得再乘 speed）
   useAnimationFrame(
@@ -259,6 +303,12 @@ function usePlaybackLoop(
         if (nextTime >= maxTime) {
           if (repeatLoop && effectiveControlsMode === 'timed') {
             commitTime(0)
+            if (config?.updatePhysics) {
+              const result = config.updatePhysics(params, 0, 0)
+              if (result) {
+                setPhysicsState((state: PhysicsState) => ({ ...state, ...result }))
+              }
+            }
             return
           }
           commitTime(maxTime)
@@ -274,6 +324,12 @@ function usePlaybackLoop(
         if (direction === -1 && nextTime <= 0) {
           if (repeatLoop && effectiveControlsMode === 'timed') {
             commitTime(maxTime)
+            if (config?.updatePhysics) {
+              const result = config.updatePhysics(params, maxTime, 0)
+              if (result) {
+                setPhysicsState((state: PhysicsState) => ({ ...state, ...result }))
+              }
+            }
             return
           }
           commitTime(0)
@@ -304,15 +360,30 @@ function usePlaybackLoop(
     setPhysicsState({ position: { x: 0, y: 0 }, velocity: { vx: 0, vy: 0 }, trajectory: [] })
   }
 
-  return { canvasDimmed, handleReset, effectiveControlsMode, criticalTimes }
+  const handleRestart = () => {
+    suppressNextModePauseRef.current = true
+    setTime(0)
+    currentTimeRef.current = 0
+    lastLifecycleTimeRef.current = 0
+    setIsPlaying(true)
+    const initState = config?.updatePhysics?.(useAnimationStore.getState().params, 0, 0)
+    setPhysicsState({
+      position: { x: 0, y: 0 },
+      velocity: { vx: 0, vy: 0 },
+      trajectory: [],
+      ...(initState ?? {}),
+    })
+  }
+
+  return { canvasDimmed, handleReset, handleRestart, effectiveControlsMode, criticalTimes }
 }
 
 /* ─── 主 hook: 组合三个子 hook ─── */
 
 export function useAnimationLifecycle(): AnimationLifecycleResult {
-  const { config, configLoading, currentTimeRef } = useAnimationConfig()
+  const { config, configLoading, currentTimeRef, appliedInitParamsRef } = useAnimationConfig()
   const discovery = useDiscoveryMode(config)
-  const playback = usePlaybackLoop(config, currentTimeRef)
+  const playback = usePlaybackLoop(config, currentTimeRef, appliedInitParamsRef)
 
   return {
     config,

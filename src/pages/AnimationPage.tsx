@@ -23,7 +23,7 @@ import { LAYOUT } from '@/theme'
 import { duration, easing } from '@/theme/motion'
 import { ThreePanel } from '@/components/Layout'
 import { useAnimationLifecycle } from '@/hooks/useAnimationLifecycle'
-import { resolveDeepLinkTime, resolveDeepLinkHint, shouldShowFreezeHint, parseUrlParamOverrides } from '@/utils/animationDeepLink'
+import { resolveDeepLinkTime, resolveDeepLinkHint, shouldShowFreezeHint, resolveUrlMergedParams } from '@/utils/animationDeepLink'
 import type { DeepLinkFreezeHint } from '@/utils/animationDeepLink'
 import { WRONG_REASONS } from '@/data/wrongReasons'
 
@@ -73,7 +73,7 @@ function AnimationCenter({
   const showCenterExtraInBasic = CenterExtraComponent && !centerExtraModeKey
   const maxTime = useMemo(() => {
     if (typeof config.maxTime === 'function') {
-      return config.maxTime(params)
+      return config.maxTime(params) ?? 30
     }
     return config.maxTime ?? 30
   }, [config, params])
@@ -321,6 +321,7 @@ export default function AnimationPage() {
     isDiscoveryMode,
     canvasDimmed,
     handleReset,
+    handleRestart,
     effectiveControlsMode,
     criticalTimes,
     discoverySteps,
@@ -330,36 +331,17 @@ export default function AnimationPage() {
     prevDiscoveryStep,
   } = useAnimationLifecycle()
 
-  // 当 URL 带有真题预设参数 / 定格帧参数时，自动注入当前动画的 params Store 中
+  // 派生定格提示（参数与时间注入已由 useAnimationConfig 统一在初始化时完成）
   useEffect(() => {
     if (!config) return
     const defaultParams = config.defaultParams as Record<string, number>
+    const { mergedParams } = resolveUrlMergedParams(searchParamsKey, defaultParams)
 
-    // ① 顶层键值写法：`?m=1&M=3` —— Master 模型卡片与知识树 animationParams 遗留形式。
-    //    兼容它是因为旧链接可能还在学生书签里；解析规则走 parseUrlParamOverrides 唯一真源。
-    const flatParams = parseUrlParamOverrides(searchParamsKey, defaultParams)
-
-    // ② JSON 写法：`?params={"m":1}` —— 真题「一键复现初态」使用此形式（优先级更高）
-    let jsonParams: Record<string, number> = {}
-    if (customParamsStr) {
-      try {
-        const parsed = JSON.parse(decodeURIComponent(customParamsStr))
-        if (parsed && typeof parsed === 'object') jsonParams = parsed
-      } catch (e) {
-        console.error('Failed to parse preset params from URL', e)
-      }
-    }
-
-    const mergedParams: Record<string, number> = { ...defaultParams, ...flatParams, ...jsonParams }
-    if (Object.keys(flatParams).length > 0 || Object.keys(jsonParams).length > 0) {
-      useAnimationStore.getState().setParams(mergedParams)
-    }
-
-    // ③ 定格帧：?critical=first|last|index 或 ?t=秒（见 utils/animationDeepLink）
-    const duration =
+    const rawDuration =
       typeof config.maxTime === 'function'
         ? config.maxTime(mergedParams)
-        : (config.maxTime ?? 30)
+        : config.maxTime
+    const duration = rawDuration ?? 30
     const target = resolveDeepLinkTime({
       tParam,
       criticalParam,
@@ -367,13 +349,6 @@ export default function AnimationPage() {
       params: mergedParams,
       maxTime: duration,
     })
-    if (target) {
-      useAnimationStore.getState().setTime(target.time)
-      useAnimationStore.getState().setIsPlaying(false)
-    }
-    // ④ 定格提示：说清「你停在哪一帧、这一帧该看什么」。
-    //    错因标杆的 highlight 优先（它讲的是这一帧的物理瞬态），没有就退回临界点自带 label。
-    //    文案按 id 现查而非随 URL 传字符串，保证改了 highlight 旧链接也跟着变。
     const reasonNote = reasonParam
       ? WRONG_REASONS.find((r) => r.id === reasonParam)?.benchmark.highlight
       : undefined
@@ -408,7 +383,7 @@ export default function AnimationPage() {
   )
 
   // actions — 稳定引用，不需订阅
-  const { setParams, setTime, setIsPlaying, updateParam, toggleTimeSlices, toggleDualObjects, toggleVectors, setDirection } = useAnimationStore.getState()
+  const { setParams, updateParam, toggleTimeSlices, toggleDualObjects, toggleVectors, setDirection } = useAnimationStore.getState()
 
   // 重置参数时保留当前模式，不回到默认模式
   const MODE_KEYS = ['mode', 'advancedMode', 'manBoatMode']
@@ -576,7 +551,7 @@ export default function AnimationPage() {
                 updateParam={updateParam}
                 setParams={setParams}
                 resetAnimation={handleReset}
-                restartAnimation={() => { setTime(0); setIsPlaying(true) }}
+                restartAnimation={handleRestart}
                 setDirection={(d) => setDirection(d)}
                 toggleVectors={toggleVectors}
                 toggleTimeSlices={toggleTimeSlices}
@@ -607,7 +582,7 @@ export default function AnimationPage() {
                 updateParam={updateParam}
                 setParams={setParams}
                 resetAnimation={handleReset}
-                restartAnimation={() => { setTime(0); setIsPlaying(true) }}
+                restartAnimation={handleRestart}
                 setDirection={(d) => setDirection(d)}
                 toggleVectors={toggleVectors}
                 toggleTimeSlices={toggleTimeSlices}

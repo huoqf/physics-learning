@@ -45,7 +45,7 @@ describe('wrongReasons · 错因标杆一致性', () => {
       const config = await getAnimationConfigAsync(benchmark.animId)
       const params = { ...(config!.defaultParams as Record<string, number>), ...benchmark.presetParams }
       const maxTime =
-        typeof config!.maxTime === 'function' ? config!.maxTime(params) : (config!.maxTime ?? 30)
+        (typeof config!.maxTime === 'function' ? config!.maxTime(params) : config!.maxTime) ?? 30
 
       if (benchmark.critical) {
         expect(benchmark.t, `「${reason.label}」同时给了 critical 与 t，语义会打架`).toBeUndefined()
@@ -128,7 +128,7 @@ describe('wrongReasons · 错因标杆一致性', () => {
     const config = await getAnimationConfigAsync(benchmark.animId)
     const params = { ...(config!.defaultParams as Record<string, number>), ...benchmark.presetParams }
     const maxTime =
-      typeof config!.maxTime === 'function' ? config!.maxTime(params) : (config!.maxTime ?? 30)
+      (typeof config!.maxTime === 'function' ? config!.maxTime(params) : config!.maxTime) ?? 30
     const resolved = resolveDeepLinkTime({
       tParam: benchmark.t != null ? String(benchmark.t) : null,
       criticalParam: benchmark.critical ?? null,

@@ -198,13 +198,15 @@ export interface RadioModulationSample {
   audio: number
   /** 高频等幅载波信号 [-1, 1] */
   carrier: number
-  /** 调幅信号 (AM)（振幅随音频变化） [-1.8, 1.8] */
+  /** 调幅信号 (AM)（振幅随音频变化） [-1.65, 1.65] */
   am: number
-  /** 调频信号 (FM)（频率疏密随音频变化） [-1, 1] */
+  /** 调幅波正向包络（与半波检波后电容滤波的脉动包络一致） [0.35, 1.65] */
+  amEnvelope: number
+  /** 调频信号 (FM)（频率疏密随音频变化，振幅恒定） [-1, 1] */
   fm: number
-  /** 检波输出（二极管单向导电半波整流） [0, 1.8] */
+  /** 检波输出（二极管单向导电半波整流） [0, 1.65] */
   detected: number
-  /** 滤波还原信号（RC 低通滤波还原音频包络） [-1, 1] */
+  /** 滤波还原信号（隔直后还原音频基带） [-1, 1] */
   filtered: number
 }
 
@@ -258,6 +260,7 @@ export function sampleRadioModulationWaves(count = 300, time = 0): RadioModulati
       audio,
       carrier,
       am,
+      amEnvelope: env,
       fm,
       detected,
       filtered,

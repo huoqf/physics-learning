@@ -532,7 +532,8 @@ function RadioModulationPanel() {
   )
 
   const isFM = modType === 1
-  const samples = useMemo(() => sampleRadioModulationWaves(150, time), [time])
+  // 540 个采样点覆盖 24 个高频载波周期（每周期 22.5 点），彻底避免折线欠采样混叠
+  const samples = useMemo(() => sampleRadioModulationWaves(540, time), [time])
 
   // 单卡片设计尺寸（用于内部归一化渲染）
   const cardW = 186
@@ -548,18 +549,19 @@ function RadioModulationPanel() {
     () => samples.map((s) => ({ x: s.t, y: s.detected })),
     [samples],
   )
+  const amEnvelopePts = useMemo(
+    () => samples.map((s) => ({ x: s.t, y: s.amEnvelope })),
+    [samples],
+  )
   const filteredPts = useMemo(
     () => samples.map((s) => ({ x: s.t, y: s.filtered })),
     [samples],
   )
 
   // 调幅波包包络线（上下两条虚线）
-  const upperEnvPts = useMemo(
-    () => samples.map((s) => ({ x: s.t, y: 1 + 0.65 * s.audio })),
-    [samples],
-  )
+  const upperEnvPts = amEnvelopePts
   const lowerEnvPts = useMemo(
-    () => samples.map((s) => ({ x: s.t, y: -(1 + 0.65 * s.audio) })),
+    () => samples.map((s) => ({ x: s.t, y: -s.amEnvelope })),
     [samples],
   )
 
@@ -569,42 +571,27 @@ function RadioModulationPanel() {
   const pUpperEnv = buildSvgWavePath(upperEnvPts, cardW, cardH, 0.24)
   const pLowerEnv = buildSvgWavePath(lowerEnvPts, cardW, cardH, 0.24)
   const pDetected = buildSvgWavePath(detectedPts, cardW, cardH, 0.24)
+  // AM 滤波包络线与检波脉冲同轴同尺度 (yScale = 0.24)，严格贴合正半周峰值顶边
+  const pAmEnvelopeFiltered = buildSvgWavePath(amEnvelopePts, cardW, cardH, 0.24)
   const pFiltered = buildSvgWavePath(filteredPts, cardW, cardH, 0.4)
-
-  const handleToggleMod = (type: number) => {
-    useAnimationStore.getState().updateParam('modType', type)
-  }
 
   return (
     <div className="w-full h-full flex flex-col p-2 bg-white rounded-xl border border-neutral-100 shadow-sm">
       <div className="shrink-0 flex justify-between items-center mb-1 px-0.5">
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-neutral-800">
-            无线电调制与检波全链路波形对照
+            无线电调制与{isFM ? '鉴频' : '检波'}全链路波形对照
           </span>
-          <div className="flex rounded bg-neutral-100 p-0.5 text-[10px]">
-            <button
-              type="button"
-              onClick={() => handleToggleMod(0)}
-              className={`px-1.5 py-0.5 rounded transition-all ${
-                !isFM ? 'bg-white font-bold text-neutral-800 shadow-xs' : 'text-neutral-500'
-              }`}
-            >
-              调幅 AM (改振幅)
-            </button>
-            <button
-              type="button"
-              onClick={() => handleToggleMod(1)}
-              className={`px-1.5 py-0.5 rounded transition-all ${
-                isFM ? 'bg-white font-bold text-neutral-800 shadow-xs' : 'text-neutral-500'
-              }`}
-            >
-              调频 FM (改频率)
-            </button>
-          </div>
+          <span
+            className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+              isFM ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'
+            }`}
+          >
+            {isFM ? '调频 FM（等幅改频）' : '调幅 AM（改振幅包络）'}
+          </span>
         </div>
         <span className="text-[10px] text-neutral-400 font-mono">
-          调制(发射端) ⟶ 传播 ⟶ 检波(接收端)
+          调制(发射端) ⟶ 传播 ⟶ {isFM ? '鉴频' : '检波'}(接收端)
         </span>
       </div>
 
@@ -613,7 +600,7 @@ function RadioModulationPanel() {
         <div className="flex flex-col p-1.5 rounded-lg border border-neutral-100 bg-neutral-50/50">
           <div className="flex justify-between items-center mb-1 text-[11px] font-bold text-neutral-700">
             <span>① 音频信号 (低频)</span>
-            <span className="text-[9px] px-1 py-0.2 rounded bg-amber-100 text-amber-700 font-normal">
+            <span className="text-[9px] px-1 py-0.5 rounded bg-amber-100 text-amber-700 font-normal">
               无法直接发射
             </span>
           </div>
@@ -640,7 +627,7 @@ function RadioModulationPanel() {
         <div className="flex flex-col p-1.5 rounded-lg border border-neutral-100 bg-neutral-50/50">
           <div className="flex justify-between items-center mb-1 text-[11px] font-bold text-neutral-700">
             <span>② 高频载波 (等幅)</span>
-            <span className="text-[9px] px-1 py-0.2 rounded bg-blue-100 text-blue-700 font-normal">
+            <span className="text-[9px] px-1 py-0.5 rounded bg-blue-100 text-blue-700 font-normal">
               用于运载发射
             </span>
           </div>
@@ -667,7 +654,7 @@ function RadioModulationPanel() {
         <div className="flex flex-col p-1.5 rounded-lg border border-amber-200 bg-amber-50/20">
           <div className="flex justify-between items-center mb-1 text-[11px] font-bold text-amber-800">
             <span>③ {isFM ? '调频波 (FM)' : '调幅波 (AM)'}</span>
-            <span className="text-[9px] px-1 py-0.2 rounded bg-amber-200 text-amber-800 font-normal">
+            <span className="text-[9px] px-1 py-0.5 rounded bg-amber-200 text-amber-800 font-normal">
               调制完成向外发射
             </span>
           </div>
@@ -713,11 +700,11 @@ function RadioModulationPanel() {
           </div>
         </div>
 
-        {/* 卡片 4：二极管检波与滤波还原 */}
+        {/* 卡片 4：AM 二极管检波与滤波 / FM 鉴频与滤波 */}
         <div className="flex flex-col p-1.5 rounded-lg border border-emerald-200 bg-emerald-50/20">
           <div className="flex justify-between items-center mb-1 text-[11px] font-bold text-emerald-800">
-            <span>④ 检波与滤波</span>
-            <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-100 text-emerald-800 font-normal">
+            <span>④ {isFM ? '鉴频与滤波' : '检波与滤波'}</span>
+            <span className="text-[9px] px-1 py-0.5 rounded bg-emerald-100 text-emerald-800 font-normal">
               接收端解调还原
             </span>
           </div>
@@ -732,19 +719,31 @@ function RadioModulationPanel() {
                 strokeWidth={0.8}
                 strokeDasharray="2,2"
               />
-              {/* 二极管切除负半周的正脉冲 */}
-              <path
-                d={pDetected}
-                fill="none"
-                stroke={withAlpha(EM_OSCILLATION_COLORS.charge, 0.45)}
-                strokeWidth={1.4}
-              />
-              {/* RC 滤波后还原的平滑音频 */}
-              <path d={pFiltered} fill="none" stroke={PHYSICS_COLORS.velocity} strokeWidth={2.2} />
+              {isFM ? (
+                /* FM 鉴频器：直接将频率疏密变化转换为音频电流 */
+                <path d={pFiltered} fill="none" stroke={PHYSICS_COLORS.velocity} strokeWidth={2.2} />
+              ) : (
+                <>
+                  {/* AM 二极管切除负半周的单向脉动脉冲 */}
+                  <path
+                    d={pDetected}
+                    fill="none"
+                    stroke={withAlpha(EM_OSCILLATION_COLORS.charge, 0.45)}
+                    strokeWidth={1.3}
+                  />
+                  {/* RC 滤波沿脉动顶边平滑包络（与半波脉冲同轴同尺度） */}
+                  <path
+                    d={pAmEnvelopeFiltered}
+                    fill="none"
+                    stroke={PHYSICS_COLORS.velocity}
+                    strokeWidth={2.2}
+                  />
+                </>
+              )}
             </svg>
           </div>
           <div className="text-[9px] text-emerald-700 text-center mt-1 truncate">
-            二极管单向切除负半周 ⟶ 滤波还原声音
+            {isFM ? '鉴频器将频率变化还原为声音' : '二极管切负半周 ⟶ 滤波沿包络还原'}
           </div>
         </div>
       </div>

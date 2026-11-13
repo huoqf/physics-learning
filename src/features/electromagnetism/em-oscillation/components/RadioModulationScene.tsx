@@ -36,20 +36,25 @@ export function RadioModulationScene({ modType = 0, time, font }: RadioModulatio
   // 空间行进波前（向右推移）
   const waveSpeed = 90
   const waveSpacing = 32
-  const waveCount = 8
+  const waveCount = 10
   const baseOffset = (time * waveSpeed) % waveSpacing
+  const linkSpan = RX_X - TX_X
 
   return (
     <>
-      {/* ── 0. 空间调幅行进电磁波（自发射天线向接收天线传播）── */}
+      {/* ── 0. 空间行进电磁波（AM 改变振幅包络；FM 振幅恒定、疏密交替）── */}
       <g pointerEvents="none">
         {Array.from({ length: waveCount }).map((_, idx) => {
-          const r = baseOffset + idx * waveSpacing
-          if (r < 20 || r > RX_X - TX_X - 10) return null
-          const distFrac = r / (RX_X - TX_X)
-          // 调幅波包包络波动
-          const envScale = 0.7 + 0.3 * Math.cos((time * 3 - distFrac * 6))
-          const opacity = Math.max(0, (0.8 - distFrac * 0.45) * envScale)
+          const linearR = baseOffset + idx * waveSpacing
+          // FM 模式下波前呈疏密周期交替（正弦相位偏移），AM 模式保持等距推进
+          const r = isFM
+            ? linearR + 7.5 * Math.sin(time * 3 - (linearR / linkSpan) * Math.PI * 3)
+            : linearR
+          if (r < 20 || r > linkSpan - 10) return null
+          const distFrac = r / linkSpan
+          // AM 调幅波包包络波动；FM 等幅（envScale = 1）
+          const envScale = isFM ? 1 : 0.7 + 0.3 * Math.cos(time * 3 - distFrac * 6)
+          const opacity = Math.max(0, (0.8 - distFrac * 0.45) * (isFM ? 0.92 : envScale))
 
           return (
             <path
@@ -250,7 +255,7 @@ export function RadioModulationScene({ modType = 0, time, font }: RadioModulatio
           电谐振
         </text>
 
-        {/* 检波器模块（核心：二极管符号与单向导电性） */}
+        {/* 解调模块（AM：二极管单向检波；FM：鉴频器解调） */}
         <g transform={`translate(${RX_X + 106}, ${CENTER_Y - 35})`}>
           <rect
             x={0}
@@ -271,23 +276,38 @@ export function RadioModulationScene({ modType = 0, time, font }: RadioModulatio
             fontWeight="bold"
             fontFamily={FONT.family}
           >
-            检波器
+            {isFM ? '鉴频器' : '检波器'}
           </text>
 
-          {/* 二极管电路符号（三角形 + 竖阻挡线） */}
-          <g transform="translate(18, 32)">
-            {/* 三角形正极 */}
-            <polygon points="0,4 16,12 0,20" fill={EM_OSCILLATION_COLORS.charge} />
-            {/* 负极竖线 */}
-            <line
-              x1={16}
-              y1={2}
-              x2={16}
-              y2={22}
-              stroke={EM_OSCILLATION_COLORS.charge}
-              strokeWidth={STROKE.objectLine}
-            />
-          </g>
+          {isFM ? (
+            /* 鉴频解调符号（Δf → u） */
+            <text
+              x={31}
+              y={44}
+              fontSize={font(FONT.small)}
+              fill={EM_OSCILLATION_COLORS.charge}
+              textAnchor="middle"
+              fontWeight="bold"
+              fontFamily={FONT.family}
+            >
+              Δf → u
+            </text>
+          ) : (
+            /* 二极管电路符号（三角形 + 竖阻挡线） */
+            <g transform="translate(18, 32)">
+              {/* 三角形正极 */}
+              <polygon points="0,4 16,12 0,20" fill={EM_OSCILLATION_COLORS.charge} />
+              {/* 负极竖线 */}
+              <line
+                x1={16}
+                y1={2}
+                x2={16}
+                y2={22}
+                stroke={EM_OSCILLATION_COLORS.charge}
+                strokeWidth={STROKE.objectLine}
+              />
+            </g>
+          )}
           <text
             x={31}
             y={62}
@@ -296,7 +316,7 @@ export function RadioModulationScene({ modType = 0, time, font }: RadioModulatio
             textAnchor="middle"
             fontFamily={FONT.family}
           >
-            单向导电
+            {isFM ? '频率解调' : '单向导电'}
           </text>
         </g>
 
@@ -349,16 +369,16 @@ export function RadioModulationScene({ modType = 0, time, font }: RadioModulatio
       {/* ── 3. 全链路四阶段指示文字标签 ── */}
       <g fontFamily={FONT.family} fontSize={font(FONT.small)} fontWeight="bold">
         <text x={162} y={CENTER_Y + 54} fill={PHYSICS_COLORS.velocity} textAnchor="middle">
-          ① 调制 (加到高频波)
+          ① 调制 (加载信号)
         </text>
         <text x={(TX_X + RX_X) / 2} y={CENTER_Y - 78} fill={EM_OSCILLATION_COLORS.bFieldWave} textAnchor="middle">
           ② 发射与传播 (光速 c)
         </text>
-        <text x={RX_X + 53} y={CENTER_Y + 54} fill={EM_OSCILLATION_COLORS.current} textAnchor="middle">
-          ③ 调谐 (电谐振选台)
+        <text x={RX_X + 54} y={CENTER_Y + 54} fill={EM_OSCILLATION_COLORS.current} textAnchor="middle">
+          ③ 调谐 (选台)
         </text>
-        <text x={RX_X + 137} y={CENTER_Y + 54} fill={EM_OSCILLATION_COLORS.charge} textAnchor="middle">
-          ④ 检波 (还原声音)
+        <text x={RX_X + 142} y={CENTER_Y + 54} fill={EM_OSCILLATION_COLORS.charge} textAnchor="middle">
+          {isFM ? '④ 鉴频 (还原)' : '④ 检波 (还原)'}
         </text>
       </g>
     </>

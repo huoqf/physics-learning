@@ -24,7 +24,10 @@ const LC_C_DEFAULT = LC_DEFAULT_PARAMS.C
  * 周期由 L、C 唯一决定（T = 2π√(LC)），必须复用 physics 层的计算结果，
  * 禁止在注册表里重复写一遍公式（双真源）。
  */
-function lcMaxTime(params: Record<string, number>): number {
+function lcMaxTime(params: Record<string, number>): number | undefined {
+  // 只有场次 0（LC 振荡，timed 模式）需要按 2 个固有周期限制时长；
+  // 场次 1/2 的 loop 模式不设固定周期截断，避免每 5.03s 强制归零跳变
+  if (params.scene !== 0 && params.scene !== undefined) return undefined
   const L = params.L ?? LC_L_DEFAULT
   const baseC = params.C ?? LC_C_DEFAULT
   const dRatio = params.dRatio ?? 1
@@ -319,7 +322,7 @@ const sharedControlMeta: ControlMeta[] = [
     hideIf: 'radioMode',
     hideIfValue: [0, 1],
     content:
-      '新高考必考波形辨析：① 调制是将低频音频信号装载到高频载波（AM 改变振幅，FM 改变频率）；② 调幅波包络与音频信号完全同形；③ 检波利用二极管单向导电性截去负半周，经电容滤波还原出原始声音。',
+      '无线电通信波形要点：① 调制把低频音频加载到高频载波（AM 改变振幅，FM 改变频率）；② 调幅波包络与音频信号同形；③ AM 经二极管单向切除负半周并滤波还原音频，FM 为等幅波需经鉴频还原。',
   },
 ]
 

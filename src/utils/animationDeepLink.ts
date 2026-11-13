@@ -43,6 +43,43 @@ export function parseUrlParamOverrides(
 }
 
 /**
+ * 解析动画 URL 查询串中的全部参数覆盖（顶层键值 `?v0=5` + JSON `?params={...}`）。
+ *
+ * JSON 参数优先级高于顶层键值；未解析到有效 JSON 时只应用顶层键值，保证与历史链接兼容。
+ */
+export function resolveUrlMergedParams(
+  search: string,
+  defaultParams: Record<string, number>,
+): {
+  mergedParams: Record<string, number>
+  hasOverrides: boolean
+} {
+  const flatParams = parseUrlParamOverrides(search, defaultParams)
+  const sp = new URLSearchParams(search)
+  const customParamsStr = sp.get('params')
+  let jsonParams: Record<string, number> = {}
+  if (customParamsStr) {
+    try {
+      const parsed = JSON.parse(decodeURIComponent(customParamsStr))
+      if (parsed && typeof parsed === 'object') {
+        for (const [k, v] of Object.entries(parsed)) {
+          if (typeof v === 'number' && Number.isFinite(v)) {
+            jsonParams[k] = v
+          }
+        }
+      }
+    } catch {
+      // 忽略畸形 JSON 参数，降级走默认与平铺参数
+    }
+  }
+  const hasOverrides = Object.keys(flatParams).length > 0 || Object.keys(jsonParams).length > 0
+  return {
+    mergedParams: { ...defaultParams, ...flatParams, ...jsonParams },
+    hasOverrides,
+  }
+}
+
+/**
  * 动画深链「定格帧」参数解析 —— 纯函数，无 React / Store 依赖。
  *
  * 为什么需要它：
