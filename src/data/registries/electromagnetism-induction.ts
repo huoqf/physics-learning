@@ -391,13 +391,6 @@ export const electromagnetismInductionAnimations = defineAnimations({
           { value: 1, label: '恒力驱动·等差' },
         ],
       },
-      {
-        type: 'preset',
-        label: '⚖ 动量守恒基准（v₀=6m/s）',
-        description: 'm_a=0.2kg、m_b=0.4kg、B=1.0T、L=0.5m：等大反向的安培力让两杆动量互相转移',
-        params: { scenario: 0, massA: 0.2, massB: 0.4, fieldB: 1.0, railL: 0.5, resSum: 1.0, initialV0: 6.0 },
-        restartOnApply: true,
-      },
     ],
     paramMeta: [
       { key: 'massA', label: 'a 棒质量 m_a', min: 0.05, max: 1.0, step: 0.05, unit: 'kg', group: '质量与回路' },

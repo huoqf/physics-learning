@@ -288,15 +288,17 @@ export const ParamControl: React.FC<ParamControlProps> = ({
         </div>
 
         {marks.some((mark) => mark.label) && (
-          <div className="relative h-4 text-ui-sm font-semibold w-full" style={{ paddingLeft: '44px', paddingRight: '44px' }}>
+          <div className="relative h-4 text-ui-sm font-semibold w-full overflow-hidden">
             {marks.filter((mark) => mark.label).map((mark) => {
               const markVariant = mark.variant ?? 'recommended'
               const [, textClass] = markClass[markVariant].split(' ')
+              const pct = getMarkPercentage(mark.value, param)
               return (
                 <span
                   key={`${param.key}-label-${mark.value}-${mark.label}`}
-                  className={['absolute top-0 -translate-x-1/2 whitespace-nowrap', textClass].join(' ')}
-                  style={{ left: `${getMarkPercentage(mark.value, param)}%` }}
+                  className={['absolute top-0 whitespace-nowrap max-w-full truncate', textClass].join(' ')}
+                  style={{ left: `${pct}%`, transform: `translateX(-${pct}%)` }}
+                  title={mark.label}
                 >
                   {mark.label}
                 </span>
@@ -311,7 +313,7 @@ export const ParamControl: React.FC<ParamControlProps> = ({
   return (
     <div
       className={[
-        'bg-white rounded-xl shadow-sm border border-neutral-200 p-4',
+        'bg-white rounded-xl shadow-sm border border-neutral-200 p-4 min-w-0 overflow-x-hidden',
         disabled && 'opacity-40 pointer-events-none',
       ].filter(Boolean).join(' ')}
     >

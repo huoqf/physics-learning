@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ClipboardList, GraduationCap, Timer, History, Trash2, Trophy } from 'lucide-react'
+import { ClipboardList, GraduationCap, Timer, History, Trash2, Trophy, X } from 'lucide-react'
 import { allProblems } from '@/data/problems'
+import { getKnowledgeNode } from '@/data/knowledgeTree'
 import { MASTER_MODEL_COUNT } from '@/data/masterModels'
 import { usePracticeStore, type PracticeMode } from '@/stores'
 import { PracticeSession } from '@/features/practice'
@@ -14,8 +15,14 @@ export default function PracticePage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const modeParam = searchParams.get('mode')
+  const knowledgeFilter = searchParams.get('knowledge')
   const sessionMode: PracticeMode | null =
     modeParam === 'practice' || modeParam === 'test' ? modeParam : null
+
+  const knowledgeNode = useMemo(
+    () => (knowledgeFilter ? getKnowledgeNode(knowledgeFilter) : undefined),
+    [knowledgeFilter]
+  )
 
   const history = usePracticeStore((s) => s.history)
   const clearHistory = usePracticeStore((s) => s.clearHistory)
@@ -31,17 +38,31 @@ export default function PracticePage() {
 
   const filteredProblems = useMemo(() => {
     return allProblems.filter((p) => {
+      if (knowledgeFilter) {
+        const matchesDirect = p.knowledgeIds.includes(knowledgeFilter)
+        const matchesNodeList = knowledgeNode?.problemIds.includes(p.id) ?? false
+        if (!matchesDirect && !matchesNodeList) return false
+      }
       if (moduleFilter.size > 0 && !moduleFilter.has(moduleOf(p.knowledgeIds))) return false
       if (difficultyFilter.size > 0 && !difficultyFilter.has(p.difficulty)) return false
       return true
     })
-  }, [moduleFilter, difficultyFilter])
+  }, [knowledgeFilter, knowledgeNode, moduleFilter, difficultyFilter])
 
   const startSession = (mode: PracticeMode) => {
-    setSearchParams({ mode })
+    const next = new URLSearchParams(searchParams)
+    next.set('mode', mode)
+    setSearchParams(next)
   }
   const exitSession = () => {
-    setSearchParams({})
+    const next = new URLSearchParams(searchParams)
+    next.delete('mode')
+    setSearchParams(next)
+  }
+  const clearKnowledgeFilter = () => {
+    const next = new URLSearchParams(searchParams)
+    next.delete('knowledge')
+    setSearchParams(next)
   }
 
   // ---- 会话进行中 ----
@@ -103,6 +124,22 @@ export default function PracticePage() {
 
         {/* 题目筛选 */}
         <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-4 mb-5 space-y-2">
+          {knowledgeFilter && (
+            <div className="flex items-center gap-2 pb-2 mb-2 border-b border-neutral-100">
+              <span className="text-sm text-neutral-400 w-12">知识点</span>
+              <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-accent-100 text-accent-700 font-medium">
+                <span>{knowledgeNode?.title ?? knowledgeFilter}</span>
+                <button
+                  type="button"
+                  onClick={clearKnowledgeFilter}
+                  className="hover:text-accent-900 cursor-pointer"
+                  aria-label="清除知识点筛选"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </span>
+            </div>
+          )}
           {availableModules.length > 1 && (
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm text-neutral-400 w-12">模块</span>

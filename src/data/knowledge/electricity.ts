@@ -135,7 +135,7 @@ export const electricityKnowledge: KnowledgeNode[] = [
   },
   {
     id: 'electricity-2-5',
-    title: '高考实验：测定电源电动势与内阻',
+    title: '实验：测定电源电动势与内阻',
     chapter: '电磁学 第2章 恒定电流',
     module: 'electricity',
     importance: 'gaokao',

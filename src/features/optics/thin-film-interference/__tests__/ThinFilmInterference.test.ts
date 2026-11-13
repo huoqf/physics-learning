@@ -10,7 +10,7 @@ describe('ThinFilmInterference 集成测试', () => {
     expect(config.controlsMode).toBe('param')
     expect(config.defaultParams.mode).toBe(0)
     expect(config.defaultParams.filmThickness).toBe(100)
-    expect(config.defaultParams.defect).toBe(1)
+    expect(config.defaultParams.defect).toBe(0)
     expect(config.paramMeta).toHaveLength(4)
   })
 

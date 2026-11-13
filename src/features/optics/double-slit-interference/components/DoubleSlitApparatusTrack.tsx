@@ -67,7 +67,7 @@ export const DoubleSlitApparatusTrack: React.FC<DoubleSlitApparatusTrackProps> =
         fill={CANVAS_COLORS.labelText}
         fontWeight="bold"
       >
-        光具座导轨装配示意（高考考点：严格顺序与作用）
+        光具座导轨装配示意
       </text>
 
       {/* ─── 1. 光轴参考中心虚线 ─── */}

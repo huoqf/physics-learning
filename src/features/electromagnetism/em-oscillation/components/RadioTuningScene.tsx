@@ -201,18 +201,16 @@ export function RadioTuningScene({ cRx, time, font }: RadioTuningSceneProps) {
 
       {/* ── 3. 调谐回路元件：电感线圈 L 与 可变电容器 C ── */}
       <g>
-        {/* 左侧接收电感线圈（垂直轴向旋转90°，左右引线转为上下引线，端点精确吻合 125 与 205） */}
+        {/* 左侧接收电感线圈（标准原理图连续半圆拱电感符号，旋转90°垂直接入 y=125 与 y=205） */}
         <g transform={`rotate(90, ${RX_LC.left}, ${(RX_LC.top + RX_LC.bottom) / 2})`}>
           <Solenoid
+            variant="symbolic"
             x={RX_LC.left}
             y={(RX_LC.top + RX_LC.bottom) / 2}
             width={80}
             height={32}
-            turns={5}
-            current={response * Math.sin(time * 12)}
+            turns={4}
             leadType="horizontal"
-            showPolarity={false}
-            showWindingArrows={false}
             showIronCore={false}
             animated={false}
           />

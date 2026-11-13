@@ -1,10 +1,10 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
 
-// ===== 电磁学 · 复合场组合场模型（高考三合一级联模型）=====
+// ===== 电磁学 · 复合场与组合场（级联模型）=====
 export const combinedFieldsAnimations = defineAnimations({
   'anim-combined-fields': {
-    title: '复合场组合场模型（高考三合一级联模型）',
+    title: '带电粒子在复合场与组合场中的运动',
     knowledgeId: 'electricity-3-4',
     Component: lazy(() =>
       import('@/features/electromagnetism/magnetism/combined-fields/CombinedFieldsAnimation'),

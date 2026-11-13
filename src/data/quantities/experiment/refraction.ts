@@ -158,7 +158,7 @@ export function buildExperimentRefractionQuantities(
       note: "sin θ₁ = AA'/R，sin θ₂ = BB'/R，比值消去半径 R",
     },
     {
-      name: '高考图像斜率法',
+      name: '图像斜率法',
       latex: '\\sin \\theta_1 = n \\cdot \\sin \\theta_2',
       level: 'derived' as const,
       condition: '多次改变入射角 θ₁',

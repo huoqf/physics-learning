@@ -68,7 +68,7 @@ export default function RefractionExperimentAnimation() {
           xDomain={xDomain}
           yDomain={[0, 1.0]}
           cursorX={currentPoint.x}
-          title={`高考图像斜率法：sin θ₁ - sin θ₂ 关系图线 (割线斜率 k ≈ n = ${physicsResult.physics.nMeas.toFixed(3)})`}
+          title={`图像斜率法：sin θ₁ - sin θ₂ 关系图线 (割线斜率 k ≈ n = ${physicsResult.physics.nMeas.toFixed(3)})`}
           xLabel="sin θ₂ (折射角正弦)"
           yLabel="sin θ₁ (入射角正弦)"
         />

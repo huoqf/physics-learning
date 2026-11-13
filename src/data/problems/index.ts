@@ -14,10 +14,12 @@ import { experimentProblems } from './experiment'
 import { inductionProblems } from './induction'
 import { nuclearGaokaoProblems } from './nuclear'
 import { gaokao2025Problems } from './gaokao2025'
+import { thermodynamicsProblems } from './thermodynamics'
 
 export const allProblems: Problem[] = [
   probBlockBoardModel,
   ...masterModelProblems,
+  ...thermodynamicsProblems,
   ...nuclearGaokaoProblems,
   ...gaokao2025Problems,
   ...opticsGaokaoProblems,

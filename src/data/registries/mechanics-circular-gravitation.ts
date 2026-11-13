@@ -277,15 +277,6 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 0,
       },
-      {
-        type: 'preset',
-        label: '🔺 等边三星（L=8×10¹⁰m）',
-        description: '三颗5M☉恒星构成等边三角形绕质心运动，聚焦星1分引力合成',
-        params: { mode: 1, L: 8.0 },
-        restartOnApply: true,
-        showIf: 'mode',
-        showIfValue: 1,
-      },
       { type: 'storeToggle', label: '显示受力与速度矢量', storeKey: 'toggleVectors', stateKey: 'showVectors', group: '显示辅助' },
       {
         type: 'tip', group: '图表解读', showIf: 'mode', showIfValue: 0,
@@ -467,18 +458,6 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
         group: '推导辅助',
         showIf: 'mode',
         showIfValue: 0,
-      },
-      {
-        type: 'preset',
-        label: '📚 教材典例（β=0.60）',
-        group: '典型工况',
-        params: { beta: 0.6, m0: 1.0, mode: 0, showGeometry: 1 },
-      },
-      {
-        type: 'preset',
-        label: '🚀 高速航行（β=0.80）',
-        group: '典型工况',
-        params: { beta: 0.8, m0: 1.0, mode: 0, showGeometry: 1 },
       },
       {
         type: 'preset',

@@ -193,7 +193,7 @@ export const ComptonScatteringScene: React.FC<ComptonScatteringSceneProps> = ({ 
             x={0}
             y={0}
             width={620}
-            height={140}
+            height={102}
             rx={6}
             fill={CANVAS_COLORS.white}
             stroke={CANVAS_COLORS.axis}
@@ -223,15 +223,6 @@ export const ComptonScatteringScene: React.FC<ComptonScatteringSceneProps> = ({ 
             fontSize={12}
           >
             能量守恒：hν = hν&apos; + E_k  |  动量守恒：p⃗ = p⃗&apos; + p⃗_e (矢量三角形)
-          </text>
-          <text
-            x={20}
-            y={112}
-            fill={CANVAS_COLORS.labelText}
-            fontSize={12}
-            fontWeight="bold"
-          >
-            💡 高考核心结论：康普顿效应证实了光子不仅具有能量，还具有动量；波长变长是因为光子在弹性碰撞中将部分动能传递给了反冲电子。
           </text>
         </g>
       </svg>

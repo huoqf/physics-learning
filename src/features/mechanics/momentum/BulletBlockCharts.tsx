@@ -287,7 +287,7 @@ export default function BulletBlockCharts({
     <div className="h-full w-full flex flex-col gap-1.5 text-neutral-800">
       {/* 面积高亮 Toggle 按钮栏 */}
       <div className="flex gap-1.5 items-center justify-start text-xs select-none pl-1 grow-0 shrink-0">
-        <span className="text-neutral-500 font-semibold mr-1">高考图线面积联动分析:</span>
+        <span className="text-neutral-500 font-semibold mr-1">图线面积联动分析:</span>
         <button
           className={`px-2.5 py-0.5 rounded-full border transition-all duration-200 cursor-pointer ${
             highlightType === 's1'

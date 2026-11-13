@@ -114,33 +114,4 @@ describe('Bohr Theory and Modern Physics Quantities Builder', () => {
       expect(resCol?.quantities[2].value).toContain('0.80 eV')
     })
   })
-
-  describe('Stage 3: Coupled Photoelectric Effect (mode = 2)', () => {
-    it('should calculate Ekm and stopping voltage correctly', () => {
-      // 照射光子：4->1 跃迁（能量 12.75 eV）
-      // 钠逸出功：2.29 eV
-      // 最大初动能：12.75 - 2.29 = 10.46 eV
-      // 理论截止电压：10.46 V
-      const res = buildModernPhysicsQuantities(animId, {
-        mode: 2,
-        radiationPhotonIndex: 2, // 4->1
-        workFunction: 2.29,
-        stoppingVoltage: 5.0,
-      }, 0)
-
-      expect(res?.quantities[1].value).toBe('12.75') // hv
-      expect(res?.quantities[3].value).toBe('10.46') // Ekm
-      expect(res?.quantities[4].value).toBe('10.46') // Uc
-      expect(res?.quantities[5].value).toContain('稳定光电流') // U < Uc
-
-      // 反向电压 >= Uc 时，电流截止
-      const resCut = buildModernPhysicsQuantities(animId, {
-        mode: 2,
-        radiationPhotonIndex: 2,
-        workFunction: 2.29,
-        stoppingVoltage: 11.0,
-      }, 0)
-      expect(resCut?.quantities[5].value).toContain('拦截')
-    })
-  })
 })

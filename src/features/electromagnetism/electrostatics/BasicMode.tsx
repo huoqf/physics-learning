@@ -294,7 +294,7 @@ export default function BasicMode({
               <g transform={`translate(${centerX}, ${centerY - chargeR - 45})`}>
                 <rect x={-80} y={-30} width={160} height={42} rx={6} fill={CANVAS_COLORS.strokeDark} opacity={0.9} />
                 <text x={0} y={-12} fontSize={CANVAS_STYLE.font.labelSize - 1} fill={colors.accent[400]} textAnchor="middle" fontWeight="bold">
-                  高考核心：接触起电
+                  接触起电电荷均分
                 </text>
                 <text x={0} y={6} fontSize={CANVAS_STYLE.font.axisSize} fill={CANVAS_COLORS.white} textAnchor="middle">
                   Q' = (Q₁ + Q₂) / 2
@@ -303,7 +303,7 @@ export default function BasicMode({
             </g>
           )}
 
-          {/* 高考考点：适用条件辨析 */}
+          {/* 物理模型边界：适用条件提示 */}
           {isTooClose && (
             <g transform={`translate(${w * 0.02}, ${stageHeight * 0.72})`}>
               <rect x={0} y={0} width={stageWidth - w * 0.04} height={56} rx={6} fill={colors.accent[50]} stroke={colors.accent[400]} strokeWidth={1} />
@@ -311,7 +311,7 @@ export default function BasicMode({
               <circle cx={20} cy={28} r={8} fill={colors.accent[500]} />
               <text x={20} y={31} fontSize={CANVAS_STYLE.font.small} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">!</text>
               <text x={36} y={22} fontSize={CANVAS_STYLE.font.labelSize} fill={colors.accent[700]} fontWeight="bold">
-                高考考点辨析：点电荷适用条件
+                模型边界：点电荷适用条件
               </text>
               <text x={36} y={38} fontSize={CANVAS_STYLE.font.axisSize} fill={colors.neutral[600]}>
                 当距离过近（r → 0）时，带电体不能视为点电荷，实际电荷分布会偏移，公式失效。

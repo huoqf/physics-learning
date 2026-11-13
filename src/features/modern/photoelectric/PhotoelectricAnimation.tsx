@@ -67,7 +67,7 @@ export default function PhotoelectricAnimation() {
         />
       </div>
 
-      {/* 高考双图像体系（通关模式显示） */}
+      {/* 物理规律双图像区 */}
       {mode === 1 && (
         <div className="flex-[1.4] min-h-0 w-full bg-white rounded-lg border border-neutral-100 p-2 overflow-hidden shrink-0 flex flex-col">
           <div className="flex items-center gap-2 mb-1 shrink-0">

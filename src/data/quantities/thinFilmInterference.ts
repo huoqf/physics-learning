@@ -166,7 +166,7 @@ export function buildThinFilmInterferenceQuantities(
       importance: 'core',
     },
     {
-      text: '山东高考真题：同一条纹对应空气膜等厚。凹陷处膜变厚，条纹必向薄端弯；弯曲一个条纹间距对应缺陷深度恰为 λ/2',
+      text: '等厚干涉判据：同一条纹对应空气膜厚度相等。凹陷处膜变厚，条纹向薄端弯曲；弯曲一个条纹间距对应缺陷深度为 λ/2',
       importance: 'hard',
     },
     {

@@ -192,23 +192,6 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       },
       // §4 显示辅助
       { type: 'storeToggle', label: '显示受力分析图', storeKey: 'toggleVectors', stateKey: 'showVectors', group: '显示辅助' },
-      // §5 快捷预设
-      {
-        type: 'preset', label: '🌍 地球 g=9.8', group: '快捷预设',
-        params: { g: 9.8 }, showIf: 'mode', showIfValue: 0
-      },
-      {
-        type: 'preset', label: '🌙 月球 g=1.63', group: '快捷预设',
-        params: { g: 1.63 }, showIf: 'mode', showIfValue: 0
-      },
-      {
-        type: 'preset', label: '🔴 火星 g=3.72', group: '快捷预设',
-        params: { g: 3.72 }, showIf: 'mode', showIfValue: 0
-      },
-      {
-        type: 'preset', label: '🪐 木星 g=24.79', group: '快捷预设',
-        params: { g: 24.79 }, showIf: 'mode', showIfValue: 0
-      },
       // §6 斜面摩擦力教学提示
       {
         type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 1,
@@ -816,13 +799,6 @@ export const mechanicsDynamicsAnimations = defineAnimations({
           { value: 2.5, label: '中 (2.5m)' },
           { value: 4.0, label: '长 (4.0m)' },
         ],
-      },
-      {
-        type: 'preset',
-        label: '🧱 板块滑动（v₀=5m/s）',
-        description: 'm=1kg、M=3kg、μ₁=0.3、μ₂=0.05、L=2.5m：恰滑至右端的临界工况',
-        params: { m: 1, M: 3, mu1: 0.3, mu2: 0.05, v0: 5, L: 2.5 },
-        restartOnApply: true,
       },
       // 原「高考考点」tip 已删除：共速判断、解题三步、临界条件、共速后行为
       // 四条右屏 gaokaoPoints 已逐条给出（quantities/dynamics/blockBoard.ts L84-87）。

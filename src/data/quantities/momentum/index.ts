@@ -2,6 +2,7 @@ import type { PhysicsPanelData, PhysicsQuantity } from '../types'
 import { handleMomentum } from './momentum'
 import { handleImpulse } from './impulse'
 import { handleMomentumConservation } from './momentumConservation'
+import { handleExperimentMomentum } from './experimentMomentum'
 import { handleCollision } from './collision'
 import { handleCurvedSlot } from './curvedSlot'
 import { handleSpringBlocks } from './springBlocks'
@@ -19,6 +20,7 @@ export function buildMomentumQuantities(
     handleMomentum(animId, params, time, base) ??
     handleImpulse(animId, params, time, base) ??
     handleMomentumConservation(animId, params, time, base) ??
+    handleExperimentMomentum(animId, params, time, base) ??
     handleCollision(animId, params, time, base) ??
     handleCurvedSlot(animId, params, time, base) ??
     handleSpringBlocks(animId, params, time, base) ??

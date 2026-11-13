@@ -30,6 +30,35 @@ export function collectAnimIds() {
   return [...ids].sort()
 }
 
+/** 扫描当前 DOM 里左屏是否存在水平滚动条或内容横向溢出 */
+export const scanLeftOverflowOnPage = (page) =>
+  page.evaluate(() => {
+    const panel = document.querySelector('.overflow-y-auto')
+    if (!panel) return null
+    const scrollDiff = panel.scrollWidth - panel.clientWidth
+    const pRect = panel.getBoundingClientRect()
+    const overflows = []
+    for (const el of panel.querySelectorAll('span, button, label, input')) {
+      if (el instanceof HTMLInputElement && el.type === 'range') continue
+      const r = el.getBoundingClientRect()
+      if (r.width <= 0 || r.height <= 0) continue
+      const overRight = Math.round(r.right - pRect.right)
+      const overLeft = Math.round(pRect.left - r.left)
+      if (overRight > 1 || overLeft > 1) {
+        overflows.push({
+          text: (el.textContent || '').trim().slice(0, 30) || el.tagName,
+          over: Math.max(overRight, overLeft),
+        })
+      }
+    }
+    if (scrollDiff <= 1 && overflows.length === 0) return null
+    return {
+      scrollDiff: Math.max(0, scrollDiff),
+      culprit: overflows[0]?.text ?? 'panel',
+      over: overflows[0]?.over ?? scrollDiff,
+    }
+  })
+
 /** 扫描当前 DOM 里所有分段器按钮是否折行 */
 export const scanSegWrapOnPage = (page) =>
   page.evaluate(() => {

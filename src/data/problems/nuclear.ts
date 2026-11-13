@@ -171,8 +171,8 @@ export const nuclearGaokaoProblems: Problem[] = [
     knowledgeIds: ['nuclear-1-1'],
     tags: ['高考真题', '压轴题', '外切圆内切圆', '磁场圆周运动', '动量守恒'],
     targetAnimation: {
-      animId: 'anim-nuclear-decay',
-      presetParams: { mode: 2, decayType: 0, bField: 1.5 },
+      animId: 'anim-decay-magnetic-orbit',
+      presetParams: { decayType: 0, bField: 1.5 },
       presetDescription: '载入静止核在磁场中发生 α 衰变的外切圆轨迹模型',
     },
     optionExplanations: {

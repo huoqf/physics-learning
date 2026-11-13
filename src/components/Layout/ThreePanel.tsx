@@ -112,7 +112,7 @@ export const ThreePanel: React.FC<ThreePanelProps> = ({
 
             {/* 抽屉面板 */}
             <div
-              className="absolute top-0 left-0 z-30 h-full bg-neutral-50 border-r border-neutral-200 overflow-y-auto shadow-xl"
+              className="absolute top-0 left-0 z-30 h-full bg-neutral-50 border-r border-neutral-200 overflow-y-auto overflow-x-hidden shadow-xl"
               style={{
                 width: leftW,
                 transform: drawerOpen ? 'translateX(0)' : 'translateX(-100%)',
@@ -125,7 +125,7 @@ export const ThreePanel: React.FC<ThreePanelProps> = ({
         ) : (
           /* 固定侧边面板 */
           <div
-            className="flex-shrink-0 bg-neutral-50 border-r border-neutral-200 overflow-y-auto"
+            className="flex-shrink-0 bg-neutral-50 border-r border-neutral-200 overflow-y-auto overflow-x-hidden"
             style={{ width: leftW }}
           >
             {left}

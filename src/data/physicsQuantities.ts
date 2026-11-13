@@ -14,6 +14,8 @@ export type { PhysicsQuantity, GaokaoPoint, Formula, PhysicsPanelData } from './
 type BuilderName =
   | 'buildKinematicsQuantities'
   | 'buildMechanicsExperimentBaseQuantities'
+  | 'buildExperimentMechanicalEnergyQuantities'
+  | 'buildExperimentNewtonSecondQuantities'
   | 'buildVibrationQuantities'
   | 'buildForceMotionQuantities'
   | 'buildDynamicsQuantities'
@@ -82,9 +84,12 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-projectile':            { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
   'anim-oblique-throw':         { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
   'anim-mechanics-experiment-base': { loader: () => import('./quantities/mechanics/experiment-base'), builderName: 'buildMechanicsExperimentBaseQuantities' },
+  'anim-experiment-mechanical-energy': { loader: () => import('./quantities/mechanics/experiment-mechanical-energy'), builderName: 'buildExperimentMechanicalEnergyQuantities' },
+  'anim-experiment-newton-second': { loader: () => import('./quantities/mechanics/experiment-newton-second'), builderName: 'buildExperimentNewtonSecondQuantities' },
 
   // 振动与波
   'anim-simple-pendulum':       { loader: () => import('./quantities/vibration'),      builderName: 'buildVibrationQuantities' },
+  'anim-experiment-pendulum':   { loader: () => import('./quantities/vibration'),      builderName: 'buildVibrationQuantities' },
   'anim-simple-harmonic':       { loader: () => import('./quantities/vibration'),      builderName: 'buildVibrationQuantities' },
   'anim-mechanical-wave':       { loader: () => import('./quantities/vibration'),      builderName: 'buildVibrationQuantities' },
   'anim-wave-diffraction':      { loader: () => import('./quantities/vibration'),      builderName: 'buildVibrationQuantities' },
@@ -130,6 +135,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-impulse':               { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
   'anim-impulse-concept':       { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
   'anim-momentum-conservation': { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
+  'anim-experiment-momentum':   { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
   'anim-collision':             { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
   'anim-curved-slot':            { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
   'anim-spring-blocks':          { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
@@ -207,9 +213,11 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-alpha-scatter':       { loader: () => import('./quantities/alphaScatter'), builderName: 'buildAlphaScatterQuantities' },
   'anim-photoelectric':       { loader: () => import('./quantities/photoelectric'), builderName: 'buildPhotoelectricQuantities' },
   'anim-nuclear-decay':       { loader: () => import('./quantities/nuclearDecay'),     builderName: 'buildNuclearDecayQuantities' },
+  'anim-decay-magnetic-orbit': { loader: () => import('./quantities/nuclearDecay'),  builderName: 'buildNuclearDecayQuantities' },
   'anim-nuclear-half-life':   { loader: () => import('./quantities/nuclearHalfLife'),  builderName: 'buildNuclearHalfLifeQuantities' },
   'anim-nuclear-reaction':    { loader: () => import('./quantities/nuclearReaction'),  builderName: 'buildNuclearReactionQuantities' },
   'anim-double-slit-interference': { loader: () => import('./quantities/doubleSlitInterference'), builderName: 'buildDoubleSlitInterferenceQuantities' },
+  'anim-experiment-double-slit':   { loader: () => import('./quantities/doubleSlitInterference'), builderName: 'buildDoubleSlitInterferenceQuantities' },
   'anim-diffraction': { loader: () => import('./quantities/diffraction'), builderName: 'buildDiffractionQuantities' },
   'anim-dispersion': { loader: () => import('./quantities/dispersion'), builderName: 'buildDispersionQuantities' },
   'anim-polarization': { loader: () => import('./quantities/polarization'), builderName: 'buildPolarizationQuantities' },

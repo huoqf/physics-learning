@@ -27,9 +27,9 @@
 | `ConductingRod` | 导体棒（支持水平切割感应电流流向 currentDir 与等效电源正负极性 showPolarity） | `type` | `<ConductingRod type="horizontal" x={rx} spacing={sp} width={w} height={h} currentDir="up" showPolarity />` |
 | `DCSource` | 直流电源（支持 instrument/battery/symbol 三种模式，symbol 模式提供 `getDCSourceTerminals` 辅助函数及 `DC_SOURCE_SYMBOL_OFFSET=20` 常量，防止外部硬编码） | `type` | `<DCSource type="symbol" x={420} y={250} voltage={U} polarity="right-positive" />` |
 | `Galvanometer` | 灵敏电流计（thin wrapper，内部使用 MeterPointer 渲染指针） | `value` | `<Galvanometer x={gx} y={gy} value={emf * 10 / 45} />` |
-| `CoilBase` | 通用线圈基座（Solenoid / PrimaryCoil 共享渲染逻辑） | `x`, `y`, `width`, `height`, `turns` | `<CoilBase x={cx} y={cy} width={160} height={80} turns={5} current={I} time={t} />` |
-| `Solenoid` | 螺线管（thin wrapper，内部使用 CoilBase，铜线样式） | `x`, `y`, `width`, `height`, `turns` | `<Solenoid x={cx} y={cy} width={160} height={80} turns={5} current={I} time={t} />` |
-| `SolenoidFieldLines` | 螺线管磁感线分布（支持内部平行场线、两端发散曲线与方向微箭头） | `x`, `y`, `width`, `height`, `current` | `<SolenoidFieldLines x={cx} y={cy} width={180} height={70} current={I} />` |
+| `CoilBase` | 通用线圈基座（Solenoid / PrimaryCoil 共享渲染逻辑，支持连续螺旋 `apparatus` 与电路符号 `symbolic`） | `x`, `y`, `width`, `height`, `turns` | `<CoilBase x={cx} y={cy} width={160} height={80} turns={5} current={I} time={t} />` |
+| `Solenoid` | 螺线管/电感线圈（thin wrapper，支持 `variant="apparatus"` 连续螺旋与 `variant="symbolic"` 电路符号、`innerOverlay` 内部磁感线分层） | `x`, `y`, `width`, `height`, `turns` | `<Solenoid x={cx} y={cy} width={160} height={80} turns={5} current={I} time={t} />` |
+| `SolenoidFieldLines` | 螺线管磁感线分布（支持内部平行场线、两端发散曲线、`spreadScale` 与方向微箭头） | `x`, `y`, `width`, `height`, `current` | `<SolenoidFieldLines x={cx} y={cy} width={180} height={70} current={I} />` |
 | `PrimaryCoil` | 原线圈（thin wrapper，内部使用 CoilBase，漆包绿线样式） | `x`, `y`, `width`, `height`, `turns` | `<PrimaryCoil x={cx} y={cy} width={120} height={66} turns={4} current={I} time={t} />` |
 | `MeterPointer` | 仪表指针通用组件（DialMeter / Galvanometer 共享指针渲染） | `angle`, `length`, `color` | `<MeterPointer angle={-30} length={21} color={themeColor} />` |
 | `DialMeter` | 理想电表盘（内部使用 MeterPointer 渲染指针，已接入 useUniqueSvgId 防冲突） | `type`, `value`, `x`, `y` | `<DialMeter type="V" value={U} x={dx} y={dy} />` |

@@ -1,6 +1,6 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
-import { SIMPLE_PENDULUM_DEFAULT_PARAMS } from '@/physics/experimentPendulum'
+import { PENDULUM_EXP_DEFAULTS } from '@/physics/experimentPendulum'
 import { GRAVITY } from '@/physics/constants'
 
 // ===== 机械振动与波 =====
@@ -84,29 +84,21 @@ export const vibrationOscillationAnimations = defineAnimations({
     CenterExtra: lazy(() => import('@/features/vibration/simpleHarmonic/SimplePendulumCenterExtra')),
     centerLayout: 'splitH',
     controlsMode: 'timed' as const,
-    maxTime: (params) => {
-      if (params?.mode === 3) {
-        const l = params.l_line ?? 0.985
-        const d = (params.d_mm ?? 20.0) / 2000
-        const L = l + d
-        const g = params.g ?? GRAVITY
-        const n = params.n_cycles ?? 40
-        const T = 2 * Math.PI * Math.sqrt(L / g)
-        return Math.ceil(n * T) + 2
-      }
-      return 20
-    },
-    defaultParams: SIMPLE_PENDULUM_DEFAULT_PARAMS,
+    maxTime: 20,
+    defaultParams: {
+      L: 1.5,
+      g: GRAVITY,
+      theta0: 8,
+      phiDeg: 0,
+      mode: 0,
+      showGraph: 1,
+      showHelper: 1,
+    } as const,
     paramMeta: [
-      { key: 'L', label: '摆长 L', min: 1.0, max: 2.0, step: 0.1, unit: 'm', group: '摆参数', hideIf: 'mode', hideIfValue: 3 },
-      { key: 'g', label: '重力加速度 g', min: 2.0, max: 20.0, step: 0.1, unit: 'm/s²', group: '环境参数', hideIf: 'mode', hideIfValue: 3 },
-      { key: 'theta0', label: '最大摆角 θ₀', min: 2, max: 60, step: 1, unit: '°', group: '摆参数', hideIf: 'mode', hideIfValue: 3 },
-      { key: 'phiDeg', label: '初相位 φ', min: 0, max: 360, step: 5, unit: '°', group: '摆参数', hideIf: 'mode', hideIfValue: 3 },
-      { key: 'l_line', label: '摆线长 l', min: 0.7, max: 1.3, step: 0.005, unit: 'm', group: '实验测量', showIf: 'mode', showIfValue: 3 },
-      { key: 'd_mm', label: '摆球直径 d', min: 12.0, max: 28.0, step: 0.1, unit: 'mm', group: '实验测量', showIf: 'mode', showIfValue: 3 },
-      { key: 'theta0_exp', label: '摆角 θ₀ (≤5°)', min: 1, max: 5, step: 0.5, unit: '°', group: '实验测量', showIf: 'mode', showIfValue: 3 },
-      { key: 'n_cycles', label: '全振动次数 N', min: 20, max: 60, step: 5, unit: '次', group: '实验测量', showIf: 'mode', showIfValue: 3 },
-      { key: 'timing_err', label: '秒表计时误差 Δt', min: -0.5, max: 0.5, step: 0.05, unit: 's', group: '误差探究', showIf: 'mode', showIfValue: 3 },
+      { key: 'L', label: '摆长 L', min: 1.0, max: 2.0, step: 0.1, unit: 'm', group: '摆参数' },
+      { key: 'g', label: '重力加速度 g', min: 2.0, max: 20.0, step: 0.1, unit: 'm/s²', group: '环境参数' },
+      { key: 'theta0', label: '最大摆角 θ₀', min: 2, max: 60, step: 1, unit: '°', group: '摆参数' },
+      { key: 'phiDeg', label: '初相位 φ', min: 0, max: 360, step: 5, unit: '°', group: '摆参数' },
     ],
     controlMeta: [
       {
@@ -118,33 +110,13 @@ export const vibrationOscillationAnimations = defineAnimations({
           { value: 0, label: '小角简谐' },
           { value: 1, label: '大角对比' },
           { value: 2, label: '能量守恒' },
-          { value: 3, label: '单摆测 g' },
         ],
       },
       {
         type: 'preset',
-        label: '⏱️ 标准摆长测 g（l=0.985m）',
-        description: '标准单摆实验 (l=0.985m, d=20mm, N=40, θ₀=4°)',
-        params: { mode: 3, l_line: 0.985, d_mm: 20.0, n_cycles: 40, timing_err: 0, theta0_exp: 4, theta0: 4, g: 9.8 },
-        restartOnApply: true,
-      },
-      {
-        type: 'preset',
-        label: '⌛ 停表滞后（+0.4s）',
-        description: '模拟人工反应慢停 0.4s 导致测得周期偏大、g 偏小',
-        params: { mode: 3, l_line: 0.985, d_mm: 20.0, n_cycles: 40, timing_err: 0.4, theta0_exp: 4, theta0: 4, g: 9.8 },
-        restartOnApply: true,
-      },
-      {
-        type: 'preset',
-        label: '📏 短摆长测 g（l=0.69m）',
-        description: '测量不同摆长数据 (l=0.690m, d=20mm, N=40)',
-        params: { mode: 3, l_line: 0.69, d_mm: 20.0, n_cycles: 40, timing_err: 0, theta0_exp: 4, theta0: 4, g: 9.8 },
-        restartOnApply: true,
-      },
-      {
-        type: 'preset',
         label: '📋 简谐基础：小角单摆 (θ₀=5°)',
+        showIf: 'mode',
+        showIfValue: 0,
         description: '基础小角等时性单摆演示 (L=1.0m, g=9.8m/s²)',
         params: { mode: 0, L: 1.0, g: 9.8, theta0: 5, phiDeg: 0 },
         restartOnApply: true,
@@ -174,7 +146,6 @@ export const vibrationOscillationAnimations = defineAnimations({
         group: '教学提示',
         showIf: 'mode',
         showIfValue: 0,
-        // 原 F_t = −mg sinθ ≈ −mgθ 属公式搬运（§2.6.5 C2），右屏 FormulaSection 已给出
         content: '把起始摆角从 5° 慢慢加到 30°：盯周期读数，它在哪个角度之后开始明显偏离小角值？',
       },
       {
@@ -189,17 +160,66 @@ export const vibrationOscillationAnimations = defineAnimations({
         group: '教学提示',
         showIf: 'mode',
         showIfValue: 2,
-        // 原「高考高频结论 + F_拉,max 公式」属考点结论与公式搬运（§2.6.5 C2/C3），
-        // 右屏 quantities/vibration.ts 的 F_拉,max 公式已给出同一结论
         content: '盯两条曲线：动能与势能此消彼长、总和是不是一条水平线？再把拉力读数与最低点对齐，看它是否出现峰值。',
+      },
+    ],
+  },
+  'anim-experiment-pendulum': {
+    title: '用单摆测重力加速度',
+    knowledgeId: 'experiment-2-4',
+    Component: lazy(() => import('@/features/vibration/simpleHarmonic/ExperimentPendulumAnimation')),
+    CenterExtra: lazy(() => import('@/features/vibration/simpleHarmonic/ExperimentPendulumCenterExtra')),
+    centerLayout: 'splitH',
+    controlsMode: 'timed' as const,
+    maxTime: (params) => {
+      const l = params.l_line ?? PENDULUM_EXP_DEFAULTS.l_line
+      const d = (params.d_mm ?? PENDULUM_EXP_DEFAULTS.d_mm) / 2000
+      const L = l + d
+      const g = params.g ?? PENDULUM_EXP_DEFAULTS.g_true
+      const n = params.n_cycles ?? PENDULUM_EXP_DEFAULTS.n_cycles
+      const T = 2 * Math.PI * Math.sqrt(L / g)
+      return Math.ceil(n * T) + 2
+    },
+    defaultParams: {
+      l_line: PENDULUM_EXP_DEFAULTS.l_line,
+      d_mm: PENDULUM_EXP_DEFAULTS.d_mm,
+      n_cycles: PENDULUM_EXP_DEFAULTS.n_cycles,
+      g: PENDULUM_EXP_DEFAULTS.g_true,
+      timing_err: PENDULUM_EXP_DEFAULTS.timing_err,
+      theta0_exp: PENDULUM_EXP_DEFAULTS.theta0,
+    } as const,
+    paramMeta: [
+      { key: 'l_line', label: '摆线长 l', min: 0.7, max: 1.3, step: 0.005, unit: 'm', group: '实验测量' },
+      { key: 'd_mm', label: '摆球直径 d', min: 12.0, max: 28.0, step: 0.1, unit: 'mm', group: '实验测量' },
+      { key: 'theta0_exp', label: '摆角 θ₀ (≤5°)', min: 1, max: 5, step: 0.5, unit: '°', group: '实验测量' },
+      { key: 'n_cycles', label: '全振动次数 N', min: 20, max: 60, step: 5, unit: '次', group: '实验测量' },
+      { key: 'timing_err', label: '秒表计时误差 Δt', min: -0.5, max: 0.5, step: 0.05, unit: 's', group: '误差探究' },
+    ],
+    controlMeta: [
+      {
+        type: 'preset',
+        label: '⏱️ 标准摆长测 g（l=0.985m）',
+        description: '标准单摆实验 (l=0.985m, d=20mm, N=40, θ₀=4°)',
+        params: { l_line: 0.985, d_mm: 20.0, n_cycles: 40, timing_err: 0, theta0_exp: 4, g: 9.8 },
+        restartOnApply: true,
+      },
+      {
+        type: 'preset',
+        label: '⌛ 停表滞后（+0.4s）',
+        description: '模拟人工反应慢停 0.4s 导致测得周期偏大、g 偏小',
+        params: { l_line: 0.985, d_mm: 20.0, n_cycles: 40, timing_err: 0.4, theta0_exp: 4, g: 9.8 },
+        restartOnApply: true,
+      },
+      {
+        type: 'preset',
+        label: '📏 短摆长测 g（l=0.69m）',
+        description: '测量不同摆长数据 (l=0.690m, d=20mm, N=40)',
+        params: { l_line: 0.69, d_mm: 20.0, n_cycles: 40, timing_err: 0, theta0_exp: 4, g: 9.8 },
+        restartOnApply: true,
       },
       {
         type: 'tip',
         group: '操作提示',
-        showIf: 'mode',
-        showIfValue: 3,
-        // 原「高考实验要点」三条（摆长算至球心、累积计时、小角近似）属实验考点（§2.6.5 C3），
-        // 右屏 gaokaoPoints 已有累积计时与摆长测量要点；左屏只留这一模式的操作顺序。
         content: '按顺序走一遍：量摆长到球心 → 从最低点开始计时、数够 30 次以上 → 再故意让秒表晚停 0.4s，看 g 偏大还是偏小。',
       },
     ],
@@ -522,53 +542,7 @@ export const vibrationOscillationAnimations = defineAnimations({
           { value: 2, label: '不同阻尼' },
         ],
       },
-      // 2A. 「衰减到稳定 (mode=0)」专属情境预设
-      {
-        type: 'preset',
-        label: '🔄 偏频起振收敛 (f = 0.5Hz)',
-        group: '典型物理情境',
-        showIf: 'mode',
-        showIfValue: 0,
-        restartOnApply: true,
-        params: () => ({ mode: 0, m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 0.5, showForces: 1 }),
-      },
-      {
-        type: 'preset',
-        label: '⚡ 同频共振起振 (f = f₀ = 1.0Hz)',
-        group: '典型物理情境',
-        showIf: 'mode',
-        showIfValue: 0,
-        restartOnApply: true,
-        params: () => ({ mode: 0, m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 1.0, showForces: 1 }),
-      },
-      // 2B. 「共振曲线 (mode=1)」专属情境预设（探究频率 f 与固有频率 f₀ 关系）
-      {
-        type: 'preset',
-        label: '⚡ 强烈共振 (f = f₀ = 1.0Hz)',
-        group: '典型物理情境',
-        showIf: 'mode',
-        showIfValue: 1,
-        restartOnApply: true,
-        params: () => ({ mode: 1, m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 1.0, showForces: 1 }),
-      },
-      {
-        type: 'preset',
-        label: '🔄 低频随动 (f = 0.5Hz < f₀)',
-        group: '典型物理情境',
-        showIf: 'mode',
-        showIfValue: 1,
-        restartOnApply: true,
-        params: () => ({ mode: 1, m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 0.5, showForces: 1 }),
-      },
-      {
-        type: 'preset',
-        label: '🛡️ 高频避振 (f = 2.2Hz >> f₀)',
-        group: '典型物理情境',
-        showIf: 'mode',
-        showIfValue: 1,
-        restartOnApply: true,
-        params: () => ({ mode: 1, m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 2.2, showForces: 1 }),
-      },
+      // 2. 仅保留需 m、f 协同匹配的耦合预设（单调 f / γ 由下方滑块与 marks 直接控制）
       {
         type: 'preset',
         label: '🏭 共振筛增重调频 (m: 1.0→1.6kg)',
@@ -577,34 +551,6 @@ export const vibrationOscillationAnimations = defineAnimations({
         showIfValue: 1,
         restartOnApply: true,
         params: () => ({ mode: 1, m: 1.6, k: 39.5, gamma: 0.6, F0: 2.0, f: 0.79, showForces: 1 }),
-      },
-      // 2C. 「不同阻尼 (mode=2)」专属情境预设（探究阻尼系数 γ 对共振峰与稳态振幅的影响）
-      {
-        type: 'preset',
-        label: '🟢 弱阻尼尖锐共振 (γ = 0.3)',
-        group: '典型物理情境',
-        showIf: 'mode',
-        showIfValue: 2,
-        restartOnApply: true,
-        params: () => ({ mode: 2, m: 1.0, k: 39.5, gamma: 0.3, F0: 2.0, f: 1.0, showForces: 1 }),
-      },
-      {
-        type: 'preset',
-        label: '🔵 中阻尼标准共振 (γ = 0.6)',
-        group: '典型物理情境',
-        showIf: 'mode',
-        showIfValue: 2,
-        restartOnApply: true,
-        params: () => ({ mode: 2, m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 1.0, showForces: 1 }),
-      },
-      {
-        type: 'preset',
-        label: '🟠 强阻尼平缓抑振 (γ = 1.2)',
-        group: '典型物理情境',
-        showIf: 'mode',
-        showIfValue: 2,
-        restartOnApply: true,
-        params: () => ({ mode: 2, m: 1.0, k: 39.5, gamma: 1.2, F0: 2.0, f: 1.0, showForces: 1 }),
       },
       // 3. 显示辅助开关
       {
@@ -628,7 +574,7 @@ export const vibrationOscillationAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 1,
         content:
-          '依次点击强烈共振、低频随动、高频避振预设，观察驱动频率 f 接近固有频率 f₀ 时的剧烈共振现象及远离 f₀ 时的明显减振效应。',
+          '拖动驱动频率 f 滑块（对比 f₀ 共振点与高频避振区），或点「共振筛增重调频」观察质量增大后固有频率左移与幅频响应。',
       },
       {
         type: 'tip',
@@ -636,7 +582,7 @@ export const vibrationOscillationAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 2,
         content:
-          '切换弱/中/强阻尼预设或拖动阻尼系数 γ 滑块，同步观察左半区阻尼液浓度与小球振幅、右上图共振峰高度、右下图三条稳态波形幅度的变化。',
+          '拖动阻尼系数 γ 滑块（对比弱/中/强阻尼刻度），同步观察阻尼液浓度、共振峰高度与三条稳态波形幅度的变化。',
       },
     ],
     paramMeta: [
@@ -649,7 +595,8 @@ export const vibrationOscillationAnimations = defineAnimations({
         step: 0.05,
         unit: 'Hz',
         marks: [
-          { value: 1.0, label: '固有频率 f₀ (m=1kg)' },
+          { value: 0.5, label: '低频 0.5Hz' },
+          { value: 1.0, label: 'f₀ (m=1kg)', variant: 'critical' },
           { value: 2.2, label: '高频避振区' },
         ],
         group: '驱动力参数',
@@ -657,7 +604,20 @@ export const vibrationOscillationAnimations = defineAnimations({
       { key: 'F0', label: '驱动力幅值 F₀', min: 0.5, max: 5.0, step: 0.5, unit: 'N', group: '驱动力参数' },
       { key: 'm', label: '振子质量 m', min: 0.5, max: 2.5, step: 0.1, unit: 'kg', group: '系统固有属性' },
       { key: 'k', label: '弹簧劲度 k', min: 10, max: 80, step: 5, unit: 'N/m', group: '系统固有属性' },
-      { key: 'gamma', label: '阻尼系数 γ', min: 0.1, max: 1.5, step: 0.05, unit: 'N·s/m', group: '系统固有属性' },
+      {
+        key: 'gamma',
+        label: '阻尼系数 γ',
+        min: 0.1,
+        max: 1.5,
+        step: 0.05,
+        unit: 'N·s/m',
+        marks: [
+          { value: 0.3, label: '弱阻尼', variant: 'recommended' },
+          { value: 0.6, label: '中阻尼' },
+          { value: 1.2, label: '强阻尼', variant: 'critical' },
+        ],
+        group: '系统固有属性',
+      },
     ],
   },
 })

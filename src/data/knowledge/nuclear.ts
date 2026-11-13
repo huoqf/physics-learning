@@ -7,7 +7,7 @@ export const nuclearKnowledge: KnowledgeNode[] = [
     chapter: '核物理',
     module: 'nuclear',
     importance: 'gaokao',
-    animationIds: ['anim-nuclear-decay'],
+    animationIds: ['anim-nuclear-decay', 'anim-decay-magnetic-orbit'],
     problemIds: ['prob-2024-quanguo-nuclear-decay', 'prob-2023-zhejiang-magnetic-decay'],
     gaokaoFrequency: '5年7考 / 射线与磁场轨迹',
     prerequisites: ['modern-1-3'], // 依赖原子的核式结构模型

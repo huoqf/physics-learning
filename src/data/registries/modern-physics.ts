@@ -1,7 +1,6 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import {
   CESIUM_WORK_FUNCTION,
-  SODIUM_WORK_FUNCTION,
   DEFAULT_WORK_FUNCTION,
   PHOTOELECTRIC_METALS,
   calculateCutoffFrequency,
@@ -112,15 +111,12 @@ export const modernPhysicsAnimations = defineAnimations({
     Component: lazy(() => import('@/features/modern/bohr-theory/BohrTheoryAnimation')),
     controlsMode: 'param' as const,
     defaultParams: {
-      mode: 0,                   // 0: 玻尔原子轨道与定态跃迁, 1: 跃迁与激发机制对比, 2: 高考综合应用(辐射光电效应)
+      mode: 0,                   // 0: 玻尔原子轨道与定态跃迁, 1: 跃迁与激发机制对比
       targetLevel: 2,            // 目标能级 n (1-4)
       realScale: 0,              // 轨道半径物理比例 (0: 示意比例, 1: n² 真实比例)
       atomQuantity: 0,           // 0: 一群氢原子, 1: 单个氢原子
       excitationType: 0,         // 0: 光子照射(严苛共振), 1: 电子碰撞(传递能量)
       incidentEnergy: 10.2,      // 入射粒子能量 (eV)
-      radiationPhotonIndex: 1,   // 跃迁光子索引 (0:4->3, 1:4->2, 2:4->1, 3:3->2, 4:3->1, 5:2->1)
-      workFunction: SODIUM_WORK_FUNCTION, // 金属逸出功 (eV)，默认钠
-      stoppingVoltage: 0.0,      // 反向遏止电压 (V)
       launchTrigger: 0,
       clearTrigger: 0,
     } as const,
@@ -132,7 +128,6 @@ export const modernPhysicsAnimations = defineAnimations({
         options: [
           { value: 0, label: '①玻尔定态' },
           { value: 1, label: '②跃迁激发' },
-          { value: 2, label: '③辐射光电' },
         ],
       },
       // 模式 0 控制
@@ -191,39 +186,6 @@ export const modernPhysicsAnimations = defineAnimations({
         showIfValue: 1,
         setParams: { clearTrigger: 1 },
       },
-      // 模式 2 控制
-      {
-        type: 'segmented',
-        key: 'radiationPhotonIndex',
-        label: '选择跃迁辐射光子',
-        group: '光照设置',
-        showIf: 'mode',
-        showIfValue: 2,
-        options: [
-          { value: 2, label: '4→1 12.75eV' },
-          { value: 4, label: '3→1 12.09eV' },
-          { value: 5, label: '2→1 10.20eV' },
-          { value: 1, label: '4→2 2.55eV' },
-          { value: 3, label: '3→2 1.89eV' },
-          { value: 0, label: '4→3 0.66eV' },
-        ],
-      },
-      {
-        type: 'preset',
-        label: '一键调至理论遏止电压',
-        group: '电路调节',
-        showIf: 'mode',
-        showIfValue: 2,
-        params: (p) => {
-          const photonEnergies = [0.66, 2.55, 12.75, 1.89, 12.09, 10.20]
-          const idx = p.radiationPhotonIndex ?? 1
-          const W0 = p.workFunction ?? SODIUM_WORK_FUNCTION
-          const hv = photonEnergies[idx]
-          const Uc = hv >= W0 ? hv - W0 : 0
-          return { stoppingVoltage: parseFloat(Uc.toFixed(2)) }
-        },
-        resetOnApply: false,
-      },
       {
         type: 'tip',
         group: '教学提示',
@@ -262,31 +224,6 @@ export const modernPhysicsAnimations = defineAnimations({
           { value: 12.09, label: 'n=1→3 临界', variant: 'recommended' },
           { value: 13.6, label: '电离极限', variant: 'critical' },
         ],
-      },
-      // 模式 2 参数
-      {
-        key: 'workFunction',
-        label: '阴极金属逸出功 W₀',
-        min: 1.5,
-        max: 4.5,
-        step: 0.05,
-        unit: 'eV',
-        group: '金属材料',
-        showIf: 'mode',
-        showIfValue: 2,
-        // 与 anim-photoelectric 共用同一份金属预设（PHOTOELECTRIC_METALS 唯一真源）
-        marks: PHOTOELECTRIC_METAL_MARKS,
-      },
-      {
-        key: 'stoppingVoltage',
-        label: '反向极板偏压 U',
-        min: 0.0,
-        max: 12.0,
-        step: 0.1,
-        unit: 'V',
-        group: '偏压调节',
-        showIf: 'mode',
-        showIfValue: 2,
       },
     ],
   },
@@ -417,7 +354,7 @@ export const modernPhysicsAnimations = defineAnimations({
     Component: lazy(() => import('@/features/modern/nuclear-decay/NuclearDecayAnimation')),
     controlsMode: (params) => params.mode === 0 ? 'param' as const : 'timed' as const,
     defaultParams: {
-      mode: 0,                // 0: 原子核的组成, 1: 天然放射线偏转, 2: 静止核衰变磁场径迹(高考模型)
+      mode: 0,                // 0: 原子核的组成, 1: 天然放射线偏转
       nuclide: 3,             // 默认 3: He-4 (alpha粒子). 0:H-1, 1:H-2, 2:H-3, 3:He-4, 4:C-12, 5:C-14, 6:U-238
       nucleonDistance: 1.2,   // 核子平均间距 (fm)
       fieldType: 0,           // 偏转介质: 0: 磁场, 1: 电场, 2: 无场
@@ -425,7 +362,6 @@ export const modernPhysicsAnimations = defineAnimations({
       eField: 5.0,            // 电场强度 (kV/m)
       initVelocity: 4.0,      // 粒子初速度
       showObstacles: 0,       // 0: 关闭挡板, 1: 开启挡板
-      decayType: 0,           // 模式2专属: 0: α 衰变 (外切圆), 1: β 衰变 (内切圆)
     } as const,
     controlMeta: [
       {
@@ -436,7 +372,6 @@ export const modernPhysicsAnimations = defineAnimations({
         options: [
           { value: 0, label: '①原子核组成' },
           { value: 1, label: '②放射线偏转' },
-          { value: 2, label: '③衰变径迹' },
         ],
       },
       // 模式0专属控制
@@ -481,20 +416,6 @@ export const modernPhysicsAnimations = defineAnimations({
         trueValue: 1,
         falseValue: 0,
       },
-      // 模式2专属控制
-      {
-        type: 'segmented',
-        key: 'decayType',
-        label: '衰变模型',
-        group: '模型选择',
-        showIf: 'mode',
-        showIfValue: 2,
-        resetOnChange: true,
-        options: [
-          { value: 0, label: 'α 衰变 (外切圆)' },
-          { value: 1, label: 'β 衰变 (内切圆)' },
-        ],
-      },
       {
         type: 'tip',
         content: '强核力是短程引力，在 0.8~2.0 fm 表现为引力，更小表现为斥力，超出则极速归零。',
@@ -508,13 +429,6 @@ export const modernPhysicsAnimations = defineAnimations({
         group: '教学提示',
         showIf: 'mode',
         showIfValue: 1,
-      },
-      {
-        type: 'tip',
-        content: '两种衰变各放一次：一个外切、一个内切。盯弯曲方向与半径——方向由新生粒子的电荷正负决定，半径差异留到右屏公式去算。',
-        group: '教学提示',
-        showIf: 'mode',
-        showIfValue: 2,
       },
     ],
     paramMeta: [
@@ -534,20 +448,7 @@ export const modernPhysicsAnimations = defineAnimations({
           { value: 2.5, label: '极微弱', variant: 'critical' },
         ],
       },
-      // 模式1/2参数
-      {
-        key: 'bField',
-        label: '磁场强度 B',
-        min: 0.5,
-        max: 3.0,
-        step: 0.1,
-        unit: 'T',
-        showIf: 'mode',
-        showIfValue: 2,
-        marks: [
-          { value: 1.5, label: '标准场强', variant: 'recommended' },
-        ],
-      },
+      // 模式1参数
       {
         key: 'bField',
         label: '磁场强度 B',
@@ -583,6 +484,48 @@ export const modernPhysicsAnimations = defineAnimations({
         unit: 'c/10',
         showIf: 'mode',
         showIfValue: 1,
+      },
+    ],
+  },
+
+  'anim-decay-magnetic-orbit': {
+    title: '静止核衰变磁场径迹',
+    knowledgeId: 'nuclear-1-1',
+    Component: lazy(() => import('@/features/modern/nuclear-decay/DecayMagneticOrbitAnimation')),
+    controlsMode: 'timed' as const,
+    defaultParams: {
+      decayType: 0,
+      bField: 1.5,
+    } as const,
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'decayType',
+        label: '衰变模型',
+        group: '模型选择',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: 'α 衰变 (外切圆)' },
+          { value: 1, label: 'β 衰变 (内切圆)' },
+        ],
+      },
+      {
+        type: 'tip',
+        content: '两种衰变各放一次：一个外切、一个内切。盯弯曲方向与半径——方向由新生粒子的电荷正负决定，半径比例关系在右屏公式与曲线中给出。',
+        group: '教学提示',
+      },
+    ],
+    paramMeta: [
+      {
+        key: 'bField',
+        label: '磁场强度 B',
+        min: 0.5,
+        max: 3.0,
+        step: 0.1,
+        unit: 'T',
+        marks: [
+          { value: 1.5, label: '标准场强', variant: 'recommended' },
+        ],
       },
     ],
   },

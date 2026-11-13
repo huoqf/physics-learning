@@ -150,11 +150,12 @@ export const mechanicsEnergyAnimations = defineAnimations({
       },
       {
         key: 'mu',
-        label: '摩擦因数 μ',
-        min: 0.0,
+        label: '动摩擦因数 μ',
+        min: 0,
         max: 0.6,
         step: 0.05,
         unit: '',
+        marks: [{ value: 0, label: '0(光滑)', variant: 'recommended' }],
         showIf: 'mode',
         showIfValue: 1,
       },
@@ -162,9 +163,6 @@ export const mechanicsEnergyAnimations = defineAnimations({
     controlMeta: [
       { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '恒力做功' }, { value: 1, label: '变力做功' }] },
-      { type: 'preset', label: '🎢 光滑下滑', group: '典型工况',
-        params: { m: 2.0, v0: 0, R: 5.0, mu: 0.00, mode: 1 },
-        showIf: 'mode', showIfValue: 1 },
       { type: 'preset', label: '🍂 粗糙下滑', group: '典型工况',
         params: { m: 2.0, v0: 0, R: 5.0, mu: 0.35, mode: 1 },
         showIf: 'mode', showIfValue: 1 },
@@ -225,14 +223,6 @@ export const mechanicsEnergyAnimations = defineAnimations({
     controlMeta: [
       { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '重力势能' }, { value: 1, label: '弹性势能' }] },
-      { type: 'preset', label: '🌍 地球 g=9.8', group: '环境重力场', params: { g: 9.8 },
-        showIf: 'mode', showIfValue: 0 },
-      { type: 'preset', label: '🌙 月球 g=1.63', group: '环境重力场', params: { g: 1.63 },
-        showIf: 'mode', showIfValue: 0 },
-      { type: 'preset', label: '🔴 火星 g=3.72', group: '环境重力场', params: { g: 3.72 },
-        showIf: 'mode', showIfValue: 0 },
-      { type: 'preset', label: '🪐 木星 g=24.79', group: '环境重力场', params: { g: 24.79 },
-        showIf: 'mode', showIfValue: 0 },
       { type: 'preset', label: '🍏 地平参考面', group: '参考面经典预设',
         params: ((c: Record<string, number>) => c.mode === 1
           ? { mode: 0, m: 2.0, g: 9.8, y0: 8.0, y_ref: 0.0 }

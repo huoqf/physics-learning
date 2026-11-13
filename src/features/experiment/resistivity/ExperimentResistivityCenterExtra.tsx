@@ -180,7 +180,7 @@ export const ExperimentResistivityCenterExtra: FC = () => {
             {physics.wiring === 0 ? (
               <div>
                 <span className="font-semibold text-blue-700">【外接法分析】：</span>
-                金属丝电阻极小（≈{physics.Rx_real.toFixed(2)}Ω ≪ 3000Ω），外接法电压表分流引起的系统误差极小，为高考推荐标准接法。
+                金属丝电阻极小（≈{physics.Rx_real.toFixed(2)}Ω ≪ 3000Ω），外接法电压表分流引起的系统误差极小，为减小系统误差的推荐接法。
               </div>
             ) : (
               <div>

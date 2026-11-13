@@ -89,7 +89,7 @@ export function buildFirstLawQuantities(
 
   let gaokaoPoints: GaokaoPoint[] = [
     { text: '正负号铁律：外界对气体做功 W>0，气体对外界做功 W<0；气体吸热 Q>0，气体放热 Q<0；内能增加 ΔU>0，内能减少 ΔU<0。', importance: 'gaokao' },
-    { text: '【高考经典母题】缓慢加热等压膨胀：气体吸热 Q=500J，膨胀对外做功 W_气=240J (W=-240J)，由 ΔU = W + Q 得内能增加 ΔU=260J。', importance: 'gaokao' },
+    { text: '等压膨胀做功分析：先由 W = -pΔV 求外界对气体做功，再代入热力学第一定律 ΔU = W + Q 判断内能增减。', importance: 'core' },
     { text: '改变内能的两种方式：做功和热传递对改变内能是等效的。', importance: 'core' }
   ]
 

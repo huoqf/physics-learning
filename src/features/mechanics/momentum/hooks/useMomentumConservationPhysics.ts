@@ -247,14 +247,6 @@ function computeAdvancedMode(p: AdvancedModeParams): AdvancedModeResult {
   }
 }
 
-import {
-  computeMomentumExperiment,
-  computeTrackSlidersAtTime,
-  experimentDurationFromResult,
-  momentumExperimentInputFromParams,
-  type MomentumExperimentResult,
-} from '@/physics/experimentMomentum'
-
 // ─── 主 Hook ──────────────────────────────────────────────────────────────
 
 export interface MomentumConservationPhysics {
@@ -264,12 +256,8 @@ export interface MomentumConservationPhysics {
   basic: BasicModeResult
   // 进阶模式
   advanced: AdvancedModeResult
-  // 高考实验模式
-  experiment: MomentumExperimentResult
-  trackSliders: ReturnType<typeof computeTrackSlidersAtTime>
   // 当前模式选择
   isAdvanced: boolean
-  isExperiment: boolean
   // 图表数据
   chartData: {
     currentDomainVtPoints1: { t: number; v: number }[]
@@ -317,18 +305,10 @@ export function useMomentumConservationPhysics(
     advancedMode = 0,
     collisionType = 0,
     e_coefficient = 0.5,
-    // 高考实验参数
-    m1_exp = 0.4,
-    m2_exp = 0.2,
-    v1_exp = 0.8,
-    plateWidth_mm = 20.0,
-    collisionType_exp = 0,
-    timing_err = 0.0,
   } = params
 
   const mode = advancedMode ?? 0
   const isAdvanced = mode === 1
-  const isExperiment = mode === 2
 
   // ── 基础模式计算 ──
   const basic = useMemo(
@@ -340,30 +320,6 @@ export function useMomentumConservationPhysics(
   const advanced = useMemo(
     () => computeAdvancedMode({ m_slider, M_board, v0, mu, L, time, groundY, designWidth }),
     [m_slider, M_board, v0, mu, L, time, groundY, designWidth]
-  )
-
-  // ── 高考实验模式计算 ──
-  const experiment = useMemo(
-    () =>
-      computeMomentumExperiment(
-        momentumExperimentInputFromParams({
-          m1_exp,
-          m2_exp,
-          v1_exp,
-          plateWidth_mm,
-          collisionType_exp,
-          timing_err,
-        })
-      ),
-    [m1_exp, m2_exp, v1_exp, plateWidth_mm, collisionType_exp, timing_err]
-  )
-
-  // 实验时长（时间轴总长与图表 x 轴上界的唯一来源，与注册表 maxTime 同源）
-  const expTMax = useMemo(() => experimentDurationFromResult(experiment), [experiment])
-
-  const trackSliders = useMemo(
-    () => computeTrackSlidersAtTime(time, experiment),
-    [time, experiment]
   )
 
   // ── 图表数据 ──
@@ -409,54 +365,12 @@ export function useMomentumConservationPhysics(
     const advPtDomain2 = advVtDomain2.map((p) => ({ t: p.t, v: M_board * p.v }))
     const advPtDomainTotal = [{ t: 0, v: m_slider * v0 }, { t: 10, v: m_slider * v0 }]
 
-    // 3. 高考实验模式 V-T 点集（自适应实际碰撞与穿门耗时，时长来自 SSOT `expTMax`）
-    const expTCol = experiment.t_collision
-
-    const expVtDomain1 = [
-      { t: 0, v: experiment.v1 },
-      { t: Math.max(0, expTCol - 0.001), v: experiment.v1 },
-      { t: Math.min(expTMax, expTCol + 0.001), v: experiment.v1_after },
-      { t: expTMax, v: experiment.v1_after },
-    ]
-    const expVtDomain2 = [
-      { t: 0, v: 0 },
-      { t: Math.max(0, expTCol - 0.001), v: 0 },
-      { t: Math.min(expTMax, expTCol + 0.001), v: experiment.v2_after },
-      { t: expTMax, v: experiment.v2_after },
-    ]
-    const expPtDomain1 = expVtDomain1.map((p) => ({ t: p.t, v: experiment.m1 * p.v }))
-    const expPtDomain2 = expVtDomain2.map((p) => ({ t: p.t, v: experiment.m2 * p.v }))
-    const expPtDomainTotal = [
-      { t: 0, v: experiment.p_total_before },
-      { t: expTMax, v: experiment.p_total_after },
-    ]
-
     // 选择当前数据集
-    const currentDomainVtPoints1 = isExperiment
-      ? expVtDomain1
-      : isAdvanced
-        ? advVtDomain1
-        : baseVtDomain1
-    const currentDomainVtPoints2 = isExperiment
-      ? expVtDomain2
-      : isAdvanced
-        ? advVtDomain2
-        : baseVtDomain2
-    const currentDomainPtPoints1 = isExperiment
-      ? expPtDomain1
-      : isAdvanced
-        ? advPtDomain1
-        : basePtDomain1
-    const currentDomainPtPoints2 = isExperiment
-      ? expPtDomain2
-      : isAdvanced
-        ? advPtDomain2
-        : basePtDomain2
-    const currentDomainPtPointsTotal = isExperiment
-      ? expPtDomainTotal
-      : isAdvanced
-        ? advPtDomainTotal
-        : basePtDomainTotal
+    const currentDomainVtPoints1 = isAdvanced ? advVtDomain1 : baseVtDomain1
+    const currentDomainVtPoints2 = isAdvanced ? advVtDomain2 : baseVtDomain2
+    const currentDomainPtPoints1 = isAdvanced ? advPtDomain1 : basePtDomain1
+    const currentDomainPtPoints2 = isAdvanced ? advPtDomain2 : basePtDomain2
+    const currentDomainPtPointsTotal = isAdvanced ? advPtDomainTotal : basePtDomainTotal
 
     // 动态截断
     const currentVtPoints1 = getPointsUpToTime(currentDomainVtPoints1, time)
@@ -477,40 +391,22 @@ export function useMomentumConservationPhysics(
       currentPtPoints2,
       currentPtPointsTotal,
     }
-  }, [basic, advanced, experiment, expTMax, isAdvanced, isExperiment, m1, v1, m2, v2, m_slider, M_board, v0, time])
+  }, [basic, advanced, isAdvanced, m1, v1, m2, v2, m_slider, M_board, v0, time])
 
   // ── 矢量/动量条映射 ──
-  const vMaxRef = isExperiment ? 2.0 : 10
-  const mapArrowLen = (val: number) => (Math.abs(val) / vMaxRef) * MC_LAYOUT.vectorMaxLength
+  const mapArrowLen = (val: number) => (Math.abs(val) / 10) * MC_LAYOUT.vectorMaxLength
 
-  const p1 = isExperiment
-    ? time <= experiment.t_collision
-      ? experiment.p1_before
-      : experiment.p1_after_measured
-    : m1 * basic.currentV1
-  const p2 = isExperiment
-    ? time <= experiment.t_collision
-      ? 0
-      : experiment.p2_after_measured
-    : m2 * basic.currentV2
-  const pTotal = isExperiment
-    ? experiment.p_total_before_measured
-    : isAdvanced
-      ? m_slider * v0
-      : m1 * v1 + m2 * v2
-  const pMaxRef = isExperiment ? 1.5 : 100
-  const mapMomentumBar = (p: number) => (Math.abs(p) / pMaxRef) * MC_LAYOUT.momentumBarMaxLength
-  // 图表 x 轴上界：实验模式跟随 SSOT 实验时长；基础/进阶模式沿用固定的 10s 观察窗口
-  const tMax = isExperiment ? expTMax : 10
+  const p1 = m1 * basic.currentV1
+  const p2 = m2 * basic.currentV2
+  const pTotal = isAdvanced ? m_slider * v0 : m1 * v1 + m2 * v2
+  const mapMomentumBar = (p: number) => (Math.abs(p) / 100) * MC_LAYOUT.momentumBarMaxLength
+  const tMax = 10
 
   return {
     mode,
     basic,
     advanced,
-    experiment,
-    trackSliders,
     isAdvanced,
-    isExperiment,
     chartData,
     p1,
     p2,

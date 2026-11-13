@@ -25,7 +25,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { execSync, spawn } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { collectAnimIds, runDeepSegWrapOnPage, scanSegWrapOnPage } from './probe-seg-wrap.mjs'
+import { collectAnimIds, runDeepSegWrapOnPage, scanLeftOverflowOnPage, scanSegWrapOnPage } from './probe-seg-wrap.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const BASELINE_FILE = join(ROOT, 'scripts/text-overlap-baseline.json')
@@ -297,6 +297,7 @@ const scanTextOverlapOnPage = (page) =>
 
 // ── 双视口联合采集 ───────────────────────────────────────────────────────
 const segFailures = []
+const leftOverflows = []
 let segTotalBtns = 0
 let segTotalStates = 0
 
@@ -361,13 +362,15 @@ for (const WIDTH of WIDTHS) {
       continue
     }
 
-    // 1. 分段器折行实测（含 Canvas-only 页面的左屏控件，不能跳过）
+    // 1. 分段器折行 & 左屏横向溢出实测（含 Canvas-only 页面的左屏控件，不能跳过）
     if (RUN_SEG) {
       const rows = await scanSegWrapOnPage(page)
       segTotalBtns += rows.length
       for (const r of rows) {
         if (r.lines > 1.35) segFailures.push({ id, vw: WIDTH, state: 'default', ...r })
       }
+      const leftOv = await scanLeftOverflowOnPage(page)
+      if (leftOv) leftOverflows.push({ id, vw: WIDTH, ...leftOv })
       if (DEEP) {
         const res = await runDeepSegWrapOnPage(page, id)
         segTotalStates += res.states
@@ -441,12 +444,15 @@ if (RUN_SEG) {
   for (const f of segFailures) {
     console.log(`❌ [seg-wrap ${f.vw}px] ${f.id}  「${f.text}」  折 ${f.lines} 行  单格 ${f.cellW}px  [${f.state}]`)
   }
+  for (const o of leftOverflows) {
+    console.log(`❌ [left-overflow ${o.vw}px] ${o.id}  scrollDiff=${o.scrollDiff}px  元素「${o.culprit}」超出 ${o.over}px`)
+  }
   const deepNote = DEEP ? ` / 深度切换 ${segTotalStates} 次` : ''
   console.log(
-    `[seg-wrap] 实测 ${segTotalBtns} 个分段器按钮${deepNote} / ${segFailures.length} 处折行  [${vwLabel}]`,
+    `[seg-wrap] 实测 ${segTotalBtns} 个分段器按钮${deepNote} / ${segFailures.length} 处折行 / ${leftOverflows.length} 处左屏横向溢出  [${vwLabel}]`,
   )
-  if (segFailures.length) {
-    console.error('❌ 分段器折行实测未通过：压缩选项或对确需折行的一项加 `allowWrap: true` 并注释理由。')
+  if (segFailures.length || leftOverflows.length) {
+    console.error('❌ 左屏布局实测未通过：存在分段器折行或左屏横向溢出。')
     exitCode = 1
   }
 }

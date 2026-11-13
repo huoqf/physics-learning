@@ -28,8 +28,8 @@ const CAP_WIDTH = 130
 const CAP_GAP = 46
 const CAP_PLATE_THICKNESS = 10
 
-// 螺线管电感（底部中央水平横置）
-const COIL = { cx: 390, cy: BOTTOM_Y, turns: 6, rx: 13, ry: 22 } as const
+// 螺线管电感（底部中央水平横置，与 LCOscillationScene 同源几何）
+const COIL = { cx: 390, cy: BOTTOM_Y, turns: 5, rx: 6, ry: 20 } as const
 const COIL_TOTAL_WIDTH = 180
 const COIL_LEFT = COIL.cx - COIL_TOTAL_WIDTH / 2 // 300
 const COIL_RIGHT = COIL.cx + COIL_TOTAL_WIDTH / 2 // 480
@@ -88,12 +88,13 @@ export const ProbLcOscillationModelDiagram: React.FC<DiagramProps> = () => {
           <line x1={LOOP_RIGHT} y1={bottomPlateOuterY} x2={LOOP_RIGHT} y2={BOTTOM_Y} />
         </g>
 
-        {/* ── 2. 电感 L（底部中央水平螺线管，与回路串联）── */}
+        {/* ── 2. 电感 L（底部中央水平螺线管，连续螺旋绕线与回路串联）── */}
         <Solenoid
           x={COIL.cx}
           y={COIL.cy}
           width={COIL_TOTAL_WIDTH}
           height={COIL.ry * 2}
+          rx={COIL.rx}
           turns={COIL.turns}
           current={1}
           leadType="horizontal"
