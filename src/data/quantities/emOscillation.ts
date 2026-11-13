@@ -266,8 +266,12 @@ function buildLCPanel(params: Record<string, number>, time: number): PhysicsPane
       importance: 'gaokao' as const,
     },
     {
-      text: '动态电路分析：开关接 1 时电容器接直流电源（u_C = E 恒定），增大 d 则 C 减小、Q 减小；拨至 2 振荡后若外力断开电源下在峰值处拉大极板间距 d，Q 不变而 C 减小，周期 T 变短、电场能增大。',
+      text: '高考压轴做功与储能突变：① 在 q=Q₀ 瞬间迅速拉大极板间距 d，Q 不变、C 减小，外力克服极板间静电引力做正功，电场能 Ee 突增；② 在 q=0 瞬间拉大间距 d，极板不带电外力不做功，总能量守恒不变，但周期 T 突变缩短。',
       importance: 'hard' as const,
+    },
+    {
+      text: '动态电路分析：开关接 1 时电容器接直流电源（u_C = E 恒定），增大 d 则 C 减小、Q 减小；拨至 2 振荡后若外力断开电源下在峰值处拉大极板间距 d，Q 不变而 C 减小，周期 T 变短、电场能增大。',
+      importance: 'gaokao' as const,
     },
     {
       text: '周期调控规律：增大线圈匝数/插入铁芯增大 L，或减小极板间距 d/插入电介质增大 C，均使 T = 2π√(LC) 增大、固有频率降低；只调电源电压 E 或 Q₀ 仅改振幅与储能，不改周期 T。',
@@ -384,6 +388,58 @@ function buildEMWavePanel(params: Record<string, number>): PhysicsPanelData {
 // ─── 场次 2：电磁波谱与无线电波的发射与接收 ───────────────────────────────
 
 function buildSpectrumPanel(params: Record<string, number>): PhysicsPanelData {
+  if (params.radioMode === 2) {
+    // ── 无线电调制与检波全链路子模式 ──
+    const isFM = (params.modType ?? 0) === 1
+    const quantities: PhysicsQuantity[] = [
+      { label: '调制体制', value: isFM ? '调频 (FM)' : '调幅 (AM)', unit: '', color: EM_OSCILLATION_COLORS.current, highlight: 'positive' },
+      { label: '基带信号', value: '低频音频', unit: '20Hz ~ 20kHz', color: CANVAS_COLORS.labelText },
+      { label: '载波信号', value: '高频等幅波', unit: 'MHz 级', color: EM_OSCILLATION_COLORS.current },
+      { label: '检波器件', value: '二极管单向导电', unit: '', color: EM_OSCILLATION_COLORS.charge },
+      { label: '解调还原', value: 'RC 低通滤波', unit: '', color: CANVAS_COLORS.labelText },
+    ]
+
+    const formulas: Formula[] = [
+      {
+        name: '调幅信号表达式 (AM)',
+        latex: 's_{\\text{AM}}(t) = [A_0 + s_m(t)]\\cos(\\omega_c t)',
+        condition: '调幅过程（振幅随音频信号线性变化，包络与原信号同形）',
+        note: '高频载波角频率 ω_c 远大于低频音频角频率 ω_m；调幅波包络的上下轮廓线与音频信号同形。',
+        level: 'core' as const,
+      },
+      {
+        name: '二极管检波半波整流与包络检波',
+        latex: 'v_{\\text{检波}}(t) = \\max(0, s_{\\text{AM}}(t)) \\xrightarrow{\\text{RC滤波}} s_m(t)',
+        condition: '接收机解调过程（二极管单向导电切除负半周，RC 滤波去除高频载波还原音频）',
+        level: 'important' as const,
+      },
+    ]
+
+    const gaokaoPoints: GaokaoPoint[] = [
+      {
+        text: '新高考必考波形辨析四图：① 音频信号（低频正弦波，不能直接辐射）；② 高频载波（等幅密集振荡）；③ 调幅波（高频振荡振幅随音频变化）；④ 检波信号（半波整流脉冲）与滤波输出（还原平滑音频）。',
+        importance: 'gaokao' as const,
+      },
+      {
+        text: '调幅与调频核心区别：调幅（AM）是使高频载波的振幅随信号改变；调频（FM）是使高频载波的频率随信号改变（抗干扰能力更强）。',
+        importance: 'core' as const,
+      },
+      {
+        text: '无线电通信全链四步：调制（音频装载到高频） ⟶ 发射（开放天线光速辐射） ⟶ 调谐（电谐振选台） ⟶ 检波/解调（二极管与RC滤波还原声音）。',
+        importance: 'gaokao' as const,
+      },
+    ]
+
+    const warnings: WarningItem[] = [
+      {
+        text: '高考术语辨析陷阱：调制是发射端的动作；调谐是接收端通过电谐振选出目标频率；解调（检波）是从高频波中还原音频信号，三者绝不能混为一谈。',
+        level: 'danger' as const,
+      },
+    ]
+
+    return { quantities, formulas, gaokaoPoints, warnings }
+  }
+
   if (params.radioMode === 1) {
     // ── 无线电发射与接收（调谐）子模式 ──
     const cRx = params.cRx ?? 1.0

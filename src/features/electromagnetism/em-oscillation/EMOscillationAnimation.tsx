@@ -10,6 +10,7 @@ import { LCOscillationScene } from './components/LCOscillationScene'
 import { EMWaveScene } from './components/EMWaveScene'
 import { EMSpectrumScene } from './components/EMSpectrumScene'
 import { RadioTuningScene } from './components/RadioTuningScene'
+import { RadioModulationScene } from './components/RadioModulationScene'
 import { LC_DEFAULT_PARAMS } from '@/physics'
 
 /** 场次索引（与 registry 的 defaultParams.scene 一一对应） */
@@ -93,16 +94,21 @@ function EMWaveStage({ font }: { font: FontFn }) {
 // ─── 场次 2：电磁波谱与无线电调谐 ─────────────────────────────────────────
 
 function EMSpectrumStage({ font }: { font: FontFn }) {
-  const { radioMode, band, cRx, time } = useAnimationStore(
+  const { radioMode, band, cRx, modType, time } = useAnimationStore(
     useShallow((s) => ({
       radioMode: s.params.radioMode ?? 0,
       band: s.params.band ?? 0,
       cRx: s.params.cRx ?? 1.0,
+      modType: s.params.modType ?? 0,
       time: s.time,
     })),
   )
 
   const layout = useEMSpectrumLayout(band)
+
+  if (radioMode === 2) {
+    return <RadioModulationScene modType={modType} time={time} font={font} />
+  }
 
   if (radioMode === 1) {
     return <RadioTuningScene cRx={cRx} time={time} font={font} />

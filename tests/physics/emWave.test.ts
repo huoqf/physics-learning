@@ -5,6 +5,7 @@ import {
   formatWavelength,
   frequencyFromWavelength,
   getSpectrumBand,
+  sampleRadioModulationWaves,
   wavelengthFromFrequency,
 } from '@/physics/emWave'
 import { SPEED_OF_LIGHT } from '@/physics/constants'
@@ -131,5 +132,39 @@ describe('emWave · formatFrequency（回归锁）', () => {
 
   it('c 取 3.0×10⁸ m/s（与物理层常量同源）', () => {
     expect(frequencyFromWavelength(1)).toBe(SPEED_OF_LIGHT)
+  })
+})
+
+describe('emWave · sampleRadioModulationWaves (无线电调制与检波)', () => {
+  it('生成指定数量的采样点，时间归一化在 [0, 1]', () => {
+    const samples = sampleRadioModulationWaves(100, 0)
+    expect(samples).toHaveLength(101)
+    expect(samples[0].t).toBe(0)
+    expect(samples[100].t).toBe(1)
+  })
+
+  it('音频信号与载波信号幅值严格限制在 [-1, 1]', () => {
+    const samples = sampleRadioModulationWaves(200, 1.5)
+    for (const s of samples) {
+      expect(s.audio).toBeGreaterThanOrEqual(-1 - 1e-6)
+      expect(s.audio).toBeLessThanOrEqual(1 + 1e-6)
+      expect(s.carrier).toBeGreaterThanOrEqual(-1 - 1e-6)
+      expect(s.carrier).toBeLessThanOrEqual(1 + 1e-6)
+    }
+  })
+
+  it('二极管检波输出严格满足单向导电非负性 (detected >= 0)', () => {
+    const samples = sampleRadioModulationWaves(200, 0.5)
+    for (const s of samples) {
+      expect(s.detected).toBeGreaterThanOrEqual(0)
+    }
+  })
+
+  it('调幅 AM 信号严格满足振幅包络 A(t) = 1 + 0.65 * audio', () => {
+    const samples = sampleRadioModulationWaves(200, 0)
+    for (const s of samples) {
+      const maxPossibleAm = 1 + 0.65 + 1e-6
+      expect(Math.abs(s.am)).toBeLessThanOrEqual(maxPossibleAm)
+    }
   })
 })

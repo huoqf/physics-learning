@@ -189,3 +189,81 @@ export function formatFrequency(f: number): string {
   const expNum = parseInt(expStr, 10)
   return `${mantissaStr} × 10${toSuperscript(expNum)} Hz`
 }
+
+/** 无线电调制与检波模式波形采样单点 */
+export interface RadioModulationSample {
+  /** 归一化时间 t (0 ~ 1.0) */
+  t: number
+  /** 低频音频调制信号（声音基带） [-1, 1] */
+  audio: number
+  /** 高频等幅载波信号 [-1, 1] */
+  carrier: number
+  /** 调幅信号 (AM)（振幅随音频变化） [-1.8, 1.8] */
+  am: number
+  /** 调频信号 (FM)（频率疏密随音频变化） [-1, 1] */
+  fm: number
+  /** 检波输出（二极管单向导电半波整流） [0, 1.8] */
+  detected: number
+  /** 滤波还原信号（RC 低通滤波还原音频包络） [-1, 1] */
+  filtered: number
+}
+
+/**
+ * 生成无线电通信调制（AM/FM）与检波（二极管整流与滤波）的对比波形序列。
+ *
+ * 教材依据：人教版选择性必修第二册第 4 章第 3 节「无线电波的发射和接收」
+ *   图 4.3-3（调制过程：调幅波与调频波）与 图 4.3-5（检波过程）。
+ *
+ * 专门服务新高考高频考点——四类波形辨析：
+ *   1. 音频信号：低频信号，不能直接向外有效辐射；
+ *   2. 载波信号：高频等幅信号，用于搭载音频向外发射；
+ *   3. 调幅波(AM)：高频载波的振幅随音频信号变化，波包包络与音频完全同形；
+ *   4. 检波输出：利用二极管单向导电性切除调幅波的下半周，再经 RC 滤波恢复音频。
+ *
+ * @param count 采样点数，默认 300
+ * @param time 当前时间偏置（用于行进动态呈现）
+ */
+export function sampleRadioModulationWaves(count = 300, time = 0): RadioModulationSample[] {
+  const samples: RadioModulationSample[] = []
+  // 音频周期数：在归一化窗口内展示 2 个完整周期
+  const fa = 2
+  // 高频载波周期数：展示 24 个密集完整周期，使波包轮廓与高频振荡明显区分
+  const fc = 24
+  // 调幅系数 m (0 < m < 1，典型值 0.65，避免过调制削波)
+  const m = 0.65
+  // 调频频偏系数 beta
+  const beta = 2.4
+
+  for (let i = 0; i <= count; i++) {
+    const t = i / count
+    // 空间波动行进相位
+    const phaseOffset = time * 0.4
+    const ta = 2 * Math.PI * fa * (t - phaseOffset)
+    const tc = 2 * Math.PI * fc * (t - phaseOffset)
+
+    const audio = Math.cos(ta)
+    const carrier = Math.cos(tc)
+    // 调幅信号：A(t) = 1 + m * audio
+    const env = 1 + m * audio
+    const am = env * carrier
+    // 调频信号：频率瞬时变化
+    const fm = Math.cos(tc + beta * Math.sin(ta))
+    // 二极管检波：理想半波整流，切除负半周
+    const detected = Math.max(0, am)
+    // 滤波还原音频：去除直流偏置与载波残差，还原出纯净音频
+    const filtered = audio
+
+    samples.push({
+      t,
+      audio,
+      carrier,
+      am,
+      fm,
+      detected,
+      filtered,
+    })
+  }
+
+  return samples
+}
+

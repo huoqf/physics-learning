@@ -74,7 +74,8 @@ const sharedParams = {
   // ── 场次 1：电磁波 ──
   fEM: 100,
   // ── 场次 2：电磁波谱与无线电 ──
-  radioMode: 0, // 0: 波谱全景, 1: 无线电发射与接收（调谐）
+  radioMode: 0, // 0: 波谱全景, 1: 无线电调谐, 2: 调制与检波全链路
+  modType: 0, // 0: 调幅 AM, 1: 调频 FM
   band: 0,
   // 接收端可变调谐电容，**相对基准 C₀ 的比例因子**（无量纲；基准 C₀ 对应 100MHz 谐振点）
   cRx: 1.0,
@@ -168,13 +169,13 @@ const sharedParamMeta: ParamMeta[] = [
     showIf: 'scene',
     showIfValue: 2,
     hideIf: 'radioMode',
-    hideIfValue: 0,
+    hideIfValue: [0, 2],
     group: '接收回路可变电容',
     description: '调节电容使回路固有频率等于电台频率（高频模型：基准 C₀ 对应 100MHz，实际回路 C 为 pF 级、L 为 μH 级）',
     marks: [
-      { value: 0.5, label: '0.5C₀(141MHz)' },
-      { value: 1.0, label: '1.0C₀(100MHz谐振点)', variant: 'critical' as const },
-      { value: 2.0, label: '2.0C₀(70.7MHz)' },
+      { value: 0.5, label: '0.5C₀' },
+      { value: 1.0, label: '1.0C₀(谐振点)', variant: 'critical' as const },
+      { value: 2.0, label: '2.0C₀' },
     ],
   },
 ]
@@ -197,6 +198,15 @@ const sharedControlMeta: ControlMeta[] = [
     label: '📻 收音机LC谐振选台',
     description: '切入接收调谐回路并锚定可变电容 C=1.0C₀（100MHz 谐振点）',
     params: { scene: 2, radioMode: 1, cRx: 1.0 },
+    restartOnApply: true,
+    showIf: 'scene',
+    showIfValue: 2,
+  },
+  {
+    type: 'preset' as const,
+    label: '📡 调幅AM与二极管检波',
+    description: '对比低频音频、高频载波、调幅AM波与二极管检波波形',
+    params: { scene: 2, radioMode: 2, modType: 0 },
     restartOnApply: true,
     showIf: 'scene',
     showIfValue: 2,
@@ -233,6 +243,22 @@ const sharedControlMeta: ControlMeta[] = [
     options: [
       { value: 0, label: '波谱全景' },
       { value: 1, label: '无线电调谐' },
+      { value: 2, label: '调制与检波' },
+    ],
+  },
+  {
+    type: 'segmented' as const,
+    key: 'modType',
+    label: '调制体制',
+    group: '调制与检波波形',
+    showIf: 'scene',
+    showIfValue: 2,
+    hideIf: 'radioMode',
+    hideIfValue: [0, 1],
+    resetOnChange: true,
+    options: [
+      { value: 0, label: '调幅 AM' },
+      { value: 1, label: '调频 FM' },
     ],
   },
   {
@@ -243,7 +269,7 @@ const sharedControlMeta: ControlMeta[] = [
     showIf: 'scene',
     showIfValue: 2,
     hideIf: 'radioMode',
-    hideIfValue: 1,
+    hideIfValue: [1, 2],
     resetOnChange: true,
     options: [
       { value: 0, label: '无线电' },
@@ -274,7 +300,7 @@ const sharedControlMeta: ControlMeta[] = [
     showIf: 'scene',
     showIfValue: 2,
     hideIf: 'radioMode',
-    hideIfValue: 1,
+    hideIfValue: [1, 2],
     content: '按波长由长到短记忆谱段顺序，并对照各谱段的典型应用。',
   },
   {
@@ -282,16 +308,25 @@ const sharedControlMeta: ControlMeta[] = [
     showIf: 'scene',
     showIfValue: 2,
     hideIf: 'radioMode',
-    hideIfValue: 0,
+    hideIfValue: [0, 2],
     content:
       '旋转可变电容 C，只盯感应电流表的读数：读数最大的那一刻，接收回路的固有频率就与电台频率相等。',
+  },
+  {
+    type: 'tip' as const,
+    showIf: 'scene',
+    showIfValue: 2,
+    hideIf: 'radioMode',
+    hideIfValue: [0, 1],
+    content:
+      '新高考必考波形辨析：① 调制是将低频音频信号装载到高频载波（AM 改变振幅，FM 改变频率）；② 调幅波包络与音频信号完全同形；③ 检波利用二极管单向导电性截去负半周，经电容滤波还原出原始声音。',
   },
 ]
 
 const sharedVisual = {
   controlsMode: (params: Record<string, number>) => {
     if (params.scene === 2) {
-      return params.radioMode === 1 ? ('loop' as const) : ('param' as const)
+      return params.radioMode === 0 ? ('param' as const) : ('loop' as const)
     }
     if (params.scene === 1) return 'loop' as const
     if ((params.switchPos ?? 2) === 1) return 'param' as const

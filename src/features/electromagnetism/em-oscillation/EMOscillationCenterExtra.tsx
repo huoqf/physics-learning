@@ -9,6 +9,7 @@ import {
   CANVAS_COLORS,
   EM_OSCILLATION_COLORS,
   ENERGY_CHART_COLORS,
+  PHYSICS_COLORS,
   SCENE_COLORS,
   VISIBLE_SPECTRUM_COLORS,
   withAlpha,
@@ -19,6 +20,7 @@ import {
   formatWavelength,
   formatLCEnergy,
   calculateRadioTuning,
+  sampleRadioModulationWaves,
   LC_DEFAULT_PARAMS,
   LC_DISPLAY_ENERGY_EPSILON,
   LC_CURVE_CHARGE_SPAN,
@@ -51,6 +53,7 @@ export default function EMOscillationCenterExtra() {
 
   if (scene === 1) return <EMWavePanel />
   if (scene === 2) {
+    if (radioMode === 2) return <RadioModulationPanel />
     return radioMode === 1 ? <RadioTuningPanel /> : <EMSpectrumPanel />
   }
   return <LCPanel />
@@ -497,4 +500,256 @@ function RadioTuningPanel() {
     </div>
   )
 }
+
+// ─── 场次 2 子模式：无线电调制与检波全链路波形辨析 ──────────────────────────
+
+function buildSvgWavePath(
+  points: { x: number; y: number }[],
+  width: number,
+  height: number,
+  yScale = 0.38,
+): string {
+  if (points.length === 0) return ''
+  const cy = height / 2
+  return (
+    'M ' +
+    points
+      .map((p) => {
+        const px = p.x * width
+        const py = cy - p.y * height * yScale
+        return `${px.toFixed(1)},${py.toFixed(1)}`
+      })
+      .join(' L ')
+  )
+}
+
+function RadioModulationPanel() {
+  const { modType, time } = useAnimationStore(
+    useShallow((s) => ({
+      modType: s.params.modType ?? 0,
+      time: s.time,
+    })),
+  )
+
+  const isFM = modType === 1
+  const samples = useMemo(() => sampleRadioModulationWaves(150, time), [time])
+
+  // 单卡片设计尺寸（用于内部归一化渲染）
+  const cardW = 186
+  const cardH = 88
+
+  const audioPts = useMemo(() => samples.map((s) => ({ x: s.t, y: s.audio })), [samples])
+  const carrierPts = useMemo(() => samples.map((s) => ({ x: s.t, y: s.carrier })), [samples])
+  const modulatedPts = useMemo(
+    () => samples.map((s) => ({ x: s.t, y: isFM ? s.fm : s.am })),
+    [samples, isFM],
+  )
+  const detectedPts = useMemo(
+    () => samples.map((s) => ({ x: s.t, y: s.detected })),
+    [samples],
+  )
+  const filteredPts = useMemo(
+    () => samples.map((s) => ({ x: s.t, y: s.filtered })),
+    [samples],
+  )
+
+  // 调幅波包包络线（上下两条虚线）
+  const upperEnvPts = useMemo(
+    () => samples.map((s) => ({ x: s.t, y: 1 + 0.65 * s.audio })),
+    [samples],
+  )
+  const lowerEnvPts = useMemo(
+    () => samples.map((s) => ({ x: s.t, y: -(1 + 0.65 * s.audio) })),
+    [samples],
+  )
+
+  const pAudio = buildSvgWavePath(audioPts, cardW, cardH, 0.4)
+  const pCarrier = buildSvgWavePath(carrierPts, cardW, cardH, 0.4)
+  const pModulated = buildSvgWavePath(modulatedPts, cardW, cardH, isFM ? 0.4 : 0.24)
+  const pUpperEnv = buildSvgWavePath(upperEnvPts, cardW, cardH, 0.24)
+  const pLowerEnv = buildSvgWavePath(lowerEnvPts, cardW, cardH, 0.24)
+  const pDetected = buildSvgWavePath(detectedPts, cardW, cardH, 0.24)
+  const pFiltered = buildSvgWavePath(filteredPts, cardW, cardH, 0.4)
+
+  const handleToggleMod = (type: number) => {
+    useAnimationStore.getState().updateParam('modType', type)
+  }
+
+  return (
+    <div className="w-full h-full flex flex-col p-2 bg-white rounded-xl border border-neutral-100 shadow-sm">
+      <div className="shrink-0 flex justify-between items-center mb-1 px-0.5">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-neutral-800">
+            无线电调制与检波全链路波形对照
+          </span>
+          <div className="flex rounded bg-neutral-100 p-0.5 text-[10px]">
+            <button
+              type="button"
+              onClick={() => handleToggleMod(0)}
+              className={`px-1.5 py-0.5 rounded transition-all ${
+                !isFM ? 'bg-white font-bold text-neutral-800 shadow-xs' : 'text-neutral-500'
+              }`}
+            >
+              调幅 AM (改振幅)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleToggleMod(1)}
+              className={`px-1.5 py-0.5 rounded transition-all ${
+                isFM ? 'bg-white font-bold text-neutral-800 shadow-xs' : 'text-neutral-500'
+              }`}
+            >
+              调频 FM (改频率)
+            </button>
+          </div>
+        </div>
+        <span className="text-[10px] text-neutral-400 font-mono">
+          调制(发射端) ⟶ 传播 ⟶ 检波(接收端)
+        </span>
+      </div>
+
+      <div className="flex-1 min-h-0 grid grid-cols-4 gap-1.5 items-stretch">
+        {/* 卡片 1：低频音频信号 */}
+        <div className="flex flex-col p-1.5 rounded-lg border border-neutral-100 bg-neutral-50/50">
+          <div className="flex justify-between items-center mb-1 text-[11px] font-bold text-neutral-700">
+            <span>① 音频信号 (低频)</span>
+            <span className="text-[9px] px-1 py-0.2 rounded bg-amber-100 text-amber-700 font-normal">
+              无法直接发射
+            </span>
+          </div>
+          <div className="flex-1 min-h-0 flex items-center justify-center">
+            <svg viewBox={`0 0 ${cardW} ${cardH}`} className="w-full h-full overflow-visible">
+              <line
+                x1={0}
+                y1={cardH / 2}
+                x2={cardW}
+                y2={cardH / 2}
+                stroke={CANVAS_COLORS.axis}
+                strokeWidth={0.8}
+                strokeDasharray="2,2"
+              />
+              <path d={pAudio} fill="none" stroke={PHYSICS_COLORS.velocity} strokeWidth={2} />
+            </svg>
+          </div>
+          <div className="text-[9px] text-neutral-500 text-center mt-1 truncate">
+            声音转化成电信号 · 周期长/频率低
+          </div>
+        </div>
+
+        {/* 卡片 2：高频等幅载波 */}
+        <div className="flex flex-col p-1.5 rounded-lg border border-neutral-100 bg-neutral-50/50">
+          <div className="flex justify-between items-center mb-1 text-[11px] font-bold text-neutral-700">
+            <span>② 高频载波 (等幅)</span>
+            <span className="text-[9px] px-1 py-0.2 rounded bg-blue-100 text-blue-700 font-normal">
+              用于运载发射
+            </span>
+          </div>
+          <div className="flex-1 min-h-0 flex items-center justify-center">
+            <svg viewBox={`0 0 ${cardW} ${cardH}`} className="w-full h-full overflow-visible">
+              <line
+                x1={0}
+                y1={cardH / 2}
+                x2={cardW}
+                y2={cardH / 2}
+                stroke={CANVAS_COLORS.axis}
+                strokeWidth={0.8}
+                strokeDasharray="2,2"
+              />
+              <path d={pCarrier} fill="none" stroke={EM_OSCILLATION_COLORS.current} strokeWidth={1.5} />
+            </svg>
+          </div>
+          <div className="text-[9px] text-neutral-500 text-center mt-1 truncate">
+            LC 高频振荡产生 · 振幅与频率恒定
+          </div>
+        </div>
+
+        {/* 卡片 3：已调高频波 */}
+        <div className="flex flex-col p-1.5 rounded-lg border border-amber-200 bg-amber-50/20">
+          <div className="flex justify-between items-center mb-1 text-[11px] font-bold text-amber-800">
+            <span>③ {isFM ? '调频波 (FM)' : '调幅波 (AM)'}</span>
+            <span className="text-[9px] px-1 py-0.2 rounded bg-amber-200 text-amber-800 font-normal">
+              调制完成向外发射
+            </span>
+          </div>
+          <div className="flex-1 min-h-0 flex items-center justify-center">
+            <svg viewBox={`0 0 ${cardW} ${cardH}`} className="w-full h-full overflow-visible">
+              <line
+                x1={0}
+                y1={cardH / 2}
+                x2={cardW}
+                y2={cardH / 2}
+                stroke={CANVAS_COLORS.axis}
+                strokeWidth={0.8}
+                strokeDasharray="2,2"
+              />
+              {!isFM && (
+                <>
+                  <path
+                    d={pUpperEnv}
+                    fill="none"
+                    stroke={PHYSICS_COLORS.velocity}
+                    strokeWidth={1.2}
+                    strokeDasharray="3,2"
+                  />
+                  <path
+                    d={pLowerEnv}
+                    fill="none"
+                    stroke={PHYSICS_COLORS.velocity}
+                    strokeWidth={1.2}
+                    strokeDasharray="3,2"
+                  />
+                </>
+              )}
+              <path
+                d={pModulated}
+                fill="none"
+                stroke={isFM ? EM_OSCILLATION_COLORS.current : EM_OSCILLATION_COLORS.bFieldWave}
+                strokeWidth={1.5}
+              />
+            </svg>
+          </div>
+          <div className="text-[9px] text-amber-700 text-center mt-1 truncate">
+            {isFM ? '频率随音频疏密交替 · 振幅恒定' : '高频波包包络与音频信号完全同形'}
+          </div>
+        </div>
+
+        {/* 卡片 4：二极管检波与滤波还原 */}
+        <div className="flex flex-col p-1.5 rounded-lg border border-emerald-200 bg-emerald-50/20">
+          <div className="flex justify-between items-center mb-1 text-[11px] font-bold text-emerald-800">
+            <span>④ 检波与滤波</span>
+            <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-100 text-emerald-800 font-normal">
+              接收端解调还原
+            </span>
+          </div>
+          <div className="flex-1 min-h-0 flex items-center justify-center">
+            <svg viewBox={`0 0 ${cardW} ${cardH}`} className="w-full h-full overflow-visible">
+              <line
+                x1={0}
+                y1={cardH / 2}
+                x2={cardW}
+                y2={cardH / 2}
+                stroke={CANVAS_COLORS.axis}
+                strokeWidth={0.8}
+                strokeDasharray="2,2"
+              />
+              {/* 二极管切除负半周的正脉冲 */}
+              <path
+                d={pDetected}
+                fill="none"
+                stroke={withAlpha(EM_OSCILLATION_COLORS.charge, 0.45)}
+                strokeWidth={1.4}
+              />
+              {/* RC 滤波后还原的平滑音频 */}
+              <path d={pFiltered} fill="none" stroke={PHYSICS_COLORS.velocity} strokeWidth={2.2} />
+            </svg>
+          </div>
+          <div className="text-[9px] text-emerald-700 text-center mt-1 truncate">
+            二极管单向切除负半周 ⟶ 滤波还原声音
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 
