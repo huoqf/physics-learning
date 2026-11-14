@@ -11,6 +11,7 @@ export * from './dualRods'
 export * from './loopPassField'
 export * from './acCircuit'
 export * from './electromagnetism/rcTransient'
+export * from './electromagnetism/chargeElementary'
 
 // 渲染辅助函数已迁出，但为兼容旧 import 路径仍在此 re-export
 export {

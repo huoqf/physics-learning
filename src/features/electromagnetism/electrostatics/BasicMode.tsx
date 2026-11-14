@@ -7,7 +7,7 @@
  * 功能特性：
  * 1. 拖拽右侧电荷改变间距 r，实时更新库仑力大小
  * 2. F-r 关系图表面板，展示力随距离的变化曲线
- * 3. 接触起电演示：两球接触后电荷重新分配（Q' = (Q1+Q2)/2）
+ * 3. 接触起电演示（由左屏 controlMeta preset 触发）：两球接触后电荷重新分配（Q' = (Q1+Q2)/2）
  * 4. 高考考点提示：当 r 过小时提示点电荷适用条件
  *
  * 布局：左右并列（左侧动画舞台 60% + 右侧图表面板 40%）
@@ -15,7 +15,7 @@
  * @category M4
  */
 import { PhysicsVectorArrow } from '@/components/Physics'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { type CanvasSize, useAnimationFrame } from '@/utils'
 import type { ViewportInfo } from '@/utils'
 import { useAnimationStore } from '@/stores'
@@ -28,11 +28,8 @@ import {
 import { colors } from '@/theme/colors'
 
 import { RelationChart } from '@/components/Chart'
-import { Button } from '@/components/UI'
-import { useSceneScale } from '@/hooks'
+import { useSceneScale } from '@/hooks'
 import { COULOMB_CONSTANT } from '@/physics/constants'
-
-/** 静电力常量 k = 9×10⁹ N·m²/C² */
 
 /**
  * 基础模式布局配置常量
@@ -69,7 +66,7 @@ export default function BasicMode({
   canvasSize: CanvasSize
   vp: ViewportInfo
 }) {
-  const { q1 = 2, q2 = -3, r: rParam = 4 } = params
+  const { q1 = 2, q2 = -3, r: rParam = 4, contactTrigger = 0 } = params
   const updateParam = useAnimationStore((s) => s.updateParam)
   const [dragging, setDragging] = useState(false)
   const [dragR, setDragR] = useState(rParam)
@@ -78,11 +75,25 @@ export default function BasicMode({
     setDragR(rParam)
   }, [rParam])
 
-  // 接触起电动画状态控制
+  // 接触起电动画状态控制（由左屏 controlMeta preset 递增 contactTrigger 触发）
   const [contactStep, setContactStep] = useState<'idle' | 'closing' | 'sharing' | 'opening'>('idle')
   const [contactProgress, setContactProgress] = useState(0)
   const [, setElapsedTime] = useState(0)
   const duration = 600 // 每个阶段时间 (ms)
+  const prevTriggerRef = useRef(contactTrigger)
+
+  useEffect(() => {
+    if (contactTrigger > prevTriggerRef.current) {
+      prevTriggerRef.current = contactTrigger
+      if (contactStep === 'idle') {
+        setContactStep('closing')
+        setContactProgress(0)
+        setElapsedTime(0)
+      }
+    } else {
+      prevTriggerRef.current = contactTrigger
+    }
+  }, [contactTrigger, contactStep])
 
   useAnimationFrame((dt) => {
     setElapsedTime((prev) => {
@@ -111,13 +122,6 @@ export default function BasicMode({
     })
   }, { playing: contactStep !== 'idle' })
 
-  const handleContactStart = () => {
-    if (contactStep !== 'idle') return
-    setContactStep('closing')
-    setContactProgress(0)
-    setElapsedTime(0)
-  }
-
   const r = dragR
   const q1SI = Math.abs(q1 * 1e-6)
   const q2SI = Math.abs(q2 * 1e-6)
@@ -125,9 +129,10 @@ export default function BasicMode({
   const { F } = calculateCoulombForce(COULOMB_CONSTANT, q1SI, q2SI, rSI)
 
   const attractive = q1 * q2 < 0
+  const { font } = canvasSize
   const w = canvasSize.width
   const h = canvasSize.height
-  const stageHeight = h - 60 // 腾出底端按钮的高度
+  const stageHeight = h
 
   // 动画舞台占据左边 60% 的宽度
   const stageWidth = w * 0.6
@@ -205,7 +210,7 @@ export default function BasicMode({
     <div className="flex flex-col h-full bg-white rounded-lg shadow-inner">
       {/* 左右并列 HTML 布局分区，平级非嵌套 (铁律 8) */}
       <div className="flex flex-1 min-h-0">
-        
+
         {/* 左侧：动画舞台 */}
         <svg width={stageWidth} height={stageHeight} className="flex-shrink-0"
           onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
@@ -220,9 +225,15 @@ export default function BasicMode({
           <line x1={x2} y1={centerY + stageHeight * LAYOUT.distanceLabelOffsetRatio - 6} x2={x2} y2={centerY + stageHeight * LAYOUT.distanceLabelOffsetRatio + 6}
             stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} />
           <text x={centerX} y={centerY + stageHeight * LAYOUT.distanceLabelOffsetRatio + 18}
-            fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.axis} textAnchor="middle">
+            fontSize={font(12)} fill={PHYSICS_COLORS.axis} textAnchor="middle">
             r = {r.toFixed(1)} cm
           </text>
+
+          {(contactStep === 'closing' || contactStep === 'opening') && (
+            <text x={centerX} y={26} fontSize={font(12)} fill={colors.accent[600]} textAnchor="middle" fontWeight="bold">
+              {contactStep === 'closing' ? '两球正在靠近接触...' : '电荷均分完成，两球正在分开...'}
+            </text>
+          )}
 
           {showVectors && contactStep !== 'sharing' && (
             <g>
@@ -241,9 +252,9 @@ export default function BasicMode({
                 strokeWidth={CANVAS_STYLE.stroke.vectorMain}
               />
               <text x={x1 + leftArrowDir * 30} y={centerY - 12}
-                fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.electricForce} textAnchor="middle" fontWeight="bold">F</text>
+                fontSize={font(11)} fill={PHYSICS_COLORS.electricForce} textAnchor="middle" fontWeight="bold">F</text>
               <text x={x2 + rightArrowDir * 30} y={centerY - 12}
-                fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.electricForce} textAnchor="middle" fontWeight="bold">F</text>
+                fontSize={font(11)} fill={PHYSICS_COLORS.electricForce} textAnchor="middle" fontWeight="bold">F</text>
             </g>
           )}
 
@@ -251,13 +262,13 @@ export default function BasicMode({
           <circle cx={x1} cy={centerY} r={chargeR}
             fill={q1 >= 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
             stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-          <text x={x1} y={centerY + 6} fontSize={chargeR * 0.9} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">
+          <text x={x1} y={centerY + 6} fontSize={font(14)} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">
             {q1 > 0 ? '+' : q1 < 0 ? '−' : '0'}
           </text>
           {/* 电荷量标签与上面的 `F` 力标签各占一行。
               小球的 `F` 标在力箭头上方 `centerY-12`，而力箭头从球心水平射出，
               所以球心正上方那一小段（`-chargeR-8` 起）同时属于两者，按构造必然咬合。 */}
-          <text x={x1} y={centerY - chargeR - 26} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
+          <text x={x1} y={centerY - chargeR - 26} fontSize={font(12)} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
             q₁ = {q1.toFixed(2)} μC
           </text>
 
@@ -268,14 +279,14 @@ export default function BasicMode({
             strokeWidth={dragging ? CANVAS_STYLE.stroke.vectorMain : CANVAS_STYLE.stroke.objectLine}
             style={{ cursor: contactStep === 'idle' ? 'grab' : 'default' }}
             onMouseDown={handleMouseDown} />
-          <text x={x2} y={centerY + 6} fontSize={chargeR * 0.9} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">
+          <text x={x2} y={centerY + 6} fontSize={font(14)} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">
             {q2 > 0 ? '+' : q2 < 0 ? '−' : '0'}
           </text>
-          <text x={x2} y={centerY - chargeR - 26} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
+          <text x={x2} y={centerY - chargeR - 44} fontSize={font(12)} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
             q₂ = {q2.toFixed(2)} μC
           </text>
           {contactStep === 'idle' && (
-            <text x={x2} y={centerY + chargeR + 16} fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
+            <text x={x2} y={centerY + chargeR + 16} fontSize={font(11)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
               (拖拽改变距离)
             </text>
           )}
@@ -288,15 +299,15 @@ export default function BasicMode({
                 <animate attributeName="r" values={`${chargeR * 1.3};${chargeR * 1.8};${chargeR * 1.3}`} dur="0.15s" repeatCount="indefinite" />
               </circle>
               {/* 闪电火花特效 */}
-              <path d={`M ${centerX - 5} ${centerY - 10} L ${centerX + 5} ${centerY - 2} L ${centerX - 4} ${centerY + 2} L ${centerX + 2} ${centerY + 10}`} 
+              <path d={`M ${centerX - 5} ${centerY - 10} L ${centerX + 5} ${centerY - 2} L ${centerX - 4} ${centerY + 2} L ${centerX + 2} ${centerY + 10}`}
                 stroke={CANVAS_COLORS.white} strokeWidth={2.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-              
+
               <g transform={`translate(${centerX}, ${centerY - chargeR - 45})`}>
                 <rect x={-80} y={-30} width={160} height={42} rx={6} fill={CANVAS_COLORS.strokeDark} opacity={0.9} />
-                <text x={0} y={-12} fontSize={CANVAS_STYLE.font.labelSize - 1} fill={colors.accent[400]} textAnchor="middle" fontWeight="bold">
+                <text x={0} y={-12} fontSize={font(11)} fill={colors.accent[400]} textAnchor="middle" fontWeight="bold">
                   接触起电电荷均分
                 </text>
-                <text x={0} y={6} fontSize={CANVAS_STYLE.font.axisSize} fill={CANVAS_COLORS.white} textAnchor="middle">
+                <text x={0} y={6} fontSize={font(10)} fill={CANVAS_COLORS.white} textAnchor="middle">
                   Q' = (Q₁ + Q₂) / 2
                 </text>
               </g>
@@ -309,11 +320,11 @@ export default function BasicMode({
               <rect x={0} y={0} width={stageWidth - w * 0.04} height={56} rx={6} fill={colors.accent[50]} stroke={colors.accent[400]} strokeWidth={1} />
               {/* 叹号图标 */}
               <circle cx={20} cy={28} r={8} fill={colors.accent[500]} />
-              <text x={20} y={31} fontSize={CANVAS_STYLE.font.small} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">!</text>
-              <text x={36} y={22} fontSize={CANVAS_STYLE.font.labelSize} fill={colors.accent[700]} fontWeight="bold">
+              <text x={20} y={31} fontSize={font(10)} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">!</text>
+              <text x={36} y={22} fontSize={font(12)} fill={colors.accent[700]} fontWeight="bold">
                 模型边界：点电荷适用条件
               </text>
-              <text x={36} y={38} fontSize={CANVAS_STYLE.font.axisSize} fill={colors.neutral[600]}>
+              <text x={36} y={38} fontSize={font(10)} fill={colors.neutral[600]}>
                 当距离过近（r → 0）时，带电体不能视为点电荷，实际电荷分布会偏移，公式失效。
               </text>
             </g>
@@ -338,28 +349,6 @@ export default function BasicMode({
           </div>
         </div>
 
-      </div>
-
-      <div className="shrink-0 p-3 bg-neutral-50 border-t border-neutral-200 flex items-center gap-4">
-        <Button
-          onClick={handleContactStart}
-          disabled={contactStep !== 'idle'}
-        >
-          接触带电再分开
-        </Button>
-        <div className="flex items-center gap-2 text-xs text-neutral-600">
-          <span>拖拽右侧小球改变距离</span>
-          {contactStep !== 'idle' && (
-            <>
-              <span className="text-neutral-400">|</span>
-              <span className="text-amber-600 font-semibold animate-pulse">
-                {contactStep === 'closing' && '两球正在靠近...'}
-                {contactStep === 'sharing' && '碰触！电荷转移中和并平分...'}
-                {contactStep === 'opening' && '两球弹回原处...'}
-              </span>
-            </>
-          )}
-        </div>
       </div>
     </div>
   )

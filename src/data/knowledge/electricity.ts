@@ -7,11 +7,9 @@ export const electricityKnowledge: KnowledgeNode[] = [
     chapter: '电磁学 第1章 静电场',
     module: 'electricity',
     importance: 'core',
-    animationIds: ['anim-coulomb-law', 'anim-electrostatic-shielding'],
+    animationIds: ['anim-charge-elementary', 'anim-coulomb-law', 'anim-electrostatic-shielding'],
     problemIds: [],
     prerequisites: [],
-    coverageNote:
-      '覆盖度声明：本节点借用「库仑定律」动画演示同种电荷相斥、异种电荷相吸与电荷量的数量级，借用「静电屏蔽」动画演示静电平衡与感应电荷分布。高中要求的「摩擦起电 / 接触起电 / 感应起电三种起电方式的电子转移过程」「电荷守恒的表述与简单应用」「元电荷 e = 1.6×10⁻¹⁹ C 与比荷」「密立根油滴实验」目前没有动画演示。',
   },
   {
     id: 'electricity-1-1',

@@ -1,5 +1,6 @@
 import { PhysicsGround, PhysicsVectorArrow, VectorArrow } from '@/components/Physics'
 import {
+  ELECTROSTATIC_APPARATUS_COLORS,
   EM_COLORS,
   DYNAMICS_COLORS,
   SCENE_COLORS,
@@ -240,12 +241,72 @@ export function ElectrostaticShieldingScene({
             fillRule="evenodd"
           />
 
-          <text x={centerX} y={260} fontSize={font(13)} fontWeight="bold" fill={CANVAS_COLORS.labelText} textAnchor="middle">
+          <text x={centerX} y={148} fontSize={font(13)} fontWeight="bold" fill={CANVAS_COLORS.labelText} textAnchor="middle">
             金属空腔内室 (E ≡ 0)
           </text>
-          <text x={centerX} y={350} fontSize={font(12)} fill={CANVAS_COLORS.textMuted} textAnchor="middle">
-            外屏蔽：外部电场在腔内合场强为零
+          <text x={centerX} y={235} fontSize={font(12)} fill={CANVAS_COLORS.textMuted} textAnchor="middle">
+            外屏蔽：腔内验电器金箔闭合
           </text>
+
+          {/* 金属空腔内部金箔验电器（E ≡ 0，金箔竖直闭合） */}
+          <g>
+            {/* 玻璃外罩 */}
+            <circle
+              cx={centerX}
+              cy={340}
+              r={48}
+              fill={ELECTROSTATIC_APPARATUS_COLORS.glassDomeFill}
+              stroke={ELECTROSTATIC_APPARATUS_COLORS.glassDomeStroke}
+              strokeWidth={2}
+            />
+            {/* 绝缘橡皮塞 */}
+            <rect
+              x={centerX - 10}
+              y={286}
+              width={20}
+              height={14}
+              rx={3}
+              fill={ELECTROSTATIC_APPARATUS_COLORS.insulatorPlug}
+              stroke={SCENE_COLORS.materials.structStroke}
+              strokeWidth={1}
+            />
+            {/* 顶端感应金属球 */}
+            <circle
+              cx={centerX}
+              cy={268}
+              r={9}
+              fill={ELECTROSTATIC_APPARATUS_COLORS.ballFill}
+              stroke={SCENE_COLORS.materials.structStroke}
+              strokeWidth={1.5}
+            />
+            {/* 金属传导杆 */}
+            <rect
+              x={centerX - 2.5}
+              y={277}
+              width={5}
+              height={58}
+              fill={ELECTROSTATIC_APPARATUS_COLORS.rodFill}
+            />
+            {/* 两片自然下垂闭合的金箔 */}
+            <line
+              x1={centerX - 2}
+              y1={335}
+              x2={centerX - 2}
+              y2={368}
+              stroke={ELECTROSTATIC_APPARATUS_COLORS.foilGold}
+              strokeWidth={3}
+              strokeLinecap="round"
+            />
+            <line
+              x1={centerX + 2}
+              y1={335}
+              x2={centerX + 2}
+              y2={368}
+              stroke={ELECTROSTATIC_APPARATUS_COLORS.foilGold}
+              strokeWidth={3}
+              strokeLinecap="round"
+            />
+          </g>
 
           {/* 接地引线与地线符号 */}
           {isGrounded === 1 && (

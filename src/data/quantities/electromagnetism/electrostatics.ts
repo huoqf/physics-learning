@@ -1,5 +1,8 @@
 import {
   calculateCoulombForce,
+  calculateContactCharges,
+  calculateChargingProcess,
+  calculateMillikanOilDrop,
   calculateElectricField,
   calculateCapacitor,
   calculateChargeInEFieldTrajectory,
@@ -39,6 +42,7 @@ export function handleElectrostatics(
       if (mode === 0) {
         const rSI = (r || 0.01) * 0.01
         const { F } = calculateCoulombForce(k, q1SI, q2SI, rSI)
+        const { q1New } = calculateContactCharges(q1, q2)
         return {
           quantities: [
             ...base,
@@ -47,13 +51,16 @@ export function handleElectrostatics(
             { label: '间距 r', value: r.toFixed(1), unit: 'cm' },
             { label: '库仑力 F', value: F.toExponential(2), unit: 'N', highlight: 'extreme' as const },
             { label: '作用类型', value: attractive ? '相互吸引' : '相互排斥', unit: '', highlight: attractive ? 'negative' as const : 'positive' as const },
+            { label: '接触均分后单球电量', symbol: "q'", value: `${q1New > 0 ? '+' : ''}${q1New.toFixed(2)}`, unit: 'μC' },
           ],
           formulas: [
             { name: '库仑定律', latex: 'F = k \\frac{q_1 q_2}{r^2}', level: 'core', condition: '仅适用于点电荷与真空' },
             { name: '静电力常量', latex: 'k = 9 \\times 10^9 \\;\\text{N·m}^2\\text{/C}^2', level: 'core' },
+            { name: '接触起电电荷均分', latex: "q_1' = q_2' = \\frac{q_1 + q_2}{2}", level: 'core', condition: '两个完全相同的金属球接触后再分开' },
           ],
           gaokaoPoints: [
             { text: '库仑定律仅适用于点电荷与真空（或空气近似）。', importance: 'gaokao' as const },
+            { text: '相同金属球接触起电：异种电荷先中和再平分，同种电荷总电量平分，总电荷量始终守恒。', importance: 'gaokao' as const },
             { text: '库仑力与万有引力具有相似形式（都与距离平方成反比），但本质不同。', importance: 'core' as const },
             { text: '同号电荷相斥，异号电荷相吸——方向由符号决定。', importance: 'basic' as const },
           ],
@@ -664,6 +671,71 @@ export function handleElectrostatics(
         warnings: [
           { text: '易错点：在计算负电荷做功与电势能变化时，极易忽略电量 q 的负号，导致做功的正负符号判定错误。请注意带入 q 符号进行代数计算。', level: 'danger' as const }
         ]
+      }
+    }
+    case 'anim-charge-elementary': {
+      const mode = params.mode ?? 0
+      if (mode === 0) {
+        const ch = calculateChargingProcess({
+          method: params.method ?? 1,
+          step: params.step ?? 0,
+          qAInit: params.qAInit ?? 4,
+          qBInit: params.qBInit ?? -2,
+          inducerQ: params.inducerQ ?? 6,
+          isGrounded: params.isGrounded ?? 0,
+        })
+        return {
+          quantities: [
+            ...base,
+            { label: '物体 A 当前电量', symbol: 'q_A', value: `${ch.qA > 0 ? '+' : ''}${ch.qA.toFixed(1)}`, unit: 'nC', highlight: ch.qA > 0 ? 'positive' as const : ch.qA < 0 ? 'negative' as const : undefined },
+            { label: '物体 B 当前电量', symbol: 'q_B', value: `${ch.qB > 0 ? '+' : ''}${ch.qB.toFixed(1)}`, unit: 'nC', highlight: ch.qB > 0 ? 'positive' as const : ch.qB < 0 ? 'negative' as const : undefined },
+            { label: '系统总电量', symbol: 'Q_总', value: `${ch.qTotalAfter > 0 ? '+' : ''}${ch.qTotalAfter.toFixed(1)}`, unit: 'nC', highlight: 'extreme' as const },
+            { label: '转移电荷量', symbol: '|Δq|', value: ch.deltaQ.toFixed(1), unit: 'nC' },
+            { label: '转移电子数', symbol: 'N', value: `${ch.transferredElectronsIn1e10.toFixed(2)}×10¹⁰`, unit: '个' },
+            { label: '验电器金箔张角', symbol: 'θ', value: ch.foilAngleDeg.toFixed(1), unit: '°' },
+            { label: '元电荷常量', symbol: 'e', value: '1.60×10⁻¹⁹', unit: 'C' },
+          ],
+          formulas: [
+            { name: '电荷守恒定律', latex: '\\sum q_{\\text{初}} = \\sum q_{\\text{末}}', level: 'core', condition: '与外界无电荷交换的孤立系统' },
+            { name: '接触起电电荷均分', latex: "q_1' = q_2' = \\frac{q_1 + q_2}{2}", level: 'core', condition: '两个完全相同的金属球接触后再分开' },
+            { name: '电荷量子化规律', latex: 'Q = N \\cdot e \\quad (e = 1.60\\times 10^{-19}\\;\\text{C})', level: 'core', condition: '任何带电体电荷量均为元电荷的整数倍' },
+          ],
+          gaokaoPoints: [
+            { text: '三种起电方式（摩擦、接触、感应）均不是创造了电荷，本质都是电子从一个物体转移到另一个物体，或从物体一部分转移到另一部分。', importance: 'gaokao' as const },
+            { text: '感应起电中靠近施感电荷的一端感应异号电荷，远离一端感应同号电荷；手触接地时永远引走远端电荷，断开接地再移走带电体后导体带与施感电荷相反的电性。', importance: 'gaokao' as const },
+            { text: '元电荷 e = 1.60×10⁻¹⁹ C 是电荷量的最小单元数值（不是点电荷，也不是实物粒子），所有带电体所带电荷量均为 e 的整数倍。', importance: 'gaokao' as const },
+          ],
+        }
+      } else {
+        const m = calculateMillikanOilDrop({
+          voltageU: params.voltageU ?? 490,
+          plateGapMm: params.plateGapMm ?? 5,
+          chargeMultipleN: params.chargeMultipleN ?? 2,
+          dropMass1e15: params.dropMass1e15 ?? 3.2,
+        })
+        return {
+          quantities: [
+            ...base,
+            { label: '板间匀强场强', symbol: 'E', value: (m.electricField / 1000).toFixed(1), unit: 'kV/m', color: PHYSICS_COLORS.electricField },
+            { label: '所受电场力', symbol: 'F_e', value: m.electricForce.toExponential(2), unit: 'N', color: PHYSICS_COLORS.electricForce },
+            { label: '所受重力', symbol: 'G', value: m.gravityForce.toExponential(2), unit: 'N', color: PHYSICS_COLORS.gravity },
+            { label: '悬浮平衡电压', symbol: 'U_平', value: m.balanceVoltage.toFixed(1), unit: 'V', highlight: m.isBalanced ? 'positive' as const : 'extreme' as const },
+            { label: '油滴带电量', symbol: 'q', value: `${m.chargeQIn1e19.toFixed(1)}×10⁻¹⁹`, unit: 'C', highlight: 'extreme' as const },
+            { label: '元电荷整数倍', symbol: 'n', value: `${m.n}`, unit: '个' },
+            { label: '油滴比荷', symbol: 'q/m', value: m.specificChargeDrop.toFixed(2), unit: 'C/kg' },
+            { label: '电子比荷', symbol: 'e/m_e', value: m.specificChargeElectron.toExponential(2), unit: 'C/kg' },
+          ],
+          formulas: [
+            { name: '油滴受力平衡', latex: 'q \\frac{U}{d} = mg \\implies q = \\frac{mgd}{U}', level: 'core', condition: '带电油滴在平行板间静止或匀速竖直运动' },
+            { name: '电荷量子化与元电荷', latex: 'q = n e \\quad (n \\in \\mathbb{Z}^+)', level: 'core', condition: '密立根通过测量大量油滴电荷量的最大公约数求得 e' },
+            { name: '比荷（荷质比）定义', latex: '\\text{比荷} = \\frac{q}{m}', level: 'core', condition: '电子比荷约为 1.76×10¹¹ C/kg（汤姆孙测定）' },
+          ],
+          gaokaoPoints: [
+            { text: '密立根油滴实验首次精确测定了元电荷数值 e ≈ 1.60×10⁻¹⁹ C，并证实了电荷量是量子化的（只能取 e 的整数倍）。', importance: 'gaokao' as const },
+            { text: '电子的比荷（e/m_e ≈ 1.76×10¹¹ C/kg）远大于氢离子（质子）的比荷（e/m_p ≈ 9.58×10⁷ C/kg），最早由汤姆孙通过阴极射线偏转实验测得。', importance: 'gaokao' as const },
+            { text: '油滴平衡法解题关键：由 qU/d = mg 计算电荷量，注意区分质量 m、密度 ρ 与球体积 V = (4/3)πr³ 的换算关系。', importance: 'core' as const },
+          ],
+        }
       }
     }
     default:

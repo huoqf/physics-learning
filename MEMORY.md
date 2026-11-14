@@ -6,7 +6,7 @@
 
 ## 动画映射表
 
-> **生成时间**：2026-11-13
+> **生成时间**：2026-11-14
 > **生成命令**：`node scripts/gen-annotations.mjs`
 > **数据来源**：`src/ANNOTATIONS.md`（自动生成，请勿手动编辑）
 > **更新方式**：修改 `src/data/registries/*.ts` 后运行 `node scripts/gen-annotations.mjs` 重新生成
@@ -26,6 +26,7 @@
 | anim-multimeter-ohm | 多用电表与欧姆表原理 | Multimeter | — | physics | MultimeterCenterExtra |
 | anim-experiment-er | 实验：测定电源电动势与内阻 | ExperimentEr | ExperimentErScene | physics | ExperimentErCenterExtra |
 | anim-motor-circuit | 非纯电阻电路与电动机 | NonPureCircuit | — | physics | NonPureCircuitCenterExtra |
+| anim-charge-elementary | 电荷、起电方式与元电荷 | charge-elementary | — | — | — |
 | anim-coulomb-law | 库仑定律 | CoulombLaw | — | — | — |
 | anim-electric-field | 电场强度与比值定义法 | ElectricField | ElectricFieldBasicScene | constants | — |
 | anim-charge-in-efield | 带电粒子在匀强电场中运动 | ChargeInEField | — | electromagnetism | — |
@@ -69,7 +70,7 @@
 | anim-equilibrium | 共点力平衡 | EquilibriumAnimation | — | dynamics | — |
 | anim-newton-second | 牛顿第二定律 | NewtonSecondAnimation | — | constants | NewtonSecondCenterExtra |
 | anim-weightlessness | 超重与失重 | WeightlessnessAnimation | — | physics | WeightlessnessCenterExtra |
-| anim-connected-bodies | 连接体问题 | ConnectedBodiesAnimation | — | physics | ConnectedBodiesCenterExtra |
+| anim-connected-bodies | 连接体问题 | ConnectedBodiesAnimation | — | dynamics/connected-body | ConnectedBodiesCenterExtra |
 | anim-system-isolated | 方法论：整体法与隔离法 | SystemIsolatedMethodologyAnimation | — | constants | SystemIsolatedMethodologyCenterExtra |
 | anim-gravity | 万有引力定律 | GravityAnimation | — | — | — |
 | anim-block-board | 板块模型 | BlockBoardAnimation | — | blockBoard | BlockBoardChart |
@@ -110,7 +111,7 @@
 | anim-alpha-scatter | α 粒子散射实验与核式结构 | AlphaScatterAnimation | — | alphaScatter | — |
 | anim-bohr-theory | 玻尔原子理论与氢光谱能级跃迁 | BohrTheoryAnimation | — | — | — |
 | anim-photoelectric | 光电效应与光的波粒二象性 | PhotoelectricAnimation | — | photoelectric | — |
-| anim-nuclear-decay | 原子核的组成与天然放射 | NuclearDecayAnimation | NuclearDecayScene | — | — |
+| anim-nuclear-decay | 原子核的组成与天然放射 | NuclearDecayAnimation | NuclearDecayScene | nuclearDecay | — |
 | anim-decay-magnetic-orbit | 静止核衰变磁场径迹 | DecayMagneticOrbitAnimation | DecayMagneticOrbitScene | nuclearDecay | — |
 | anim-nuclear-half-life | 原子核衰变与半衰期 | NuclearHalfLifeAnimation | NuclearHalfLifeScene | nuclearDecay | — |
 | anim-nuclear-reaction | 核反应、结合能与质量亏损 | NuclearReactionAnimation | NuclearReactionScene | — | — |
@@ -146,7 +147,7 @@
 | anim-doppler-effect | 多普勒效应 | doppler | — | — | — |
 | anim-forced-resonance | 受迫振动与共振 | forced-resonance | — | — | ForcedResonanceCenterExtra |
 
-共 131 个动画条目。
+共 132 个动画条目。
 
 ---
 
@@ -182,4 +183,4 @@ node scripts/gen-annotations.mjs
 
 ---
 
-*最后更新：2026-11-13 | 生成命令：`node scripts/gen-annotations.mjs`*
+*最后更新：2026-11-14 | 生成命令：`node scripts/gen-annotations.mjs`*

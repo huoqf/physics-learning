@@ -144,6 +144,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
 
 
   // 电磁学
+  'anim-charge-elementary':     { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-coulomb-law':           { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-electric-field':        { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-charge-in-efield':      { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },

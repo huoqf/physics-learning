@@ -56,3 +56,12 @@ export const BOLTZMANN_CONSTANT = 1.38e-23
 /** 阿伏伽德罗常量 NA (mol⁻¹) */
 export const AVOGADRO_CONSTANT = 6.02e23
 
+/** 元电荷 e (C)，高中物理教材取近似值 1.60×10⁻¹⁹ C */
+export const ELEMENTARY_CHARGE = 1.6e-19
+
+/** 电子质量 m_e (kg)，高中物理常用 9.1×10⁻³¹ kg */
+export const ELECTRON_MASS = 9.1e-31
+
+/** 质子质量 m_p (kg)，高中物理常用 1.67×10⁻²⁷ kg */
+export const PROTON_MASS = 1.67e-27
+
