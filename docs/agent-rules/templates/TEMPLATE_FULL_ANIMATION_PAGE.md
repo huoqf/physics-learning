@@ -282,9 +282,10 @@ export const xxxAnimations = defineAnimations({
     Component: lazy(() => import('@/features/xxx/XxxAnimation')),
 
     // controlsMode 选择（详见下方说明）：
-    //   'timed'  — 有起点/终点的过程演示，底部显示播放/暂停+进度条
-    //   'loop'   — 永续循环无终点（圆周运动、布朗运动），底部显示「循环运行中」+速度选择器
-    //   'param'  — 纯参数驱动、无时间推进（静态受力图、电路计算），底部显示信息条
+    //   'timed'      — 有起点/终点的过程演示，底部显示完整播放控制条与阶段进度条
+    //   'loop'       — 永续循环无终点（圆周运动、布朗运动），底部显示「循环演示中」与微步/重置/倍速
+    //   'param'      — 纯参数驱动、无时间推进（静态受力图、电路计算），不渲染底部控制栏
+    //   'pause-only' — 由左屏开关触发过程，仅在激活后显示居中暂停/继续按钮
     controlsMode: 'timed',
 
     defaultParams: {
@@ -337,7 +338,7 @@ export const xxxAnimations = defineAnimations({
 
 ### CenterExtra 组件编写
 
-CenterExtra 渲染在右屏面板中，接收 store params 和 time，使用 `MiniChart` 或 `BasePhysicsChart`：
+CenterExtra 渲染在中屏区域上方或侧方，接收 store params 和 time，使用 `MiniChart` 或 `BasePhysicsChart`：
 
 ```tsx
 // features/xxx/XxxCenterExtra.tsx

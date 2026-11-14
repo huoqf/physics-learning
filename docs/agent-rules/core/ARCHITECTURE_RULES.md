@@ -314,25 +314,26 @@ tests/
 
 | 模式 | 字段值 | 底部 UI | 自动播放 | 判断依据 |
 |------|--------|---------|---------|---------|
-| 完整控制栏 | `'timed'`（默认，可省略） | 播放/暂停 + 重置 + 速度 + 进度条 | 否（手动点播） | 动画有明确起点/终点，进度条有教学意义（如碰撞演示、轨迹描绘） |
-| 精简速度栏 | `'loop'` | 「循环运行中」徽章 + 速度选择器 | **是**（加载即自动播放） | 永续循环无终点（圆周运动、行星轨道、分子热运动、交变波形） |
-| 参数提示条 | `'param'` | 💡「通过左侧参数面板实时调节」信息条 | 否（无帧循环） | 画面由参数直接决定，无 `useAnimationFrame` 时间驱动（静态受力图、电路参数计算） |
+| 完整控制栏 | `'timed'`（默认，可省略） | 播放/暂停 + 微步 + 重置 + 阶段进度条 + 慢放倍速 + 实验工具 | 否（手动点播） | 动画有明确起点/终点，进度条有教学意义（如碰撞演示、轨迹描绘） |
+| 精简控制栏 | `'loop'` | 播放/暂停 + 微步 + 重置 +「循环演示中」+ 时刻 + 倍速 + 实验工具 | **是**（加载即自动播放） | 永续循环无终点（圆周运动、行星轨道、分子热运动、交变波形） |
+| 隐藏控制栏 | `'param'` | 不渲染底部控制栏（组件返回 `null`） | 否（无帧循环） | 画面由参数直接决定，无 `useAnimationFrame` 时间驱动（静态受力图、电路参数计算） |
+| 仅暂停开关 | `'pause-only'` | 仅激活后（`isPlaying \|\| time > 0`）显示居中暂停/继续按钮 | 否（由左屏触发） | 由左侧开关/操作触发（如瞬时切断绳弹簧），仅需中途定格分析 |
 
 **典型分类示例**：
 
 ```ts
 // ✅ timed — 有起点/终点的过程性演示
 'anim-projectile': { controlsMode: 'timed', ... }   // 默认可省略
-'anim-brownian-motion': { controlsMode: 'timed', ... }  // 热力学平衡过程，到顶暂停
+'anim-conveyor':   { controlsMode: 'timed', ... }   // 共速/滑离过程，含临界时刻标记
 
 // ✅ loop — 永续运行的现象展示
 'anim-circular-motion': { controlsMode: 'loop', ... }
-'anim-ac-generation':   { controlsMode: 'loop', ... }
+'anim-brownian-motion': { controlsMode: 'loop', ... }  // 分子热运动持续演化
+'anim-ac-generation':   { controlsMode: 'timed', ... } // 有临界相位点可按需用 timed
 
 // ✅ param — 纯参数驱动、无时间推进
-'anim-spring-force': { controlsMode: 'param', ... }
-'anim-ohm-law':      { controlsMode: 'param', ... }
-'anim-reflection':   { controlsMode: 'param', ... }
+'anim-reflection': { controlsMode: 'param', ... }
+'anim-ohm-law':    { controlsMode: 'param', ... }
 ```
 
 **判断流程**：
@@ -344,7 +345,8 @@ tests/
 **注意事项**：
 - `'loop'` 型动画在 `useAnimationLifecycle` 初始化时自动 `setIsPlaying(true)`，**不得**为其添加"首次加载暂停"逻辑
 - `'param'` 型若有 `useSimulationFrame` 用于拖拽响应（如 `anim-equilibrium`），仍标记为 `'param'`，因为 `isPlaying` 全局开关对主画面无语义（注：拖拽场景应使用 `useSimulationFrame`，其 rAF 始终运行，`active` 控制推进；而非 `useAnimationFrame`）
-- `'param'` 型底部控制区高度与其他模式保持一致（信息条高度 ≈ 完整控制栏），不应引起布局跳变
+- `'param'` 型底部不渲染控制栏（`AnimationControls` 返回 `null`），以便静态受力图、电路图、光学作图等充分利用中屏全部垂直空间
+- 若多子模式在静态参数与过程动画间切换，可传入动态函数 `(params) => 'param' | 'timed' | 'loop' | 'pause-only'`
 
 ### 8.2 错题数据流
 
