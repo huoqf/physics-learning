@@ -3,6 +3,7 @@ import { ChartContext, type ChartContextValue } from './ChartContext';
 import { pointerXToPhysX, type PhysXHit } from './pointerXToPhysX';
 import { CHART_COLORS, CHART_LAYOUT, FONT, STROKE, DASH } from '@/theme/physics';
 import { useCanvasSize, smartFormat } from '@/utils';
+import { useAnimationRenderRole } from '@/context/AnimationRenderContext';
 
 function clamp(v: number, min: number, max: number) {
   return v < min ? min : v > max ? max : v;
@@ -203,6 +204,7 @@ export function BasePhysicsChart({
   onScrubEnd,
   extraBottomRows = 0,
 }: BasePhysicsChartProps) {
+  const renderRole = useAnimationRenderRole();
   const isMini = variant === 'mini';
   const initW = initialSize?.width ?? (isMini ? CHART_LAYOUT.miniWidth : CHART_LAYOUT.defaultWidth);
   const initH =
@@ -694,6 +696,11 @@ export function BasePhysicsChart({
       {children}
     </>
   );
+
+  if (renderRole !== 'normal') {
+    if (useFixed) return null;
+    return <div className={`w-full h-full min-h-0 opacity-0 pointer-events-none ${className}`} aria-hidden />;
+  }
 
   if (useFixed) {
     return (

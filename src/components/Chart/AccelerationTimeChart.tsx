@@ -34,6 +34,10 @@ type AccelerationTimeChartProps = (StaticATProps | AnimatedATProps) & {
   underlay?: React.ReactNode
   children?: React.ReactNode
   className?: string
+  onScrubX?: (physX: number) => void
+  onScrubStart?: () => void
+  onScrubEnd?: () => void
+  enableTimeScrub?: boolean
 }
 
 const curveColorMap: Record<string, string> = {
@@ -68,6 +72,10 @@ export function AccelerationTimeChart({
   children,
   className = '',
   mode = 'static',
+  onScrubX,
+  onScrubStart,
+  onScrubEnd,
+  enableTimeScrub,
 }: AccelerationTimeChartProps) {
   const tsProps = {
     mode,
@@ -93,6 +101,10 @@ export function AccelerationTimeChart({
     underlay,
     children,
     className,
+    onScrubX,
+    onScrubStart,
+    onScrubEnd,
+    enableTimeScrub,
   }
 
   return <TimeSeriesChart {...(tsProps as TimeSeriesChartProps)} />

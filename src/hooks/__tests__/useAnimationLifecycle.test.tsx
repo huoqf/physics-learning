@@ -305,4 +305,33 @@ describe('useAnimationLifecycle', () => {
     expect(useAnimationStore.getState().isPlaying).toBe(false)
     expect(useAnimationStore.getState().physicsState.position).toEqual({ x: 3, y: 4 })
   })
+
+  it('canvasDimmed 恒为 false，解析 timeStages，且逆向播放跨过临界点同样自动停靠', () => {
+    vi.mocked(getAnimationConfig).mockReturnValue(
+      makeConfig({
+        maxTime: 5,
+        criticalTimes: [{ time: 1.5, label: '共速点', variant: 'critical', autoPause: true }],
+        timeStages: [
+          { from: 1.5, to: 5, label: '共速段', variant: 'secondary' },
+          { from: 0, to: 1.5, label: '加速段', variant: 'primary' },
+        ],
+      }),
+    )
+
+    const { result } = renderHook(() => useAnimationLifecycle(), { wrapper: createWrapper() })
+    expect(result.current.canvasDimmed).toBe(false)
+    expect(result.current.timeStages?.map((s) => s.label)).toEqual(['加速段', '共速段'])
+
+    act(() => {
+      useAnimationStore.getState().setDirection(-1)
+      useAnimationStore.getState().setTime(1.6)
+      useAnimationStore.getState().setIsPlaying(true)
+    })
+
+    act(() => { stepFrame(0) })
+    act(() => { stepFrame(200) })
+
+    expect(useAnimationStore.getState().time).toBeCloseTo(1.5, 5)
+    expect(useAnimationStore.getState().isPlaying).toBe(false)
+  })
 })

@@ -8,8 +8,7 @@ import { useAppStore } from '@/stores/useAppStore'
 import type { DiscoveryStepData } from '@/components/UI'
 import { useAnimationFrame } from '@/utils/animation'
 import { resolveDeepLinkTime, resolveUrlMergedParams } from '@/utils/animationDeepLink'
-import { duration } from '@/theme/motion'
-import type { AnimationConfig, CriticalTimePoint } from '@/data/types'
+import type { AnimationConfig, CriticalTimePoint, TimeStageSegment } from '@/data/types'
 
 export interface AnimationLifecycleResult {
   config: AnimationConfig | undefined
@@ -22,6 +21,8 @@ export interface AnimationLifecycleResult {
   effectiveControlsMode: 'timed' | 'loop' | 'param' | 'pause-only'
   /** 当前参数下解析后的临界时刻列表 */
   criticalTimes: CriticalTimePoint[] | undefined
+  /** 当前参数下解析后的物理过程阶段列表 */
+  timeStages: TimeStageSegment[] | undefined
   discoverySteps: DiscoveryStepData[]
   discoveryStep: number
   setDiscoveryStep: (step: number) => void
@@ -37,6 +38,19 @@ function resolveCriticalTimes(
   const raw = typeof config.criticalTimes === 'function' ? config.criticalTimes(params) : config.criticalTimes
   if (!raw || raw.length === 0) return raw
   return [...raw].sort((a, b) => a.time - b.time)
+}
+
+function resolveTimeStages(
+  config: AnimationConfig | undefined,
+  params: Record<string, number>,
+): TimeStageSegment[] | undefined {
+  if (!config?.timeStages) return undefined
+  const raw = typeof config.timeStages === 'function' ? config.timeStages(params) : config.timeStages
+  if (!raw || raw.length === 0) return undefined
+  return raw
+    .filter((s) => Number.isFinite(s.from) && Number.isFinite(s.to) && s.to > s.from)
+    .slice()
+    .sort((a, b) => a.from - b.from)
 }
 
 /* ─── 子 hook: config 加载 + store 初始化 ─── */
@@ -212,22 +226,12 @@ function usePlaybackLoop(
   const direction = useAnimationStore((s) => s.direction)
   const repeatLoop = useAnimationStore((s) => s.repeatLoop)
   const autoPauseOnCritical = useAnimationStore((s) => s.autoPauseOnCritical)
-  const [canvasDimmed, setCanvasDimmed] = useState(false)
   const rawMaxTime = typeof config?.maxTime === 'function' ? config.maxTime(params) : config?.maxTime
   const hasExplicitMaxTime = rawMaxTime != null
   // 每个动画可在 config 中通过 maxTime 覆盖播放上限；不传（或函数返回 undefined）则走全局默认 30s（loop 型未声明时持续递增）
   const maxTime = rawMaxTime ?? 30
   const criticalTimes = useMemo(() => resolveCriticalTimes(config, params), [config, params])
-
-  // 暂停时延迟 dimmed
-  useEffect(() => {
-    if (!isPlaying) {
-      const timer = setTimeout(() => setCanvasDimmed(true), duration.fast)
-      return () => clearTimeout(timer)
-    } else {
-      setCanvasDimmed(false)
-    }
-  }, [isPlaying])
+  const timeStages = useMemo(() => resolveTimeStages(config, params), [config, params])
 
   // 外部修改 store time 时同步到 ref（包括播放中触发 restartAnimation 等重置到 0 的情况）
   const time = useAnimationStore((s) => s.time)
@@ -287,21 +291,30 @@ function usePlaybackLoop(
       const dtSec = deltaTime / 1000
       let nextTime = prevTime + dtSec * direction
 
-      // 临界时刻自动暂停引擎（仅 timed / pause-only 正向播放且开启自动停靠时生效；开启 repeatLoop 时终点由循环重播接管）
-      if (!isLoop && direction === 1 && autoPauseOnCritical && criticalTimes && criticalTimes.length > 0) {
+      // 临界时刻自动暂停引擎（仅 timed / pause-only 且开启自动停靠时生效，支持正向与逆向跨过临界点）
+      if (!isLoop && autoPauseOnCritical && criticalTimes && criticalTimes.length > 0) {
         const skipEndPointForRepeat = repeatLoop && effectiveControlsMode === 'timed'
-        const hit = criticalTimes.find(
-          (ct) =>
-            ct.autoPause !== false &&
-            (!skipEndPointForRepeat || ct.time < maxTime - 1e-6) &&
-            ct.time > prevTime + 1e-6 &&
-            ct.time <= nextTime + 1e-6
-        )
+        const hit =
+          direction === 1
+            ? criticalTimes.find(
+                (ct) =>
+                  ct.autoPause !== false &&
+                  (!skipEndPointForRepeat || ct.time < maxTime - 1e-6) &&
+                  ct.time > prevTime + 1e-6 &&
+                  ct.time <= nextTime + 1e-6
+              )
+            : [...criticalTimes].reverse().find(
+                (ct) =>
+                  ct.autoPause !== false &&
+                  ct.time > 1e-6 &&
+                  ct.time < prevTime - 1e-6 &&
+                  ct.time >= nextTime - 1e-6
+              )
         if (hit) {
           commitTime(hit.time)
           setIsPlaying(false)
           if (config?.updatePhysics) {
-            const result = config.updatePhysics(params, hit.time, Math.max(0, hit.time - prevTime))
+            const result = config.updatePhysics(params, hit.time, Math.abs(hit.time - prevTime))
             if (result) {
               setPhysicsState((state: PhysicsState) => ({ ...state, ...result }))
             }
@@ -412,7 +425,7 @@ function usePlaybackLoop(
     })
   }
 
-  return { canvasDimmed, handleReset, handleRestart, effectiveControlsMode, criticalTimes }
+  return { canvasDimmed: false, handleReset, handleRestart, effectiveControlsMode, criticalTimes, timeStages }
 }
 
 /* ─── 主 hook: 组合三个子 hook ─── */

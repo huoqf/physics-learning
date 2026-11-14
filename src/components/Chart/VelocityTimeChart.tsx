@@ -79,6 +79,10 @@ type VelocityTimeChartProps = (StaticChartProps | AnimatedChartProps) & {
   className?: string
   /** 固定尺寸模式（直接返回 `<g>`，不走 useCanvasSize + foreignObject） */
   fixedSize?: { width: number; height: number }
+  onScrubX?: (physX: number) => void
+  onScrubStart?: () => void
+  onScrubEnd?: () => void
+  enableTimeScrub?: boolean
 }
 
 const curveColorMap: Record<string, string> = {
@@ -121,6 +125,10 @@ export function VelocityTimeChart({
   className = '',
   mode = 'static',
   fixedSize,
+  onScrubX,
+  onScrubStart,
+  onScrubEnd,
+  enableTimeScrub,
 }: VelocityTimeChartProps) {
   const tsProps = {
     mode,
@@ -155,6 +163,10 @@ export function VelocityTimeChart({
     children,
     className,
     fixedSize,
+    onScrubX,
+    onScrubStart,
+    onScrubEnd,
+    enableTimeScrub,
   }
 
   return <TimeSeriesChart {...(tsProps as TimeSeriesChartProps)} />

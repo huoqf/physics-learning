@@ -13,11 +13,13 @@ import {
   SCENE_COLORS,
   CANVAS_COLORS,
   FONT,
+  withAlpha,
 } from '@/theme/physics'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { getBoardSystemState } from '@/physics/blockBoard'
 import { GRAVITY } from '@/physics/constants'
+import { computeStrobeTimes } from '@/utils/strobe'
 
 import type { SceneScale } from '@/scene/SceneScale'
 
@@ -43,8 +45,14 @@ const PX_SCALE: SceneScale = {
 }
 
 export default function BlockBoardAnimation() {
-  const { params, time, showVectors } = useAnimationStore(
-    useShallow((s) => ({ params: s.params, time: s.time, showVectors: s.showVectors }))
+  const { params, time, showVectors, showTimeSlices, timeSliceInterval } = useAnimationStore(
+    useShallow((s) => ({
+      params: s.params,
+      time: s.time,
+      showVectors: s.showVectors,
+      showTimeSlices: s.showTimeSlices,
+      timeSliceInterval: s.timeSliceInterval,
+    }))
   )
   const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: DESIGN })
   const { font } = canvasSize
@@ -103,6 +111,20 @@ export default function BlockBoardAnimation() {
     state.phase === 'together' ? '共速整体' :
     state.phase === 'fallen' ? '滑块跌落' : '静止'
 
+  // 频闪残影采样（展示滑块减速与木板加速的等时间距变化）
+  const strobeSnapshots = showTimeSlices
+    ? computeStrobeTimes(time, timeSliceInterval, 8)
+        .filter((tSample) => Math.abs(tSample - time) > 0.015)
+        .map((tSample, idx, arr) => {
+          const st = getBoardSystemState({ m, M, mu1, mu2, v0, L: boardLen, g }, tSample)
+          const bx = boardStartX + st.xBoard * pxPerMeter
+          const sx = bx + (st.xBlock - st.xBoard) * pxPerMeter
+          const sy = st.hasFallen ? groundY - L.blockH : boardY - L.blockH
+          const alpha = 0.14 + (0.28 * (idx + 1)) / Math.max(1, arr.length)
+          return { tSample, bx, sx, sy, alpha }
+        })
+    : []
+
   return (
     <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
       <defs>
@@ -138,6 +160,38 @@ export default function BlockBoardAnimation() {
           L = {boardLen}m
         </text>
       </g>
+
+      {/* ═══ 频闪等时残影（木板与滑块历史轮廓） ═══ */}
+      {strobeSnapshots.length > 0 && (
+        <g aria-hidden>
+          {strobeSnapshots.map((snap) => (
+            <g key={`strobe-${snap.tSample}`} opacity={snap.alpha}>
+              <rect
+                x={snap.bx}
+                y={boardY}
+                width={boardWPx}
+                height={L.boardH}
+                rx={2}
+                fill={withAlpha(SCENE_COLORS.materials.woodSphereGrad[1], 0.18)}
+                stroke={SCENE_COLORS.materials.woodSphereGrad[1]}
+                strokeWidth={1}
+                strokeDasharray="3,2"
+              />
+              <rect
+                x={snap.sx}
+                y={snap.sy}
+                width={L.blockW}
+                height={L.blockH}
+                rx={2}
+                fill={withAlpha(PHYSICS_COLORS.velocity, 0.15)}
+                stroke={PHYSICS_COLORS.velocity}
+                strokeWidth={1.2}
+                strokeDasharray="3,2"
+              />
+            </g>
+          ))}
+        </g>
+      )}
 
       {/* ═══ 木板 ═══ */}
       <Block

@@ -1,5 +1,9 @@
-export { useAnimationStore } from './useAnimationStore'
-export type { PhysicsState } from './useAnimationStore'
+export {
+  useAnimationStore,
+  AnimationStoreOverrideProvider,
+  useAnimationRenderRole,
+} from './useAnimationStore'
+export type { PhysicsState, GhostSnapshot, AnimationRenderRole } from './useAnimationStore'
 export { useKnowledgeStore } from './useKnowledgeStore'
 export { useProblemStore } from './useProblemStore'
 export { useWrongStore } from './useWrongStore'

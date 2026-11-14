@@ -7,6 +7,7 @@
 import { useEffect, useMemo } from 'react'
 import { BasePhysicsChart, useChartContext } from '@/components/Chart'
 import { CHART_COLORS, FONT } from '@/theme/physics'
+import { useChartTimeScrub } from '@/context/ChartTimeScrubContext'
 
 /** 曲线定义 */
 export interface MiniChartLine {
@@ -58,6 +59,12 @@ export interface MiniChartProps {
   minWidth?: number
   minHeight?: number
   className?: string
+  /** 点击/拖拽图区时反控 X 轴物理值（xKey==='t' 且未显式传参时默认反控播放时间） */
+  onScrubX?: (physX: number) => void
+  onScrubStart?: () => void
+  onScrubEnd?: () => void
+  /** 是否启用时间图像点击/拖拽反控（仅 xKey==='t' 时生效），默认 true */
+  enableTimeScrub?: boolean
 }
 
 function MiniChartContent({
@@ -224,7 +231,18 @@ export function MiniChart({
   minWidth = 300,
   minHeight = 130,
   className = '',
+  onScrubX,
+  onScrubStart,
+  onScrubEnd,
+  enableTimeScrub = true,
 }: MiniChartProps) {
+  const chartTimeScrub = useChartTimeScrub()
+  const resolvedOnScrubX = onScrubX ?? (
+    enableTimeScrub && xKey === 't' && chartTimeScrub
+      ? chartTimeScrub.scrubToTime
+      : undefined
+  )
+
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production' && (currentXVal < xMin || currentXVal > xMax)) {
       console.warn(
@@ -252,6 +270,9 @@ export function MiniChart({
       gridCount={resolvedGridCount}
       initialSize={{ width: minWidth, height: minHeight }}
       className={className}
+      onScrubX={resolvedOnScrubX}
+      onScrubStart={onScrubStart}
+      onScrubEnd={onScrubEnd}
     >
       <MiniChartContent
         points={points}

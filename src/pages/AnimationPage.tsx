@@ -6,7 +6,7 @@ import { buildParamVocabulary } from '@/data/paramVocabulary'
 import type { ControlMeta, ParamMeta } from '@/data/types'
 import { getAnimationConfig } from '@/data/animationRegistry'
 import { knowledgeTree } from '@/data/knowledgeTree'
-import { useAnimationStore } from '@/stores'
+import { useAnimationStore, AnimationStoreOverrideProvider } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAppStore } from '@/stores/useAppStore'
 import {
@@ -26,9 +26,10 @@ import { useAnimationLifecycle } from '@/hooks/useAnimationLifecycle'
 import { resolveDeepLinkTime, resolveDeepLinkHint, shouldShowFreezeHint, resolveUrlMergedParams } from '@/utils/animationDeepLink'
 import type { DeepLinkFreezeHint } from '@/utils/animationDeepLink'
 import { WRONG_REASONS } from '@/data/wrongReasons'
+import { ChartTimeScrubProvider } from '@/context/ChartTimeScrubContext'
 
 import { AnimationLayoutContext } from '@/context/AnimationLayoutContext'
-import type { AnimationConfig, CriticalTimePoint } from '@/data/types'
+import type { AnimationConfig, CriticalTimePoint, TimeStageSegment } from '@/data/types'
 
 /**
  * 中心动画区域 — 订阅 time（每帧更新），与左侧/右侧面板隔离。
@@ -36,21 +37,33 @@ import type { AnimationConfig, CriticalTimePoint } from '@/data/types'
 function AnimationCenter({
   config,
   isDiscoveryMode,
-  canvasDimmed,
   handleReset,
   effectiveControlsMode,
   criticalTimes,
+  timeStages,
+  paramMeta,
   deepLinkHint,
 }: {
   config: AnimationConfig
   isDiscoveryMode: boolean
-  canvasDimmed: boolean
   handleReset: () => void
   effectiveControlsMode: 'timed' | 'loop' | 'param' | 'pause-only'
   criticalTimes: CriticalTimePoint[] | undefined
+  timeStages: TimeStageSegment[] | undefined
+  paramMeta: ParamMeta[]
   deepLinkHint: DeepLinkFreezeHint | null
 }) {
-  const { time, isPlaying, speed, params, repeatLoop, autoPauseOnCritical } = useAnimationStore(
+  const {
+    time,
+    isPlaying,
+    speed,
+    params,
+    repeatLoop,
+    autoPauseOnCritical,
+    showTimeSlices,
+    timeSliceInterval,
+    ghostSnapshot,
+  } = useAnimationStore(
     useShallow((s) => ({
       time: s.time,
       isPlaying: s.isPlaying,
@@ -58,6 +71,9 @@ function AnimationCenter({
       params: s.params,
       repeatLoop: s.repeatLoop,
       autoPauseOnCritical: s.autoPauseOnCritical,
+      showTimeSlices: s.showTimeSlices,
+      timeSliceInterval: s.timeSliceInterval,
+      ghostSnapshot: s.ghostSnapshot,
     }))
   )
   const setTime = useAnimationStore((s) => s.setTime)
@@ -65,6 +81,10 @@ function AnimationCenter({
   const setSpeed = useAnimationStore((s) => s.setSpeed)
   const toggleRepeatLoop = useAnimationStore((s) => s.toggleRepeatLoop)
   const toggleAutoPauseOnCritical = useAnimationStore((s) => s.toggleAutoPauseOnCritical)
+  const toggleTimeSlices = useAnimationStore((s) => s.toggleTimeSlices)
+  const setTimeSliceInterval = useAnimationStore((s) => s.setTimeSliceInterval)
+  const captureGhostSnapshot = useAnimationStore((s) => s.captureGhostSnapshot)
+  const clearGhostSnapshot = useAnimationStore((s) => s.clearGhostSnapshot)
 
   const AnimationComponent = config.Component
   const CenterExtraComponent = config.CenterExtra
@@ -81,6 +101,37 @@ function AnimationCenter({
   const isLightWeightMutation = config.id === 'anim-light-weight-mutation'
   const isSplitH = config.centerLayout === 'splitH' || isSpringForceCutMode || isLightWeightMutation
 
+  const chartTimeScrubValue = useMemo(
+    () => ({
+      maxTime,
+      scrubToTime: (targetTime: number) => {
+        if (!Number.isFinite(targetTime)) return
+        const clamped = maxTime > 0 ? Math.min(maxTime, Math.max(0, targetTime)) : Math.max(0, targetTime)
+        setIsPlaying(false)
+        setTime(Number(clamped.toFixed(3)))
+      },
+    }),
+    [maxTime, setIsPlaying, setTime],
+  )
+
+  const { hasGhostDiff, ghostDiffSummary } = useMemo(() => {
+    if (!ghostSnapshot) return { hasGhostDiff: false, ghostDiffSummary: null as string | null }
+    const diffs: string[] = []
+    const allKeys = new Set([...Object.keys(ghostSnapshot.params), ...Object.keys(params)])
+    for (const k of allKeys) {
+      const prev = ghostSnapshot.params[k]
+      const curr = params[k]
+      if (typeof prev === 'number' && typeof curr === 'number' && Math.abs(prev - curr) > 1e-6) {
+        const meta = paramMeta.find((m) => m.key === k)
+        const shortLabel = meta ? meta.label.split(/\s+/)[0] : k
+        diffs.push(`${shortLabel}: ${Number(prev.toFixed(2))}→${Number(curr.toFixed(2))}`)
+      }
+    }
+    if (diffs.length === 0) return { hasGhostDiff: false, ghostDiffSummary: null }
+    const summary = diffs.length <= 2 ? diffs.join(' · ') : `${diffs.slice(0, 2).join(' · ')} +${diffs.length - 2}`
+    return { hasGhostDiff: true, ghostDiffSummary: summary }
+  }, [ghostSnapshot, params, paramMeta])
+
   /**
    * 定格提示的显示条件由 `shouldShowFreezeHint` 统一裁定（纯函数，已单测覆盖）：
    * 播放中 → 收起；时间偏离这一帧 → 收起。用派生值而不是 effect 清除，
@@ -88,6 +139,36 @@ function AnimationCenter({
    * （子先跑时 time 还是上一帧的值，首帧就把刚到手的提示误清掉）。
    */
   const visibleDeepLinkHint = shouldShowFreezeHint(deepLinkHint, time, isPlaying)
+
+  const renderSceneWithGhost = () => (
+    <div className="relative w-full h-full">
+      <ErrorBoundary resetKey={config.id}>
+        <Suspense
+          fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
+        >
+          <AnimationLayoutContext.Provider value={config.sceneLayout}>
+            <AnimationComponent />
+          </AnimationLayoutContext.Provider>
+        </Suspense>
+      </ErrorBoundary>
+      {ghostSnapshot && hasGhostDiff && (
+        <div
+          className="absolute inset-0 pointer-events-none mix-blend-multiply"
+          aria-hidden
+        >
+          <ErrorBoundary resetKey={`${config.id}-ghost`}>
+            <Suspense fallback={null}>
+              <AnimationStoreOverrideProvider params={ghostSnapshot.params} renderRole="ghost">
+                <AnimationLayoutContext.Provider value={config.sceneLayout}>
+                  <AnimationComponent />
+                </AnimationLayoutContext.Provider>
+              </AnimationStoreOverrideProvider>
+            </Suspense>
+          </ErrorBoundary>
+        </div>
+      )}
+    </div>
+  )
 
   const controlBar = (wrapperClassName: string) => (
     <div className={wrapperClassName}>
@@ -102,11 +183,20 @@ function AnimationCenter({
         onTimeChange={setTime}
         controlsMode={effectiveControlsMode}
         criticalTimes={criticalTimes}
+        timeStages={timeStages}
         enableFrameStep={config.enableFrameStep}
         repeatLoop={repeatLoop}
         onToggleRepeatLoop={toggleRepeatLoop}
         autoPauseCritical={autoPauseOnCritical}
         onToggleAutoPauseCritical={toggleAutoPauseOnCritical}
+        ghostActive={Boolean(ghostSnapshot)}
+        ghostDiffSummary={ghostDiffSummary}
+        onCaptureGhost={captureGhostSnapshot}
+        onClearGhost={clearGhostSnapshot}
+        showTimeSlices={showTimeSlices}
+        timeSliceInterval={timeSliceInterval}
+        onToggleTimeSlices={toggleTimeSlices}
+        onTimeSliceIntervalChange={setTimeSliceInterval}
         deepLinkHint={visibleDeepLinkHint}
       />
     </div>
@@ -114,29 +204,33 @@ function AnimationCenter({
 
   if (isDiscoveryMode && config.DiscoveryComponent) {
     return (
-      <div className="w-full h-full bg-white rounded-xl shadow-md overflow-hidden flex flex-col">
-        <div className="flex-1 overflow-auto">
-          <ErrorBoundary resetKey={config.id}>
-            <Suspense
-              fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
-            >
-              <config.DiscoveryComponent />
-            </Suspense>
-          </ErrorBoundary>
+      <ChartTimeScrubProvider value={chartTimeScrubValue}>
+        <div className="w-full h-full bg-white rounded-xl shadow-md overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-auto">
+            <ErrorBoundary resetKey={config.id}>
+              <Suspense
+                fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
+              >
+                <config.DiscoveryComponent />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+          {controlBar('px-4 pb-4 shrink-0 border-t border-neutral-100')}
         </div>
-        {controlBar('px-4 pb-4 shrink-0 border-t border-neutral-100')}
-      </div>
+      </ChartTimeScrubProvider>
     )
   }
 
   // 进阶模式：CenterExtra 接管全部布局
   if (isCenterExtraFull && CenterExtraComponent) {
     return (
-      <ErrorBoundary resetKey={config.id}>
-        <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400 text-sm">加载动画中…</div>}>
-          <CenterExtraComponent />
-        </Suspense>
-      </ErrorBoundary>
+      <ChartTimeScrubProvider value={chartTimeScrubValue}>
+        <ErrorBoundary resetKey={config.id}>
+          <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400 text-sm">加载动画中…</div>}>
+            <CenterExtraComponent />
+          </Suspense>
+        </ErrorBoundary>
+      </ChartTimeScrubProvider>
     )
   }
 
@@ -147,95 +241,57 @@ function AnimationCenter({
 
   if (isSplitH && CenterExtraComponent) {
     return (
-      <div className="flex flex-col h-full gap-2">
-        <div className="flex-1 min-h-0 flex flex-row gap-2">
-          {/* 左侧：物理动画 */}
-          <div
-            className="flex-1 w-0 min-h-0 bg-white rounded-xl shadow-md overflow-hidden"
-            style={{
-              transition: `opacity ${duration.normal}ms ${easing.standard}`,
-              opacity: canvasDimmed ? 0.95 : 1,
-            }}
-          >
-            <ErrorBoundary resetKey={config.id}>
-              <Suspense
-                fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
-              >
-                <AnimationLayoutContext.Provider value={config.sceneLayout}>
-                  <AnimationComponent />
-                </AnimationLayoutContext.Provider>
-              </Suspense>
-            </ErrorBoundary>
+      <ChartTimeScrubProvider value={chartTimeScrubValue}>
+        <div className="flex flex-col h-full gap-2">
+          <div className="flex-1 min-h-0 flex flex-row gap-2">
+            {/* 左侧：物理动画 */}
+            <div className="flex-1 w-0 min-h-0 bg-white rounded-xl shadow-md overflow-hidden">
+              {renderSceneWithGhost()}
+            </div>
+            {/* 右侧：图表对比 */}
+            <div className="flex-1 w-0 min-h-0 bg-white rounded-xl shadow-md overflow-hidden flex flex-col">
+              <ErrorBoundary resetKey={config.id}>
+                <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400 text-sm">加载图表中…</div>}>
+                  <CenterExtraComponent />
+                </Suspense>
+              </ErrorBoundary>
+            </div>
           </div>
-          {/* 右侧：加速度对比图 */}
-          <div className="flex-1 w-0 min-h-0 bg-white rounded-xl shadow-md overflow-hidden flex flex-col">
-            <ErrorBoundary resetKey={config.id}>
-              <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400 text-sm">加载图表中…</div>}>
-                <CenterExtraComponent />
-              </Suspense>
-            </ErrorBoundary>
-          </div>
+          {standardControlBar}
         </div>
-        {standardControlBar}
-      </div>
+      </ChartTimeScrubProvider>
     )
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {showCenterExtraInBasic && CenterExtraComponent ? (
-        <>
-          <div className={`${centerHeightClass} shrink-0 min-h-0`}>
-            <ErrorBoundary resetKey={config.id}>
-              <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400 text-sm">加载动画中…</div>}>
-                <CenterExtraComponent />
-              </Suspense>
-            </ErrorBoundary>
-          </div>
-          <div className={`${restHeightClass} min-h-0 flex flex-col gap-2`}>
-            <div
-              className="flex-1 min-h-0 w-full bg-white rounded-xl shadow-md overflow-hidden"
-              style={{
-                transition: `opacity ${duration.normal}ms ${easing.standard}`,
-                opacity: canvasDimmed ? 0.95 : 1,
-              }}
-            >
+    <ChartTimeScrubProvider value={chartTimeScrubValue}>
+      <div className="flex flex-col h-full">
+        {showCenterExtraInBasic && CenterExtraComponent ? (
+          <>
+            <div className={`${centerHeightClass} shrink-0 min-h-0`}>
               <ErrorBoundary resetKey={config.id}>
-                <Suspense
-                  fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
-                >
-                  <AnimationLayoutContext.Provider value={config.sceneLayout}>
-                    <AnimationComponent />
-                  </AnimationLayoutContext.Provider>
+                <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400 text-sm">加载动画中…</div>}>
+                  <CenterExtraComponent />
                 </Suspense>
               </ErrorBoundary>
             </div>
+            <div className={`${restHeightClass} min-h-0 flex flex-col gap-2`}>
+              <div className="flex-1 min-h-0 w-full bg-white rounded-xl shadow-md overflow-hidden">
+                {renderSceneWithGhost()}
+              </div>
+              {standardControlBar}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="w-full flex-1 min-h-0 bg-white rounded-xl shadow-md overflow-hidden">
+              {renderSceneWithGhost()}
+            </div>
             {standardControlBar}
-          </div>
-        </>
-      ) : (
-        <>
-          <div
-            className="w-full flex-1 min-h-0 bg-white rounded-xl shadow-md overflow-hidden"
-            style={{
-              transition: `opacity ${duration.normal}ms ${easing.standard}`,
-              opacity: canvasDimmed ? 0.95 : 1,
-            }}
-          >
-            <ErrorBoundary resetKey={config.id}>
-              <Suspense
-                fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
-              >
-                <AnimationLayoutContext.Provider value={config.sceneLayout}>
-                  <AnimationComponent />
-                </AnimationLayoutContext.Provider>
-              </Suspense>
-            </ErrorBoundary>
-          </div>
-          {standardControlBar}
-        </>
-      )}
-    </div>
+          </>
+        )}
+      </div>
+    </ChartTimeScrubProvider>
   )
 }
 
@@ -319,11 +375,11 @@ export default function AnimationPage() {
     config,
     configLoading,
     isDiscoveryMode,
-    canvasDimmed,
     handleReset,
     handleRestart,
     effectiveControlsMode,
     criticalTimes,
+    timeStages,
     discoverySteps,
     discoveryStep,
     setDiscoveryStep,
@@ -598,10 +654,11 @@ export default function AnimationPage() {
           <AnimationCenter
               config={config}
               isDiscoveryMode={isDiscoveryMode}
-              canvasDimmed={canvasDimmed}
               handleReset={handleReset}
               effectiveControlsMode={effectiveControlsMode}
               criticalTimes={criticalTimes}
+              timeStages={timeStages}
+              paramMeta={paramMeta}
               deepLinkHint={deepLinkHint}
             />
           </div>

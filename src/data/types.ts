@@ -220,8 +220,8 @@ export interface AnimationConfig<P extends Record<string, number> = Record<strin
   /**
    * 播放控制器渲染模式（静态或动态）：
    * - `'timed'`（默认）：完整控制栏（播放/暂停 + 速度 + 进度条）
-   * - `'loop'`：精简控制栏（仅速度选择器 + 循环运行中徽章，无暂停/进度）；加载即自动播放
-   * - `'param'`：替换为参数提示信息条（💡 通过左侧参数面板实时调节）
+   * - `'loop'`：精简控制栏（播放/暂停 + 重置 + 微步 + 倍速）；加载即自动播放
+   * - `'param'`：不渲染底部播放控制栏（纯参数实时驱动）
    * - `'pause-only'`：仅暂停/继续按钮（无播放启动、无重置、无速度、无进度条）
    *   适用场景：动画由左屏开关/交互触发（如绳与弹簧瞬时切断），不需要"播放"启动按钮，
    *   但需要在播放过程中暂停分析、暂停后继续播放。到达 maxTime 后自动停止。
@@ -233,8 +233,22 @@ export interface AnimationConfig<P extends Record<string, number> = Record<strin
   controlsMode?: 'timed' | 'loop' | 'param' | 'pause-only' | ((params: Record<string, number>) => 'timed' | 'loop' | 'param' | 'pause-only')
   /** 可选：临界时刻标记列表，用于进度条展示与一键吸附定格 */
   criticalTimes?: CriticalTimePoint[] | ((params: Record<string, number>) => CriticalTimePoint[])
+  /** 可选：过程阶段分段列表，用于在进度条上分段着色并展示当前所处物理阶段 */
+  timeStages?: TimeStageSegment[] | ((params: Record<string, number>) => TimeStageSegment[])
   /** 可选：是否开启逐帧/微步控制，默认开启 */
   enableFrameStep?: boolean
+}
+
+/** 播放进度条物理过程阶段分段 */
+export interface TimeStageSegment {
+  /** 阶段起始时刻（秒） */
+  from: number
+  /** 阶段结束时刻（秒） */
+  to: number
+  /** 阶段语义标签，如 '相对滑动' / '共速整体减速' */
+  label: string
+  /** 语义色变体 */
+  variant?: 'primary' | 'secondary' | 'accent' | 'danger' | 'neutral'
 }
 
 /** 高考物理关键临界时刻点数据 */

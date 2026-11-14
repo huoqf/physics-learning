@@ -25,9 +25,12 @@ describe('AnimationControls', () => {
     expect(onPlayPause).toHaveBeenCalledTimes(1)
     expect(onTimeChange).toHaveBeenCalledWith(1.05)
 
-    // 切换步长：0.05 -> 0.01 -> 0.02
+    // 切换步长：0.05 -> 0.1 -> 0.01 -> 0.02 -> 0.05
     const stepToggle = screen.getByRole('button', { name: '切换微步步长，当前 0.05s' })
     fireEvent.click(stepToggle)
+    expect(screen.getByRole('button', { name: '切换微步步长，当前 0.1s' })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: '切换微步步长，当前 0.1s' }))
     expect(screen.getByRole('button', { name: '切换微步步长，当前 0.01s' })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: '后退 0.01 秒' }))
@@ -35,12 +38,19 @@ describe('AnimationControls', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '切换微步步长，当前 0.01s' }))
     expect(screen.getByRole('button', { name: '切换微步步长，当前 0.02s' })).toBeTruthy()
+
+    // 验证精简倍速：保留慢放 0.1x 与正常 1x，移除 2x / 4x
+    expect(screen.getByRole('button', { name: '0.1x' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '1x' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '2x' })).toBeNull()
+    expect(screen.queryByRole('button', { name: '4x' })).toBeNull()
   })
 
-  it('loop 模式提供暂停/继续、重置与当前时刻显示', () => {
+  it('loop 模式提供暂停/继续、重置、逐帧微步与当前时刻显示', () => {
     const onPlayPause = vi.fn()
     const onReset = vi.fn()
     const onSpeedChange = vi.fn()
+    const onTimeChange = vi.fn()
 
     const { rerender } = render(
       <AnimationControls
@@ -52,7 +62,7 @@ describe('AnimationControls', () => {
         onPlayPause={onPlayPause}
         onReset={onReset}
         onSpeedChange={onSpeedChange}
-        onTimeChange={vi.fn()}
+        onTimeChange={onTimeChange}
       />,
     )
 
@@ -61,6 +71,9 @@ describe('AnimationControls', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '暂停' }))
     expect(onPlayPause).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(screen.getByRole('button', { name: '前进 0.05 秒' }))
+    expect(onTimeChange).toHaveBeenCalledWith(12.39)
 
     fireEvent.click(screen.getByRole('button', { name: '重置' }))
     expect(onReset).toHaveBeenCalledTimes(1)
@@ -78,7 +91,7 @@ describe('AnimationControls', () => {
         onPlayPause={onPlayPause}
         onReset={onReset}
         onSpeedChange={onSpeedChange}
-        onTimeChange={vi.fn()}
+        onTimeChange={onTimeChange}
       />,
     )
     expect(screen.getByText('已定格暂停')).toBeTruthy()
@@ -153,5 +166,48 @@ describe('AnimationControls', () => {
     expect(screen.queryByText('负时刻')).toBeNull()
     expect(screen.queryByText('永不发生')).toBeNull()
     expect(screen.queryByText('超窗时刻')).toBeNull()
+  })
+
+  it('渲染过程阶段分段芯片并支持频闪周期切换与对照组快照交互', () => {
+    const onTimeChange = vi.fn()
+    const onToggleTimeSlices = vi.fn()
+    const onTimeSliceIntervalChange = vi.fn()
+    const onCaptureGhost = vi.fn()
+    const onClearGhost = vi.fn()
+
+    render(
+      <AnimationControls
+        isPlaying={false}
+        speed={1}
+        time={1.5}
+        maxTime={8}
+        onPlayPause={vi.fn()}
+        onReset={vi.fn()}
+        onSpeedChange={vi.fn()}
+        onTimeChange={onTimeChange}
+        timeStages={[
+          { from: 0, to: 1.2, label: '相对滑动', variant: 'primary' },
+          { from: 1.2, to: 4.5, label: '共速整体减速', variant: 'secondary' },
+        ]}
+        showTimeSlices={true}
+        timeSliceInterval={0.1}
+        onToggleTimeSlices={onToggleTimeSlices}
+        onTimeSliceIntervalChange={onTimeSliceIntervalChange}
+        ghostActive={true}
+        ghostDiffSummary="初速度: 5→8"
+        onCaptureGhost={onCaptureGhost}
+        onClearGhost={onClearGhost}
+      />,
+    )
+
+    fireEvent.click(screen.getByText('共速整体减速').closest('button')!)
+    expect(onTimeChange).toHaveBeenCalledWith(1.2)
+
+    fireEvent.click(screen.getByRole('button', { name: '频闪周期 0.1s' }))
+    expect(onTimeSliceIntervalChange).toHaveBeenCalledWith(0.2)
+
+    expect(screen.getByText('对照: 初速度: 5→8')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '清除对照快照' }))
+    expect(onClearGhost).toHaveBeenCalledTimes(1)
   })
 })

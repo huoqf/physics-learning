@@ -11,12 +11,14 @@ import { ProjectileScene } from './components/ProjectileScene'
 
 export default function ProjectileAnimation() {
   // 1. 精确订阅 Zustand Store
-  const { params, time, showVectors, showGrid, setIsPlaying } = useAnimationStore(
+  const { params, time, showVectors, showGrid, showTimeSlices, timeSliceInterval, setIsPlaying } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
       time: s.time,
       showVectors: s.showVectors,
       showGrid: s.showGrid,
+      showTimeSlices: s.showTimeSlices,
+      timeSliceInterval: s.timeSliceInterval,
       setIsPlaying: s.setIsPlaying,
     }))
   )
@@ -146,8 +148,8 @@ export default function ProjectileAnimation() {
             inclineAngle={inclineAngle}
             v0x={v0x}
             g={g}
-            strobeMode={strobeMode}
-            strobeT={strobeT}
+            strobeMode={showTimeSlices || strobeMode === 1 ? 1 : 0}
+            strobeT={showTimeSlices ? timeSliceInterval : strobeT}
             airResistance={airResistance}
           />
         </AnimationSvgCanvas>

@@ -5,6 +5,7 @@ import { ChartCursor } from './ChartCursor'
 import { ChartArea } from './ChartArea'
 import { PHYSICS_COLORS, CHART_COLORS, SERIES_MAP, FONT, STROKE, DASH } from '@/theme/physics'
 import type { ChartSeriesVariant, ChartAreaVariant, ChartAreaIntensity } from '@/theme/physics'
+import { useChartTimeScrub } from '@/context/ChartTimeScrubContext'
 
 // ── 通用时间序列点 ──
 
@@ -105,6 +106,12 @@ export type TimeSeriesChartProps = (StaticTSProps | AnimatedTSProps) & {
   referenceOpacity?: number
   className?: string
   fixedSize?: { width: number; height: number }
+  /** 点击/拖拽图区时反控 X 轴物理值（未传且处于动画上下文中时自动反控播放时间） */
+  onScrubX?: (physX: number) => void
+  onScrubStart?: () => void
+  onScrubEnd?: () => void
+  /** 是否启用图像点击/拖拽反控播放时间，默认 true */
+  enableTimeScrub?: boolean
 }
 
 // ── 渲染单条曲线 + 面积 ──
@@ -415,7 +422,14 @@ export function TimeSeriesChart({
   cursorLabel,
   cursorFormat,
   curveColor,
+  onScrubX,
+  onScrubStart,
+  onScrubEnd,
+  enableTimeScrub = true,
 }: TimeSeriesChartProps) {
+  const chartTimeScrub = useChartTimeScrub()
+  const resolvedOnScrubX = onScrubX ?? (enableTimeScrub && chartTimeScrub ? chartTimeScrub.scrubToTime : undefined)
+
   if (process.env.NODE_ENV !== 'production' && mode === 'animated' && !domainPoints) {
     console.warn(
       'TimeSeriesChart: animated mode requires domainPoints to keep axis domain stable.'
@@ -451,6 +465,9 @@ export function TimeSeriesChart({
       showGrid={showGrid}
       className={className}
       fixedSize={fixedSize}
+      onScrubX={resolvedOnScrubX}
+      onScrubStart={onScrubStart}
+      onScrubEnd={onScrubEnd}
     >
       <TSContent
         points={points}

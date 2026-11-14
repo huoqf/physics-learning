@@ -34,6 +34,10 @@ type DisplacementTimeChartProps = (StaticDTProps | AnimatedDTProps) & {
   underlay?: React.ReactNode
   children?: React.ReactNode
   className?: string
+  onScrubX?: (physX: number) => void
+  onScrubStart?: () => void
+  onScrubEnd?: () => void
+  enableTimeScrub?: boolean
 }
 
 const curveColorMap: Record<string, string> = {
@@ -67,6 +71,10 @@ export function DisplacementTimeChart({
   children,
   className = '',
   mode = 'static',
+  onScrubX,
+  onScrubStart,
+  onScrubEnd,
+  enableTimeScrub,
 }: DisplacementTimeChartProps) {
   const tsProps = {
     mode,
@@ -92,6 +100,10 @@ export function DisplacementTimeChart({
     underlay,
     children,
     className,
+    onScrubX,
+    onScrubStart,
+    onScrubEnd,
+    enableTimeScrub,
   }
 
   return <TimeSeriesChart {...(tsProps as TimeSeriesChartProps)} />

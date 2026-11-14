@@ -11,15 +11,69 @@ import {
   ChevronLeft,
   ChevronRight,
   Crosshair,
+  Camera,
+  X,
+  Layers,
 } from 'lucide-react'
 import { colors } from '@/theme/colors'
 import { duration } from '@/theme/motion'
-import type { CriticalTimePoint } from '@/data/types'
+import { withAlpha } from '@/theme/physics'
+import { STROBE_INTERVAL_OPTIONS } from '@/utils/strobe'
+import type { CriticalTimePoint, TimeStageSegment } from '@/data/types'
 import type { DeepLinkFreezeHint } from '@/utils/animationDeepLink'
 
-const SPEED_OPTIONS = [0.25, 0.5, 1, 2] as const
-const STEP_SIZE_OPTIONS = [0.01, 0.02, 0.05] as const
+const SPEED_OPTIONS = [0.1, 0.25, 0.5, 1] as const
+const STEP_SIZE_OPTIONS = [0.01, 0.02, 0.05, 0.1] as const
 const CRITICAL_MATCH_EPSILON = 0.015
+
+const STAGE_VARIANT_ORDER: NonNullable<TimeStageSegment['variant']>[] = [
+  'primary',
+  'secondary',
+  'accent',
+  'danger',
+]
+
+function getStagePalette(variant: TimeStageSegment['variant'], index: number) {
+  const resolved = variant ?? STAGE_VARIANT_ORDER[index % STAGE_VARIANT_ORDER.length]
+  if (resolved === 'secondary') {
+    return {
+      trackBg: withAlpha(colors.secondary[500], 0.22),
+      chipBg: colors.secondary[50],
+      chipText: colors.secondary[700],
+      chipBorder: colors.secondary[300],
+    }
+  }
+  if (resolved === 'accent') {
+    return {
+      trackBg: withAlpha(colors.accent[500], 0.24),
+      chipBg: colors.accent[50],
+      chipText: colors.accent[700],
+      chipBorder: colors.accent[300],
+    }
+  }
+  if (resolved === 'danger') {
+    return {
+      trackBg: withAlpha(colors.danger[500], 0.2),
+      chipBg: colors.danger[50],
+      chipText: colors.danger[700],
+      chipBorder: colors.danger[300],
+    }
+  }
+  if (resolved === 'neutral') {
+    return {
+      trackBg: withAlpha(colors.neutral[500], 0.18),
+      chipBg: colors.neutral[100],
+      chipText: colors.neutral[700],
+      chipBorder: colors.neutral[300],
+    }
+  }
+  return {
+    trackBg: withAlpha(colors.primary[500], 0.22),
+    chipBg: colors.primary[50],
+    chipText: colors.primary[700],
+    chipBorder: colors.primary[300],
+  }
+}
 
 function getCriticalPalette(variant?: CriticalTimePoint['variant']) {
   if (variant === 'critical') {
@@ -126,9 +180,11 @@ interface AnimationControlsProps {
   controlsMode?: 'timed' | 'loop' | 'param' | 'pause-only'
   /** 高考临界时刻点配置，用于进度条标注与点击精准吸附定格 */
   criticalTimes?: CriticalTimePoint[]
+  /** 物理过程阶段分段配置，用于进度条分段着色与当前阶段提示 */
+  timeStages?: TimeStageSegment[]
   /** 是否开启微步逐帧分析按钮，默认 true */
   enableFrameStep?: boolean
-  /** 微步步进大小（秒），默认 0.05s；支持在 0.01s / 0.02s / 0.05s 间切换 */
+  /** 微步步进大小（秒），默认 0.05s；支持在 0.01s / 0.02s / 0.05s / 0.1s 间切换 */
   stepSize?: number
   /** timed 模式下是否循环重播 */
   repeatLoop?: boolean
@@ -138,6 +194,22 @@ interface AnimationControlsProps {
   autoPauseCritical?: boolean
   /** 切换关键临界点自动暂停 */
   onToggleAutoPauseCritical?: () => void
+  /** 是否处于控制变量参照对照（Ghost）模式 */
+  ghostActive?: boolean
+  /** 对照组与当前实验组的参数差异摘要 */
+  ghostDiffSummary?: string | null
+  /** 锁定/更新控制变量参照快照 */
+  onCaptureGhost?: () => void
+  /** 清除参照快照 */
+  onClearGhost?: () => void
+  /** 是否开启频闪残影模式 */
+  showTimeSlices?: boolean
+  /** 频闪采样周期（秒） */
+  timeSliceInterval?: number
+  /** 切换频闪残影模式 */
+  onToggleTimeSlices?: () => void
+  /** 切换频闪采样周期 */
+  onTimeSliceIntervalChange?: (interval: number) => void
   /** 深链定格提示；非空时在控制条顶部显示「已定格到哪一帧 + 该看什么」 */
   deepLinkHint?: DeepLinkFreezeHint | null
 }
@@ -153,12 +225,21 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
   onTimeChange,
   controlsMode = 'timed',
   criticalTimes,
+  timeStages,
   enableFrameStep = true,
   stepSize = 0.05,
   repeatLoop = false,
   onToggleRepeatLoop,
   autoPauseCritical = false,
   onToggleAutoPauseCritical,
+  ghostActive = false,
+  ghostDiffSummary = null,
+  onCaptureGhost,
+  onClearGhost,
+  showTimeSlices = false,
+  timeSliceInterval = 0.1,
+  onToggleTimeSlices,
+  onTimeSliceIntervalChange,
   deepLinkHint,
 }) => {
   const [activeStepSize, setActiveStepSize] = useState(stepSize)
@@ -181,6 +262,27 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
       .sort((a, b) => a.time - b.time)
   }, [criticalTimes, maxTime])
 
+  const normalizedStages = useMemo(() => {
+    if (!timeStages || timeStages.length === 0 || !(maxTime > 0)) return []
+    return timeStages
+      .map((s, idx) => ({
+        ...s,
+        from: Math.max(0, Math.min(maxTime, s.from)),
+        to: Math.max(0, Math.min(maxTime, s.to)),
+        index: idx,
+      }))
+      .filter((s) => Number.isFinite(s.from) && Number.isFinite(s.to) && s.to > s.from)
+      .sort((a, b) => a.from - b.from)
+  }, [timeStages, maxTime])
+
+  const activeStage = useMemo(() => {
+    if (normalizedStages.length === 0) return null
+    return (
+      normalizedStages.find((s) => time >= s.from - 1e-6 && time <= s.to + 1e-6) ??
+      normalizedStages[normalizedStages.length - 1]
+    )
+  }, [normalizedStages, time])
+
   const percentage = maxTime > 0 ? Math.min(100, Math.max(0, (time / maxTime) * 100)) : 0
 
   // 根据播放速度确定颜色
@@ -200,6 +302,122 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
     if (isPlaying) onPlayPause()
     const clamped = maxTime > 0 ? Math.min(maxTime, Math.max(0, targetTime)) : Math.max(0, targetTime)
     onTimeChange(clamped)
+  }
+
+  const handleStep = (direction: -1 | 1, clampToMax: boolean) => {
+    if (isPlaying) onPlayPause()
+    const rawNext = time + direction * activeStepSize
+    const nextTime = clampToMax ? Math.min(maxTime, Math.max(0, rawNext)) : Math.max(0, rawNext)
+    onTimeChange(Number(nextTime.toFixed(3)))
+  }
+
+  const cycleStepSize = () => {
+    const idx = STEP_SIZE_OPTIONS.indexOf(activeStepSize as (typeof STEP_SIZE_OPTIONS)[number])
+    const nextIdx = idx === -1 ? 0 : (idx + 1) % STEP_SIZE_OPTIONS.length
+    setActiveStepSize(STEP_SIZE_OPTIONS[nextIdx])
+  }
+
+  const cycleStrobeInterval = () => {
+    if (!onTimeSliceIntervalChange) return
+    const idx = STROBE_INTERVAL_OPTIONS.indexOf(
+      timeSliceInterval as (typeof STROBE_INTERVAL_OPTIONS)[number],
+    )
+    const nextIdx = idx === -1 ? 0 : (idx + 1) % STROBE_INTERVAL_OPTIONS.length
+    onTimeSliceIntervalChange(STROBE_INTERVAL_OPTIONS[nextIdx])
+  }
+
+  const hasLabTools = Boolean(onToggleTimeSlices || onCaptureGhost)
+
+  const renderLabTools = () => {
+    if (!hasLabTools) return null
+    return (
+      <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+        {onToggleTimeSlices && (
+          <div className="inline-flex items-center">
+            <button
+              type="button"
+              onClick={onToggleTimeSlices}
+              aria-pressed={showTimeSlices}
+              title={showTimeSlices ? '关闭频闪等时残影' : '开启频闪等时残影（部分场景支持）'}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border whitespace-nowrap shrink-0 transition-colors cursor-pointer"
+              style={
+                showTimeSlices
+                  ? {
+                      backgroundColor: colors.secondary[50],
+                      color: colors.secondary[700],
+                      borderColor: colors.secondary[300],
+                    }
+                  : {
+                      backgroundColor: colors.neutral[50],
+                      color: colors.neutral[600],
+                      borderColor: colors.neutral[200],
+                    }
+              }
+            >
+              <Layers className="w-3 h-3" />
+              <span>频闪</span>
+            </button>
+            {showTimeSlices && onTimeSliceIntervalChange && (
+              <button
+                type="button"
+                onClick={cycleStrobeInterval}
+                title="点击切换频闪采样周期"
+                aria-label={`频闪周期 ${timeSliceInterval}s`}
+                className="ml-1 px-1.5 py-0.5 rounded text-xs font-mono font-medium bg-secondary-50 text-secondary-700 border border-secondary-200 hover:bg-secondary-100 whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                T={timeSliceInterval}s
+              </button>
+            )}
+          </div>
+        )}
+
+        {onCaptureGhost && (
+          <div className="inline-flex items-center gap-1">
+            <button
+              type="button"
+              onClick={onCaptureGhost}
+              title={ghostActive ? '点击以当前参数刷新对照组快照' : '锁定当前参数为对照组，改参数后同屏虚影对比'}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border whitespace-nowrap shrink-0 transition-colors cursor-pointer"
+              style={
+                ghostActive
+                  ? {
+                      backgroundColor: colors.primary[50],
+                      color: colors.primary[700],
+                      borderColor: colors.primary[300],
+                    }
+                  : {
+                      backgroundColor: colors.neutral[50],
+                      color: colors.neutral[600],
+                      borderColor: colors.neutral[200],
+                    }
+              }
+            >
+              <Camera className="w-3 h-3" />
+              <span>{ghostActive ? '更新对照' : '锁定对照'}</span>
+            </button>
+            {ghostActive && (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700 border border-neutral-200 whitespace-nowrap"
+                title={ghostDiffSummary ?? '已锁定对照参数，调整左屏参数即可同屏对比'}
+              >
+                <span>{ghostDiffSummary ? `对照: ${ghostDiffSummary}` : '对照已锁定(调参对比)'}</span>
+                {onClearGhost && (
+                  <button
+                    type="button"
+                    onClick={onClearGhost}
+                    aria-label="清除对照快照"
+                    title="清除对照快照"
+                    className="text-neutral-500 hover:text-neutral-800 cursor-pointer"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    )
   }
 
   // ── param 型：不渲染底部控制栏 ──
@@ -241,13 +459,25 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
     )
   }
 
-  // ── loop 型：支持暂停/定格、重置、当前时刻读数与倍速控制 ──
+  // ── loop 型：支持暂停/定格、逐帧微步、重置、当前时刻读数与倍速控制 ──
   if (controlsMode === 'loop') {
     return (
-      <div className="w-full bg-white rounded-lg shadow-sm border border-neutral-200 px-4 py-2">
+      <div className="w-full bg-white rounded-lg shadow-sm border border-neutral-200 px-4 py-2 space-y-1.5">
         {deepLinkHint && <DeepLinkHintRow hint={deepLinkHint} />}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {enableFrameStep && (
+              <button
+                type="button"
+                onClick={() => handleStep(-1, false)}
+                title={`后退 ${activeStepSize}s（逐帧微步）`}
+                aria-label={`后退 ${activeStepSize} 秒`}
+                className="w-8 h-8 rounded-full bg-neutral-100 text-neutral-700 hover:bg-neutral-200 active:scale-[0.95] flex items-center justify-center transition-all cursor-pointer"
+              >
+                <StepBack className="w-4 h-4" />
+              </button>
+            )}
+
             <button
               type="button"
               onClick={onPlayPause}
@@ -267,6 +497,18 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
               )}
             </button>
 
+            {enableFrameStep && (
+              <button
+                type="button"
+                onClick={() => handleStep(1, false)}
+                title={`前进 ${activeStepSize}s（逐帧微步）`}
+                aria-label={`前进 ${activeStepSize} 秒`}
+                className="w-8 h-8 rounded-full bg-neutral-100 text-neutral-700 hover:bg-neutral-200 active:scale-[0.95] flex items-center justify-center transition-all cursor-pointer"
+              >
+                <StepForward className="w-4 h-4" />
+              </button>
+            )}
+
             <button
               type="button"
               onClick={onReset}
@@ -281,6 +523,18 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
             >
               <RotateCcw className="w-4 h-4" />
             </button>
+
+            {enableFrameStep && (
+              <button
+                type="button"
+                onClick={cycleStepSize}
+                title="点击切换逐帧步长：0.01s / 0.02s(50Hz) / 0.05s / 0.1s(计数周期)"
+                aria-label={`切换微步步长，当前 ${activeStepSize}s`}
+                className="px-2 py-1 rounded text-xs font-mono font-medium bg-neutral-100 text-neutral-600 hover:bg-neutral-200 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
+              >
+                {activeStepSize}s/步
+              </button>
+            )}
 
             {/* 状态徽章 */}
             <div
@@ -310,20 +564,13 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
 
           <SpeedSelector speed={speed} onSpeedChange={onSpeedChange} />
         </div>
+        {hasLabTools && (
+          <div className="pt-1 border-t border-neutral-100 flex flex-wrap items-center justify-end gap-2">
+            {renderLabTools()}
+          </div>
+        )}
       </div>
     )
-  }
-
-  const handleStep = (direction: -1 | 1) => {
-    if (isPlaying) onPlayPause()
-    const nextTime = Math.min(maxTime, Math.max(0, time + direction * activeStepSize))
-    onTimeChange(Number(nextTime.toFixed(3)))
-  }
-
-  const cycleStepSize = () => {
-    const idx = STEP_SIZE_OPTIONS.indexOf(activeStepSize as (typeof STEP_SIZE_OPTIONS)[number])
-    const nextIdx = idx === -1 ? 0 : (idx + 1) % STEP_SIZE_OPTIONS.length
-    setActiveStepSize(STEP_SIZE_OPTIONS[nextIdx])
   }
 
   const prevCritical = [...sortedCriticals].reverse().find((ct) => ct.time < time - CRITICAL_MATCH_EPSILON)
@@ -333,12 +580,12 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
   return (
     <div className="w-full bg-white rounded-lg shadow-sm border border-neutral-200 px-4 py-2 space-y-2">
       {deepLinkHint && <DeepLinkHintRow hint={deepLinkHint} />}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2.5">
         <div className="flex items-center gap-1.5 shrink-0">
           {enableFrameStep && (
             <button
               type="button"
-              onClick={() => handleStep(-1)}
+              onClick={() => handleStep(-1, true)}
               title={`后退 ${activeStepSize}s（逐帧微步）`}
               aria-label={`后退 ${activeStepSize} 秒`}
               className="w-8 h-8 rounded-full bg-neutral-100 text-neutral-700 hover:bg-neutral-200 active:scale-[0.95] flex items-center justify-center transition-all cursor-pointer"
@@ -368,7 +615,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
           {enableFrameStep && (
             <button
               type="button"
-              onClick={() => handleStep(1)}
+              onClick={() => handleStep(1, true)}
               title={`前进 ${activeStepSize}s（逐帧微步）`}
               aria-label={`前进 ${activeStepSize} 秒`}
               className="w-8 h-8 rounded-full bg-neutral-100 text-neutral-700 hover:bg-neutral-200 active:scale-[0.95] flex items-center justify-center transition-all cursor-pointer"
@@ -396,7 +643,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
             <button
               type="button"
               onClick={cycleStepSize}
-              title="点击切换逐帧步长：0.01s 精细网格 / 0.02s 打点周期(50Hz) / 0.05s 标准微步"
+              title="点击切换逐帧步长：0.01s 精细网格 / 0.02s 打点周期(50Hz) / 0.05s 标准微步 / 0.1s 计数点周期"
               aria-label={`切换微步步长，当前 ${activeStepSize}s`}
               className="px-2 py-1 rounded text-xs font-mono font-medium bg-neutral-100 text-neutral-600 hover:bg-neutral-200 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
             >
@@ -450,6 +697,28 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
             {time.toFixed(2)}s
           </span>
           <div className="flex-1 relative h-2 bg-neutral-200 rounded-full flex items-center">
+            {/* 物理过程阶段分段底色 */}
+            {normalizedStages.length > 0 && (
+              <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none">
+                {normalizedStages.map((stage) => {
+                  const leftPct = (stage.from / maxTime) * 100
+                  const widthPct = ((stage.to - stage.from) / maxTime) * 100
+                  const palette = getStagePalette(stage.variant, stage.index)
+                  return (
+                    <div
+                      key={`${stage.label}-${stage.index}`}
+                      className="absolute top-0 bottom-0 border-r border-white/80 last:border-r-0"
+                      style={{
+                        left: `${leftPct}%`,
+                        width: `${widthPct}%`,
+                        backgroundColor: palette.trackBg,
+                      }}
+                    />
+                  )
+                })}
+              </div>
+            )}
+
             {/* 临界时刻刻度标记 */}
             {sortedCriticals.length > 0 && maxTime > 0 && (
               <div className="absolute inset-x-0 -top-2.5 h-2 pointer-events-none z-20">
@@ -506,88 +775,133 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
         </div>
       </div>
 
-      {/* 临界时刻快捷芯片条（仅存在 criticalTimes 时显示） */}
-      {sortedCriticals.length > 0 && (
-        <div className="pt-1.5 border-t border-neutral-100 flex items-center gap-2">
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              type="button"
-              disabled={!prevCritical}
-              onClick={() => prevCritical && jumpToTime(prevCritical.time)}
-              title={prevCritical ? `上一关键点：${prevCritical.label} (${prevCritical.time.toFixed(2)}s)` : '已是首个关键点前'}
-              aria-label="上一关键点"
-              className="w-6 h-6 rounded border border-neutral-200 bg-neutral-50 text-neutral-600 hover:bg-neutral-100 disabled:opacity-35 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              disabled={!nextCritical}
-              onClick={() => nextCritical && jumpToTime(nextCritical.time)}
-              title={nextCritical ? `下一关键点：${nextCritical.label} (${nextCritical.time.toFixed(2)}s)` : '已过最后一个关键点'}
-              aria-label="下一关键点"
-              className="w-6 h-6 rounded border border-neutral-200 bg-neutral-50 text-neutral-600 hover:bg-neutral-100 disabled:opacity-35 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer"
-            >
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
+      {/* 物理过程阶段 + 临界时刻快捷芯片 + 教学实验工具条 */}
+      {(sortedCriticals.length > 0 || normalizedStages.length > 0 || hasLabTools) && (
+        <div className="pt-1.5 border-t border-neutral-100 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex-1 min-w-0 flex flex-wrap items-center gap-2">
+            {normalizedStages.length > 0 && (
+              <div className="flex items-center gap-1 overflow-x-auto py-0.5">
+                {normalizedStages.map((stage) => {
+                  const isCurrent = activeStage?.index === stage.index
+                  const palette = getStagePalette(stage.variant, stage.index)
+                  return (
+                    <button
+                      key={`stage-chip-${stage.label}-${stage.index}`}
+                      type="button"
+                      onClick={() => jumpToTime(stage.from)}
+                      title={`跳至阶段起点：${stage.label} (${stage.from.toFixed(2)}s–${stage.to.toFixed(2)}s)`}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border whitespace-nowrap shrink-0 cursor-pointer transition-all"
+                      style={
+                        isCurrent
+                          ? {
+                              backgroundColor: palette.chipBg,
+                              color: palette.chipText,
+                              borderColor: palette.chipBorder,
+                              fontWeight: 600,
+                            }
+                          : {
+                              backgroundColor: colors.neutral[50],
+                              color: colors.neutral[500],
+                              borderColor: colors.neutral[200],
+                            }
+                      }
+                    >
+                      <span>{stage.label}</span>
+                      <span className="font-mono opacity-80">
+                        {stage.from.toFixed(1)}–{stage.to.toFixed(1)}s
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            {sortedCriticals.length > 0 && (
+              <div className="flex items-center gap-1.5 min-w-0">
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    disabled={!prevCritical}
+                    onClick={() => prevCritical && jumpToTime(prevCritical.time)}
+                    title={prevCritical ? `上一关键点：${prevCritical.label} (${prevCritical.time.toFixed(2)}s)` : '已是首个关键点前'}
+                    aria-label="上一关键点"
+                    className="w-6 h-6 rounded border border-neutral-200 bg-neutral-50 text-neutral-600 hover:bg-neutral-100 disabled:opacity-35 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!nextCritical}
+                    onClick={() => nextCritical && jumpToTime(nextCritical.time)}
+                    title={nextCritical ? `下一关键点：${nextCritical.label} (${nextCritical.time.toFixed(2)}s)` : '已过最后一个关键点'}
+                    aria-label="下一关键点"
+                    className="w-6 h-6 rounded border border-neutral-200 bg-neutral-50 text-neutral-600 hover:bg-neutral-100 disabled:opacity-35 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto py-0.5">
+                  {sortedCriticals.map((ct, idx) => {
+                    const isActive = Math.abs(time - ct.time) <= CRITICAL_MATCH_EPSILON
+                    const palette = getCriticalPalette(ct.variant)
+                    return (
+                      <button
+                        key={`${ct.time}-${idx}`}
+                        type="button"
+                        onClick={() => jumpToTime(ct.time)}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap shrink-0 transition-all cursor-pointer active:scale-[0.97]"
+                        style={
+                          isActive
+                            ? {
+                                backgroundColor: palette.activeBg,
+                                color: colors.neutral.white,
+                                borderColor: palette.activeBg,
+                              }
+                            : {
+                                backgroundColor: palette.chipBg,
+                                color: palette.chipText,
+                                borderColor: palette.chipBorder,
+                              }
+                        }
+                      >
+                        <span>{ct.label}</span>
+                        <span className="font-mono opacity-85">{ct.time.toFixed(2)}s</span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {onToggleAutoPauseCritical && (
+                  <button
+                    type="button"
+                    onClick={onToggleAutoPauseCritical}
+                    aria-pressed={autoPauseCritical}
+                    title={autoPauseCritical ? '已开启：播放经过关键点时自动暂停定格' : '已关闭：连续播放不停靠关键点'}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border whitespace-nowrap shrink-0 transition-colors cursor-pointer"
+                    style={
+                      autoPauseCritical
+                        ? {
+                            backgroundColor: colors.accent[50],
+                            color: colors.accent[700],
+                            borderColor: colors.accent[300],
+                          }
+                        : {
+                            backgroundColor: colors.neutral[50],
+                            color: colors.neutral[500],
+                            borderColor: colors.neutral[200],
+                          }
+                    }
+                  >
+                    <Crosshair className="w-3 h-3" />
+                    <span>遇临界暂停</span>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto py-0.5">
-            {sortedCriticals.map((ct, idx) => {
-              const isActive = Math.abs(time - ct.time) <= CRITICAL_MATCH_EPSILON
-              const palette = getCriticalPalette(ct.variant)
-              return (
-                <button
-                  key={`${ct.time}-${idx}`}
-                  type="button"
-                  onClick={() => jumpToTime(ct.time)}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap shrink-0 transition-all cursor-pointer active:scale-[0.97]"
-                  style={
-                    isActive
-                      ? {
-                          backgroundColor: palette.activeBg,
-                          color: colors.neutral.white,
-                          borderColor: palette.activeBg,
-                        }
-                      : {
-                          backgroundColor: palette.chipBg,
-                          color: palette.chipText,
-                          borderColor: palette.chipBorder,
-                        }
-                  }
-                >
-                  <span>{ct.label}</span>
-                  <span className="font-mono opacity-85">{ct.time.toFixed(2)}s</span>
-                </button>
-              )
-            })}
-          </div>
-
-          {onToggleAutoPauseCritical && (
-            <button
-              type="button"
-              onClick={onToggleAutoPauseCritical}
-              aria-pressed={autoPauseCritical}
-              title={autoPauseCritical ? '已开启：播放经过关键点时自动暂停定格' : '已关闭：连续播放不停靠关键点'}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border whitespace-nowrap shrink-0 transition-colors cursor-pointer"
-              style={
-                autoPauseCritical
-                  ? {
-                      backgroundColor: colors.accent[50],
-                      color: colors.accent[700],
-                      borderColor: colors.accent[300],
-                    }
-                  : {
-                      backgroundColor: colors.neutral[50],
-                      color: colors.neutral[500],
-                      borderColor: colors.neutral[200],
-                    }
-              }
-            >
-              <Crosshair className="w-3 h-3" />
-              <span>遇临界暂停</span>
-            </button>
-          )}
+          {renderLabTools()}
         </div>
       )}
     </div>

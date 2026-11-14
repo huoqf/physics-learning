@@ -1,4 +1,5 @@
 ﻿import React, { type RefObject } from 'react'
+import { useAnimationRenderRole } from '@/context/AnimationRenderContext'
 
 // ─── 类型 ──────────────────────────────────────────────────────────────────
 
@@ -196,11 +197,21 @@ export const AnimationSvgCanvas = React.memo<AnimationSvgCanvasProps>(
     onPointerMove,
     onPointerUp,
   }) {
-    const hasCanvas = !!canvasRef
+    const renderRole = useAnimationRenderRole()
+    const isOverlay = renderRole !== 'normal'
+    const hasCanvas = !!canvasRef && !isOverlay
+    // 叠加对照组/频闪层时剥离容器背景与阴影类名，确保透明叠放在主画布之上而不遮挡底图
+    const safeClassName = isOverlay
+      ? className
+          .split(/\s+/)
+          .filter((cls) => cls && !/^(bg-|shadow|border)/.test(cls))
+          .join(' ')
+      : className
+
     return (
       <div
         ref={containerRef}
-        className={`w-full h-full overflow-hidden${hasCanvas ? ' relative' : ''}${className ? ` ${className}` : ''}`}
+        className={`w-full h-full overflow-hidden${hasCanvas ? ' relative' : ''}${isOverlay ? ' pointer-events-none bg-transparent' : ''}${safeClassName ? ` ${safeClassName}` : ''}`}
       >
         {hasCanvas && (
           <canvas
@@ -211,20 +222,29 @@ export const AnimationSvgCanvas = React.memo<AnimationSvgCanvasProps>(
         )}
         <svg
           ref={svgRef}
-          className={`block select-none w-full h-full${hasCanvas ? ' absolute inset-0 pointer-events-none' : ''}`}
-          onMouseMove={onMouseMove}
-          onMouseUp={onMouseUp}
-          onMouseLeave={onMouseLeave}
-          onMouseDown={onMouseDown}
-          onClick={onClick}
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
+          className={`block select-none w-full h-full${hasCanvas || isOverlay ? ' pointer-events-none' : ''}${hasCanvas ? ' absolute inset-0' : ''}`}
+          onMouseMove={isOverlay ? undefined : onMouseMove}
+          onMouseUp={isOverlay ? undefined : onMouseUp}
+          onMouseLeave={isOverlay ? undefined : onMouseLeave}
+          onMouseDown={isOverlay ? undefined : onMouseDown}
+          onClick={isOverlay ? undefined : onClick}
+          onTouchStart={isOverlay ? undefined : onTouchStart}
+          onTouchMove={isOverlay ? undefined : onTouchMove}
+          onTouchEnd={isOverlay ? undefined : onTouchEnd}
+          onPointerMove={isOverlay ? undefined : onPointerMove}
+          onPointerUp={isOverlay ? undefined : onPointerUp}
         >
           <g transform={transform}>
-            {children}
+            {isOverlay ? (
+              <g
+                opacity={renderRole === 'ghost' ? 0.36 : 0.28}
+                style={renderRole === 'ghost' ? { filter: 'saturate(0.3)' } : undefined}
+              >
+                {children}
+              </g>
+            ) : (
+              children
+            )}
           </g>
         </svg>
       </div>
