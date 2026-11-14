@@ -16,6 +16,7 @@ interface AmpereFIChartProps {
   I: number
   B: number
   L?: number
+  thetaIB?: number
   font?: (base: number) => number
 }
 
@@ -23,7 +24,7 @@ interface AmpereFIChartProps {
  * 安培力 F-I 关系图业务适配层。
  *
  * 内部统一使用 RelationChart 渲染标准关系图。纵轴符号与 solveBasicAmpere
- * 保持一致：F = -BIL，+F 表示沿导轨向右，-F 表示沿导轨向左。
+ * 保持一致：F = -B⊥IL = -BIL·sinθ_IB，+F 表示沿导轨向右，-F 表示沿导轨向左。
  */
 export const AmpereFIChart: React.FC<AmpereFIChartProps> = ({
   w,
@@ -31,10 +32,14 @@ export const AmpereFIChart: React.FC<AmpereFIChartProps> = ({
   I,
   B,
   L = 4.0,
+  thetaIB = 90,
   font = (base) => base,
 }) => {
-  const slopeK = -B * L
+  const radIB = (thetaIB * Math.PI) / 180
+  const bPerp = B * Math.sin(radIB)
+  const slopeK = -bPerp * L
   const currentF = slopeK * I
+  const slopeExpr = Math.abs(thetaIB - 90) > 0.1 ? 'k = -B⊥L' : 'k = -BL'
 
   const points = useMemo(
     () => [
@@ -91,7 +96,7 @@ export const AmpereFIChart: React.FC<AmpereFIChartProps> = ({
           userSelect: 'none',
         }}
       >
-        k = -BL = {slopeK.toFixed(1)} N/A
+        {slopeExpr} = {slopeK.toFixed(1)} N/A
         <br />
         F = {currentF.toFixed(1)} N
       </div>

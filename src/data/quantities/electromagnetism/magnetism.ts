@@ -1,4 +1,6 @@
 import {
+  computeBFieldRatioExperiment,
+  computeMagneticFluxState,
   solveBasicAmpere,
   solveAdvancedAmpere,
   calculateDoubleBoundaryExit,
@@ -13,6 +15,86 @@ import type { PhysicsPanelData } from '../types'
 
 export function handleMagnetism(animId: string, params: Record<string, number>, time: number, base: PhysicsPanelData['quantities']): PhysicsPanelData | null {
   switch (animId) {
+    case 'anim-magnetic-field-flux': {
+      const mode = params.mode ?? 0
+      const chartAxis = params.chartAxis ?? 0
+      const B = params.B ?? 1.0
+      const I = params.I ?? 2.0
+      const L = params.L ?? 0.15
+      const thetaIB = params.thetaIB ?? 90
+      const S = params.S ?? 0.4
+      const thetaNormal = params.thetaNormal ?? 30
+
+      if (mode === 0) {
+        const res = computeBFieldRatioExperiment({
+          B,
+          I,
+          L,
+          thetaIB,
+          chartAxis,
+        })
+
+        return {
+          quantities: [
+            ...base,
+            { label: '垂直磁场分量', symbol: 'B_⊥', value: res.B_perp.toFixed(2), unit: 'T', color: PHYSICS_COLORS.magneticField },
+            { label: '检验电流元', symbol: 'IL', value: res.currentElementIL.toFixed(3), unit: 'A·m', color: PHYSICS_COLORS.electricCurrent },
+            { label: '安培力大小', symbol: 'F', value: res.ampereForceF.toFixed(2), unit: 'N', color: PHYSICS_COLORS.lorentzForce, highlight: res.ampereForceF > 1e-4 ? 'extreme' : 'zero' },
+            { label: '弹簧测力计示数', symbol: 'T', value: res.springReadingT.toFixed(2), unit: 'N', color: PHYSICS_COLORS.tension },
+            { label: '比值测定结果', symbol: 'F/(IL)', value: res.measuredRatio.toFixed(2), unit: 'T', color: PHYSICS_COLORS.magneticField },
+            { label: '图像直线斜率', symbol: 'k', value: chartAxis === 0 ? res.slopeFI.toFixed(3) : chartAxis === 1 ? res.slopeFL.toFixed(2) : res.slopeFIL.toFixed(2), unit: chartAxis === 0 ? 'N/A' : chartAxis === 1 ? 'N/m' : 'T', color: PHYSICS_COLORS.velocity },
+          ],
+          formulas: [
+            { name: '磁感应强度定义式', latex: 'B = \\frac{F}{I L}', level: 'core' as const, condition: '通电直导线垂直于磁场方向放置（θ_IB = 90°）' },
+            { name: '倾斜放置通电导线', latex: 'F = B I L \\sin\\theta_{IB}', level: 'core' as const, condition: '匀强磁场中直导线与 B 夹角为 θ_IB' },
+            { name: '控制变量直线斜率', latex: 'k_I = B_\\perp L, \\quad k_L = B_\\perp I', level: 'derived' as const, condition: '分别对应 F–I 图与 F–L 图斜率' },
+          ],
+          gaokaoPoints: [
+            { text: '【比值定义物理本质】B = F/(IL) 是比值定义法，磁场某点 B 的大小和方向完全由场源本身决定，与是否放入检验电流 I、导线长度 L 及所受安培力 F 无关。', importance: 'core' },
+            { text: '【图像斜率定量求 B】控制 L 不变作 F–I 直线，斜率 k_I = B·sinθ_IB·L；控制 I 不变作 F–L 直线，斜率 k_L = B·sinθ_IB·I；合画 F–(IL) 图时斜率直接等于 B·sinθ_IB。', importance: 'gaokao' },
+            { text: '【非垂直放置修正】若检验电流不与磁场垂直，用 F/(IL) 求得的是垂直于电流的分量 B·sinθ_IB，不能直接当成磁场总磁感应强度 B。', importance: 'gaokao' },
+          ],
+          warnings: [
+            { text: '常见误区：误认为由 B = F/(IL) 可得“B 与 F 成正比、与 IL 成反比”，实质上在确定位置 F 随 IL 同比例增大，其比值保持不变。', level: 'danger' },
+            { text: '常见误区：测安培力时忽略弹簧测力计初始自重 G₀，直接把总示数 T 当作安培力 F，正确做法是取 F = T - G₀。', level: 'warning' },
+          ],
+        }
+      }
+
+      const flux = computeMagneticFluxState({ B, S, thetaNormal })
+      const sideDesc =
+        flux.fluxSide === 'front'
+          ? '正面穿入'
+          : flux.fluxSide === 'back'
+            ? '反面穿入'
+            : '平行零通量'
+
+      return {
+        quantities: [
+          ...base,
+          { label: '有效投影面积', symbol: 'S_⊥', value: flux.projAreaSPerp.toFixed(3), unit: 'm²', color: PHYSICS_COLORS.magneticField },
+          { label: '垂直面磁场分量', symbol: 'B_⊥', value: flux.B_perp.toFixed(2), unit: 'T', color: PHYSICS_COLORS.magneticField },
+          { label: '平面与磁场夹角', symbol: 'α', value: flux.planeAngleAbs.toFixed(0), unit: '°', color: PHYSICS_COLORS.textMuted },
+          { label: '穿过磁感线条数', symbol: 'N_eff', value: `${flux.effectiveLineCount} / 9`, unit: '条', color: PHYSICS_COLORS.velocity },
+          { label: '磁通量', symbol: 'Φ', value: flux.phi.toFixed(3), unit: `Wb (${sideDesc})`, color: PHYSICS_COLORS.emf, highlight: Math.abs(flux.phi) < 1e-4 ? 'zero' : 'extreme' },
+          { label: '相对初态变化量', symbol: 'ΔΦ', value: flux.deltaPhiFromZero.toFixed(3), unit: 'Wb', color: PHYSICS_COLORS.lorentzForce },
+        ],
+        formulas: [
+          { name: '匀强磁场磁通量', latex: '\\Phi = B S_\\perp = B S \\cos\\theta', level: 'core' as const, condition: 'θ 为线圈法线 n̂ 与磁场 B 夹角' },
+          { name: '按平面夹角表示', latex: '\\Phi = B S \\sin\\alpha', level: 'derived' as const, condition: 'α = 90° - θ 为线圈平面与磁场 B 的夹角' },
+          { name: '磁通量变化量', latex: '\\Delta\\Phi = \\Phi_2 - \\Phi_1 = BS(\\cos\\theta_2 - \\cos\\theta_1)', level: 'core' as const, condition: '需带入磁感线穿入正反面的正负号' },
+        ],
+        gaokaoPoints: [
+          { text: '【投影面积几何意义】当线圈倾斜时，可用“有效投影面积 S⊥ = S|cosθ| 乘以 B”，也可等价理解为“线圈全面积 S 乘以垂直分量 B⊥ = Bcosθ”，二者结果完全一致。', importance: 'core' },
+          { text: '【双角辨析防混】使用 cosθ 还是 sinα 取决于角度基准：若 θ 是法线与 B 夹角则乘 cosθ；若 α 是线圈平面与 B 夹角则乘 sinα。', importance: 'gaokao' },
+          { text: '【标量正负号规则】磁通量是标量但具有正负之分，若从正面穿入记为 Φ₁ = +BS，翻转 180° 后变为反面穿入 Φ₂ = -BS，则 ΔΦ = Φ₂ - Φ₁ = -2BS，绝对值为 2BS。', importance: 'gaokao' },
+        ],
+        warnings: [
+          { text: '常见误区：误把线圈翻转 180° 的磁通量变化量算成 ΔΦ = BS - BS = 0，忽略了磁感线穿过线圈正面与反面的正负符号。', level: 'danger' },
+          { text: '常见误区：套用公式时未辨明已知角是“法线与磁场夹角”还是“平面与磁场夹角”，导致三角函数 sin 与 cos 用反。', level: 'warning' },
+        ],
+      }
+    }
     case 'anim-ampere-force': {
       const mode = params.mode ?? 0
       const B = params.B ?? 1.0

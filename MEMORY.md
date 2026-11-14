@@ -45,6 +45,7 @@
 | anim-induction-dual-rods | 电磁感应双杆模型 | InductionDualRods | DualRodsScene | physics | — |
 | anim-induction-loop-field | 电磁感应线框模型 | InductionLoopField | LoopPassFieldScene | loopPassField | — |
 | anim-self-induction-eddy | 自感、互感与电磁阻尼 | SelfInductionAnimation | SelfInductionScene | electromagnetism/selfInduction | SelfInductionCenterExtra |
+| anim-magnetic-field-flux | 磁感应强度与磁通量 | magnetic-flux | — | — | — |
 | anim-ampere-force | 安培力 F=BIL | AmpereForce | BasicAmpereScene | — | — |
 | anim-lorentz-force | 洛伦兹力 F=qvB | VelocitySelector | VelocitySelectorScene | physics | — |
 | anim-charge-in-bfield | 带电粒子在磁场中运动 | ChargeInBField | — | physics | — |
@@ -147,7 +148,7 @@
 | anim-doppler-effect | 多普勒效应 | doppler | — | — | — |
 | anim-forced-resonance | 受迫振动与共振 | forced-resonance | — | — | ForcedResonanceCenterExtra |
 
-共 132 个动画条目。
+共 133 个动画条目。
 
 ---
 

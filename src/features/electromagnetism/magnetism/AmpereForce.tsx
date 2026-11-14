@@ -124,6 +124,7 @@ export default function AmpereForce() {
                   I={I}
                   B={B}
                   L={L}
+                  thetaIB={thetaIB}
                   font={font}
                 />
               </div>

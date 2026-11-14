@@ -158,6 +158,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-multimeter-ohm':        { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-experiment-er':         { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-motor-circuit':         { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-magnetic-field-flux':   { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-ampere-force':          { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-lorentz-force':         { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-charge-in-bfield':      { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },

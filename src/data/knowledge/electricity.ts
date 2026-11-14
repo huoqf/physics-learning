@@ -157,11 +157,9 @@ export const electricityKnowledge: KnowledgeNode[] = [
     chapter: '电磁学 第3章 磁场',
     module: 'electricity',
     importance: 'gaokao',
-    animationIds: ['anim-faraday-law', 'anim-ampere-force'],
+    animationIds: ['anim-magnetic-field-flux', 'anim-ampere-force', 'anim-faraday-law'],
     problemIds: [],
     prerequisites: ['electricity-2-3'],
-    coverageNote:
-      '覆盖度声明：本节点借用「法拉第电磁感应定律」动画演示匀强磁场垂直穿过线圈时的 Φ = BS⊥ 与 dΦ/dt，借用「安培力 F=BIL」动画演示 B 对通电导体的作用。缺两项：「用控制变量法测量 B（改 I、改 L 观察 F，作 F–I 图由斜率求 B）」的定量测量过程；「线圈平面与磁场不垂直时取投影面积 S⊥ = S·cosθ」的一般情形演示。',
   },
   {
     id: 'electricity-3-1',

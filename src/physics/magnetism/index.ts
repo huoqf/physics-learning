@@ -42,3 +42,16 @@ export {
   type CircularGeometryOrbit,
   type MagBoundaryType,
 } from './circularGeometry'
+
+export {
+  WIRE_FRAME_GRAVITY_N,
+  TAP_LENGTHS_M,
+  FLUX_FIELD_LINE_COUNT,
+  computeBFieldRatioExperiment,
+  computeMagneticFluxState,
+  type BFieldRatioParams,
+  type BFieldRatioSamplePoint,
+  type BFieldRatioResult,
+  type MagneticFluxParams,
+  type MagneticFluxResult,
+} from './magneticFlux'
