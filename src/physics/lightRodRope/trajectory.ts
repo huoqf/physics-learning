@@ -607,35 +607,40 @@ export function getLightRodRopeCriticalTimes(
   const points = precomputeLightRodRopeTrajectory(m1, m2, L, GRAVITY, constraint, maxTime, 0.02, theta0Rad, v0)
   if (points.length < 2) return []
 
+  const last = points[points.length - 1]
   const events: CriticalTimePoint[] = []
 
-  // 1. 轻杆/双绳经过最低点（thetaB 首次跨越 π/2）
-  for (let i = 1; i < points.length; i++) {
-    const prev = points[i - 1]
-    const curr = points[i]
-    if (prev.thetaB < Math.PI / 2 && curr.thetaB >= Math.PI / 2) {
-      const tLow = alignCriticalTime(curr.t, 'nearest')
-      if (tLow > 0 && tLow <= maxTime) {
-        events.push({
-          time: tLow,
-          label: '⚡ B 球经过最低点',
-          variant: 'critical',
-          autoPause: false,
-        })
+  // 1. 轻杆/双绳经过最低点（thetaB 首次跨越 π/2）；定滑轮若在最低点终止则归入下方终点事件
+  if (last.stopReason !== 'reach_bottom') {
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1]
+      const curr = points[i]
+      if (prev.thetaB < Math.PI / 2 && curr.thetaB >= Math.PI / 2) {
+        const tLow = alignCriticalTime(curr.t, 'nearest')
+        if (tLow > 0 && tLow <= maxTime) {
+          events.push({
+            time: tLow,
+            label: '⚡ B 球经过最低点',
+            variant: 'critical',
+            autoPause: false,
+          })
+        }
+        break
       }
-      break
     }
   }
 
   // 2. 轻绳松弛或到达终止态
-  const last = points[points.length - 1]
   if (last.stopReason === 'slack' && last.t > 0 && last.t <= maxTime) {
-    events.push({
-      time: alignCriticalTime(last.t, 'before'),
-      label: '⚡ 轻绳松弛临界 (T = 0)',
-      variant: 'critical',
-      autoPause: true,
-    })
+    const tSlack = alignCriticalTime(last.t, 'before')
+    if (!events.some((e) => Math.abs(e.time - tSlack) < 0.02)) {
+      events.push({
+        time: tSlack,
+        label: '⚡ 轻绳松弛临界 (T = 0)',
+        variant: 'critical',
+        autoPause: true,
+      })
+    }
   } else if (last.stopReason === 'reach_bottom' && last.t > 0 && last.t <= maxTime) {
     events.push({
       time: alignCriticalTime(last.t, 'before'),

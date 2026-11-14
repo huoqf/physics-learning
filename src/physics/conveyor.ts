@@ -7,6 +7,7 @@
 
 import { GRAVITY } from './constants'
 import { alignCriticalTime } from '@/utils/criticalTime'
+import type { TimeStageSegment } from '@/data/types'
 
 export type ConveyorMode = 'horizontal' | 'inclined'
 
@@ -185,6 +186,49 @@ export function getConveyorCriticalTimes(
     }
   }
   return events.sort((a, b) => a.time - b.time)
+}
+
+/**
+ * 传送带模型进度条过程阶段分段（复用 getConveyorFrame 单一真源）。
+ */
+export function getConveyorTimeStages(
+  params: Record<string, number>,
+  maxTime = 12,
+): TimeStageSegment[] {
+  const inclined = (params.conveyorMode ?? 0) === 1
+  const conveyorParam: ConveyorParam = {
+    vBelt: params.vBelt ?? 0,
+    v0: params.v0 ?? 0,
+    mu: params.mu ?? 0.2,
+    L: params.L ?? 6,
+    mode: inclined ? 'inclined' : 'horizontal',
+    thetaRad: THETA_DEFAULT,
+    x0Ratio: params.x0Ratio ?? 0,
+  }
+  const frame = getConveyorFrame(conveyorParam, maxTime, MASS_DEFAULT)
+  const canKeepSync = canConveyorKeepSynchronous(conveyorParam)
+  const tSync = frame.tSync != null && frame.tSync > 0 ? Math.min(maxTime, frame.tSync) : null
+  const tExit = frame.tExit != null && frame.tExit > 0 ? Math.min(maxTime, frame.tExit) : null
+
+  const stages: TimeStageSegment[] = []
+  const tPhase1End = Math.min(tSync ?? maxTime, tExit ?? maxTime)
+  if (tPhase1End > 1e-4) {
+    stages.push({ from: 0, to: tPhase1End, label: '相对滑动变速', variant: 'primary' })
+  }
+
+  if (tSync != null && tSync < (tExit ?? maxTime) - 1e-4) {
+    const tPhase2End = tExit ?? maxTime
+    if (canKeepSync) {
+      stages.push({ from: tSync, to: tPhase2End, label: '共速随带匀速', variant: 'secondary' })
+    } else {
+      stages.push({ from: tSync, to: tPhase2End, label: '共速后继续滑动', variant: 'accent' })
+    }
+  }
+
+  if (tExit != null && tExit < maxTime - 1e-4) {
+    stages.push({ from: tExit, to: maxTime, label: '滑离传送带', variant: 'neutral' })
+  }
+  return stages
 }
 
 /**

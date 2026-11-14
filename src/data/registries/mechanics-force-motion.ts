@@ -6,6 +6,7 @@ import {
   FORCE_MOTION_PARAM_CONFIGS,
 } from '@/features/mechanics/force-motion/forceMotionLayout'
 import { getForceMotionDefaultEnv } from '@/physics'
+import { getForceMotionCriticalTimes } from '@/physics/forceMotion'
 import type { ParamMeta } from '@/data/types'
 
 const FORCE_MOTION_DEFAULT_PARAMS = {
@@ -32,6 +33,7 @@ export const mechanicsForceMotionAnimations = defineAnimations({
     Component: lazy(() => import('@/features/mechanics/force-motion/ForceMotionTopic')),
     defaultParams: FORCE_MOTION_DEFAULT_PARAMS,
     maxTime: FORCE_MOTION_MAX_TIME,
+    criticalTimes: (p) => getForceMotionCriticalTimes(p, FORCE_MOTION_MAX_TIME),
 
     buildParamMeta: (params): ParamMeta[] => {
       const mode = Math.round(params.mode ?? 0)

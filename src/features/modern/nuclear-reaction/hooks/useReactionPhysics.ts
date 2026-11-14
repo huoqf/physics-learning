@@ -1,4 +1,9 @@
 import { useMemo } from 'react'
+import {
+  CHAIN_REACTION_TIMING,
+  FISSION_TIMING,
+  FUSION_TIMING,
+} from '@/physics/chainReaction'
 import type { NuclearParticle } from '../model/constants'
 
 /** 核反应粒子群返回类型（聚变/裂变共用） */
@@ -92,8 +97,8 @@ function computeFusion(time: number): ReactionParticleResult {
   const showLabel = time >= 3.3
   const isReacted = time >= 3.2
 
-  const tImpact = 3.0
-  const tSeparate = 3.5
+  const tImpact = FUSION_TIMING.impact
+  const tSeparate = FUSION_TIMING.separate
 
   const dCenter = { x: -3.5, y: 0 }
   const tCenter = { x: 3.5, y: 0 }
@@ -175,8 +180,8 @@ function computeFission(time: number): ReactionParticleResult {
   const showLabel = time >= 4.0
   const isReacted = time >= 3.8
 
-  const tImpact = 2.5
-  const tSeparate = 3.8
+  const tImpact = FISSION_TIMING.impact
+  const tSeparate = FISSION_TIMING.separate
 
   const initNeutronStart = { x: -4.5, y: 0 }
   const u235Center = { x: 0.5, y: 0 }
@@ -300,19 +305,19 @@ function computeFission(time: number): ReactionParticleResult {
 /** 铀核链式反应：多代裂变网络 */
 function computeChainReaction(time: number): ChainReactionPhysicsResult {
   const chainReactors = [
-    { id: 'u-g1-0', gen: 1, x: -3.0, y: 0, tHit: 1.0 },
-    { id: 'u-g2-0', gen: 2, x: -0.5, y: -1.3, tHit: 2.8 },
-    { id: 'u-g2-1', gen: 2, x: -0.5, y: 0, tHit: 2.8 },
-    { id: 'u-g2-2', gen: 2, x: -0.5, y: 1.3, tHit: 2.8 },
-    { id: 'u-g3-0', gen: 3, x: 2.2, y: -2.0, tHit: 4.6 },
-    { id: 'u-g3-1', gen: 3, x: 2.2, y: -1.5, tHit: 4.6 },
-    { id: 'u-g3-2', gen: 3, x: 2.2, y: -1.0, tHit: 4.6 },
-    { id: 'u-g3-3', gen: 3, x: 2.2, y: -0.5, tHit: 4.6 },
-    { id: 'u-g3-4', gen: 3, x: 2.2, y: 0, tHit: 4.6 },
-    { id: 'u-g3-5', gen: 3, x: 2.2, y: 0.5, tHit: 4.6 },
-    { id: 'u-g3-6', gen: 3, x: 2.2, y: 1.0, tHit: 4.6 },
-    { id: 'u-g3-7', gen: 3, x: 2.2, y: 1.5, tHit: 4.6 },
-    { id: 'u-g3-8', gen: 3, x: 2.2, y: 2.0, tHit: 4.6 },
+    { id: 'u-g1-0', gen: 1, x: -3.0, y: 0, tHit: CHAIN_REACTION_TIMING.gen1Hit },
+    { id: 'u-g2-0', gen: 2, x: -0.5, y: -1.3, tHit: CHAIN_REACTION_TIMING.gen2Hit },
+    { id: 'u-g2-1', gen: 2, x: -0.5, y: 0, tHit: CHAIN_REACTION_TIMING.gen2Hit },
+    { id: 'u-g2-2', gen: 2, x: -0.5, y: 1.3, tHit: CHAIN_REACTION_TIMING.gen2Hit },
+    { id: 'u-g3-0', gen: 3, x: 2.2, y: -2.0, tHit: CHAIN_REACTION_TIMING.gen3Hit },
+    { id: 'u-g3-1', gen: 3, x: 2.2, y: -1.5, tHit: CHAIN_REACTION_TIMING.gen3Hit },
+    { id: 'u-g3-2', gen: 3, x: 2.2, y: -1.0, tHit: CHAIN_REACTION_TIMING.gen3Hit },
+    { id: 'u-g3-3', gen: 3, x: 2.2, y: -0.5, tHit: CHAIN_REACTION_TIMING.gen3Hit },
+    { id: 'u-g3-4', gen: 3, x: 2.2, y: 0, tHit: CHAIN_REACTION_TIMING.gen3Hit },
+    { id: 'u-g3-5', gen: 3, x: 2.2, y: 0.5, tHit: CHAIN_REACTION_TIMING.gen3Hit },
+    { id: 'u-g3-6', gen: 3, x: 2.2, y: 1.0, tHit: CHAIN_REACTION_TIMING.gen3Hit },
+    { id: 'u-g3-7', gen: 3, x: 2.2, y: 1.5, tHit: CHAIN_REACTION_TIMING.gen3Hit },
+    { id: 'u-g3-8', gen: 3, x: 2.2, y: 2.0, tHit: CHAIN_REACTION_TIMING.gen3Hit },
   ]
 
   const subNucleons: SubNucleon[] = [
@@ -335,8 +340,8 @@ function computeChainReaction(time: number): ChainReactionPhysicsResult {
 
   const neutrons: ChainNeutron[] = []
 
-  if (time < 1.0) {
-    const progress = time / 1.0
+  if (time < CHAIN_REACTION_TIMING.gen1Hit) {
+    const progress = time / CHAIN_REACTION_TIMING.gen1Hit
     neutrons.push({
       id: 'init-n',
       x: -5.0 + (chainReactors[0].x - -5.0) * progress,
@@ -344,8 +349,10 @@ function computeChainReaction(time: number): ChainReactionPhysicsResult {
     })
   }
 
-  if (time >= 1.5 && time < 2.8) {
-    const progress = (time - 1.5) / 1.3
+  if (time >= CHAIN_REACTION_TIMING.gen1Fission && time < CHAIN_REACTION_TIMING.gen2Hit) {
+    const progress =
+      (time - CHAIN_REACTION_TIMING.gen1Fission) /
+      (CHAIN_REACTION_TIMING.gen2Hit - CHAIN_REACTION_TIMING.gen1Fission)
     const startX = chainReactors[0].x
     const startY = chainReactors[0].y
     chainReactors.slice(1, 4).forEach((target, idx) => {
@@ -357,8 +364,10 @@ function computeChainReaction(time: number): ChainReactionPhysicsResult {
     })
   }
 
-  if (time >= 3.3 && time < 4.6) {
-    const progress = (time - 3.3) / 1.3
+  if (time >= CHAIN_REACTION_TIMING.gen2Fission && time < CHAIN_REACTION_TIMING.gen3Hit) {
+    const progress =
+      (time - CHAIN_REACTION_TIMING.gen2Fission) /
+      (CHAIN_REACTION_TIMING.gen3Hit - CHAIN_REACTION_TIMING.gen2Fission)
     const sourceReactors = chainReactors.slice(1, 4)
     const targetReactors = chainReactors.slice(4, 13)
 
@@ -375,8 +384,8 @@ function computeChainReaction(time: number): ChainReactionPhysicsResult {
     })
   }
 
-  if (time >= 5.1) {
-    const progress = Math.min(1, (time - 5.1) / 2.0)
+  if (time >= CHAIN_REACTION_TIMING.gen3Fission) {
+    const progress = Math.min(1, (time - CHAIN_REACTION_TIMING.gen3Fission) / 2.0)
     const targetReactors = chainReactors.slice(4, 13)
     targetReactors.forEach((src, idx) => {
       const angles = [-0.4, 0, 0.4]

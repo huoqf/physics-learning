@@ -7,10 +7,12 @@ import { calcUniformDecelLine } from './modes/uniformDecelLine'
 import { calcConstantAngleCurve } from './modes/constantAngleCurve'
 import { calcProjectileLike } from './modes/projectileLike'
 import { calcUniformCircular } from './modes/uniformCircular'
-import { calcVariableCircular } from './modes/variableCircular'
+import { calcVariableCircular, findVariableCircularEvents } from './modes/variableCircular'
 import { calcSimpleHarmonic } from './modes/simpleHarmonic'
 import { calcLinearVariableForce } from './modes/linearVariableForce'
-import { calcTerminalVariableForce } from './modes/terminalVariableForce'
+import { calcTerminalVariableForce, findTerminalVariableForceTime } from './modes/terminalVariableForce'
+import { finalizeCriticalPoints, type RawCriticalPoint } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 export type { ForceMotionMode, ForceMotionState, ForceMotionSample } from './types'
 
@@ -194,4 +196,94 @@ export function getForceMotionDefaultEnv(modeIndex: number): number {
     case 9: return 100
     default: return GRAVITY
   }
+}
+
+/**
+ * 力与运动专题（anim-force-motion-topic）全模式临界时刻计算（SSOT）。
+ */
+export function getForceMotionCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 60,
+): CriticalTimePoint[] {
+  const mode = getForceMotionMode(params.mode)
+  const m = clampPositive(params.m ?? 2, 2)
+  const v0 = Number.isFinite(params.v0) ? params.v0 ?? 0 : 0
+  const theta = Number.isFinite(params.theta) ? params.theta ?? 0 : 0
+  const raw: RawCriticalPoint[] = []
+
+  switch (mode) {
+    case 'uniform-decel-line': {
+      const F = clampPositive(params.env1 ?? 10, 10)
+      const aMag = F / m
+      if (v0 > 1e-6 && aMag > 1e-6) {
+        raw.push({
+          rawTime: v0 / aMag,
+          align: 'before',
+          label: '⚡ 减速停稳 (v = 0)',
+          variant: 'critical',
+          autoPause: true,
+        })
+      }
+      break
+    }
+    case 'constant-angle-curve': {
+      const g = clampPositive(params.env1 ?? GRAVITY, GRAVITY)
+      const vy0 = v0 * Math.sin((theta * Math.PI) / 180)
+      if (vy0 > 1e-4) {
+        const tTop = vy0 / g
+        raw.push({ rawTime: tTop, align: 'after', label: '⚡ 斜抛最高点 (v_y = 0)', variant: 'warning', autoPause: true })
+        raw.push({ rawTime: 2 * tTop, align: 'before', label: '⚡ 落回抛出高度', variant: 'critical', autoPause: true })
+      }
+      break
+    }
+    case 'uniform-circular': {
+      const R = clampPositive(params.env1 ?? 5, 5)
+      if (Math.abs(v0) > 1e-6) {
+        const T = (2 * Math.PI * R) / Math.abs(v0)
+        raw.push({ rawTime: T / 2, align: 'nearest', label: '半周反相位置', variant: 'info', autoPause: false })
+        raw.push({ rawTime: T, align: 'nearest', label: '完成 1 个圆周周期 T', variant: 'info', autoPause: false })
+      }
+      break
+    }
+    case 'variable-circular': {
+      const R = clampPositive(params.env1 ?? 5, 5)
+      const model = (params.env2 ?? 0) > 0.5 ? 'rod' : 'rope'
+      const ev = findVariableCircularEvents(v0, m, R, model, maxTime)
+      if (ev.slackTime) {
+        raw.push({ rawTime: ev.slackTime, align: 'after', label: '⚡ 绳松弛脱离圆周', variant: 'critical', autoPause: true })
+      }
+      if (ev.swingPeakTime) {
+        raw.push({ rawTime: ev.swingPeakTime, align: 'nearest', label: '⚡ 摆动最高点 (v = 0)', variant: 'critical', autoPause: true })
+      }
+      if (ev.loopTopTime) {
+        raw.push({ rawTime: ev.loopTopTime, align: 'nearest', label: '首次经过圆周最高点', variant: 'warning', autoPause: false })
+      }
+      if (ev.loopFullTime) {
+        raw.push({ rawTime: ev.loopFullTime, align: 'nearest', label: '完成 1 个竖直圆周期', variant: 'info', autoPause: false })
+      }
+      break
+    }
+    case 'simple-harmonic': {
+      const k = clampPositive(params.env1 ?? 60, 60)
+      const T = 2 * Math.PI * Math.sqrt(m / k)
+      raw.push({ rawTime: T / 4, align: 'nearest', label: '首次最大位移 (T/4)', variant: 'warning', autoPause: false })
+      raw.push({ rawTime: T / 2, align: 'nearest', label: '首次回到平衡位置 (T/2)', variant: 'info', autoPause: false })
+      raw.push({ rawTime: T, align: 'nearest', label: '完成 1 个简谐周期 T', variant: 'info', autoPause: false })
+      break
+    }
+    case 'terminal-variable-force': {
+      const P = clampPositive(params.env1 ?? 100, 100)
+      const kf = clampPositive(params.env2 ?? 4, 4)
+      const subMode = (params.env3 ?? 0) > 0.5 ? 'drag' : 'power'
+      const tTerm = findTerminalVariableForceTime(v0, m, P, kf, subMode, maxTime)
+      if (tTerm) {
+        raw.push({ rawTime: tTerm, align: 'after', label: '⚡ 趋近收尾速度', variant: 'critical', autoPause: true })
+      }
+      break
+    }
+    default:
+      break
+  }
+
+  return finalizeCriticalPoints(raw, maxTime)
 }

@@ -1,6 +1,13 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
 import { getChargeInBFieldCriticalTimes } from '@/physics/magnetism/forces'
+import { getAmpereForceCriticalTimes } from '@/physics/magnetism/ampereForce'
+import { getLorentzForceCriticalTimes } from '@/physics/magnetism/velocitySelector'
+import {
+  computeCircularGeometryOrbit,
+  getMagneticCircularGeomCriticalTimes,
+  type MagBoundaryType,
+} from '@/physics/magnetism/circularGeometry'
 
 // ===== 电磁学 · 磁场（[M4-1]）=====
 export const electromagnetismMagnetismAnimations = defineAnimations({
@@ -9,6 +16,7 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
     knowledgeId: 'electricity-3-1',
     Component: lazy(() => import('@/features/electromagnetism/magnetism/AmpereForce')),
     controlsMode: 'timed' as const,
+    criticalTimes: (p) => getAmpereForceCriticalTimes(p, 30),
     controlMeta: [
       { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础：直交规律' }, { value: 1, label: '进阶：斜面平衡' }] },
@@ -49,6 +57,8 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
     title: '洛伦兹力 F=qvB',
     knowledgeId: 'electricity-3-2',
     Component: lazy(() => import('@/features/electromagnetism/magnetism/VelocitySelector')),
+    controlsMode: (p) => ((p.mode ?? 0) === 0 ? 'timed' as const : 'loop' as const),
+    criticalTimes: (p) => getLorentzForceCriticalTimes(p, 30),
     defaultParams: {
       mode: 0,
       q: 1.0,
@@ -158,6 +168,15 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
     CenterExtra: lazy(() => import('@/features/electromagnetism/magnetism/CircularGeometryModel/CircularGeometryModelExtra')),
     centerLayout: 'splitH',
     controlsMode: 'timed' as const,
+    maxTime: (p) =>
+      computeCircularGeometryOrbit({
+        particleSign: p.particleSign ?? 1,
+        velocity: p.velocity ?? 3.0,
+        angleDeg: p.angle ?? 60,
+        B: p.magneticB ?? 1.0,
+        boundaryType: (p.boundaryType ?? 0) as MagBoundaryType,
+      }).tOut + 2.0,
+    criticalTimes: (p) => getMagneticCircularGeomCriticalTimes(p),
     controlMeta: [
       { type: 'segmented', key: 'boundaryType', label: '磁场边界', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '单边界' }, { value: 1, label: '矩形边界' }, { value: 2, label: '圆形边界' }] },

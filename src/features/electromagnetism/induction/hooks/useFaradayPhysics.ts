@@ -4,20 +4,20 @@
  * 从 FaradayLaw.tsx 拆分：所有物理计算、图表数据、电路路径、电子位置。
  */
 import { useMemo, useCallback } from 'react'
-import { computeFaradayMagnetFlux, FaradayChartPoint } from '@/physics/electromagnetism'
+import { computeFaradayMagnetFlux, FARADAY_SCENE_CONSTANTS, FaradayChartPoint } from '@/physics/electromagnetism'
 
-// ─── 物理与几何常量 ─────────────────────────────────────────────────────────
-export const MAGNET_MIN_X = 60
-export const COIL_X = 220
+// ─── 物理与几何常量（统一从物理层真源读取） ───────────────────────────────
+export const MAGNET_MIN_X = FARADAY_SCENE_CONSTANTS.magnetMinX
+export const COIL_X = FARADAY_SCENE_CONSTANTS.coilX
 export const COIL_RX = 35
 export const COIL_RY = 60
-export const MAGNET_LEN = 100
+export const MAGNET_LEN = FARADAY_SCENE_CONSTANTS.magnetLen
 export const MAGNET_H = 30
-export const MAGNET_MAX_X = 360
-export const RANGE_X = MAGNET_MAX_X - MAGNET_MIN_X
+export const MAGNET_MAX_X = FARADAY_SCENE_CONSTANTS.magnetMaxX
+export const RANGE_X = FARADAY_SCENE_CONSTANTS.rangeX
 
-export const COIL_AREA_M2 = 0.02
-export const CHART_DURATION = 10
+export const COIL_AREA_M2 = FARADAY_SCENE_CONSTANTS.coilAreaM2
+export const CHART_DURATION = FARADAY_SCENE_CONSTANTS.chartDuration
 export const CHART_STEPS = 120
 
 // ─── 辅助计算函数 ──────────────────────────────────────────────────────────

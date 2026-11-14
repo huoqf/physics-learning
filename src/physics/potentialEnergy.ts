@@ -1,3 +1,6 @@
+import { finalizeCriticalPoints, type RawCriticalPoint } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 /**
  * src/physics/potentialEnergy.ts
  * 重力势能与弹性势能物理计算模块 — 纯函数，无副作用
@@ -195,4 +198,54 @@ export function getPEStateAtTime(
     W: p0.W + (p1.W - p0.W) * ratio,
     deltaEp: p0.deltaEp + (p1.deltaEp - p0.deltaEp) * ratio,
   }
+}
+
+/**
+ * 重力势能与弹性势能（anim-potential-energy）临界时刻。
+ */
+export function getPotentialEnergyCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 15,
+): CriticalTimePoint[] {
+  const mode = params.mode ?? 0
+  const m = params.m ?? 2
+  const g = params.g ?? 9.8
+  const y0 = params.y0 ?? 8
+  const y_ref = params.y_ref ?? 3
+  const k = params.k ?? 100
+  const raw: RawCriticalPoint[] = []
+
+  if (mode === 0 && g > 0 && y0 > 0) {
+    if (y0 > y_ref && y_ref >= 0) {
+      raw.push({
+        rawTime: Math.sqrt((2 * (y0 - y_ref)) / g),
+        align: 'nearest',
+        label: '经过零势能面 (Ep = 0)',
+        variant: 'info',
+        autoPause: false,
+      })
+    }
+    const tLand = Math.sqrt((2 * y0) / g)
+    raw.push({
+      rawTime: tLand,
+      align: 'nearest',
+      label: '⚡ 首次触地反弹',
+      variant: 'critical',
+      autoPause: true,
+    })
+    raw.push({
+      rawTime: tLand * 1.7,
+      align: 'nearest',
+      label: '第一次反弹最高点',
+      variant: 'warning',
+      autoPause: false,
+    })
+  } else if (mode === 1 && m > 0 && k > 0) {
+    const T = 2 * Math.PI * Math.sqrt(m / k)
+    raw.push({ rawTime: T / 4, align: 'nearest', label: '首次过平衡位置 (Ep=0, Ek最大)', variant: 'warning', autoPause: false })
+    raw.push({ rawTime: T / 2, align: 'nearest', label: '反向最大形变 (Ek=0, Ep最大)', variant: 'info', autoPause: false })
+    raw.push({ rawTime: T, align: 'nearest', label: '完成 1 个简谐周期 T', variant: 'info', autoPause: false })
+  }
+
+  return finalizeCriticalPoints(raw, maxTime)
 }

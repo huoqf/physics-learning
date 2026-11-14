@@ -4,10 +4,16 @@ import { GRAVITY } from '@/physics/constants'
 import { getVelocityCriticalTimes } from '@/physics/kinematics/velocity'
 import {
   computeChaseMeetingMaxTime,
+  getAccelerationCriticalTimes,
   getChaseMeetingCriticalTimes,
+  getChaseMeetingTimeStages,
 } from '@/physics/kinematics/acceleration'
+import {
+  getKinematicsAdvancedCriticalTimes,
+  getUniformAccelerationCriticalTimes,
+} from '@/physics/kinematics/base'
 import { getFreeFallCriticalTimes, getProjectileCriticalTimes } from '@/physics/kinematics/trajectory'
-import { getVerticalThrowCriticalTimes } from '@/physics/kinematics/vertical-throw'
+import { getVerticalThrowCriticalTimes, getVerticalThrowTimeStages } from '@/physics/kinematics/vertical-throw'
 import { alignCriticalTime } from '@/utils/criticalTime'
 
 export const mechanicsKinematicsAnimations = defineAnimations({
@@ -64,6 +70,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     title: '加速度演示',
     knowledgeId: 'mechanics-1-4',
     Component: lazy(() => import('@/features/mechanics/kinematics/AccelerationAnimation')),
+    criticalTimes: (p) => getAccelerationCriticalTimes(p, 30),
     defaultParams: {
       vA: 200, aB: 5, deltaT: 1,
     } as const,
@@ -89,6 +96,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     Component: lazy(() => import('@/features/mechanics/kinematics/AccelerationCenterExtra')),
     maxTime: (p) => computeChaseMeetingMaxTime(p),
     criticalTimes: (p) => getChaseMeetingCriticalTimes(p, computeChaseMeetingMaxTime(p)),
+    timeStages: (p) => getChaseMeetingTimeStages(p, computeChaseMeetingMaxTime(p)),
     defaultParams: {
       chaseMode: 0,
       vA: 35, deltaX0: 80, t0: 1, aB: 6, vMax: 40,
@@ -144,6 +152,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     title: '匀变速直线运动',
     knowledgeId: 'mechanics-2-1',
     Component: lazy(() => import('@/features/mechanics/kinematics/UniformAccelerationAnimation')),
+    criticalTimes: (p) => getUniformAccelerationCriticalTimes(p, 30),
     defaultParams: { v0: 0, a: 1.5, t: 0, advancedMode: 0, areaMode: 1, splitN: 0, flashPeriod: 1 } as const,
     paramMeta: [
       { key: 'v0', label: '初速度 v₀', min: 0, max: 20, step: 0.1, unit: 'm/s' },
@@ -248,6 +257,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     Component: lazy(() => import('@/features/mechanics/kinematics/VerticalThrowAnimation')),
     controlsMode: 'timed',
     criticalTimes: (p) => getVerticalThrowCriticalTimes(p, 30),
+    timeStages: (p) => getVerticalThrowTimeStages(p, 30),
     defaultParams: { v0: 15, g: GRAVITY, t: 0, advancedMode: 0, sliceDensity: 0, airResistance: 0, targetHeight: 0 } as const,
     paramMeta: [
       { key: 'v0', label: '初速度 v₀', min: 0, max: 30, step: 0.1, unit: 'm/s' },
@@ -506,6 +516,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     title: '运动学图像扩展',
     knowledgeId: 'mechanics-2-4',
     Component: lazy(() => import('@/features/mechanics/kinematics/KinematicsAdvancedAnimation')),
+    criticalTimes: (p) => getKinematicsAdvancedCriticalTimes(p, 30),
     defaultParams: {
       v0: 4.0,
       a: 2.0,

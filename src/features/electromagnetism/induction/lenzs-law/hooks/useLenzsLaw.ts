@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { calculateLenzsLaw, lenzsMagnetVelocityAt } from '@/physics'
+import { calculateLenzsLaw, lenzsMagnetVelocityAt, LENZS_PLAY_DURATION_S } from '@/physics'
 import { useAnimationFrame } from '@/utils/animation'
 
 // 舒展充盈 840×650 视口坐标系下的垂直运动范围与线圈中心
@@ -52,11 +52,10 @@ export function useLenzsLaw() {
     }
   }, [isPlaying, motionMode])
 
-  // 播放结束自动暂停机制 (T = 2秒)
+  // 播放结束自动暂停机制 (T = LENZS_PLAY_DURATION_S)
   useEffect(() => {
     if (isPlaying) {
-      const T = 2
-      if (time >= T) {
+      if (time >= LENZS_PLAY_DURATION_S) {
         setIsPlaying(false)
       }
     }
@@ -120,8 +119,7 @@ export function useLenzsLaw() {
   let velocity = 0
 
   if (isPlaying) {
-    const T = 2
-    const progress = Math.min(1, time / T)
+    const progress = Math.min(1, time / LENZS_PLAY_DURATION_S)
     const smoothK = (1 - Math.cos(progress * Math.PI)) / 2
 
     if (motionMode === 1) {

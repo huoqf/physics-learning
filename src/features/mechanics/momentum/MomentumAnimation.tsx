@@ -16,6 +16,7 @@ import {
   elasticCollision1D,
 } from '@/physics/momentum'
 import { MomentumScene } from './MomentumScene'
+import { MOMENTUM_SCENE_GEOM } from '@/physics/momentum'
 
 /** 动量动画参数范围 */
 const MOMENTUM_PARAM_BOUNDS = {
@@ -25,8 +26,8 @@ const MOMENTUM_PARAM_BOUNDS = {
 
 /** 动量动画布局常量 */
 export const MOMENTUM_LAYOUT = {
-  steelBallBaseRadius: 14,
-  massRadiusScale: 1.8,
+  steelBallBaseRadius: MOMENTUM_SCENE_GEOM.steelBallBaseRadius,
+  massRadiusScale: MOMENTUM_SCENE_GEOM.massRadiusScale,
   canvasPadding: 60,
   vectorMaxLength: 90,
   momentumBarMaxHeight: 80,
@@ -40,7 +41,7 @@ export const MOMENTUM_LAYOUT = {
   ballAboveGround: 40,
   momentumAxisY: 45,
   totalMomentumAxisY: 60,
-  velocityScale: 25,
+  velocityScale: MOMENTUM_SCENE_GEOM.velocityScale,
   cyclePeriod: 6,
 } as const
 

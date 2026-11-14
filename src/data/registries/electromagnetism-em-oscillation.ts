@@ -336,6 +336,7 @@ const sharedVisual = {
     return 'timed' as const // 场次 0（开关接 2，LC 振荡）使用 timed，全面激活进度条、关键相位吸附与定格分析
   },
   maxTime: lcMaxTime,
+  criticalTimes: lcCriticalTimes,
   enableFrameStep: true,
   CenterExtra: lazy(() => import('@/features/electromagnetism/em-oscillation/EMOscillationCenterExtra')),
   centerLayout: 'splitV' as const,
@@ -350,7 +351,6 @@ export const electromagnetismEmOscillationAnimations = defineAnimations({
     defaultParams: { ...sharedParams, scene: 0 } as const,
     paramMeta: sharedParamMeta,
     controlMeta: sharedControlMeta,
-    criticalTimes: lcCriticalTimes,
     ...sharedVisual,
   },
 

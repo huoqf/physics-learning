@@ -1,5 +1,10 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
+import {
+  getExperimentMechanicalEnergyCriticalTimes,
+  getMechanicsExperimentBaseCriticalTimes,
+} from '@/physics/experimentMechanics'
+import { getExperimentNewtonSecondCriticalTimes } from '@/physics/experimentNewtonSecond'
 
 /**
  * 高考力学实验基础 - 动画注册表
@@ -10,6 +15,7 @@ export const mechanicsExperimentAnimations = defineAnimations({
     knowledgeId: 'experiment-1-1',
     Component: lazy(() => import('@/features/mechanics/experiment/MechanicsExperimentAnimation')),
     controlsMode: 'timed',
+    criticalTimes: (p) => getMechanicsExperimentBaseCriticalTimes(p, 30),
     defaultParams: {
       mode: 0,
       v0: 1.0,
@@ -106,6 +112,7 @@ export const mechanicsExperimentAnimations = defineAnimations({
     knowledgeId: 'experiment-2-1',
     Component: lazy(() => import('@/features/mechanics/experiment/ExperimentNewtonSecondAnimation')),
     controlsMode: 'timed',
+    criticalTimes: (p) => getExperimentNewtonSecondCriticalTimes(p, 30),
     defaultParams: {
       mode: 0,
       M_cart: 0.4,
@@ -216,6 +223,7 @@ export const mechanicsExperimentAnimations = defineAnimations({
     knowledgeId: 'experiment-2-2',
     Component: lazy(() => import('@/features/mechanics/experiment/ExperimentMechanicalEnergyAnimation')),
     controlsMode: 'timed',
+    criticalTimes: (p) => getExperimentMechanicalEnergyCriticalTimes(p, 30),
     defaultParams: {
       freq: 50,
       m: 0.2,

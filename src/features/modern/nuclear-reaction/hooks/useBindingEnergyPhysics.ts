@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { BINDING_ENERGY_TIMING } from '@/physics/chainReaction'
 import type { NuclearParticle } from '../model/constants'
 import type { NuclideData } from '../model/constants'
 
@@ -44,14 +45,16 @@ export function useBindingEnergyPhysics(
     const ropeH = 1.2
     const plateY = -0.8
 
-    const tCombineStart = 3.5
-    const tCombineEnd = 4.5
+    const tCombineStart = BINDING_ENERGY_TIMING.combineStart
+    const tCombineEnd = BINDING_ENERGY_TIMING.combineEnd
     const isBound = time >= tCombineEnd
     const isCombining = time >= tCombineStart && time < tCombineEnd
 
-    const showFlash = time >= 4.3 && time <= 4.8
-    const showPhotonEmitted = time >= 4.4 && time < 5.8
-    const photonProgress = showPhotonEmitted ? (time - 4.4) / 1.4 : 0
+    const showFlash = time >= BINDING_ENERGY_TIMING.flashStart && time <= BINDING_ENERGY_TIMING.flashEnd
+    const showPhotonEmitted = time >= BINDING_ENERGY_TIMING.photonStart && time < BINDING_ENERGY_TIMING.photonEnd
+    const photonProgress = showPhotonEmitted
+      ? (time - BINDING_ENERGY_TIMING.photonStart) / (BINDING_ENERGY_TIMING.photonEnd - BINDING_ENERGY_TIMING.photonStart)
+      : 0
 
     // 计算天平倾斜角 (balanceAngle，度数)
     let balanceAngle = 0

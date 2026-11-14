@@ -1,9 +1,13 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
 import { GRAVITY } from '@/physics/constants'
-import { getBoardTimeline } from '@/physics/blockBoard'
-import { getConveyorCriticalTimes } from '@/physics/conveyor'
+import { getBoardTimeline, getBoardTimeStages } from '@/physics/blockBoard'
+import { getConveyorCriticalTimes, getConveyorTimeStages } from '@/physics/conveyor'
 import { getLightWeightMutationCriticalTimes, getSpringForceCriticalTimes } from '@/physics/dynamics/spring-force'
+import { getInclinedPlaneCriticalTimes } from '@/physics/inclined_plane'
+import { getNewtonSecondCriticalTimes, getWeightlessnessCriticalTimes } from '@/physics/dynamics/dynamics-advanced'
+import { getSystemIsolatedCriticalTimes } from '@/physics/systemIsolated'
+import { getConnectedBodiesCriticalTimes } from '@/physics/dynamics/connected-body'
 import { alignCriticalTime } from '@/utils/criticalTime'
 
 export const mechanicsDynamicsAnimations = defineAnimations({
@@ -11,7 +15,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '弹力演示',
     knowledgeId: 'mechanics-3-2',
     Component: lazy(() => import('@/features/mechanics/dynamics/SpringForceAnimation')),
-    controlsMode: 'timed',
+    controlsMode: (p) => ((p.mode ?? 0) === 0 ? 'timed' : 'param'),
     criticalTimes: (p) => getSpringForceCriticalTimes(p, 5),
     defaultParams: { mode: 0, k: 100, m: 1.5, kAtoms: 120, kRope: 150 } as const,
     maxTime: 5,
@@ -215,6 +219,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     CenterExtra: lazy(() => import('@/features/mechanics/dynamics/InclinedPlaneCenterExtra')),
     centerLayout: 'splitH',
     controlsMode: 'timed' as const,
+    criticalTimes: (p) => getInclinedPlaneCriticalTimes(p, 30),
     defaultParams: {
       theta: 30,
       mu: 0.3,
@@ -254,6 +259,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     controlsMode: 'timed' as const,
     maxTime: 12, // 观察窗口，须与 ConveyorAnimation 取景时长一致
     criticalTimes: (p) => getConveyorCriticalTimes(p, 12), // 共速/离开，见 physics/conveyor.ts
+    timeStages: (p) => getConveyorTimeStages(p, 12),
     defaultParams: { conveyorMode: 0, vBelt: 3.0, v0: 0, mu: 0.2, L: 6, x0Ratio: 0, showSyncLine: 1, showScratch: 1 } as const,
     paramMeta: [
       { key: 'vBelt', label: '传送带速度 v带', min: -5, max: 5, step: 0.5, unit: 'm/s', importance: 'core' },
@@ -539,6 +545,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '牛顿第二定律',
     knowledgeId: 'mechanics-4-2',
     Component: lazy(() => import('@/features/mechanics/dynamics/NewtonSecondAnimation')),
+    criticalTimes: (p) => getNewtonSecondCriticalTimes(p, 30),
     defaultParams: { F: 10, m: 2, mu: 0, advancedMode: 0, modelIdx: 0, k: 2, F0: 15, omega: 1.5 } as const,
     paramMeta: [
       { key: 'F', label: '拉力 F', min: 0, max: 50, step: 1, unit: 'N', showIf: 'advancedMode', showIfValue: 0 },
@@ -584,6 +591,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '超重与失重',
     knowledgeId: 'mechanics-4-4',
     Component: lazy(() => import('@/features/mechanics/dynamics/WeightlessnessAnimation')),
+    criticalTimes: (p) => getWeightlessnessCriticalTimes(p, 30),
     defaultParams: { a: 2, g: GRAVITY, m: 50, advancedMode: 0, modelIdx: 0 } as const,
     paramMeta: [
       { key: 'a', label: '电梯加速度 a', min: -10, max: 10, step: 0.5, unit: 'm/s²', showIf: 'advancedMode', showIfValue: 0 },
@@ -610,6 +618,8 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '连接体问题',
     knowledgeId: 'mechanics-4-5',
     Component: lazy(() => import('@/features/mechanics/dynamics/ConnectedBodiesAnimation')),
+    controlsMode: 'timed' as const,
+    criticalTimes: (p) => getConnectedBodiesCriticalTimes(p, 30),
     defaultParams: { m1: 2, m2: 3, F: 15, mu: 0.1, advancedMode: 0, analysisView: 0, connectionType: 0 } as const,
     paramMeta: [
       { key: 'm1', label: '质量 m₁', min: 1, max: 10, step: 0.5, unit: 'kg' },
@@ -643,6 +653,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '方法论：整体法与隔离法',
     knowledgeId: 'mechanics-4-method-1',
     Component: lazy(() => import('@/features/mechanics/dynamics/SystemIsolatedMethodologyAnimation')),
+    criticalTimes: (p) => getSystemIsolatedCriticalTimes(p, 30),
     defaultParams: { modelType: 0, analysisView: 0, activeObject: 0, m1: 2, m2: 4, F: 15, theta: 30, mu: 0.15 } as const,
     paramMeta: [
       { key: 'm1', label: '质量 m₁/m', min: 1, max: 10, step: 0.5, unit: 'kg' },
@@ -734,6 +745,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     centerLayout: 'splitV',
     controlsMode: 'timed',
     maxTime: 8,
+    timeStages: (p) => getBoardTimeStages({ m: p.m, M: p.M, mu1: p.mu1, mu2: p.mu2, v0: p.v0, L: p.L }, 8),
     criticalTimes: (p) => {
       /*
        * 时刻只留一个真源：直接取物理层的阶段分界（getBoardTimeline）。

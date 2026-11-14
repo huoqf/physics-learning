@@ -1,3 +1,6 @@
+import { finalizeCriticalPoints, type RawCriticalPoint } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 /**
  * src/physics/power.ts
  * 汽车起动模型物理计算 — 纯函数，无副作用
@@ -255,4 +258,56 @@ export function calculateConstantAccelParams(
   const t_c = v_c / a_target
   const v_max = P_rated / f
   return { F_const, v_c, t_c, v_max }
+}
+
+/**
+ * 功率与机车启动（anim-power）临界时刻。
+ */
+export function getPowerCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const mode = params.mode ?? 0
+  const P = params.P ?? 60000
+  const m = params.m ?? 2000
+  const f = params.f ?? 2000
+  const a = params.a ?? 1.5
+  if (!(P > 0) || !(m > 0) || !(f > 0)) return []
+
+  const raw: RawCriticalPoint[] = []
+  if (mode === 0) {
+    const vLimit = P / (3 * f)
+    const aMax = (2 * f) / m
+    if (aMax > 0) {
+      raw.push({
+        rawTime: vLimit / aMax,
+        align: 'after',
+        label: '低速限流结束→进入恒功率加速',
+        variant: 'info',
+        autoPause: false,
+      })
+    }
+    const pts = precomputeConstantPowerTrajectory(P, m, f, maxTime, 0.05)
+    const vMax = P / f
+    const nearTerm = pts.find((pt) => pt.v >= 0.98 * vMax)
+    if (nearTerm) {
+      raw.push({
+        rawTime: nearTerm.t,
+        align: 'after',
+        label: '趋近最大速度 v_m (98%)',
+        variant: 'warning',
+        autoPause: false,
+      })
+    }
+  } else if (a > 0) {
+    const { t_c } = calculateConstantAccelParams(P, m, f, a)
+    raw.push({
+      rawTime: t_c,
+      align: 'after',
+      label: '⚡ 达到额定功率 (匀加速→变加速)',
+      variant: 'critical',
+      autoPause: true,
+    })
+  }
+  return finalizeCriticalPoints(raw, maxTime)
 }

@@ -91,3 +91,34 @@ export function calcTerminalVariableForce(
     pauseReason: isTerminal ? 'terminal' : undefined,
   }
 }
+
+/** 单趟积分定位首次接近收尾速度的时刻 */
+export function findTerminalVariableForceTime(
+  v0: number,
+  m: number,
+  firstParam: number,
+  secondParam: number,
+  mode: 'power' | 'drag',
+  maxTime: number,
+): number | null {
+  if (!(secondParam > 1e-6) || !(m > 1e-6)) return null
+  const terminalV = firstParam / secondParam
+  const dt = 0.01
+  let vy = v0
+  const steps = Math.floor(maxTime / dt)
+  for (let i = 1; i <= steps; i++) {
+    const deriv = (_tStep: number, state: number[]) => {
+      if (mode === 'power') {
+        const v = Math.max(Math.abs(state[1]), 0.01)
+        return [state[1], (firstParam / v - secondParam) / m]
+      }
+      return [state[1], (firstParam - secondParam * state[1]) / m]
+    }
+    const next = rk4Step(deriv, (i - 1) * dt, [0, vy], dt)
+    vy = next[1]
+    if (Math.abs(Math.abs(vy) - terminalV) < 0.05) {
+      return i * dt
+    }
+  }
+  return null
+}

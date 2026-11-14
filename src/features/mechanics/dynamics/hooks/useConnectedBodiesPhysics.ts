@@ -12,28 +12,32 @@ import { PX_PER_METER } from '@/utils'
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateConnectedBody, calculateConnectedBodyTimeline, GRAVITY } from '@/physics'
+import {
+  CONNECTED_BODY_ADVANCED_DURATION,
+  CONNECTED_BODY_TRAVEL_CONSTANTS,
+} from '@/physics/dynamics/connected-body'
 
 /** 连接体场景布局常量 */
 const LAYOUT = {
   groundOffset: 80,
-  blockMaxWidth: 65,
+  blockMaxWidth: CONNECTED_BODY_TRAVEL_CONSTANTS.blockMaxWidth,
   blockWidthRatio: 0.11,
   blockMaxHeight: 50,
   blockHeightRatio: 0.13,
   wheelRadius: 6,
-  springMaxStretchRatio: 0.7,
+  springMaxStretchRatio: CONNECTED_BODY_TRAVEL_CONSTANTS.springMaxStretchRatio,
   ropeMinLength: 40,
-  ropeLengthRatio: 0.12,
-  startXRatio: 0.15,
-  endXRatio: 0.85,
+  ropeLengthRatio: CONNECTED_BODY_TRAVEL_CONSTANTS.ropeLengthRatio,
+  startXRatio: CONNECTED_BODY_TRAVEL_CONSTANTS.startXRatio,
+  endXRatio: CONNECTED_BODY_TRAVEL_CONSTANTS.endXRatio,
 }
 
 /** 弹簧视觉动效参数（非严格物理量，仅用于动画表现） */
 const SPRING_VISUAL = {
   visualOmega: 11.5,
   visualDamping: 1.6,
-  tensionToStretchScale: 11,
-  stretchVisualScale: 15,
+  tensionToStretchScale: CONNECTED_BODY_TRAVEL_CONSTANTS.tensionToStretchScale,
+  stretchVisualScale: CONNECTED_BODY_TRAVEL_CONSTANTS.stretchVisualScale,
 }
 
 export interface ConnectedBodiesPhysicsResult {
@@ -171,10 +175,14 @@ export function useConnectedBodiesPhysics(): ConnectedBodiesPhysicsResult {
   if (advancedMode === 0) {
     effectiveTime = maxDisplacementTime !== Infinity && time >= maxDisplacementTime ? maxDisplacementTime : time
   } else {
-    effectiveTime = Math.min(time, 4.0)
+    effectiveTime = Math.min(time, CONNECTED_BODY_ADVANCED_DURATION)
   }
 
-  const isMoving = isPlaying && time > 0 && (advancedMode === 0 ? time < maxDisplacementTime : time < 4.0) && isMovingPhysically
+  const isMoving =
+    isPlaying &&
+    time > 0 &&
+    (advancedMode === 0 ? time < maxDisplacementTime : time < CONNECTED_BODY_ADVANCED_DURATION) &&
+    isMovingPhysically
 
   // 自动停止播放
   useEffect(() => {
@@ -184,7 +192,7 @@ export function useConnectedBodiesPhysics(): ConnectedBodiesPhysicsResult {
         setIsPlaying(false)
       }
     } else {
-      if (time >= 4.0) {
+      if (time >= CONNECTED_BODY_ADVANCED_DURATION) {
         setIsPlaying(false)
       }
     }
@@ -192,7 +200,14 @@ export function useConnectedBodiesPhysics(): ConnectedBodiesPhysicsResult {
 
   // 4. 物理位移→像素映射
   const timeline = calculateConnectedBodyTimeline(m1, m2, F, mu, GRAVITY, effectiveTime)
-  const maxTimeline = calculateConnectedBodyTimeline(m1, m2, F, mu, GRAVITY, advancedMode === 0 ? maxDisplacementTime : 4.0)
+  const maxTimeline = calculateConnectedBodyTimeline(
+    m1,
+    m2,
+    F,
+    mu,
+    GRAVITY,
+    advancedMode === 0 ? maxDisplacementTime : CONNECTED_BODY_ADVANCED_DURATION,
+  )
   const dispX = maxTimeline.s > 0.001 ? (timeline.s / maxTimeline.s) * maxTravel : 0
 
   const m1X = startX + dispX

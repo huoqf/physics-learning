@@ -1,12 +1,15 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
-import { SANDBOX_ENERGY_LIMIT } from '@/physics/firstLaw'
+import { CYCLE_DURATION, getFirstLawCriticalTimes, SANDBOX_ENERGY_LIMIT } from '@/physics/firstLaw'
 
 export const thermodynamicsFirstLawAnimations = defineAnimations({
   'anim-first-law': {
     title: '热力学第一定律（能量守恒）',
     knowledgeId: 'thermodynamics-3-1',
     Component: lazy(() => import('@/features/thermodynamics/firstLaw/FirstLawAnimation')),
+    controlsMode: (p) => ((p.mode ?? 0) === 1 ? 'timed' as const : 'loop' as const),
+    maxTime: (p) => ((p.mode ?? 0) === 1 ? CYCLE_DURATION : undefined),
+    criticalTimes: (p) => getFirstLawCriticalTimes(p, CYCLE_DURATION),
     defaultParams: {
       mode: 0,
       W: 0,

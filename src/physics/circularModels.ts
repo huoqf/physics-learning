@@ -5,6 +5,8 @@
  */
 
 import { GRAVITY } from './constants'
+import { finalizeCriticalPoints } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 export interface ConicalPendulumState {
   /** 是否存在非零稳定圆锥摆解 */
@@ -246,5 +248,44 @@ export function calculateDiskSlippingState(
     friction: 0,    // 飞出后无摩擦力
     opacity,
   }
+}
+
+/**
+ * 圆盘与圆锥摆模型（anim-circular-models）临界时刻。
+ */
+export function getCircularModelsCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const modelMode = params.modelMode ?? 0
+  const omega = params.omega ?? 3.0
+  const L = params.L ?? 1.0
+  const r = params.r ?? 0.8
+  const mu = params.mu ?? 0.4
+  if (!(omega > 1e-6)) return []
+  const T = (2 * Math.PI) / omega
+  if (modelMode === 0) {
+    const minOmega = Math.sqrt(GRAVITY / Math.max(1e-4, L))
+    if (omega <= minOmega) return []
+    return finalizeCriticalPoints(
+      [{ rawTime: T, align: 'nearest', label: '圆锥摆转动一周', variant: 'info', autoPause: false }],
+      maxTime,
+    )
+  }
+  const criticalOmega = Math.sqrt((mu * GRAVITY) / Math.max(1e-4, r))
+  if (omega <= criticalOmega) {
+    return finalizeCriticalPoints(
+      [{ rawTime: T, align: 'nearest', label: '随圆盘转动一周', variant: 'info', autoPause: false }],
+      maxTime,
+    )
+  }
+  const aSlip = Math.max(0.1, omega * omega * r - mu * GRAVITY)
+  const tFly = Math.sqrt(Math.max(0, (2 * Math.max(0, 2.0 - r)) / aSlip))
+  return finalizeCriticalPoints(
+    [
+      { rawTime: tFly, align: 'after', label: '⚡ 滑块飞出圆盘边缘', variant: 'critical', autoPause: true },
+    ],
+    maxTime,
+  )
 }
 

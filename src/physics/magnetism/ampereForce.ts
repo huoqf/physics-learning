@@ -6,6 +6,8 @@
  * @agent-rule 见 docs/agent-rules/core/ARCHITECTURE_RULES.md §4
  */
 import { GRAVITY } from '../constants'
+import { finalizeCriticalPoints } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 /** 基础模式（直交规律）场景参数 */
 export const AMPERE_BASIC_SCENE = {
@@ -304,4 +306,66 @@ export function solveAdvancedAmpere(
   }
 
   return { F_ampere, F_ampere_x, F_ampere_y, N, f, a, x, state, isLimited, R_parallel, I_min, I_max }
+}
+
+export interface AmpereForceCriticalParams {
+  mode?: number
+  I?: number
+  B?: number
+  L?: number
+  thetaIB?: number
+  theta?: number
+  mu?: number
+  bFieldDir?: number
+}
+
+/**
+ * 计算安培力导轨滑行边界临界时刻（SSOT）
+ */
+export function getAmpereForceCriticalTimes(
+  params: AmpereForceCriticalParams = {},
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const mode = params.mode ?? 0
+  const I = params.I ?? 2.0
+  const B = params.B ?? 1.0
+  const L = params.L ?? 4.0
+
+  if (mode === 0) {
+    const res = solveBasicAmpere(I, B, params.thetaIB ?? 90, L, AMPERE_BASIC_SCENE.mass, 0, AMPERE_BASIC_SCENE)
+    if (Math.abs(res.a) <= 1e-6) return []
+    const halfSpan = (AMPERE_BASIC_SCENE.xMax - AMPERE_BASIC_SCENE.xMin) / 2
+    const tLimit = Math.sqrt((2 * halfSpan) / Math.abs(res.a))
+    return finalizeCriticalPoints(
+      [{ rawTime: tLimit, align: 'before', label: '导体棒滑至导轨边界', variant: 'warning', autoPause: true }],
+      maxTime,
+    )
+  }
+
+  const res = solveAdvancedAmpere(
+    I,
+    B,
+    params.theta ?? 30,
+    params.mu ?? 0.2,
+    params.bFieldDir ?? 0,
+    L,
+    AMPERE_ADVANCED_SCENE.mass,
+    0,
+    AMPERE_ADVANCED_SCENE,
+  )
+  if (Math.abs(res.a) <= 1e-6) return []
+  const halfSpan = (AMPERE_ADVANCED_SCENE.xMax - AMPERE_ADVANCED_SCENE.xMin) / 2
+  const tLimit = Math.sqrt((2 * halfSpan) / Math.abs(res.a))
+  return finalizeCriticalPoints(
+    [
+      {
+        rawTime: tLimit,
+        align: 'before',
+        label: res.state === 'sliding-up' ? '上滑抵达导轨极限' : '下滑抵达导轨极限',
+        variant: 'warning',
+        autoPause: true,
+      },
+    ],
+    maxTime,
+  )
 }

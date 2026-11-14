@@ -93,3 +93,44 @@ export function calcVariableCircular(
     isTerminal: false,
   }
 }
+
+/** 扫描竖直圆周临界事件（脱轨 / 摆动最高点 / 首次过顶与一周期） */
+export function findVariableCircularEvents(
+  v0: number,
+  m: number,
+  R: number,
+  model: 'rope' | 'rod',
+  maxTime: number,
+): { slackTime?: number; swingPeakTime?: number; loopTopTime?: number; loopFullTime?: number } {
+  if (!(R > 1e-6) || !(Math.abs(v0) > 1e-6)) return {}
+  const g = GRAVITY
+  const dt = 0.002
+  let theta = 0
+  let omega = v0 / R
+  let prevOmega = omega
+  const limit = Math.min(maxTime, 30)
+  let loopTopTime: number | undefined
+  let swingPeakTime: number | undefined
+
+  for (let curT = 0; curT <= limit; curT += dt) {
+    const v = omega * R
+    const tension = m * ((v * v) / R + g * Math.cos(theta))
+    if (model === 'rope' && tension <= 0 && curT > 0) {
+      return { slackTime: curT }
+    }
+    if (swingPeakTime == null && prevOmega > 0 && omega <= 0 && curT > 0) {
+      swingPeakTime = curT
+      return { swingPeakTime }
+    }
+    if (loopTopTime == null && theta >= Math.PI) {
+      loopTopTime = curT
+    }
+    if (theta >= 2 * Math.PI) {
+      return { loopTopTime, loopFullTime: curT }
+    }
+    prevOmega = omega
+    omega += -(g / R) * Math.sin(theta) * dt
+    theta += omega * dt
+  }
+  return { loopTopTime }
+}

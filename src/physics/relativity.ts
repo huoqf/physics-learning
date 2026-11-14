@@ -11,6 +11,9 @@
  * 所有函数均为纯函数，无 React/DOM 依赖。
  */
 
+import { finalizeCriticalPoints } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 /** 光速常数 c (m/s) */
 export const SPEED_OF_LIGHT = 299792458
 
@@ -93,4 +96,23 @@ export function calcRelativisticVelocityAddition(v1: number, v2: number): number
   if (Math.abs(denom) < 1e-12) return 1
   const result = (v1 + v2) / denom
   return Math.min(Math.max(result, -0.9999), 0.9999)
+}
+
+/**
+ * 狭义相对论（anim-relativity）钟慢光钟周期对照临界点。
+ */
+export function getRelativityCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  if ((params.mode ?? 0) !== 0) return []
+  const gamma = calcLorentzFactor(params.beta ?? 0.6)
+  return finalizeCriticalPoints(
+    [
+      { rawTime: gamma, align: 'nearest', label: '地面系光钟达顶镜 (γ·τ₀)', variant: 'info', autoPause: false },
+      { rawTime: 2.0, align: 'nearest', label: '飞船固有光钟完成 1 周期 (2 s)', variant: 'warning', autoPause: false },
+      { rawTime: 2 * gamma, align: 'nearest', label: '地面系光钟完成 1 周期 (2γ·τ₀)', variant: 'info', autoPause: false },
+    ],
+    maxTime,
+  )
 }

@@ -1,10 +1,13 @@
 import { useMemo } from 'react'
 import {
   LASER_BEAM_INITIAL_RADIUS_M,
+  LASER_HEAT_DEFAULTS,
+  LASER_MATERIAL_CONFIGS,
   beamRadius,
   halfAngleFromDeg,
   halfAngleFromMrad,
   intensityRatioPercent,
+  simulateLaserTargetHeating,
 } from '@/physics/laser'
 
 interface UseLaserPhysicsParams {
@@ -162,72 +165,14 @@ export function useLaserPhysics({
     // 3. 模式 2：高能量应用 (High Intensity)
     // ==========================================
     if (modeVal === 2) {
-      // 靶材热物理常数配置
-      interface MaterialConfig {
-        name: string
-        T_m: number    // 熔点 (°C)
-        T_b: number    // 沸点/汽化点 (°C)
-        Cv: number     // 有效热容 (J/K)
-        E_melt: number // 熔化所需潜热 (J)
-        E_vap: number  // 汽化 1mm 深度所需潜热 (J)
-        kloss: number  // 散热系数 (W/K)
-      }
-
-      const configMap: Record<number, MaterialConfig> = {
-        0: { name: '纸张', T_m: 0, T_b: 250, Cv: 0.008, E_melt: 0, E_vap: 0.8, kloss: 0.0006 },
-        1: { name: '木板', T_m: 0, T_b: 360, Cv: 0.025, E_melt: 0, E_vap: 2.2, kloss: 0.0012 },
-        2: { name: '铁板', T_m: 1538, T_b: 2750, Cv: 0.16, E_melt: 3.5, E_vap: 15.0, kloss: 0.006 },
-      }
-
-      const mat = configMap[materialVal] || configMap[0]
+      const mat = LASER_MATERIAL_CONFIGS[materialVal] ?? LASER_MATERIAL_CONFIGS[0]
       meltingPoint = mat.T_m
       boilingPoint = mat.T_b
 
-      const T0 = 20 // 初始温度 20°C
-      const dt = 0.01 // 模拟步长 (s)
-      const maxSimTime = 10.0 // 最大模拟时间
-
-      // 焦斑能量密度调节因子：基准焦斑直径为 30μm
-      // 焦斑直径 D 越小，能量密度越爆表 (与 1/D^2 成正比)，升温与汽化剧烈增加
-      const focusDiameterClamped = Math.max(5, focusDiameter)
-      const energyDensityScale = (30 / focusDiameterClamped) ** 1.5
-
-      // 辅助模拟函数：模拟到时间 t 时的温度和切割深度
-      const runSimTo = (targetTime: number) => {
-        let simT = T0
-        let simDepth = 0
-        let simMeltAccum = 0
-        let simMelted = false
-        let simBoiled = false
-
-        const stepsNeeded = Math.floor(targetTime / dt)
-        for (let step = 0; step < stepsNeeded; step++) {
-          const loss = mat.kloss * (simT - T0)
-          const netPower = Math.max(0, (laserPower * 0.85 * energyDensityScale) - loss)
-
-          if (!simMelted && mat.T_m > 0 && simT >= mat.T_m) {
-            // 熔化阶段（保持熔点，吸收潜热）
-            simT = mat.T_m
-            simMeltAccum += netPower * dt
-            if (simMeltAccum >= mat.E_melt) {
-              simMelted = true
-            }
-          } else if (simT >= mat.T_b) {
-            // 汽化阶段（保持沸点，消耗潜热增加汽化深度）
-            simT = mat.T_b
-            simBoiled = true
-            simMelted = true
-            simDepth += (netPower * dt) / mat.E_vap
-          } else {
-            // 升温阶段
-            simT += (netPower * dt) / mat.Cv
-          }
-        }
-        return { simT, simDepth, simMelted, simBoiled }
-      }
+      const maxSimTime = LASER_HEAT_DEFAULTS.maxSimTimeS
 
       // 1. 计算当前时间 time 下的状态
-      const currentSim = runSimTo(time)
+      const currentSim = simulateLaserTargetHeating(materialVal, laserPower, focusDiameter, time)
       temp = currentSim.simT
       meltDepth = currentSim.simDepth
       isMelted = currentSim.simMelted
@@ -237,7 +182,7 @@ export function useLaserPhysics({
       const curveSteps = 100
       for (let i = 0; i <= curveSteps; i++) {
         const t = (i / curveSteps) * maxSimTime
-        const stateAtT = runSimTo(t)
+        const stateAtT = simulateLaserTargetHeating(materialVal, laserPower, focusDiameter, t)
         tempChartPoints.push({ x: t, y: stateAtT.simT })
       }
 

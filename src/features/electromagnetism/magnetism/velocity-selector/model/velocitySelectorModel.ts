@@ -1,4 +1,5 @@
-import { calculateVelocitySelectorTrajectory } from '@/physics'
+import { calculateVelocitySelectorTrajectory, VELOCITY_SELECTOR_PHYSICS } from '@/physics'
+export { VELOCITY_SELECTOR_PHYSICS }
 
 export interface VelocitySelectorParams {
   mode: number
@@ -60,12 +61,6 @@ export interface HandPoseParams {
   middleDir: { x: number; y: number }
   handActive: boolean
 }
-
-export const VELOCITY_SELECTOR_PHYSICS = {
-  plateLength: 5.0,
-  plateGap: 2.0,
-  mass: 1.0,
-} as const
 
 /** 速度选择器滑杆量程（与 registry paramMeta 保持一致） */
 export const VELOCITY_SELECTOR_BOUNDS = {

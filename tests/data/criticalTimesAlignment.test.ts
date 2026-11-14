@@ -6,6 +6,11 @@ import { electromagnetismElectrostaticsAnimations } from '@/data/registries/elec
 import { getBoardTimeline } from '@/physics/blockBoard'
 import { calculateLCConstants } from '@/physics/lcOscillation'
 import { rcTauFromParams, rcWindowFromParams } from '@/physics'
+import {
+  ensureExtendedRegistry,
+  getAllAnimationIds,
+  getAnimationConfig,
+} from '@/data/animationRegistry'
 import { CRITICAL_TIME_STEP } from '@/utils/criticalTime'
 
 /**
@@ -113,5 +118,42 @@ describe('临界时刻 · 必须落在播放条 0.01 s 网格上', () => {
     expect(discharging[0].label).toContain('36.8%')
     expect(discharging[2].label).toContain('放完')
     expect(charging[2].label).toContain('充满')
+  })
+
+  it('全量注册表：所有 timed 动画须提供 criticalTimes 且（除精确读数点外）对齐 0.01s 网格', async () => {
+    await ensureExtendedRegistry()
+    const ids = getAllAnimationIds()
+    expect(ids.length).toBeGreaterThanOrEqual(130)
+
+    const exactTimeExceptions = new Set(['anim-lc-oscillation'])
+
+    for (const id of ids) {
+      const cfg = getAnimationConfig(id)
+      expect(cfg, `${id} 配置缺失`).toBeDefined()
+      if (!cfg) continue
+
+      const params = { ...(cfg.defaultParams ?? {}) } as Record<string, number>
+      const controlsMode =
+        typeof cfg.controlsMode === 'function' ? cfg.controlsMode(params) : (cfg.controlsMode ?? 'timed')
+
+      if (controlsMode !== 'timed') continue
+
+      expect(cfg.criticalTimes, `${id} 为 timed 模式但未配置 criticalTimes`).toBeDefined()
+      const maxTime =
+        typeof cfg.maxTime === 'function' ? (cfg.maxTime(params) ?? 30) : (cfg.maxTime ?? 30)
+      const list =
+        typeof cfg.criticalTimes === 'function' ? cfg.criticalTimes(params) : (cfg.criticalTimes ?? [])
+
+      let prev = 0
+      for (const pt of list) {
+        expect(pt.time, `${id} 临界点 ${pt.label} <= 0`).toBeGreaterThan(0)
+        expect(pt.time, `${id} 临界点 ${pt.label} 超出 maxTime=${maxTime}`).toBeLessThanOrEqual(maxTime + 1e-9)
+        expect(pt.time, `${id} 临界点未按时间严格升序`).toBeGreaterThan(prev)
+        prev = pt.time
+        if (!exactTimeExceptions.has(id)) {
+          expect(onGrid(pt.time), `${id} 临界点 ${pt.label}=${pt.time} 未落在 0.01s 网格`).toBe(true)
+        }
+      }
+    }
   })
 })

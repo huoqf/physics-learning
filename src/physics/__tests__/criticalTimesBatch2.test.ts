@@ -78,6 +78,12 @@ describe('Batch 2 物理层临界时刻单一真源函数', () => {
     const rod = getLightRodRopeCriticalTimes({ constraint: 0, m1: 1, m2: 1, L: 1.2, theta0: 30, v0: 0 }, 6)
     expect(rod.length).toBeGreaterThanOrEqual(1)
     expectGridAligned(rod.map((e) => e.time), 6)
+
+    // 定滑轮绳连到达最低点停止，不应同时生成两条时间重合的事件
+    const pulley = getLightRodRopeCriticalTimes({ constraint: 1, m1: 1, m2: 1, L: 1.2, theta0: 30, v0: 0 }, 6)
+    expect(pulley.length).toBe(1)
+    expectGridAligned(pulley.map((e) => e.time), 6)
+    expect(pulley[0].label).toContain('到达最低点')
   })
 
   it('getManBoatCriticalTimes 区分自动模式与键盘手动模式', () => {

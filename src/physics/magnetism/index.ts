@@ -19,11 +19,16 @@ export {
   AMPERE_ADVANCED_SCENE,
   solveBasicAmpere,
   solveAdvancedAmpere,
+  getAmpereForceCriticalTimes,
 } from './ampereForce'
 
 export type { BasicAmperePhysicsResult, AdvancedAmperePhysicsResult } from './ampereForce'
 
-export { calculateVelocitySelectorTrajectory } from './velocitySelector'
+export {
+  VELOCITY_SELECTOR_PHYSICS,
+  calculateVelocitySelectorTrajectory,
+  getLorentzForceCriticalTimes,
+} from './velocitySelector'
 export type { VelocitySelectorPoint } from './velocitySelector'
 
 export { getCoilPolarity } from './polarity'
@@ -32,6 +37,7 @@ export type { CoilPolarity } from './polarity'
 export {
   computeCircularGeometryOrbit,
   isInsideMagBoundary,
+  getMagneticCircularGeomCriticalTimes,
   type CircularGeometryParams,
   type CircularGeometryOrbit,
   type MagBoundaryType,

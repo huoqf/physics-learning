@@ -5,7 +5,7 @@ export const thermodynamicsSecondLawAnimations = defineAnimations({
   'anim-second-law': {
     title: '热力学第二定律（方向性与熵增）',
     knowledgeId: 'thermodynamics-3-2',
-    controlsMode: 'timed',
+    controlsMode: 'loop',
     Component: lazy(() => import('@/features/thermodynamics/secondLaw/SecondLawAnimation')),
     defaultParams: {
       scene: 0,

@@ -5,6 +5,9 @@ import {
   getExperimentMomentumCriticalTimes,
   momentumExperimentInputFromParams,
 } from '@/physics/experimentMomentum'
+import { getMomentumCriticalTimes } from '@/physics/momentum'
+import { getImpulseConceptCriticalTimes } from '@/physics/impulse'
+import { getMomentumTheoremCriticalTimes } from '@/physics/momentumTheorem'
 import { getMomentumConservationCriticalTimes } from '@/physics/momentumConservation'
 import { getCollisionCriticalTimes } from '@/physics/collision'
 import { getCurvedSlotCriticalTimes } from '@/physics/momentumApplication/curvedSlot'
@@ -23,6 +26,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
     title: '动量',
     knowledgeId: 'mechanics-8-1',
     Component: lazy(() => import('@/features/mechanics/momentum/MomentumAnimation')),
+    criticalTimes: (p) => getMomentumCriticalTimes(p, MOMENTUM_BASE_MAX_TIME),
     defaultParams: { m: 3, v: 4, mA: 3, vA: 5, mB: 2, vB: -3, advancedMode: 0, showEkChart: 1 } as const,
     paramMeta: [
       { key: 'm', label: '质量 m', min: 1, max: 10, step: 0.5, unit: 'kg', showIf: 'advancedMode', showIfValue: 0 },
@@ -43,6 +47,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
     title: '冲量',
     knowledgeId: 'mechanics-8-2',
     Component: lazy(() => import('@/features/mechanics/momentum/ImpulseAnimation')),
+    criticalTimes: (p) => getImpulseConceptCriticalTimes(p, MOMENTUM_BASE_MAX_TIME),
     defaultParams: { F: 10, t_duration: 3, FMax: 10, t_total: 3, forceType: 0, advancedMode: 0 } as const,
     paramMeta: [
       { key: 'F', label: '恒力 F', min: 1, max: 20, step: 0.5, unit: 'N', showIf: 'advancedMode', showIfValue: 0 },
@@ -64,6 +69,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
     Component: lazy(() => import('@/features/mechanics/momentum/MomentumTheoremAnimation')),
     CenterExtra: lazy(() => import('@/features/mechanics/momentum/MomentumTheoremChartsExtra')),
     centerLayout: 'splitH',
+    criticalTimes: (p) => getMomentumTheoremCriticalTimes(p, MOMENTUM_BASE_MAX_TIME),
     defaultParams: { m: 2, h: 2, k: 5, rho: 1000, S: 0.01, v_fluid: 5, alpha: 0, advancedMode: 0, showGravity: 1, showVelocity: 1, showNormalForce: 1 } as const,
     paramMeta: [
       { key: 'm', label: '物体质量 m', min: 0.5, max: 10, step: 0.5, unit: 'kg', showIf: 'advancedMode', showIfValue: 0 },

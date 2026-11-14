@@ -1,5 +1,6 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
+import { LASER_HEAT_DEFAULTS, getLaserCriticalTimes } from '@/physics/laser'
 
 export const opticsLaserAnimations = defineAnimations({
   'anim-laser': {
@@ -12,6 +13,8 @@ export const opticsLaserAnimations = defineAnimations({
     // 直至熔化/沸腾（useLaserPhysics 的 runSimTo(time) + 温度曲线游标），
     // 必须保留 timed 才能播放切割过程。
     controlsMode: (params) => (params.mode === 2 ? 'timed' as const : 'param' as const),
+    maxTime: (params) => (params.mode === 2 ? LASER_HEAT_DEFAULTS.maxSimTimeS : undefined),
+    criticalTimes: (params) => getLaserCriticalTimes(params, LASER_HEAT_DEFAULTS.maxSimTimeS),
     defaultParams: {
       mode: 0,
       propagationDistance: 50,

@@ -1,3 +1,6 @@
+import { finalizeCriticalPoints, type RawCriticalPoint } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 /**
  * 纯物理计算：多普勒效应 (Doppler Effect)
  *
@@ -220,4 +223,57 @@ export function calculateMachConeGeometry(
       y2: sourceY + dy,
     },
   }
+}
+
+/** 多普勒演示舞台空间运动学尺度契约（useDopplerPhysics 与临界时刻共用单一真源） */
+export const DOPPLER_VISUAL_CONFIG = {
+  vVisual: 3.6,
+  visualPeriod: 0.55,
+  maxRadius: 15,
+  mode0HalfSpan: 10,
+  mode1HalfSpan: 14,
+  mode2HalfSpan: 11,
+  machConeLength: 28,
+} as const
+
+/**
+ * 多普勒效应（anim-doppler-effect）临界时刻。
+ */
+export function getDopplerCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const mode = params.mode ?? 0
+  const waveSpeed = params.waveSpeed ?? 340
+  const sourceSpeed = params.sourceSpeed ?? 100
+  const observerSpeed = params.observerSpeed ?? 0
+  if (!(waveSpeed > 0)) return []
+
+  const { vs, vo } = getEffectiveDopplerSpeeds(mode, sourceSpeed, observerSpeed, waveSpeed)
+  const { vVisual, mode0HalfSpan, mode1HalfSpan, mode2HalfSpan } = DOPPLER_VISUAL_CONFIG
+  const raw: RawCriticalPoint[] = []
+
+  if (mode === 0) {
+    const beta = Math.min(0.85, Math.max(0.05, vs / waveSpeed))
+    const vsVisual = vVisual * beta
+    const tourDuration = (2 * mode0HalfSpan) / vsVisual
+    raw.push({ rawTime: tourDuration / 2, align: 'after', label: '⚡ 波源掠过中央观测台（由压缩转为拉伸）', variant: 'critical', autoPause: true })
+    raw.push({ rawTime: tourDuration, align: 'before', label: '波源到达巡航终点', variant: 'info', autoPause: false })
+  } else if (mode === 1) {
+    const voVisual = vVisual * (vo / waveSpeed)
+    if (Math.abs(voVisual) > 1e-6) {
+      const obsDuration = (2 * mode1HalfSpan) / Math.abs(voVisual)
+      raw.push({ rawTime: obsDuration / 2, align: 'after', label: '⚡ 观察者小车掠过波源位置', variant: 'critical', autoPause: true })
+      raw.push({ rawTime: obsDuration, align: 'before', label: '观察者到达行程终点', variant: 'info', autoPause: false })
+    }
+  } else {
+    const vsVisual = vVisual * (vs / waveSpeed)
+    if (vsVisual > 1e-6) {
+      const tourDuration = (2 * mode2HalfSpan) / vsVisual
+      raw.push({ rawTime: tourDuration / 2, align: 'after', label: '⚡ 超音速战机与马赫锥掠过中央台', variant: 'critical', autoPause: true })
+      raw.push({ rawTime: tourDuration, align: 'before', label: '战机飞越演示区域终点', variant: 'info', autoPause: false })
+    }
+  }
+
+  return finalizeCriticalPoints(raw, maxTime)
 }

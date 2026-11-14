@@ -4,6 +4,7 @@ import {
   calculateDopplerFrequency,
   calculateMachConeGeometry,
   getEffectiveDopplerSpeeds,
+  DOPPLER_VISUAL_CONFIG,
   type WavefrontCircle,
   type MachConeGeometry,
 } from '@/physics/vibration/doppler'
@@ -89,9 +90,15 @@ export function useDopplerPhysics(params: DopplerParams): DopplerPhysicsResult {
 
     // ── 空间几何映射与运动轨迹 ──
     // 物理视野宽 48m (-24m ~ +24m)，高 24m (-12m ~ +12m)
-    const vVisual = 3.6 // 空间波前扩散速度 (m/s)
-    const visualPeriod = 0.55 // 每 0.55 秒发射一个波前圆 (稳定维持 7~9 个清晰圆环)
-    const maxRadius = 15 // 最大扩散半径 (m)，与视野高度 24m 完美契合，绝不切边
+    const {
+      vVisual,
+      visualPeriod,
+      maxRadius,
+      mode0HalfSpan,
+      mode1HalfSpan,
+      mode2HalfSpan,
+      machConeLength,
+    } = DOPPLER_VISUAL_CONFIG
 
     let currentSourceX = 0
     let currentObserverX = 0
@@ -101,9 +108,9 @@ export function useDopplerPhysics(params: DopplerParams): DopplerPhysicsResult {
     const wavefronts: WavefrontCircle[] = []
 
     // ── 1. 计算波源与观察者的当前运动状态 ──
-    let xStart = -10
-    let xEnd = 10
-    let distance = 20
+    let xStart: number = -mode0HalfSpan
+    let xEnd: number = mode0HalfSpan
+    let distance = xEnd - xStart
     let vsVisual = 0
     let tourDuration = 10
 
@@ -111,8 +118,8 @@ export function useDopplerPhysics(params: DopplerParams): DopplerPhysicsResult {
       // 模式 0：波源在两站之间 [-10m, +10m] 匀速巡航
       const beta = Math.min(0.85, Math.max(0.05, vs / waveSpeed))
       vsVisual = vVisual * beta
-      xStart = -10
-      xEnd = 10
+      xStart = -mode0HalfSpan
+      xEnd = mode0HalfSpan
       distance = xEnd - xStart
       tourDuration = distance / vsVisual
 
@@ -125,8 +132,8 @@ export function useDopplerPhysics(params: DopplerParams): DopplerPhysicsResult {
       currentSourceX = 0
       const voBeta = vo / waveSpeed
       const voVisual = vVisual * voBeta
-      xStart = -14
-      xEnd = 14
+      xStart = -mode1HalfSpan
+      xEnd = mode1HalfSpan
       distance = xEnd - xStart
       const obsDuration = Math.abs(distance / (voVisual || 1))
 
@@ -137,8 +144,8 @@ export function useDopplerPhysics(params: DopplerParams): DopplerPhysicsResult {
       // 模式 2：超音速激波 (vs >= waveSpeed)
       const beta = vs / waveSpeed
       vsVisual = vVisual * beta
-      xStart = -11
-      xEnd = 11
+      xStart = -mode2HalfSpan
+      xEnd = mode2HalfSpan
       distance = xEnd - xStart
       tourDuration = distance / vsVisual
 
@@ -153,7 +160,7 @@ export function useDopplerPhysics(params: DopplerParams): DopplerPhysicsResult {
         0,
         vVisual,
         vsVisual,
-        28,
+        machConeLength,
       )
     }
 

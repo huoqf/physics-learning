@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 
 import { ENERGY_COLORS } from '@/theme/physics'
 import {
+  ENERGY_FLOW_TIMING,
   dispatchStorageDay,
   electricVehicleSplit,
   fuelVehicleSplit,
@@ -15,12 +16,12 @@ import {
 } from '@/physics/energyFlow'
 import type { EnergyFlowReservoir } from '@/components/Physics/EnergyFlowBars'
 
-/** 一个播放循环的时长 (s)：与底部进度条默认 30 s 一致 */
-export const ENERGY_CYCLE_S = 30
+/** 一个播放循环的时长 (s)：与底部进度条一致 */
+export const ENERGY_CYCLE_S = ENERGY_FLOW_TIMING.cycleS
 
 /** 有效推进时长 (s)：前 26 s 走完一天/一次循环，最后 4 s 停在终态，
  *  留时间让学生对着账本读数把数字与柱子对上（进度条走完会归零重播）。 */
-const RUN_S = 26
+const RUN_S = ENERGY_FLOW_TIMING.runS
 
 /** 单位换算：1 万 m³ = 1e4 m³；1 GJ = 1e9 J */
 const WAN_M3 = 1e4

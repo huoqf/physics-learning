@@ -1,5 +1,6 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
+import { ENERGY_FLOW_TIMING, getEnergyFlowCriticalTimes } from '@/physics/energyFlow'
 
 /**
  * 能量守恒定律与能源 - 动画注册表
@@ -10,6 +11,8 @@ export const thermodynamicsEnergyAnimations = defineAnimations({
     knowledgeId: 'thermodynamics-3-3',
     Component: lazy(() => import('@/features/thermodynamics/energy/EnergyConservationAnimation')),
     controlsMode: 'timed',
+    maxTime: ENERGY_FLOW_TIMING.cycleS,
+    criticalTimes: (p) => getEnergyFlowCriticalTimes(p, ENERGY_FLOW_TIMING.cycleS),
     defaultParams: {
       scene: 0,
       pv: 200,

@@ -1,10 +1,15 @@
 import { useMemo } from 'react'
-import { computeRodConstants, computeRodStateAtTime, calculateCuttingEMF } from '@/physics'
+import {
+  computeRodConstants,
+  computeRodStateAtTime,
+  calculateCuttingEMF,
+  CUTTING_EMF_X_LIMIT,
+} from '@/physics'
 import { worldToDesign } from '@/scene'
 import type { SceneScale } from '@/scene'
 import type { CanvasPreset } from '@/hooks/useAnimationViewport'
 
-const X_LIMIT = 10.0
+const X_LIMIT = CUTTING_EMF_X_LIMIT
 
 export interface CuttingEMFParams {
   mode: number

@@ -1,4 +1,6 @@
 import { GRAVITY } from './constants'
+import { finalizeCriticalPoints } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 /**
  * src/physics/momentumTheorem.ts
@@ -149,4 +151,30 @@ export function calculateMomentumChangeRate(
   rho: number, S: number, v: number, alpha: number
 ): number {
   return rho * S * v * v * (1 + alpha)
+}
+
+/**
+ * 动量定理（anim-impulse）临界时刻。
+ * 基础模式演示缓冲垫碰撞：触垫、压至最深（峰值冲力）、离垫。
+ */
+export function getMomentumTheoremCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  if ((params.advancedMode ?? 0) === 1) return []
+  const m = params.m ?? 2
+  const h = params.h ?? 2
+  const k = params.k ?? 5
+  if (!(m > 0) || !(h > 0) || !(k > 0)) return []
+
+  const fallTime = Math.sqrt((2 * h) / GRAVITY)
+  const collisionDt = calculateCollisionTime(m, k)
+  return finalizeCriticalPoints(
+    [
+      { rawTime: fallTime, align: 'after', label: '触及缓冲垫（进入缓冲）', variant: 'info', autoPause: false },
+      { rawTime: fallTime + collisionDt, align: 'nearest', label: '⚡ 缓冲最深·峰值力 F_max', variant: 'critical', autoPause: true },
+      { rawTime: fallTime + 2 * collisionDt, align: 'after', label: '缓冲结束·反弹离垫', variant: 'info', autoPause: false },
+    ],
+    maxTime,
+  )
 }

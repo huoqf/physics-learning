@@ -1,5 +1,9 @@
-/**
- * 连接体问题静态张力范围（仅静止态有意义）
+import { GRAVITY } from '../constants'
+import { PX_PER_METER } from '@/utils/coordinate'
+import { finalizeCriticalPoints } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
+/** 连接体问题静态张力范围（仅静止态有意义）
  *
  * 静止时张力由静摩擦分配决定，不唯一。取值范围受两物体最大静摩擦力约束：
  *   T_min = max(0, F - f₂_max)   —— m₂ 即将滑动时绳的最小拉力
@@ -162,4 +166,84 @@ export function calculateConnectedBodyTimeline(
   const s = 0.5 * a * t * t
 
   return { a, v, s, T, isMoving: true }
+}
+
+/** 连接体进阶模式模拟时长 (s) */
+export const CONNECTED_BODY_ADVANCED_DURATION = 4.0
+
+/** 连接体标准布局估算行程常数（与 useConnectedBodiesPhysics 对齐） */
+export const CONNECTED_BODY_TRAVEL_CONSTANTS = {
+  designWidth: 840,
+  startXRatio: 0.15,
+  endXRatio: 0.85,
+  blockMaxWidth: 65,
+  ropeLengthRatio: 0.12,
+  tensionToStretchScale: 11,
+  stretchVisualScale: 15,
+  springMaxStretchRatio: 0.7,
+} as const
+
+export interface ConnectedBodiesCriticalParams {
+  m1?: number
+  m2?: number
+  F?: number
+  mu?: number
+  advancedMode?: number
+  connectionType?: number
+}
+
+/**
+ * 计算连接体问题关键时刻（SSOT）
+ */
+export function getConnectedBodiesCriticalTimes(
+  params: ConnectedBodiesCriticalParams = {},
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const m1 = params.m1 ?? 2
+  const m2 = params.m2 ?? 3
+  const F = params.F ?? 15
+  const mu = params.mu ?? 0.1
+  const advancedMode = params.advancedMode ?? 0
+  const connectionType = params.connectionType ?? 0
+
+  const { isMoving, a, T } = calculateConnectedBody(m1, m2, F, mu, GRAVITY)
+  if (!isMoving || a <= 0.01) return []
+
+  if (advancedMode !== 0) {
+    return finalizeCriticalPoints(
+      [
+        {
+          rawTime: CONNECTED_BODY_ADVANCED_DURATION,
+          align: 'before',
+          label: '连接体抵达终点停止',
+          variant: 'warning',
+          autoPause: true,
+        },
+      ],
+      maxTime,
+    )
+  }
+
+  const c = CONNECTED_BODY_TRAVEL_CONSTANTS
+  const defaultRopeL = c.designWidth * c.ropeLengthRatio
+  const springDx = connectionType === 1
+    ? Math.min(defaultRopeL * c.springMaxStretchRatio, T / c.tensionToStretchScale)
+    : 0
+  const currentRopeL = connectionType === 0 ? defaultRopeL : defaultRopeL + springDx * c.stretchVisualScale
+  const maxTravelPx = Math.max(10, c.designWidth * (c.endXRatio - c.startXRatio) - 2 * c.blockMaxWidth - currentRopeL)
+  const travelM = maxTravelPx / PX_PER_METER
+  const tEnd = Math.sqrt((2 * travelM) / a)
+
+  return finalizeCriticalPoints(
+    [
+      {
+        rawTime: tEnd,
+        align: 'before',
+        label: '连接体抵达右端终点',
+        variant: 'warning',
+        autoPause: true,
+      },
+    ],
+    maxTime,
+  )
 }

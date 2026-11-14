@@ -13,6 +13,7 @@ import {
   sampleTwoSourceField,
   computeTwoSourcePathDifference,
   computeInterferenceCondition,
+  WAVE_INTERFERENCE_SCENE_DEFAULTS,
   type TwoSourceParams,
 } from '@/physics/wave'
 
@@ -119,10 +120,9 @@ export default function WaveInterferenceAnimation() {
 
   const a = a_cm / 100
   const lambda = lambda_cm / 100
-  const waveSpeed = 0.8
-  const sourceX = 0.15
-  const s1 = useMemo(() => ({ x: sourceX, y: -a / 2 }), [a])
-  const s2 = useMemo(() => ({ x: sourceX, y: a / 2 }), [a])
+  const { sourceX, screenDistance, waveSpeed } = WAVE_INTERFERENCE_SCENE_DEFAULTS
+  const s1 = useMemo(() => ({ x: sourceX, y: -a / 2 }), [sourceX, a])
+  const s2 = useMemo(() => ({ x: sourceX, y: a / 2 }), [sourceX, a])
 
   const fieldParams = useMemo(
     () => ({
@@ -133,7 +133,7 @@ export default function WaveInterferenceAnimation() {
       waveSpeed,
       phaseDiff: 0,
     }),
-    [s1, s2, lambda, A],
+    [s1, s2, lambda, A, waveSpeed],
   )
 
   useEffect(() => {
@@ -180,8 +180,8 @@ export default function WaveInterferenceAnimation() {
   const delta = computeTwoSourcePathDifference(r1, r2)
   const cond = computeInterferenceCondition(delta, lambda)
 
-  // 接收屏物理坐标在距离波源 1.0 米处（即 x = sourceX + 1.0 = 1.15 米）
-  const screenDesign = worldToDesign(sourceX + 1.0, 0, sceneScale)
+  // 接收屏物理坐标在距离波源 1.0 米处（即 x = sourceX + screenDistance = 1.15 米）
+  const screenDesign = worldToDesign(sourceX + screenDistance, 0, sceneScale)
   const screenX = screenDesign.px
 
   return (

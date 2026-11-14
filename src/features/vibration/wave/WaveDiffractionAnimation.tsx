@@ -8,7 +8,11 @@ import { WAVE_COLORS, CANVAS_COLORS, STROKE, SCENE_COLORS } from '@/theme/physic
 import { colors } from '@/theme/colors'
 import { hexToRgb } from '@/utils'
 import { worldToDesign, type SceneScale } from '@/scene'
-import { sampleDiffractionField, type DiffractionFieldParams } from '@/physics/wave'
+import {
+  sampleDiffractionField,
+  WAVE_DIFFRACTION_SCENE_DEFAULTS,
+  type DiffractionFieldParams,
+} from '@/physics/wave'
 
 /** splitH 设计坐标 420×650（与 CANVAS_PRESETS.splitH 一致） */
 const DW = 420
@@ -115,8 +119,7 @@ export default function WaveDiffractionAnimation() {
 
   const d = d_cm / 100
   const lambda = lambda_cm / 100
-  const slitX = 0.35
-  const waveSpeed = 0.8
+  const { slitX, screenDistance, waveSpeed } = WAVE_DIFFRACTION_SCENE_DEFAULTS
 
   const fieldParams = useMemo(
     () => ({
@@ -127,7 +130,7 @@ export default function WaveDiffractionAnimation() {
       slitY: 0,
       waveSpeed,
     }),
-    [d, lambda, A],
+    [d, lambda, A, slitX, waveSpeed],
   )
 
   useEffect(() => {
@@ -155,8 +158,8 @@ export default function WaveDiffractionAnimation() {
 
   const barrierColor = SCENE_COLORS.optical.screenStroke
 
-  // 接收屏在距离缝刚好 0.75 米处（即物理坐标 x = slitX + 0.75 = 1.10 米）
-  const screenDesign = worldToDesign(slitX + 0.75, 0, sceneScale)
+  // 接收屏在距离缝刚好 0.75 米处（即物理坐标 x = slitX + screenDistance = 1.10 米）
+  const screenDesign = worldToDesign(slitX + screenDistance, 0, sceneScale)
   const screenX = screenDesign.px
 
   return (

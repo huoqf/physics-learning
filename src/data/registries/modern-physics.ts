@@ -8,8 +8,10 @@ import {
 import {
   NUCLEAR_HALF_LIFE_TMAX,
   getDecayMagneticOrbitCriticalTimes,
+  getNuclearDecayCriticalTimes,
   getNuclearHalfLifeCriticalTimes,
 } from '@/physics/nuclearDecay'
+import { getNuclearReactionCriticalTimes } from '@/physics/chainReaction'
 import { defineAnimations } from '../defineAnimations'
 
 /**
@@ -31,7 +33,7 @@ export const modernPhysicsAnimations = defineAnimations({
     title: 'α 粒子散射实验与核式结构',
     knowledgeId: 'modern-1-3',
     Component: lazy(() => import('@/features/modern/alpha-scatter/AlphaScatterAnimation')),
-    controlsMode: 'timed' as const,
+    controlsMode: 'loop' as const,
     defaultParams: {
       modelType: 1,              // 0: 汤姆孙枣糕模型, 1: 卢瑟福核式模型
       impactParameter: 15,       // 碰撞参数 b (px)
@@ -358,6 +360,7 @@ export const modernPhysicsAnimations = defineAnimations({
     knowledgeId: 'nuclear-1-1',
     Component: lazy(() => import('@/features/modern/nuclear-decay/NuclearDecayAnimation')),
     controlsMode: (params) => params.mode === 0 ? 'param' as const : 'timed' as const,
+    criticalTimes: (p) => getNuclearDecayCriticalTimes(p, 30),
     defaultParams: {
       mode: 0,                // 0: 原子核的组成, 1: 天然放射线偏转
       nuclide: 3,             // 默认 3: He-4 (alpha粒子). 0:H-1, 1:H-2, 2:H-3, 3:He-4, 4:C-12, 5:C-14, 6:U-238
@@ -608,6 +611,7 @@ export const modernPhysicsAnimations = defineAnimations({
     knowledgeId: 'nuclear-1-4',
     Component: lazy(() => import('@/features/modern/nuclear-reaction/NuclearReactionAnimation')),
     controlsMode: 'timed' as const,
+    criticalTimes: (p) => getNuclearReactionCriticalTimes(p, 30),
     defaultParams: {
       mode: 0,                   // 0: 结合能与质量亏损, 1: 核反应过程
       nuclide: 3,                // 0:氕(¹H), 1:氘(²H), 2:氚(³H), 3:氦核(⁴He), 4:碳-12(¹²C), 5:铁-56(⁵⁶Fe), 6:铀-238(²³⁸U)

@@ -11,6 +11,9 @@
  * 单位制：SI（kg, m, s, N, rad）
  */
 
+import { finalizeCriticalPoints } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 /** 斜面叠放系统在某一时刻的受力分解结果 */
 export interface StackedStaticStatics {
   /** 地面对系统的支持力 (N) */
@@ -33,6 +36,34 @@ export interface SlidingStatics extends StackedStaticStatics {
   ax: number
   /** 加速度竖直分量 (m/s²)，向下为正 */
   ay: number
+}
+
+/** 水平同加速连接体（拉车模型）受力与运动量 */
+export interface PullCartStatics {
+  hasMotion: boolean
+  acceleration: number
+  tension: number
+  f1Max: number
+  f2Max: number
+}
+
+/**
+ * 模型 0：水平同加速双滑块连接体。
+ */
+export function computePullCartStatics(
+  m1: number,
+  m2: number,
+  F: number,
+  mu: number,
+  g: number,
+): PullCartStatics {
+  const f1Max = mu * m1 * g
+  const f2Max = mu * m2 * g
+  const totalFrictionMax = f1Max + f2Max
+  const hasMotion = F > totalFrictionMax && m1 + m2 > 0
+  const acceleration = hasMotion ? (F - totalFrictionMax) / (m1 + m2) : 0
+  const tension = hasMotion ? (m1 * F) / (m1 + m2) : m1 + m2 > 0 ? (m1 / (m1 + m2)) * F : 0
+  return { hasMotion, acceleration, tension, f1Max, f2Max }
 }
 
 /**
@@ -102,4 +133,45 @@ export function computeSlidingStatics(
     f_ground: m1 * ax,
     N_ground: (m1 + m2) * g - m1 * ay,
   }
+}
+
+/**
+ * 整体法与隔离法（anim-system-isolated）临界时刻。
+ */
+export function getSystemIsolatedCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const modelType = params.modelType ?? 0
+  if (modelType === 1) return []
+  const m1 = params.m1 ?? 2
+  const m2 = params.m2 ?? 4
+  const F = params.F ?? 15
+  const theta = params.theta ?? 30
+  const mu = params.mu ?? 0.15
+  const g = 9.8
+  if (modelType === 0) {
+    const st = computePullCartStatics(m1, m2, F, mu, g)
+    if (!st.hasMotion || !(st.acceleration > 1e-6)) return []
+    const tEnd = Math.sqrt(10 / st.acceleration)
+    return finalizeCriticalPoints(
+      [
+        { rawTime: tEnd, align: 'before', label: '⚡ 到达轨道终点', variant: 'critical', autoPause: true },
+      ],
+      maxTime,
+    )
+  }
+  const thetaRad = (theta * Math.PI) / 180
+  const st = computeSlidingStatics(m1, m2, thetaRad, mu, g)
+  const cos = Math.cos(thetaRad)
+  if (!st.hasMotion || !(st.acceleration > 1e-6) || !(cos > 1e-4)) return []
+  const maxTravel = 3.6 / cos - 0.5
+  if (!(maxTravel > 0)) return []
+  const tEnd = Math.sqrt((2 * maxTravel) / st.acceleration)
+  return finalizeCriticalPoints(
+    [
+      { rawTime: tEnd, align: 'before', label: '⚡ 滑至斜面底端', variant: 'critical', autoPause: true },
+    ],
+    maxTime,
+  )
 }

@@ -5,7 +5,7 @@ import { useAnimationViewport } from '@/hooks'
 import { useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { GRAVITY } from '@/physics/constants'
-import { computeStackedStaticStatics, computeSlidingStatics } from '@/physics'
+import { computePullCartStatics, computeStackedStaticStatics, computeSlidingStatics } from '@/physics/systemIsolated'
 import { refFromPeak } from '@/utils/vectorRefs'
 
 /**
@@ -219,13 +219,13 @@ export function useSystemIsolatedPhysics(): SystemIsolatedPhysicsResult {
     const ropeL = 1.5
     const startX = 2.0
 
-    const f1Max = mu * m1 * g
-    const f2Max = mu * m2 * g
-    const totalFrictionMax = f1Max + f2Max
-    const isMovingPhysically = F > totalFrictionMax
-
-    const a = isMovingPhysically ? (F - totalFrictionMax) / (m1 + m2) : 0
-    const T = isMovingPhysically ? (m1 * F) / (m1 + m2) : (m1 / (m1 + m2)) * F
+    const {
+      hasMotion: isMovingPhysically,
+      acceleration: a,
+      tension: T,
+      f1Max,
+      f2Max,
+    } = computePullCartStatics(m1, m2, F, mu, g)
 
     // 计算当前物理位移
     const maxTravel = 5.0

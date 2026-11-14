@@ -4,7 +4,8 @@
  * @category M4 — 天体物理
  */
 
-import { alignCriticalTime } from '@/utils/criticalTime'
+import { alignCriticalTime, finalizeCriticalPoints, type RawCriticalPoint } from '@/utils/criticalTime'
+import { EARTH_MASS, EARTH_RADIUS, GRAVITATIONAL_CONSTANT, SATELLITE_LAUNCH_RADIUS_RATIO } from './constants'
 import type { CriticalTimePoint } from '@/data/types'
 
 /**
@@ -479,6 +480,60 @@ export function getKeplerCriticalTimes(
   }
 
   return events.sort((a, b) => a.time - b.time)
+}
+
+/**
+ * 人造卫星与宇宙速度（anim-satellite）临界时刻。
+ * 复用 satelliteLayout 的时间倍率和发射阶段定义（mode 0: timeScale=500；mode 1: 3s 起飞 / 8s 入轨）。
+ */
+export function getSatelliteCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const mode = params.mode ?? 0
+  if (mode === 0) {
+    const rMeters = (params.r ?? 7.0) * 1e6
+    const { T } = calculateOrbitalSpeed(EARTH_MASS, rMeters, GRAVITATIONAL_CONSTANT)
+    const animPeriod = T / 500
+    if (!Number.isFinite(animPeriod) || animPeriod <= 0) return []
+    return finalizeCriticalPoints(
+      [{ rawTime: animPeriod, align: 'nearest', label: '完成 1 周圆周公转', variant: 'info', autoPause: false }],
+      maxTime,
+    )
+  }
+
+  if ((params.isLaunched ?? 0) === 0) return []
+  const raw: RawCriticalPoint[] = [
+    { rawTime: 3.0, align: 'after', label: '垂直爬升结束→重力转弯', variant: 'info', autoPause: false },
+    { rawTime: 8.0, align: 'after', label: '⚡ 转弯结束·正式入轨', variant: 'critical', autoPause: true },
+  ]
+  const v0Ms = (params.v0 ?? 7.9) * 1000
+  const r0 = SATELLITE_LAUNCH_RADIUS_RATIO * EARTH_RADIUS
+  const { orbitType, e, p } = calculateLaunchTrajectory(v0Ms, EARTH_MASS, r0, GRAVITATIONAL_CONSTANT)
+  if (orbitType === 'crash' && v0Ms > 0) {
+    const h = r0 * v0Ms
+    let theta = Math.PI / 2
+    let rCur = r0
+    let tPhys = 0
+    const dtPhys = 5
+    while (tPhys < 7200) {
+      const denom = 1 - e * Math.cos(theta - Math.PI / 2)
+      rCur = denom > 0.05 ? p / denom : r0
+      if (rCur < EARTH_RADIUS * 0.99) {
+        raw.push({
+          rawTime: 8.0 + tPhys / 400,
+          align: 'before',
+          label: '⚡ 轨道过低·坠入地球',
+          variant: 'critical',
+          autoPause: true,
+        })
+        break
+      }
+      theta += (h / (rCur * rCur)) * dtPhys
+      tPhys += dtPhys
+    }
+  }
+  return finalizeCriticalPoints(raw, maxTime)
 }
 
 

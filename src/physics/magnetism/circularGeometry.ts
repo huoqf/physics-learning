@@ -8,6 +8,9 @@
  * 这里统一为单一真源：中屏与看板必须同时调用本函数。
  */
 
+import { finalizeCriticalPoints, type RawCriticalPoint } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 /** 磁场边界类型：0=单边界 y≥0，1=矩形边界，2=圆形边界 */
 export type MagBoundaryType = 0 | 1 | 2
 
@@ -104,4 +107,50 @@ export function computeCircularGeometryOrbit(
   }
 
   return { R, omega, xc, yc, theta0, omegaDir, tOut }
+}
+
+export interface MagneticCircularGeomCriticalParams {
+  boundaryType?: number
+  particleSign?: number
+  velocity?: number
+  angle?: number
+  magneticB?: number
+}
+
+/**
+ * 计算磁场圆周几何模型关键时刻（SSOT）
+ */
+export function getMagneticCircularGeomCriticalTimes(
+  params: MagneticCircularGeomCriticalParams = {},
+  maxTime?: number,
+): CriticalTimePoint[] {
+  const orbit = computeCircularGeometryOrbit({
+    particleSign: params.particleSign ?? 1,
+    velocity: params.velocity ?? 3.0,
+    angleDeg: params.angle ?? 60,
+    B: params.magneticB ?? 1.0,
+    boundaryType: (params.boundaryType ?? 0) as MagBoundaryType,
+  })
+  const effectiveMax = maxTime ?? orbit.tOut + 2.0
+  const raw: RawCriticalPoint[] = []
+
+  if (orbit.tOut > 0.1) {
+    raw.push({
+      rawTime: orbit.tOut / 2,
+      align: 'nearest',
+      label: '到达圆弧中点 (角平分线)',
+      variant: 'info',
+    })
+  }
+  if (orbit.tOut > 0 && orbit.tOut < 11.9) {
+    raw.push({
+      rawTime: orbit.tOut,
+      align: 'before',
+      label: '粒子射出磁场边界',
+      variant: 'warning',
+      autoPause: true,
+    })
+  }
+
+  return finalizeCriticalPoints(raw, effectiveMax)
 }

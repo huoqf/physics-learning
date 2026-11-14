@@ -66,7 +66,7 @@ export const opticsInterferenceAnimations = defineAnimations({
     title: '用双缝干涉测光的波长',
     knowledgeId: 'experiment-3-4',
     Component: lazy(() => import('@/features/optics/double-slit-interference/ExperimentDoubleSlitAnimation')),
-    controlsMode: 'loop' as const,
+    controlsMode: 'param' as const,
     defaultParams: {
       wavelength: DOUBLE_SLIT_DEFAULT_PARAMS.wavelength,
       slitDistance: DOUBLE_SLIT_DEFAULT_PARAMS.slitDistance,

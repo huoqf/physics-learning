@@ -1,3 +1,6 @@
+import { finalizeCriticalPoints, type RawCriticalPoint } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 /**
  * src/physics/impulse.ts
  * 冲量（Impulse）纯物理计算模块
@@ -163,4 +166,51 @@ export function calculateImpulseSlices(
   }
 
   return slices
+}
+
+/**
+ * 冲量概念（anim-impulse-concept）临界时刻。
+ */
+export function getImpulseConceptCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const isAdvanced = (params.advancedMode ?? 0) === 1
+  const raw: RawCriticalPoint[] = []
+
+  if (!isAdvanced) {
+    const tDuration = params.t_duration ?? 3
+    if (tDuration > 0) {
+      raw.push({
+        rawTime: tDuration,
+        align: 'after',
+        label: '⚡ 恒力冲量作用结束 (I = Ft)',
+        variant: 'critical',
+        autoPause: true,
+      })
+    }
+  } else {
+    const tTotal = params.t_total ?? 3
+    const forceType = params.forceType ?? 0
+    if (tTotal > 0) {
+      if (forceType === 1) {
+        raw.push({
+          rawTime: tTotal / 2,
+          align: 'nearest',
+          label: '正弦半波力达峰值 F_max',
+          variant: 'warning',
+          autoPause: false,
+        })
+      }
+      raw.push({
+        rawTime: tTotal,
+        align: 'after',
+        label: '⚡ 变力冲量累积完成 (∫Fdt)',
+        variant: 'critical',
+        autoPause: true,
+      })
+    }
+  }
+
+  return finalizeCriticalPoints(raw, maxTime)
 }

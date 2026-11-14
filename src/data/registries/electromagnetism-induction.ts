@@ -4,6 +4,13 @@ import { getSingleRodCriticalTimes } from '@/physics/singleRod'
 import { getDualRodsCriticalTimes } from '@/physics/dualRods'
 import { getLoopPassFieldCriticalTimes } from '@/physics/loopPassField'
 import { getSelfInductionCriticalTimes } from '@/physics/electromagnetism/selfInduction'
+import {
+  FARADAY_SCENE_CONSTANTS,
+  LENZS_PLAY_DURATION_S,
+  getFaradayLawCriticalTimes,
+  getLenzsLawCriticalTimes,
+  getCuttingEMFCriticalTimes,
+} from '@/physics/induction'
 
 // ===== 电磁学 · 电磁感应（[M4-1]）=====
 export const electromagnetismInductionAnimations = defineAnimations({
@@ -129,6 +136,9 @@ export const electromagnetismInductionAnimations = defineAnimations({
     title: '法拉第电磁感应定律',
     knowledgeId: 'electricity-4-3',
     Component: lazy(() => import('@/features/electromagnetism/induction/FaradayLaw')),
+    controlsMode: 'timed' as const,
+    maxTime: FARADAY_SCENE_CONSTANTS.chartDuration,
+    criticalTimes: (p) => getFaradayLawCriticalTimes(p, FARADAY_SCENE_CONSTANTS.chartDuration),
     defaultParams: {
       mode: 0,
       N: 50,
@@ -158,6 +168,9 @@ export const electromagnetismInductionAnimations = defineAnimations({
     title: '楞次定律',
     knowledgeId: 'electricity-4-2',
     Component: lazy(() => import('@/features/electromagnetism/induction/LenzsLaw')),
+    controlsMode: 'timed' as const,
+    maxTime: LENZS_PLAY_DURATION_S,
+    criticalTimes: (p) => getLenzsLawCriticalTimes(p, LENZS_PLAY_DURATION_S),
     defaultParams: {
       magnetSpeed: 2,
       magnetPole: 1,
@@ -248,6 +261,8 @@ export const electromagnetismInductionAnimations = defineAnimations({
     title: '导体切割磁感线',
     knowledgeId: 'electricity-4-4',
     Component: lazy(() => import('@/features/electromagnetism/induction/CuttingEMF')),
+    controlsMode: 'timed' as const,
+    criticalTimes: (p) => getCuttingEMFCriticalTimes(p, 30),
     defaultParams: {
       mode: 0,
       B: 1.5,

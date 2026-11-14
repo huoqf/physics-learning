@@ -1,7 +1,7 @@
 import { calculateFreeFall } from './base'
 import { GRAVITY } from '../constants'
 import { alignCriticalTime } from '@/utils/criticalTime'
-import type { CriticalTimePoint } from '@/data/types'
+import type { CriticalTimePoint, TimeStageSegment } from '@/data/types'
 
 /**
  * 竖直上抛运动（含空气阻力）——欧拉法数值求解
@@ -256,4 +256,32 @@ export function getVerticalThrowCriticalTimes(
   }
 
   return events.sort((a, b) => a.time - b.time)
+}
+
+/**
+ * 竖直上抛运动进度条过程阶段分段（SSOT，复用 precomputeVerticalThrowTrajectory）。
+ */
+export function getVerticalThrowTimeStages(
+  params: VerticalThrowCriticalParams = {},
+  maxTime = 30,
+): TimeStageSegment[] {
+  const v0 = params.v0 ?? 15
+  const g = params.g ?? GRAVITY
+  const airResistance = params.airResistance ?? 0
+  if (v0 <= 0 || g <= 0) return []
+
+  const traj = precomputeVerticalThrowTrajectory(v0, g, airResistance)
+  const tPeak = Math.min(maxTime, traj.peakTime)
+  const tLand = Math.min(maxTime, traj.landTime)
+  const stages: TimeStageSegment[] = []
+  if (tPeak > 1e-4) {
+    stages.push({ from: 0, to: tPeak, label: '上升减速', variant: 'primary' })
+  }
+  if (tLand > tPeak + 1e-4) {
+    stages.push({ from: tPeak, to: tLand, label: '下落加速', variant: 'secondary' })
+  }
+  if (tLand < maxTime - 1e-4) {
+    stages.push({ from: tLand, to: maxTime, label: '落回地面', variant: 'neutral' })
+  }
+  return stages
 }

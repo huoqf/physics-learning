@@ -5,6 +5,8 @@
  * 核心公式 ΔU = Q + W 已在 thermodynamics.ts 的 calculateInternalEnergy 中实现。
  * 本文件补充可视化映射、粒子仿真、活塞/矢量计算。
  */
+import { finalizeCriticalPoints } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 // ─── 物理常量 ─────────────────────────────────────────────────────────────
 /** 气体分子粒子数 */
@@ -269,4 +271,25 @@ export function calculateCycleState(time: number): FirstLawPhysicsState {
   }
 
   return { P, V, T, W, Q, deltaU, currentStepIndex: stepIndex, stepProgress }
+}
+
+/**
+ * 计算热力学第一定律（循环热机模式）临界时刻（SSOT）
+ * mode === 0 沙箱探索返回空数组；mode === 1 标注热机四冲程切换点。
+ */
+export function getFirstLawCriticalTimes(
+  params: { mode?: number } = {},
+  maxTime: number = CYCLE_DURATION,
+): CriticalTimePoint[] {
+  if ((params.mode ?? 0) !== 1) return []
+  const quarter = CYCLE_DURATION / 4
+  return finalizeCriticalPoints(
+    [
+      { rawTime: quarter, align: 'after', label: '② 等压膨胀吸热 (状态B)', variant: 'info' },
+      { rawTime: quarter * 2, align: 'after', label: '③ 等容放热降温 (状态C)', variant: 'warning' },
+      { rawTime: quarter * 3, align: 'after', label: '④ 等压压缩放热 (状态D)', variant: 'info' },
+      { rawTime: CYCLE_DURATION, align: 'before', label: '完成正循环回到状态A', variant: 'critical', autoPause: false },
+    ],
+    maxTime,
+  )
 }

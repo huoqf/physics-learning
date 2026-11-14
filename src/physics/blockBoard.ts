@@ -7,6 +7,7 @@
  */
 
 import { GRAVITY } from './constants'
+import type { TimeStageSegment } from '@/data/types'
 
 // ─── 参数接口 ──────────────────────────────────────────────────────────────
 
@@ -269,4 +270,35 @@ export function generateBRTrajectory(
   }
 
   return { blockTrajectory, boardTrajectory }
+}
+
+/**
+ * 生成板块模型进度条物理过程分段（SSOT，复用 getBoardTimeline）。
+ */
+export function getBoardTimeStages(
+  param: BlockBoardParam,
+  maxTime = 8,
+): TimeStageSegment[] {
+  const tl = getBoardTimeline(param)
+  const stages: TimeStageSegment[] = []
+  const t1 = Math.min(maxTime, tl.tEndPhase1)
+  if (t1 <= 1e-4) return stages
+
+  stages.push({ from: 0, to: t1, label: '相对滑动', variant: 'primary' })
+  if (t1 >= maxTime - 1e-4) return stages
+
+  if (tl.tFall <= tl.tSync && tl.tFall <= tl.tBlockStop) {
+    stages.push({ from: t1, to: maxTime, label: '滑落地面减速', variant: 'danger' })
+  } else if (tl.tSync < tl.tBlockStop && Number.isFinite(tl.tSync)) {
+    const tEnd = Number.isFinite(tl.tStop) ? Math.min(maxTime, t1 + tl.tStop) : maxTime
+    if (tEnd > t1 + 1e-4) {
+      stages.push({ from: t1, to: tEnd, label: '共速整体减速', variant: 'secondary' })
+    }
+    if (tEnd < maxTime - 1e-4) {
+      stages.push({ from: tEnd, to: maxTime, label: '静止', variant: 'neutral' })
+    }
+  } else {
+    stages.push({ from: t1, to: maxTime, label: '静止', variant: 'neutral' })
+  }
+  return stages
 }

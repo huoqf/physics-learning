@@ -2,6 +2,8 @@
  * 电磁感应纯函数库。
  * 无副作用，不依赖 React/DOM/window。单位采用 SI。
  */
+import { finalizeCriticalPoints, type RawCriticalPoint } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 /**
  * 法拉第-楞次定律 EMF = -N·(dΦ/dt)（V）
@@ -208,7 +210,7 @@ export function lenzsMagnetVelocityAt(
   motionMode: number,
   time: number
 ): number {
-  const T = 2
+  const T = LENZS_PLAY_DURATION_S
   const progress = Math.min(1, Math.max(0, time / T))
   const envelope = Math.sin(progress * Math.PI)
   return motionMode === 1 ? -magnetSpeed * envelope : magnetSpeed * envelope
@@ -348,8 +350,8 @@ export const FARADAY_UNIFORM_B0 = 0
  * @returns Φ（Wb，有符号）
  */
 export function computeFaradayMagnetFlux(magnetLeftPx: number, B: number): number {
-  const COIL_X = 280          // 线圈中心 px
-  const MAGNET_LEN = 100      // 磁铁长度 px
+  const COIL_X = FARADAY_SCENE_CONSTANTS.coilX          // 与场景视觉线圈中心严格统一
+  const MAGNET_LEN = FARADAY_SCENE_CONSTANTS.magnetLen  // 磁铁长度 px
   const SCALE_PX_PER_M = 500  // 1 m = 500 px
   const COIL_RADIUS_M = 65 / SCALE_PX_PER_M // 线圈等效半径（米）
   const PHI0 = 0.45           // 磁通量归一化系数
@@ -415,8 +417,8 @@ export function generateMagnetFaradayPoints(
   duration: number = 10,
   steps: number = 100
 ): FaradayChartPoint[] {
-  const MAGNET_MIN_X = 60
-  const COIL_X = 280
+  const MAGNET_MIN_X = FARADAY_SCENE_CONSTANTS.magnetMinX
+  const COIL_X = FARADAY_SCENE_CONSTANTS.coilX
   const COIL_RX = 42
   const MAGNET_MAX_X = COIL_X + COIL_RX - 10 // 完全穿过线圈右侧 px
 
@@ -626,4 +628,194 @@ export function computeInductionMode2(
   const dPhi = dPhi_motion + dPhi_transformer + dPhi_pulse
   const currentI = subClosed ? -0.8 * 10 * dPhi : 0
   return { phi, dPhi, currentI }
+}
+
+// ─── 下沉常量与临界时刻统一真源 ───────────────────────────────────────────
+
+/** 法拉第定律实验场景常量（与 useFaradayPhysics 共享） */
+export const FARADAY_SCENE_CONSTANTS = {
+  magnetMinX: 60,
+  magnetMaxX: 360,
+  magnetLen: 100,
+  coilX: 220,
+  rangeX: 300,
+  chartDuration: 10,
+  coilAreaM2: 0.02,
+} as const
+
+/** 楞次定律自动单程播放时长 (s) */
+export const LENZS_PLAY_DURATION_S = 2
+
+/** 导体切割磁感线轨道总长 (m) */
+export const CUTTING_EMF_X_LIMIT = 10.0
+
+export interface FaradayLawCriticalParams {
+  mode?: number
+  magnetV?: number
+  dBdt?: number
+  B0?: number
+}
+
+/**
+ * 计算法拉第电磁感应定律演示关键时刻（SSOT）
+ */
+export function getFaradayLawCriticalTimes(
+  params: FaradayLawCriticalParams = {},
+  maxTime: number = FARADAY_SCENE_CONSTANTS.chartDuration,
+): CriticalTimePoint[] {
+  const mode = params.mode ?? 0
+  const raw: RawCriticalPoint[] = []
+
+  if (mode === 0) {
+    const v = params.magnetV ?? 140
+    if (v <= 1e-6) return []
+    const { magnetMinX, magnetMaxX, magnetLen, coilX, rangeX } = FARADAY_SCENE_CONSTANTS
+    const peakOffsetForward = coilX - magnetLen / 2 - magnetMinX
+    const peakOffsetBackward = magnetMaxX - (coilX - magnetLen / 2)
+    const periodDist = 2 * rangeX
+    const maxCycles = Math.ceil((v * maxTime) / periodDist) + 1
+
+    for (let k = 0; k < maxCycles && raw.length < 10; k++) {
+      const baseDist = k * periodDist
+      const tPeak1 = (baseDist + peakOffsetForward) / v
+      const tTurnRight = (baseDist + rangeX) / v
+      const tPeak2 = (baseDist + rangeX + peakOffsetBackward) / v
+      const tTurnLeft = (baseDist + periodDist) / v
+
+      if (tPeak1 > 0 && tPeak1 <= maxTime) {
+        raw.push({ rawTime: tPeak1, align: 'nearest', label: '磁通量峰值 (E = 0)', variant: 'info' })
+      }
+      if (tTurnRight > 0 && tTurnRight <= maxTime) {
+        raw.push({ rawTime: tTurnRight, align: 'after', label: '抵达右端折返 (E反向)', variant: 'warning', autoPause: false })
+      }
+      if (tPeak2 > 0 && tPeak2 <= maxTime) {
+        raw.push({ rawTime: tPeak2, align: 'nearest', label: '磁通量峰值 (E = 0)', variant: 'info' })
+      }
+      if (tTurnLeft > 0 && tTurnLeft <= maxTime) {
+        raw.push({ rawTime: tTurnLeft, align: 'after', label: '回到左端折返', variant: 'info', autoPause: false })
+      }
+    }
+  } else {
+    const dBdt = params.dBdt ?? 0.5
+    const B0 = params.B0 ?? FARADAY_UNIFORM_B0
+    if (B0 * dBdt < -1e-9) {
+      const tZero = -B0 / dBdt
+      if (tZero > 0 && tZero <= maxTime) {
+        raw.push({ rawTime: tZero, align: 'after', label: '磁场过零反向 (Φ = 0)', variant: 'warning', autoPause: true })
+      }
+    }
+  }
+
+  return finalizeCriticalPoints(raw, maxTime, 0.25)
+}
+
+/**
+ * 计算楞次定律演示关键时刻（SSOT）
+ */
+export function getLenzsLawCriticalTimes(
+  _params: Record<string, number> = {},
+  maxTime: number = LENZS_PLAY_DURATION_S,
+): CriticalTimePoint[] {
+  return finalizeCriticalPoints(
+    [
+      {
+        rawTime: LENZS_PLAY_DURATION_S / 2,
+        align: 'nearest',
+        label: '速率与感应电流峰值',
+        variant: 'info',
+      },
+      {
+        rawTime: LENZS_PLAY_DURATION_S,
+        align: 'before',
+        label: '磁铁抵达终点',
+        variant: 'warning',
+        autoPause: false,
+      },
+    ],
+    maxTime,
+  )
+}
+
+export interface CuttingEMFCriticalParams {
+  mode?: number
+  B?: number
+  L?: number
+  v?: number
+  R?: number
+  F_ext?: number
+  m?: number
+}
+
+/**
+ * 计算导体切割磁感线临界时刻（SSOT）
+ */
+export function getCuttingEMFCriticalTimes(
+  params: CuttingEMFCriticalParams = {},
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const mode = params.mode ?? 0
+  const B = Math.abs(params.B ?? 1.5)
+  const L = params.L ?? 1.0
+  const R = params.R ?? 2.0
+  const raw: RawCriticalPoint[] = []
+
+  if (mode === 0) {
+    const v = Math.abs(params.v ?? 2.0)
+    if (v <= 1e-6) return []
+    const tHit = CUTTING_EMF_X_LIMIT / v
+    raw.push({
+      rawTime: tHit,
+      align: 'before',
+      label: '导体棒到达导轨末端',
+      variant: 'warning',
+      autoPause: true,
+    })
+  } else {
+    const F_ext = params.F_ext ?? 2.0
+    const m = params.m ?? 0.2
+    if (F_ext <= 1e-6 || m <= 1e-6) return []
+
+    const EPS = 1e-6
+    let tHit = 0
+    if (B < EPS || L < EPS || R < EPS) {
+      const a = F_ext / m
+      tHit = Math.sqrt((2 * CUTTING_EMF_X_LIMIT) / a)
+    } else {
+      const { timeConstant: tau } = computeRodConstants(B, L, R, m, F_ext)
+      let hi = Math.max(1, tau)
+      while (computeRodStateAtTime(hi, B, L, R, m, F_ext).x < CUTTING_EMF_X_LIMIT && hi < 500) {
+        hi *= 2
+      }
+      let lo = 0
+      for (let i = 0; i < 40; i++) {
+        const mid = (lo + hi) / 2
+        if (computeRodStateAtTime(mid, B, L, R, m, F_ext).x < CUTTING_EMF_X_LIMIT) {
+          lo = mid
+        } else {
+          hi = mid
+        }
+      }
+      tHit = (lo + hi) / 2
+
+      const tSteady = 3 * tau
+      if (tSteady > 0.05 && tSteady < tHit - 0.15) {
+        raw.push({
+          rawTime: tSteady,
+          align: 'nearest',
+          label: '接近稳定终速 (0.95vₘ)',
+          variant: 'info',
+        })
+      }
+    }
+
+    raw.push({
+      rawTime: tHit,
+      align: 'before',
+      label: '导体棒到达导轨末端',
+      variant: 'warning',
+      autoPause: true,
+    })
+  }
+
+  return finalizeCriticalPoints(raw, maxTime)
 }

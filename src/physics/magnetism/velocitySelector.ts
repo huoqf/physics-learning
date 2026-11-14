@@ -1,4 +1,12 @@
 import { lorentzForceDir } from './forces'
+import { finalizeCriticalPoints, type RawCriticalPoint } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
+export const VELOCITY_SELECTOR_PHYSICS = {
+  plateLength: 5.0,
+  plateGap: 2.0,
+  mass: 1.0,
+} as const
 
 export interface VelocitySelectorPoint {
   t: number
@@ -167,4 +175,61 @@ export function calculateVelocitySelectorTrajectory(
     hitsPlate,
     hitType
   }
+}
+
+export interface LorentzForceCriticalParams {
+  mode?: number
+  q?: number
+  v0?: number
+  B?: number
+}
+
+/**
+ * 计算洛伦兹力与速度选择器关键时刻（SSOT）
+ * mode === 0 单粒子磁偏转标注撞边界/回旋半周/穿出时刻；mode === 1 连续粒子束流返回空数组。
+ */
+export function getLorentzForceCriticalTimes(
+  params: LorentzForceCriticalParams = {},
+  maxTime = 30,
+): CriticalTimePoint[] {
+  if ((params.mode ?? 0) !== 0) return []
+  const q = params.q ?? 1.0
+  const v0 = params.v0 ?? 10.0
+  const B = params.B ?? 1.0
+  const absQ = Math.abs(q)
+  if (absQ < 1e-9 || Math.abs(B) < 1e-6 || v0 <= 0) return []
+
+  const { plateLength, plateGap, mass } = VELOCITY_SELECTOR_PHYSICS
+  const L = plateLength * 3
+  const d = plateGap * 3
+  const R = (mass * v0) / (absQ * Math.abs(B))
+  const T = (2 * Math.PI * mass) / (absQ * Math.abs(B))
+  const res = calculateVelocitySelectorTrajectory(q, mass, v0, 0, -B, L, d, 0)
+  const raw: RawCriticalPoint[] = []
+
+  if (res.hitsPlate && res.tHit !== null) {
+    if (T / 4 < res.tHit - 0.1) {
+      raw.push({ rawTime: T / 4, align: 'nearest', label: '偏转 90° (T/4)', variant: 'info' })
+    }
+    raw.push({
+      rawTime: res.tHit,
+      align: 'before',
+      label: '粒子抵达极板边界',
+      variant: 'warning',
+      autoPause: true,
+    })
+  } else if (R < L - 1e-6) {
+    raw.push({ rawTime: T / 2, align: 'nearest', label: '回旋半周 (T/2)', variant: 'info' })
+    raw.push({ rawTime: T, align: 'nearest', label: '完成一个回旋周期 (T)', variant: 'critical' })
+  } else {
+    raw.push({
+      rawTime: res.tOut,
+      align: 'before',
+      label: '粒子穿出磁场区域',
+      variant: 'warning',
+      autoPause: true,
+    })
+  }
+
+  return finalizeCriticalPoints(raw, maxTime)
 }

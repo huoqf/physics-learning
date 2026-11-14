@@ -1,3 +1,6 @@
+import { finalizeCriticalPoints, type RawCriticalPoint } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 /**
  * 受迫振动与共振物理纯计算函数
  * 遵循高中物理与大学物理基础力学振动规范，零 React/DOM 依赖，返回物理量数值
@@ -424,4 +427,70 @@ export function generateResonanceCurvePoints(
   }
 
   return points
+}
+
+/**
+ * 受迫振动与共振（anim-forced-resonance）临界时刻。
+ */
+export function getForcedResonanceCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 20,
+): CriticalTimePoint[] {
+  const mode = params.mode ?? 1
+  const m = params.m ?? 1.0
+  const k = params.k ?? 39.5
+  const gamma = params.gamma ?? 0.6
+  const F0 = params.F0 ?? 2.0
+  const f = params.f ?? 1.0
+  if (!(f > 0) || !(m > 0) || !(k > 0)) return []
+
+  const config: ForcedResonanceConfig = { m, k, gamma, F0, f }
+  const steady = calculateSteadyStateResonance(config)
+  const T = 1 / f
+  const raw: RawCriticalPoint[] = []
+
+  if (mode === 0) {
+    raw.push({ rawTime: T, align: 'nearest', label: '完成第 1 个驱动周期 T', variant: 'info', autoPause: false })
+    if (steady.beta > 1e-4) {
+      const tau = 1 / steady.beta
+      raw.push({ rawTime: tau, align: 'nearest', label: '暂态衰减弛豫时间 τ = 2m/γ', variant: 'warning', autoPause: false })
+      raw.push({ rawTime: 3 * tau, align: 'after', label: '⚡ 暂态衰减完毕·进入等幅稳态', variant: 'critical', autoPause: false })
+    }
+  } else {
+    const dt = 0.005
+    const scanEnd = Math.min(maxTime, T * 1.1)
+    let prev = calculateForcedVibrationState(config, 0, mode)
+    let foundEq = false
+    let foundPeak = false
+    for (let t = dt; t <= scanEnd; t += dt) {
+      const cur = calculateForcedVibrationState(config, t, mode)
+      if (!foundEq && prev.x * cur.x <= 0 && Math.abs(cur.x - prev.x) > 1e-9) {
+        const frac = Math.abs(prev.x) / (Math.abs(prev.x) + Math.abs(cur.x))
+        raw.push({
+          rawTime: (t - dt) + frac * dt,
+          align: 'nearest',
+          label: '首次过平衡位置（动能最大）',
+          variant: 'warning',
+          autoPause: false,
+        })
+        foundEq = true
+      }
+      if (!foundPeak && t > dt * 2 && prev.v * cur.v <= 0 && Math.abs(cur.v - prev.v) > 1e-9) {
+        const frac = Math.abs(prev.v) / (Math.abs(prev.v) + Math.abs(cur.v))
+        raw.push({
+          rawTime: (t - dt) + frac * dt,
+          align: 'nearest',
+          label: '首达稳态振幅 ±A（势能最大）',
+          variant: 'info',
+          autoPause: false,
+        })
+        foundPeak = true
+      }
+      if (foundEq && foundPeak) break
+      prev = cur
+    }
+    raw.push({ rawTime: T, align: 'nearest', label: '完成第 1 个受迫周期 T', variant: 'info', autoPause: false })
+  }
+
+  return finalizeCriticalPoints(raw, maxTime)
 }

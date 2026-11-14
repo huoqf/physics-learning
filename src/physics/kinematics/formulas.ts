@@ -1,3 +1,6 @@
+import { finalizeCriticalPoints } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 /**
  * 计算平抛运动状态（无空气阻力）
  *
@@ -82,4 +85,39 @@ export function calculateCircularMotion(r: number, omega: number, t: number): { 
     a_c: r * omega * omega,
     period: (2 * Math.PI) / omega
   };
+}
+
+/** 匀速圆周运动（anim-circular-motion）周期参考临界点 */
+export function getCircularMotionCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const omega = params.omega ?? 1
+  if (!(omega > 1e-6)) return []
+  const T = (2 * Math.PI) / omega
+  return finalizeCriticalPoints(
+    [
+      { rawTime: T / 2, align: 'nearest', label: '半周反相位置 (T/2)', variant: 'info', autoPause: false },
+      { rawTime: T, align: 'nearest', label: '完成 1 个周期 T', variant: 'warning', autoPause: false },
+    ],
+    maxTime,
+  )
+}
+
+/** 向心力与向心加速度（anim-centripetal）周期参考临界点 */
+export function getCentripetalCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const r = params.r ?? 3
+  const v = params.v ?? 3
+  if (!(r > 1e-6) || !(v > 1e-6)) return []
+  const T = (2 * Math.PI * r) / v
+  return finalizeCriticalPoints(
+    [
+      { rawTime: T / 2, align: 'nearest', label: '半周反相位置 (T/2)', variant: 'info', autoPause: false },
+      { rawTime: T, align: 'nearest', label: '完成 1 个圆周周期 T', variant: 'info', autoPause: false },
+    ],
+    maxTime,
+  )
 }

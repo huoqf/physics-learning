@@ -9,6 +9,8 @@
  */
 
 import { GRAVITY } from './constants'
+import { finalizeCriticalPoints, type RawCriticalPoint } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 // ─── 器材与轨道常量 ──────────────────────────────────────────────────────────
 
@@ -466,5 +468,80 @@ export function verifyMechanicalEnergy({
 export function isZeroInitialVelocityTape(firstGapM: number): boolean {
   const gapMm = Math.abs(firstGapM) * 1000
   return Math.abs(gapMm - FIRST_DOT_GAP_MM) <= FIRST_DOT_GAP_TOLERANCE_MM
+}
+
+/**
+ * 力学实验基础：纸带与光电门（anim-mechanics-experiment-base）临界时刻。
+ */
+export function getMechanicsExperimentBaseCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const mode = params.mode ?? 0
+  const v0 = params.v0 ?? 1.0
+  const a = params.a ?? 1.5
+  const freq = params.freq ?? TICKER_FREQ_HZ
+  const raw: RawCriticalPoint[] = []
+
+  const tEnd = timeToReach(v0, a, TRACK_MAX_M)
+  if (mode === 0) {
+    const T = countingPeriod(freq, COUNT_INTERVAL)
+    const tDiffReady = (DIFF_METHOD_MIN_DOTS - 1) * T
+    if (Number.isFinite(tDiffReady) && tDiffReady > 0 && tDiffReady < tEnd) {
+      raw.push({
+        rawTime: tDiffReady,
+        align: 'after',
+        label: '逐差法 7 个计数点就绪',
+        variant: 'info',
+        autoPause: false,
+      })
+    }
+  } else {
+    const tGateA = timeToReach(v0, a, PHOTOGATE_A_X_M - FLAG_OFFSET_M)
+    const tGateB = timeToReach(v0, a, PHOTOGATE_B_X_M - FLAG_OFFSET_M)
+    if (Number.isFinite(tGateA) && tGateA > 0) {
+      raw.push({ rawTime: tGateA, align: 'nearest', label: '遮光条通过光电门 A', variant: 'info', autoPause: false })
+    }
+    if (Number.isFinite(tGateB) && tGateB > 0) {
+      raw.push({ rawTime: tGateB, align: 'nearest', label: '遮光条通过光电门 B', variant: 'warning', autoPause: false })
+    }
+  }
+
+  if (Number.isFinite(tEnd) && tEnd > 0) {
+    raw.push({ rawTime: tEnd, align: 'before', label: '⚡ 抵达轨道末端挡块', variant: 'critical', autoPause: true })
+  }
+  return finalizeCriticalPoints(raw, maxTime)
+}
+
+/**
+ * 验证机械能守恒定律（anim-experiment-mechanical-energy）临界时刻。
+ */
+export function getExperimentMechanicalEnergyCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const freq = params.freq ?? TICKER_FREQ_HZ
+  const friction = params.friction ?? 2
+  const frictionRatio = Math.max(0, Math.min(100, friction)) / 100
+  const aEffective = GRAVITY * (1 - frictionRatio)
+  if (!(aEffective > 1e-6)) return []
+
+  const T = countingPeriod(freq, CONSECUTIVE_INTERVAL)
+  const tFirstCompare = 2 * T
+  const tEnd = timeToReach(0, aEffective, FREEFALL_MAX_M)
+  const raw: RawCriticalPoint[] = []
+  if (tFirstCompare > 0 && tFirstCompare < tEnd) {
+    raw.push({
+      rawTime: tFirstCompare,
+      align: 'after',
+      label: '首组 ΔEp / ΔEk 数据点就绪',
+      variant: 'info',
+      autoPause: false,
+    })
+  }
+  if (Number.isFinite(tEnd) && tEnd > 0) {
+    raw.push({ rawTime: tEnd, align: 'before', label: '⚡ 重物下落 0.6 m 结束', variant: 'critical', autoPause: true })
+  }
+  return finalizeCriticalPoints(raw, maxTime)
 }
 

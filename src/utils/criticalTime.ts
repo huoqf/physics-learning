@@ -1,3 +1,5 @@
+import type { CriticalTimePoint } from '@/data/types'
+
 /**
  * 临界时刻的刻度对齐（播放条网格 = 0.01 s）。
  *
@@ -46,4 +48,49 @@ export function alignCriticalTime(t: number, align: CriticalAlign = 'after'): nu
         : Math.round(scaled)
   // 用 steps / 100 而不是 steps * 0.01：后者会带出 1.5300000000000002 这类尾数
   return steps / 100
+}
+
+export interface RawCriticalPoint {
+  rawTime: number
+  label: string
+  align?: CriticalAlign
+  variant?: CriticalTimePoint['variant']
+  autoPause?: boolean
+}
+
+/**
+ * 统一将原始物理时刻列表对齐到 0.01s 网格、过滤 (0, maxTime] 有效区间、
+ * 按时间升序排序并合并间距不足 minGap 秒的重合时刻（保留优先级更高的前者）。
+ */
+export function finalizeCriticalPoints(
+  rawPoints: RawCriticalPoint[],
+  maxTime: number,
+  minGap = 0.02,
+): CriticalTimePoint[] {
+  const mapped: CriticalTimePoint[] = []
+  for (const pt of rawPoints) {
+    if (!Number.isFinite(pt.rawTime) || pt.rawTime <= 0) continue
+    const aligned = alignCriticalTime(pt.rawTime, pt.align ?? 'after')
+    if (!Number.isFinite(aligned) || aligned <= 0) continue
+    if (maxTime > 0 && aligned > maxTime + 1e-9) continue
+    mapped.push({
+      time: aligned,
+      label: pt.label,
+      variant: pt.variant,
+      autoPause: pt.autoPause,
+    })
+  }
+  mapped.sort((a, b) => a.time - b.time)
+  const deduped: CriticalTimePoint[] = []
+  for (const pt of mapped) {
+    const prev = deduped[deduped.length - 1]
+    if (prev && Math.abs(pt.time - prev.time) < minGap) {
+      if (pt.autoPause && !prev.autoPause) {
+        deduped[deduped.length - 1] = pt
+      }
+      continue
+    }
+    deduped.push(pt)
+  }
+  return deduped
 }

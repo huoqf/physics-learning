@@ -11,6 +11,8 @@
  */
 
 import { GRAVITY } from './constants'
+import { finalizeCriticalPoints, type RawCriticalPoint } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 // ─── ① 光伏 + 电化学储能调峰 ────────────────────────────────────────────────
 
@@ -348,4 +350,111 @@ export function electricVehicleSplit(inputJ: number, systemEfficiency: number): 
 function clamp01(v: number): number {
   if (!Number.isFinite(v)) return 0
   return Math.min(1, Math.max(0, v))
+}
+
+/** 能量守恒与能源演示时间轴常数 (与 useEnergyFlowPhysics 共享) */
+export const ENERGY_FLOW_TIMING = {
+  cycleS: 30,
+  runS: 26,
+  batteryEfficiency: 0.95,
+  initialSOC: 0.2,
+} as const
+
+export interface EnergyFlowCriticalParams {
+  scene?: number
+  pv?: number
+  load?: number
+  cap?: number
+}
+
+/**
+ * 计算能量守恒定律与能源演示关键时刻（SSOT）
+ */
+export function getEnergyFlowCriticalTimes(
+  params: EnergyFlowCriticalParams = {},
+  maxTime: number = ENERGY_FLOW_TIMING.cycleS,
+): CriticalTimePoint[] {
+  const scene = params.scene ?? 0
+  const { runS, batteryEfficiency, initialSOC } = ENERGY_FLOW_TIMING
+  const raw: RawCriticalPoint[] = []
+
+  if (scene === 0) {
+    const dispatch = dispatchStorageDay({
+      pvPeakKW: params.pv ?? 200,
+      loadPeakKW: params.load ?? 90,
+      capacityKWh: params.cap ?? 400,
+      chargeEfficiency: batteryEfficiency,
+      dischargeEfficiency: batteryEfficiency,
+      initialSOC,
+    })
+
+    const hourToTime = (h: number) => (h / 24) * runS
+
+    const firstCharge = dispatch.samples.find((s) => s.battery < -1e-6)
+    if (firstCharge) {
+      raw.push({
+        rawTime: hourToTime(firstCharge.t),
+        align: 'after',
+        label: '光伏富余·开始储能充电',
+        variant: 'info',
+      })
+    }
+
+    raw.push({
+      rawTime: hourToTime(12),
+      align: 'nearest',
+      label: '正午光伏出力峰值 (12:00)',
+      variant: 'critical',
+    })
+
+    if (dispatch.curtailKWh > 0.5) {
+      const fullSample = dispatch.samples.find(
+        (s) => firstCharge && s.t >= firstCharge.t && s.soc >= 0.995,
+      )
+      if (fullSample) {
+        raw.push({
+          rawTime: hourToTime(fullSample.t),
+          align: 'after',
+          label: '电池充满·多余电量弃光',
+          variant: 'warning',
+        })
+      }
+    }
+
+    const firstDischarge = dispatch.samples.find(
+      (s) => (!firstCharge || s.t > firstCharge.t) && s.battery > 1e-6,
+    )
+    if (firstDischarge) {
+      raw.push({
+        rawTime: hourToTime(firstDischarge.t),
+        align: 'after',
+        label: '晚峰来袭·储能转入放电',
+        variant: 'warning',
+      })
+    }
+
+    raw.push({
+      rawTime: runS,
+      align: 'nearest',
+      label: '一日调度统计定格 (24:00)',
+      variant: 'info',
+      autoPause: false,
+    })
+  } else {
+    raw.push({
+      rawTime: runS / 2,
+      align: 'nearest',
+      label: scene === 1 ? '抽水储能蓄水过半' : '能量输入过半 (50 MJ)',
+      variant: 'info',
+    })
+    raw.push({
+      rawTime: runS,
+      align: 'nearest',
+      label: scene === 1 ? '完成一次往返循环账本' : '100 MJ 效率对比完成',
+      variant: 'warning',
+      autoPause: false,
+    })
+  }
+
+  return finalizeCriticalPoints(raw, maxTime)
 }

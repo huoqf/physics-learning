@@ -1,5 +1,5 @@
-import { alignCriticalTime } from '@/utils/criticalTime'
-import type { CriticalTimePoint } from '@/data/types'
+import { alignCriticalTime, finalizeCriticalPoints } from '@/utils/criticalTime'
+import type { CriticalTimePoint, TimeStageSegment } from '@/data/types'
 
 /**
  * 双物体加速度对比计算（基础版）。
@@ -417,4 +417,76 @@ export function getChaseMeetingCriticalTimes(
   }
 
   return events.sort((a, b) => a.time - b.time)
+}
+
+/**
+ * 追及相遇模型进度条过程阶段分段（SSOT）。
+ */
+export function getChaseMeetingTimeStages(
+  params: Record<string, number>,
+  maxTime = computeChaseMeetingMaxTime(params),
+): TimeStageSegment[] {
+  const chaseMode = params.chaseMode ?? 0
+  const vA = params.vA ?? 30
+  if (chaseMode === 0) {
+    const deltaX0 = params.deltaX0 ?? 50
+    const t0 = params.t0 ?? 1
+    const aB = params.aB ?? 3
+    const vMax = params.vMax ?? 40
+    const st = calculatePoliceChase(vA, deltaX0, t0, aB, vMax, 0)
+    const stages: TimeStageSegment[] = []
+    let cursor = 0
+    if (t0 > 1e-4) {
+      const end = Math.min(maxTime, t0)
+      stages.push({ from: 0, to: end, label: '反应延迟期', variant: 'neutral' })
+      cursor = end
+    }
+    const tCruise = st.t1
+    if (cursor < maxTime - 1e-4) {
+      const accelEnd = Number.isFinite(tCruise) ? Math.min(maxTime, Math.max(cursor, tCruise)) : maxTime
+      if (accelEnd > cursor + 1e-4) {
+        stages.push({ from: cursor, to: accelEnd, label: '警车匀加速追击', variant: 'primary' })
+        cursor = accelEnd
+      }
+      if (cursor < maxTime - 1e-4) {
+        stages.push({ from: cursor, to: maxTime, label: '满速匀速巡航', variant: 'secondary' })
+      }
+    }
+    return stages
+  }
+
+  const vL = params.vL ?? 200
+  const aB_meet = params.aB_meet ?? 2
+  const st = calculateMeeting(vA, vL, aB_meet, 0)
+  if (st.tMeet != null && st.tMeet > 1e-4 && st.tMeet < maxTime - 1e-4) {
+    return [
+      { from: 0, to: st.tMeet, label: '相向运动', variant: 'primary' },
+      { from: st.tMeet, to: maxTime, label: '相遇后分离', variant: 'accent' },
+    ]
+  }
+  return [{ from: 0, to: maxTime, label: '相向运动', variant: 'primary' }]
+}
+
+/**
+ * 加速度演示模型（anim-acceleration）临界时刻列表。
+ * 飞机到达设计画布终点（sA = 840 m）后自动截断。
+ */
+export function getAccelerationCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const vA = params.vA ?? 200
+  if (vA <= 1e-6) return []
+  return finalizeCriticalPoints(
+    [
+      {
+        rawTime: 840 / vA,
+        align: 'before',
+        label: '⚡ 飞机到达终点',
+        variant: 'critical',
+        autoPause: true,
+      },
+    ],
+    maxTime,
+  )
 }

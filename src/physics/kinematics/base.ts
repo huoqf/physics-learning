@@ -1,3 +1,6 @@
+import { finalizeCriticalPoints } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 /** 变加速运动模型类型 */
 export type VariableMotionModel = 'force-increasing' | 'shm' | 'multi-stage'
 
@@ -155,4 +158,54 @@ export function calculateFreeFall(v0: number, g: number, t: number): { v: number
     v: v0 + g * t,
     y: v0 * t + 0.5 * g * t * t
   };
+}
+
+/**
+ * 匀变速直线运动（anim-uniform-acceleration）临界时刻。
+ * 仅在初速度与加速度反向（减速至速度过零）时产生折返临界点。
+ */
+export function getUniformAccelerationCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const v0 = params.v0 ?? 0
+  const a = params.a ?? 1.5
+  if (!(v0 > 0 && a < -1e-6)) return []
+  return finalizeCriticalPoints(
+    [
+      {
+        rawTime: -v0 / a,
+        align: 'nearest',
+        label: '⚡ 速度减为零（折返点）',
+        variant: 'critical',
+        autoPause: true,
+      },
+    ],
+    maxTime,
+  )
+}
+
+/**
+ * 运动学图像扩展（anim-kinematics-advanced）临界时刻。
+ * 减速刹车工况下停稳时刻 tBrake = -v0 / a。
+ */
+export function getKinematicsAdvancedCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const v0 = params.v0 ?? 4.0
+  const a = params.a ?? 2.0
+  if (!(v0 > 0 && a < -1e-6)) return []
+  return finalizeCriticalPoints(
+    [
+      {
+        rawTime: -v0 / a,
+        align: 'before',
+        label: '⚡ 刹车停稳',
+        variant: 'critical',
+        autoPause: true,
+      },
+    ],
+    maxTime,
+  )
 }

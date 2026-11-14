@@ -1,11 +1,21 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
-import { PENDULUM_EXP_DEFAULTS } from '@/physics/experimentPendulum'
+import {
+  getExperimentPendulumCriticalTimes,
+  PENDULUM_EXP_DEFAULTS,
+} from '@/physics/experimentPendulum'
 import { GRAVITY } from '@/physics/constants'
 import {
   getSimpleHarmonicCriticalTimes,
   getSimplePendulumCriticalTimes,
 } from '@/physics/oscillation'
+import {
+  getMechanicalWaveCriticalTimes,
+  getWaveDiffractionCriticalTimes,
+  getWaveInterferenceCriticalTimes,
+} from '@/physics/wave'
+import { getDopplerCriticalTimes } from '@/physics/vibration/doppler'
+import { getForcedResonanceCriticalTimes } from '@/physics/vibration/forcedResonance'
 
 // ===== 机械振动与波 =====
 export const vibrationOscillationAnimations = defineAnimations({
@@ -177,6 +187,7 @@ export const vibrationOscillationAnimations = defineAnimations({
     CenterExtra: lazy(() => import('@/features/vibration/simpleHarmonic/ExperimentPendulumCenterExtra')),
     centerLayout: 'splitH',
     controlsMode: 'timed' as const,
+    criticalTimes: (p) => getExperimentPendulumCriticalTimes(p),
     maxTime: (params) => {
       const l = params.l_line ?? PENDULUM_EXP_DEFAULTS.l_line
       const d = (params.d_mm ?? PENDULUM_EXP_DEFAULTS.d_mm) / 2000
@@ -239,6 +250,7 @@ export const vibrationOscillationAnimations = defineAnimations({
     centerLayout: 'splitV',
     controlsMode: 'timed' as const,
     maxTime: 40,
+    criticalTimes: (p) => getMechanicalWaveCriticalTimes(p, 40),
     defaultParams: {
       A: 2,
       f: 1,
@@ -325,6 +337,7 @@ export const vibrationOscillationAnimations = defineAnimations({
     centerLayout: 'splitH',
     controlsMode: 'timed' as const,
     maxTime: 60,
+    criticalTimes: (p) => getWaveDiffractionCriticalTimes(p, 60),
     defaultParams: {
       d: 8,
       lambda: 4,
@@ -390,6 +403,7 @@ export const vibrationOscillationAnimations = defineAnimations({
     centerLayout: 'splitH',
     controlsMode: 'timed' as const,
     maxTime: 60,
+    criticalTimes: (p) => getWaveInterferenceCriticalTimes(p, 60),
     defaultParams: {
       a: 12,
       lambda: 5,
@@ -459,6 +473,7 @@ export const vibrationOscillationAnimations = defineAnimations({
     knowledgeId: 'vibration-2-3',
     Component: lazy(() => import('@/features/vibration/doppler')),
     controlsMode: 'timed',
+    criticalTimes: (p) => getDopplerCriticalTimes(p, 30),
     defaultParams: {
       mode: 0,
       waveSpeed: 340,
@@ -519,6 +534,7 @@ export const vibrationOscillationAnimations = defineAnimations({
     centerLayout: 'splitH',
     controlsMode: 'timed',
     maxTime: 20,
+    criticalTimes: (p) => getForcedResonanceCriticalTimes(p, 20),
     defaultParams: {
       mode: 1,
       m: 1.0,

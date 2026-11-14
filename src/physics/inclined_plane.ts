@@ -1,4 +1,6 @@
 import { GRAVITY } from './constants'
+import { finalizeCriticalPoints } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 /**
  * @file src/physics/inclined_plane.ts
@@ -77,4 +79,37 @@ export function computeInclinedPlane(param: InclinedPlaneParam): InclinedPlaneRe
     accel,
     criticalTheta,
   };
+}
+
+/** 斜面物理水平投影宽度 (m)，与 useInclinedPlaneSimulation 对齐 */
+export const INCLINED_PLANE_WIDTH_M = 2.4
+
+/**
+ * 斜面模型（anim-inclined-plane）临界时刻。
+ */
+export function getInclinedPlaneCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const theta = params.theta ?? 30
+  const mu = params.mu ?? 0.3
+  const m = params.m ?? 2.0
+  const res = computeInclinedPlane({ theta, mu, m })
+  if (!res.isSliding || !(res.accel > 1e-6)) return []
+  const cosTheta = Math.cos((theta * Math.PI) / 180)
+  if (!(cosTheta > 1e-4)) return []
+  const boardLen = INCLINED_PLANE_WIDTH_M / cosTheta
+  const tBottom = Math.sqrt((2 * boardLen) / res.accel)
+  return finalizeCriticalPoints(
+    [
+      {
+        rawTime: tBottom,
+        align: 'before',
+        label: '⚡ 滑至斜面底端',
+        variant: 'critical',
+        autoPause: true,
+      },
+    ],
+    maxTime,
+  )
 }

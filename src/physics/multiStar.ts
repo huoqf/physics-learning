@@ -6,6 +6,8 @@
  * @module physics/multiStar
  */
 import { GRAVITATIONAL_CONSTANT, SOLAR_MASS, SECONDS_PER_DAY } from './constants'
+import { finalizeCriticalPoints } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 /** 双星/三星滑块间距单位：10¹⁰ m */
 export const MULTI_STAR_DISTANCE_UNIT_M = 1e10
@@ -439,3 +441,23 @@ export function calculateMultiStarChartBounds(): MultiStarChartBounds {
 /** 图表固定量程（参数域恒定，故在模块加载时算一次即可） */
 export const MULTI_STAR_CHART_BOUNDS: Readonly<MultiStarChartBounds> =
   calculateMultiStarChartBounds()
+
+/** 双星/三星系统（anim-binary-stars）半周期参考临界点 */
+export function getBinaryStarsCriticalTimes(
+  params: Record<string, number>,
+): CriticalTimePoint[] {
+  const L = (params.L ?? MULTI_STAR_DEFAULT_PARAMS.L) * MULTI_STAR_DISTANCE_UNIT_M
+  const mode = params.mode ?? MULTI_STAR_DEFAULT_PARAMS.mode
+  const massRatio = params.massRatio ?? MULTI_STAR_DEFAULT_PARAMS.massRatio
+  const periodSec =
+    mode === 1 ? calculateTripleStars(L).T : calculateBinaryStars(L, massRatio).T
+  const maxAnimTime = periodSec / MULTI_STAR_TIME_SCALE
+  if (!Number.isFinite(maxAnimTime) || maxAnimTime <= 0) return []
+  return finalizeCriticalPoints(
+    [
+      { rawTime: maxAnimTime / 2, align: 'nearest', label: '半个轨道周期 (T/2 反相)', variant: 'info', autoPause: false },
+      { rawTime: maxAnimTime, align: 'nearest', label: '完成 1 个公转周期 T', variant: 'info', autoPause: false },
+    ],
+    maxAnimTime,
+  )
+}

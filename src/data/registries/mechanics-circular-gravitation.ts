@@ -3,8 +3,13 @@ import {
   CELESTIAL_MULTI_STAR_RANGES,
   MULTI_STAR_DEFAULT_PARAMS,
   getKeplerCriticalTimes,
+  getSatelliteCriticalTimes,
   multiStarMaxAnimTime,
 } from '@/physics/celestial'
+import { getBinaryStarsCriticalTimes } from '@/physics/multiStar'
+import { getCircularModelsCriticalTimes } from '@/physics/circularModels'
+import { getCentripetalCriticalTimes, getCircularMotionCriticalTimes } from '@/physics/kinematics/formulas'
+import { getRelativityCriticalTimes } from '@/physics/relativity'
 import { getVerticalCircularCriticalTimes } from '@/physics/dynamics/dynamics-advanced'
 import { getOrbitTransferCriticalTimes } from '@/physics/orbitTransfer'
 import { defineAnimations } from '../defineAnimations'
@@ -15,6 +20,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     knowledgeId: 'mechanics-5-4',
     Component: lazy(() => import('@/features/mechanics/circular/CircularMotionAnimation')),
     controlsMode: 'timed',
+    criticalTimes: (p) => getCircularMotionCriticalTimes(p, 30),
     defaultParams: { r: 5, omega: 1, t: 0, advancedMode: 0, showProjection: 1, showWaveform: 1 } as const,
     paramMeta: [
       { key: 'r', label: '半径 r', min: 5, max: 10, step: 0.1, unit: 'm' },
@@ -34,6 +40,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     knowledgeId: 'mechanics-5-5',
     Component: lazy(() => import('@/features/mechanics/circular/CentripetalAnimation')),
     controlsMode: 'loop',
+    criticalTimes: (p) => getCentripetalCriticalTimes(p, 30),
     defaultParams: {
       r: 3,
       v: 3,
@@ -117,6 +124,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     CenterExtra: lazy(() => import('@/features/mechanics/circular/CircularModelsChart')),
     centerLayout: 'splitH',
     controlsMode: 'timed',
+    criticalTimes: (p) => getCircularModelsCriticalTimes(p, 30),
     defaultParams: { modelMode: 0, omega: 3.0, L: 1.0, r: 0.8, mu: 0.4 } as const,
     paramMeta: [
       { key: 'omega', label: '角速度 ω', min: 0.5, max: 8.0, step: 0.1, unit: 'rad/s', importance: 'core' },
@@ -194,6 +202,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     knowledgeId: 'mechanics-6-3',
     Component: lazy(() => import('@/features/mechanics/gravitation/SatelliteAnimation')),
     controlsMode: 'timed',
+    criticalTimes: (p) => getSatelliteCriticalTimes(p, 30),
     defaultParams: { r: 7.0, mode: 0, v0: 7.9, isLaunched: 0, showChart: 1, showCompare: 1 } as const,
     paramMeta: [
       { key: 'r', label: '轨道半径 r', min: 6.37, max: 22.0, step: 0.1, unit: '×10⁶ m', showIf: 'mode', showIfValue: 0 },
@@ -230,6 +239,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     centerLayout: 'splitH',
     controlsMode: 'loop',
     maxTime: multiStarMaxAnimTime,
+    criticalTimes: (p) => getBinaryStarsCriticalTimes(p),
     defaultParams: MULTI_STAR_DEFAULT_PARAMS,
     paramMeta: [
       {
@@ -418,6 +428,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     knowledgeId: 'mechanics-6-6',
     Component: lazy(() => import('@/features/modern/relativity/RelativityAnimation')),
     controlsMode: 'loop',
+    criticalTimes: (p) => getRelativityCriticalTimes(p, 30),
     defaultParams: {
       beta: 0.6,
       m0: 1.0,

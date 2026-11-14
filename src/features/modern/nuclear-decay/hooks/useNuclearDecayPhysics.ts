@@ -1,4 +1,8 @@
 import { useMemo } from 'react'
+import {
+  RADIATION_DEFLECTION_CONSTANTS,
+  computeRadiationParticleState,
+} from '@/physics/nuclearDecay'
 
 export interface Nucleon {
   id: number
@@ -134,146 +138,30 @@ export function useNuclearDecayPhysics(params: UseNuclearDecayPhysicsParams): Nu
       }
     }
 
-    const yStart = -2.5
-    const yFieldStart = -1.5
-    const yFieldEnd = 2.5
-    const v = initVelocity
+    const {
+      kAlpha,
+      kBeta,
+      kGamma,
+      paperY,
+      alumY,
+      leadY,
+      paperRange,
+      alumRange,
+      leadRange,
+    } = RADIATION_DEFLECTION_CONSTANTS
 
-    const kAlpha = 0.4
-    const kBeta = -2.4
-    const kGamma = 0
+    const fieldParams = { fieldType, bField, eField, initVelocity, showObstacles }
+    const alphaState = computeRadiationParticleState(time, kAlpha, fieldParams, paperY, paperRange)
+    const betaState = computeRadiationParticleState(time, kBeta, fieldParams, alumY, alumRange)
+    const gammaState = computeRadiationParticleState(time, kGamma, fieldParams, leadY, leadRange)
 
-    // 计算单个粒子在时间 t 处的坐标，增加横坐标命中检测
-    const getParticlePos = (t: number, qm: number, hitY: number, hitXRange: [number, number]) => {
-      const tFieldStart = (yFieldStart - yStart) / v
-      if (t <= tFieldStart) {
-        const y = yStart + v * t
-        const hit = showObstacles === 1 && y >= hitY && 0 >= hitXRange[0] && 0 <= hitXRange[1]
-        if (hit) return { x: 0, y: hitY, hit: true }
-        return { x: 0, y, hit: false }
-      }
-
-      const xStartField = 0
-      const yStartField = yFieldStart
-      const tInField = t - tFieldStart
-
-      let x = 0
-      let y = 0
-
-      if (fieldType === 0) {
-        const omega = qm * bField
-        if (Math.abs(omega) > 1e-5) {
-          x = xStartField + (v / omega) * (Math.cos(omega * tInField) - 1)
-          y = yStartField + (v / omega) * Math.sin(omega * tInField)
-        } else {
-          x = 0
-          y = yStartField + v * tInField
-        }
-      } else if (fieldType === 1) {
-        const ax = qm * eField
-        x = xStartField + 0.5 * ax * tInField * tInField
-        y = yStartField + v * tInField
-      } else {
-        x = 0
-        y = yStartField + v * tInField
-      }
-
-      // 检查在场中是否被挡板截断 (仅当横坐标在挡板范围内)
-      if (showObstacles === 1 && y >= hitY) {
-        let hitX = x
-        if (fieldType === 0) {
-          const omega = qm * bField
-          if (Math.abs(omega) > 1e-5) {
-            const tHit = Math.asin((hitY - yStartField) * omega / v) / omega
-            hitX = xStartField + (v / omega) * (Math.cos(omega * tHit) - 1)
-          }
-        } else if (fieldType === 1) {
-          const tHit = (hitY - yStartField) / v
-          hitX = xStartField + 0.5 * (qm * eField) * tHit * tHit
-        }
-        if (hitX >= hitXRange[0] && hitX <= hitXRange[1]) {
-          return { x: hitX, y: hitY, hit: true }
-        }
-      }
-
-      // 3. 出场后：沿切线做匀速直线运动 (y > yFieldEnd)
-      let tFieldEnd = tFieldStart
-      if (fieldType === 0) {
-        const omega = qm * bField
-        if (Math.abs(omega) > 1e-5) {
-          const val = (yFieldEnd - yStartField) * omega / v
-          if (val >= -1 && val <= 1) {
-            const tInFieldEnd = Math.asin(val) / omega
-            tFieldEnd = tFieldStart + tInFieldEnd
-          } else {
-            tFieldEnd = tFieldStart + Math.PI / Math.abs(omega)
-          }
-        } else {
-          tFieldEnd = tFieldStart + (yFieldEnd - yStartField) / v
-        }
-      } else {
-        tFieldEnd = tFieldStart + (yFieldEnd - yStartField) / v
-      }
-
-      if (t > tFieldEnd) {
-        const tInFieldEnd = tFieldEnd - tFieldStart
-        let xEnd = 0
-        let yEnd = yFieldEnd
-        let vxEnd = 0
-        let vyEnd = v
-
-        if (fieldType === 0) {
-          const omega = qm * bField
-          if (Math.abs(omega) > 1e-5) {
-            xEnd = xStartField + (v / omega) * (Math.cos(omega * tInFieldEnd) - 1)
-            yEnd = yStartField + (v / omega) * Math.sin(omega * tInFieldEnd)
-            vxEnd = -v * Math.sin(omega * tInFieldEnd)
-            vyEnd = v * Math.cos(omega * tInFieldEnd)
-          }
-        } else if (fieldType === 1) {
-          const ax = qm * eField
-          xEnd = xStartField + 0.5 * ax * tInFieldEnd * tInFieldEnd
-          vxEnd = ax * tInFieldEnd
-        }
-
-        const tOut = t - tFieldEnd
-        const currX = xEnd + vxEnd * tOut
-        const currY = yEnd + vyEnd * tOut
-
-        if (showObstacles === 1 && currY >= hitY) {
-          const ratio = (hitY - yEnd) / vyEnd
-          const hitX = xEnd + vxEnd * ratio
-          if (hitX >= hitXRange[0] && hitX <= hitXRange[1]) {
-            return { x: hitX, y: hitY, hit: true }
-          }
-        }
-
-        return { x: currX, y: currY, hit: false }
-      }
-
-      return { x, y, hit: false }
-    }
-
-    const paperY = 0.0
-    const alumY = 1.0
-    const leadY = 2.0
-
-    // 挡板横坐标真实范围
-    const paperRange: [number, number] = [-4.0, -0.8]
-    const alumRange: [number, number] = [0.8, 4.0]
-    const leadRange: [number, number] = [-0.8, 0.8]
-
-    const alphaState = getParticlePos(time, kAlpha, paperY, paperRange)
-    const betaState = getParticlePos(time, kBeta, alumY, alumRange)
-    const gammaState = getParticlePos(time, kGamma, leadY, leadRange)
-
-    const generatePath = (qm: number, hitY: number, range: [number, number]) => {
+    const generatePath = (qm: number, hitY: number, range: readonly [number, number]) => {
       const pathPoints: ParticlePoint[] = []
       const steps = 60
       const limitT = time
       for (let i = 0; i <= steps; i++) {
         const t = (limitT * i) / steps
-        const pt = getParticlePos(t, qm, hitY, range)
+        const pt = computeRadiationParticleState(t, qm, fieldParams, hitY, range)
         pathPoints.push({ x: pt.x, y: pt.y, visible: true })
         if (pt.hit) break
       }

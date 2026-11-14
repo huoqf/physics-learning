@@ -9,13 +9,17 @@
  */
 
 import { GRAVITY } from './constants'
+import { finalizeCriticalPoints } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 import {
   buildTapeCountingDots,
   calcDiffMethodAcceleration,
   COUNT_INTERVAL,
   countingPeriod,
+  DIFF_METHOD_MIN_DOTS,
   solveTrackMotion,
   tickerPeriod,
+  timeToReach,
 } from './experimentMechanics'
 
 /** 牛二实验长木板有效行程 (m) */
@@ -269,4 +273,45 @@ export function computeNewtonSecondMotion(
     tapeDots,
     aCalculated: aCalculated === null ? null : parseFloat(aCalculated.toFixed(3)),
   }
+}
+
+/**
+ * 探究加速度与力、质量的关系（anim-experiment-newton-second）临界时刻。
+ */
+export function getExperimentNewtonSecondCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const st = computeNewtonSecondState(params)
+  if (!(st.a_real > 1e-9)) return []
+
+  const tEnd = timeToReach(0, st.a_real, NEWTON_TRACK_MAX_M)
+  const tDiffReady = (DIFF_METHOD_MIN_DOTS - 1) * countingPeriod(st.freq, COUNT_INTERVAL)
+  const raw: Array<{
+    rawTime: number
+    align: 'before' | 'after'
+    label: string
+    variant: 'critical' | 'info'
+    autoPause: boolean
+  }> = []
+
+  if (tDiffReady > 0 && tDiffReady < tEnd) {
+    raw.push({
+      rawTime: tDiffReady,
+      align: 'after',
+      label: '逐差法 7 点纸带采集完成',
+      variant: 'info',
+      autoPause: false,
+    })
+  }
+  if (Number.isFinite(tEnd) && tEnd > 0) {
+    raw.push({
+      rawTime: tEnd,
+      align: 'before',
+      label: '⚡ 小车抵达轨道末端挡块',
+      variant: 'critical',
+      autoPause: true,
+    })
+  }
+  return finalizeCriticalPoints(raw, maxTime)
 }

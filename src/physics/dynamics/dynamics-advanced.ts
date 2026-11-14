@@ -1,5 +1,5 @@
 import { GRAVITY } from '../constants'
-import { alignCriticalTime } from '@/utils/criticalTime'
+import { alignCriticalTime, finalizeCriticalPoints } from '@/utils/criticalTime'
 import type { CriticalTimePoint } from '@/data/types'
 
 /**
@@ -481,4 +481,85 @@ export function getVerticalCircularCriticalTimes(
     })
   }
   return events.sort((a, b) => a.time - b.time)
+}
+
+/**
+ * 牛顿第二定律（anim-newton-second）进阶变力临界时刻。
+ */
+export function getNewtonSecondCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  if ((params.advancedMode ?? 0) !== 1) return []
+  const modelIdx = params.modelIdx ?? 0
+  const m = params.m ?? 2
+  const mu = params.mu ?? 0
+  const k = params.k ?? 2
+  const omega = params.omega ?? 1.5
+  if (modelIdx === 0) {
+    if (!(mu > 1e-6 && k > 1e-6)) return []
+    const tStart = (mu * m * GRAVITY) / k
+    return finalizeCriticalPoints(
+      [
+        {
+          rawTime: tStart,
+          align: 'after',
+          label: '⚡ 突破最大静摩擦起动',
+          variant: 'critical',
+          autoPause: true,
+        },
+      ],
+      Math.min(maxTime, 10),
+    )
+  }
+  if (!(omega > 1e-6)) return []
+  const T = (2 * Math.PI) / omega
+  return finalizeCriticalPoints(
+    [
+      {
+        rawTime: T / 2,
+        align: 'nearest',
+        label: '半周期速度峰值 (F=0)',
+        variant: 'warning',
+        autoPause: false,
+      },
+      {
+        rawTime: T,
+        align: 'nearest',
+        label: '完成 1 个周期 T (v=0)',
+        variant: 'info',
+        autoPause: false,
+      },
+    ],
+    Math.min(maxTime, 10),
+  )
+}
+
+/**
+ * 超重与失重（anim-weightlessness）进阶分段临界时刻。
+ */
+export function getWeightlessnessCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  if ((params.advancedMode ?? 0) !== 1) return []
+  const modelIdx = params.modelIdx ?? 0
+  if (modelIdx === 0) {
+    return finalizeCriticalPoints(
+      [
+        { rawTime: 2.0, align: 'after', label: '超重上升结束→转匀速', variant: 'info', autoPause: false },
+        { rawTime: 5.0, align: 'after', label: '⚡ 匀速结束→转减速失重', variant: 'warning', autoPause: true },
+        { rawTime: 7.0, align: 'after', label: '电梯减速停靠', variant: 'info', autoPause: false },
+      ],
+      maxTime,
+    )
+  }
+  return finalizeCriticalPoints(
+    [
+      { rawTime: 1.5, align: 'after', label: '⚡ 钢索断裂·完全失重', variant: 'critical', autoPause: true },
+      { rawTime: 4.0, align: 'after', label: '⚡ 触发紧急制动·剧烈超重', variant: 'critical', autoPause: true },
+      { rawTime: 5.0, align: 'after', label: '制动停止', variant: 'info', autoPause: false },
+    ],
+    maxTime,
+  )
 }

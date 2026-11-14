@@ -1,3 +1,6 @@
+import { finalizeCriticalPoints } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 /**
  * src/physics/momentum.ts
  * 动量（Momentum）纯物理计算模块
@@ -139,4 +142,39 @@ export function elasticCollision1D(
   const vAf = ((mA - mB) * vA + 2 * mB * vB) / totalM
   const vBf = ((mB - mA) * vB + 2 * mA * vA) / totalM
   return [vAf, vBf]
+}
+
+/** 动量场景碰撞几何与速度尺度契约（MomentumAnimation 与临界时刻共用单一真源） */
+export const MOMENTUM_SCENE_GEOM = {
+  steelBallBaseRadius: 14,
+  massRadiusScale: 1.8,
+  velocityScale: 25,
+  designWidth: 840,
+} as const
+
+/**
+ * 动量演示（anim-momentum）临界时刻。
+ * 仅进阶双球一维对冲模式存在弹性碰撞瞬间；基础单球循环滑行无临界节点。
+ */
+export function getMomentumCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  if ((params.advancedMode ?? 0) !== 1) return []
+  const mA = params.mA ?? 3
+  const vA = params.vA ?? 5
+  const mB = params.mB ?? 2
+  const vB = params.vB ?? -3
+  const { steelBallBaseRadius, massRadiusScale, velocityScale, designWidth } = MOMENTUM_SCENE_GEOM
+  const rA = steelBallBaseRadius + mA * massRadiusScale
+  const rB = steelBallBaseRadius + mB * massRadiusScale
+  const gap = 0.5 * designWidth - rA - rB
+  const approachSpeed = (vA - vB) * velocityScale
+  if (!(approachSpeed > 1e-6) || !(gap > 0)) return []
+
+  const tCollision = gap / approachSpeed
+  return finalizeCriticalPoints(
+    [{ rawTime: tCollision, align: 'after', label: '⚡ 两球弹性碰撞', variant: 'critical', autoPause: true }],
+    maxTime,
+  )
 }

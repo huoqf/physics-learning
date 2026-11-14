@@ -133,7 +133,7 @@ export const electromagnetismAcAnimations = defineAnimations({
     title: '远距离输电',
     knowledgeId: 'electricity-5-4',
     Component: lazy(() => import('@/features/electromagnetism/induction/PowerTransmission')),
-    controlsMode: 'timed',
+    controlsMode: 'loop',
     defaultParams: {
       mode: 0,
       P1: 100,

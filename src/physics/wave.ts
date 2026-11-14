@@ -1,3 +1,6 @@
+import { finalizeCriticalPoints, type RawCriticalPoint } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 /**
  * 机械波（Mechanical Wave）纯函数库。
  *
@@ -335,4 +338,94 @@ export function computeTwoSourceScreenIntensity(
   const arg = (Math.PI * sourceSeparation * sinTheta) / wavelength
   const c = Math.cos(arg)
   return I0 * c * c
+}
+
+/** 单缝衍射舞台默认物理配置（WaveDiffractionAnimation 与临界时刻共用单一真源） */
+export const WAVE_DIFFRACTION_SCENE_DEFAULTS = {
+  slitX: 0.35,
+  screenDistance: 0.75,
+  waveSpeed: 0.8,
+} as const
+
+/** 双源干涉舞台默认物理配置（WaveInterferenceAnimation 与临界时刻共用单一真源） */
+export const WAVE_INTERFERENCE_SCENE_DEFAULTS = {
+  sourceX: 0.15,
+  screenDistance: 1.0,
+  waveSpeed: 0.8,
+} as const
+
+/**
+ * 机械波形成与传播（anim-mechanical-wave）临界时刻。
+ */
+export function getMechanicalWaveCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 40,
+): CriticalTimePoint[] {
+  const f = params.f ?? 1
+  const v = params.v ?? 2
+  const mode = params.mode ?? 0
+  if (!(f > 0) || !(v > 0)) return []
+
+  const midDist = DEFAULT_WAVE_CHAIN_LENGTH / 2
+  const raw: RawCriticalPoint[] = []
+  if (mode === 0) {
+    const T = computeWavePeriod(f)
+    if (T > 0) {
+      raw.push({ rawTime: T, align: 'nearest', label: '波源完成 1 个周期 T（形成首波长 λ）', variant: 'info', autoPause: false })
+    }
+    raw.push({ rawTime: midDist / v, align: 'after', label: '波前抵达追踪质点 P（x=2m）', variant: 'warning', autoPause: false })
+    raw.push({ rawTime: DEFAULT_WAVE_CHAIN_LENGTH / v, align: 'after', label: '⚡ 波前抵达介质链末端', variant: 'critical', autoPause: false })
+  } else {
+    raw.push({ rawTime: DEFAULT_PULSE_CENTER, align: 'nearest', label: '波源发出单脉冲波峰', variant: 'info', autoPause: false })
+    raw.push({ rawTime: midDist / v + DEFAULT_PULSE_CENTER, align: 'nearest', label: '单脉冲中心经过质点 P', variant: 'warning', autoPause: false })
+    raw.push({ rawTime: DEFAULT_WAVE_CHAIN_LENGTH / v + DEFAULT_PULSE_CENTER, align: 'after', label: '⚡ 单脉冲传至介质链末端', variant: 'critical', autoPause: false })
+  }
+  return finalizeCriticalPoints(raw, maxTime)
+}
+
+/**
+ * 波的衍射（anim-wave-diffraction）临界时刻。
+ */
+export function getWaveDiffractionCriticalTimes(
+  _params: Record<string, number>,
+  maxTime = 60,
+): CriticalTimePoint[] {
+  const { slitX, screenDistance, waveSpeed } = WAVE_DIFFRACTION_SCENE_DEFAULTS
+  return finalizeCriticalPoints(
+    [
+      { rawTime: slitX / waveSpeed, align: 'after', label: '⚡ 波前抵达狭缝（发生衍射）', variant: 'critical', autoPause: false },
+      { rawTime: (slitX + screenDistance) / waveSpeed, align: 'after', label: '衍射波前抵达接收屏', variant: 'info', autoPause: false },
+    ],
+    maxTime,
+  )
+}
+
+/**
+ * 波的干涉（anim-wave-interference）临界时刻。
+ */
+export function getWaveInterferenceCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 60,
+): CriticalTimePoint[] {
+  const aCm = params.a ?? 12
+  const aM = aCm / 100
+  const { screenDistance, waveSpeed } = WAVE_INTERFERENCE_SCENE_DEFAULTS
+  const raw: RawCriticalPoint[] = []
+  if (aM > 0) {
+    raw.push({
+      rawTime: (aM / 2) / waveSpeed,
+      align: 'after',
+      label: '⚡ 两相干波在中垂线相遇叠加',
+      variant: 'critical',
+      autoPause: false,
+    })
+  }
+  raw.push({
+    rawTime: Math.hypot(screenDistance, aM / 2) / waveSpeed,
+    align: 'after',
+    label: '干涉图样抵达接收屏',
+    variant: 'info',
+    autoPause: false,
+  })
+  return finalizeCriticalPoints(raw, maxTime)
 }

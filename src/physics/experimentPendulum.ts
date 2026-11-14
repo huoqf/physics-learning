@@ -1,4 +1,6 @@
 import { GRAVITY } from './constants'
+import { finalizeCriticalPoints } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
 
 /**
  * 高考物理实验：用单摆测重力加速度 —— 纯物理计算模型。
@@ -208,4 +210,33 @@ export function computePendulumExperiment(
     interceptT2_l,
     comparisonPoints,
   }
+}
+
+/**
+ * 用单摆测重力加速度（anim-experiment-pendulum）临界时刻。
+ */
+export function getExperimentPendulumCriticalTimes(
+  params: Record<string, number>,
+  maxTime?: number,
+): CriticalTimePoint[] {
+  const res = computePendulumExperiment({
+    l_line: params.l_line,
+    d_mm: params.d_mm,
+    n_cycles: params.n_cycles,
+    g_true: params.g,
+    timing_err: params.timing_err,
+    theta0: params.theta0_exp ?? params.theta0,
+  })
+  const T0 = res.theoreticalPeriod
+  if (!(T0 > 0)) return []
+  const totalT = res.n_cycles * T0
+  const bound = maxTime ?? Math.ceil(totalT) + 2
+  return finalizeCriticalPoints(
+    [
+      { rawTime: T0 / 4, align: 'nearest', label: '首次过平衡位置（推荐计时点）', variant: 'info', autoPause: false },
+      { rawTime: T0, align: 'nearest', label: '完成第 1 个周期 T', variant: 'info', autoPause: false },
+      { rawTime: totalT, align: 'after', label: `⚡ 完成 ${res.n_cycles} 次全振动计时结束`, variant: 'critical', autoPause: true },
+    ],
+    bound,
+  )
 }

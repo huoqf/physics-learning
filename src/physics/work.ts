@@ -1,3 +1,6 @@
+import { finalizeCriticalPoints } from '@/utils/criticalTime'
+import type { CriticalTimePoint } from '@/data/types'
+
 /**
  * src/physics/work.ts
  * 恒力做功物理计算 — 纯函数，无副作用
@@ -329,4 +332,30 @@ export function computeWorkEnergyBars(
   const F_net = Fx - f
   const Ek = F_net > 0 ? F_net * currentS : 0
   return { WF, Wf_abs, Ek }
+}
+
+/**
+ * 恒力做功（anim-work）临界时刻。
+ * 注：WorkAnimation 固定在 t = 4.0s 完成设定总位移 s 的演示进程（a <= 0 拉不动时无进程）。
+ */
+export function getWorkCriticalTimes(
+  params: Record<string, number>,
+  maxTime = 30,
+): CriticalTimePoint[] {
+  const mode = params.mode ?? 0
+  const F = params.F ?? 10
+  const angleDeg = params.angleDeg ?? 30
+  const s = params.s ?? 5
+  const m = params.m ?? 2
+  const mu = params.mu ?? 0.3
+  const g = params.g ?? 9.8
+  const kin =
+    mode === 0
+      ? calculateWorkKinematicsBasic(F, s, angleDeg, m)
+      : calculateWorkKinematicsAdvanced(F, s, angleDeg, m, mu, g)
+  if (!(kin.a > 1e-6)) return []
+  return finalizeCriticalPoints(
+    [{ rawTime: 4.0, align: 'before', label: '⚡ 完成设定总位移 s', variant: 'critical', autoPause: true }],
+    maxTime,
+  )
 }

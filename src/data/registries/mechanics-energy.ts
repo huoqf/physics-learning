@@ -5,12 +5,16 @@ import { getKineticEnergyCriticalTimes } from '@/physics/kineticEnergy';
 import { getEnergyConservationCriticalTimes } from '@/physics/energyConservation';
 import { getVerticalSpringCriticalTimes } from '@/physics/verticalSpring';
 import { getLightRodRopeCriticalTimes } from '@/physics/lightRodRope/trajectory';
+import { getWorkCriticalTimes } from '@/physics/work';
+import { getPowerCriticalTimes } from '@/physics/power';
+import { getPotentialEnergyCriticalTimes } from '@/physics/potentialEnergy';
 
 export const mechanicsEnergyAnimations = defineAnimations({
   'anim-work': {
     title: '恒力做功',
     knowledgeId: 'mechanics-7-1',
     Component: lazy(() => import('@/features/mechanics/energy/WorkAnimation')),
+    criticalTimes: (p) => getWorkCriticalTimes(p, 30),
     defaultParams: { F: 10, angleDeg: 30, s: 5, m: 2, mu: 0.3, g: GRAVITY, mode: 0 } as const,
     paramMeta: [
       { key: 'F', label: '拉力 F', min: 0, max: 50, step: 1, unit: 'N' },
@@ -68,6 +72,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
     title: '功率',
     knowledgeId: 'mechanics-7-2',
     Component: lazy(() => import('@/features/mechanics/energy/PowerAnimation')),
+    criticalTimes: (p) => getPowerCriticalTimes(p, 30),
     defaultParams: { P: 60000, m: 2000, f: 2000, a: 1.5, mode: 0 } as const,
     paramMeta: [
       { key: 'P', label: '额定功率 P', min: 10000, max: 200000, step: 5000, unit: 'W' },
@@ -181,6 +186,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
     title: '重力势能与弹性势能',
     knowledgeId: 'mechanics-7-4',
     Component: lazy(() => import('@/features/mechanics/energy/PotentialEnergyAnimation')),
+    criticalTimes: (p) => getPotentialEnergyCriticalTimes(p, 30),
     defaultParams: { m: 2, g: 9.8, y0: 8, y_ref: 3, k: 100, x0: 2.0, mode: 0 } as const,
     paramMeta: [
       { key: 'm', label: '质量 m', min: 0.5, max: 8, step: 0.5, unit: 'kg' },
