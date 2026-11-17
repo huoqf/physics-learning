@@ -71,11 +71,13 @@ interface VectorArrowProps {
   /**
    * 标签摆放位置。
    * - `tip`（默认）：箭尖外 10px，沿箭头方向。绝大多数场合都对。
-   * - `side`：箭杆 3/4 长度处的侧面。**同起点、同方向、像素长度又相近的多支箭头**
+   * - `side`：箭杆 3/4 长度处的右手法线侧面。**同起点、同方向、像素长度又相近的多支箭头**
    *   （典型：竖直圆周最低点的 `F_T` 与 `a_合`，两者都沿半径向内、箭尖只差 3px）
    *   若都用 `tip`，两枚标签必然叠字；`side` 把其中一枚挪到箭杆侧面。
+   * - `side-opposite`：箭杆 3/4 长度处的左手法线侧面（与 `side` 相对的另一侧），
+   *   用于两支平行同向且相邻的矢量分别向左右外侧标注（如重力 `G₀` 与安培力 `F`）。
    */
-  labelPlacement?: 'tip' | 'side'
+  labelPlacement?: 'tip' | 'side' | 'side-opposite'
   /** 是否使用虚线箭头 */
   dashed?: boolean
   /** 是否在箭头外侧增加发光阴影，提高对比度 */
@@ -198,11 +200,14 @@ export function VectorArrow({
 
   let textX = tipX + pxDirX * 10;
   let textY = tipY + pxDirY * 10;
-  if (labelPlacement === 'side') {
-    textX = x1 + pxDirX * totalLength * 0.75 + sideNX * 12;
-    textY = y1 + pxDirY * totalLength * 0.75 + sideNY * 12;
+  if (labelPlacement === 'side' || labelPlacement === 'side-opposite') {
+    const sideSign = labelPlacement === 'side-opposite' ? -1 : 1;
+    const nx = sideNX * sideSign;
+    const ny = sideNY * sideSign;
+    textX = x1 + pxDirX * totalLength * 0.75 + nx * 12;
+    textY = y1 + pxDirY * totalLength * 0.75 + ny * 12;
     // 向外的法线朝左就把字画在左端（end），朝右就从左端起笔（start）——字总是往远离箭杆的方向排
-    textAnchor = sideNX >= 0 ? 'start' : 'end';
+    textAnchor = nx >= 0 ? 'start' : 'end';
     dy = '0.35em';
   }
 

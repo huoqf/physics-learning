@@ -60,10 +60,12 @@ export const ForceDecompositionCard = React.memo(function ForceDecompositionCard
   currentPoint, cardWidth, cardHeight, cardX, cardY,
   m, r, v0, trackType, canvasSize,
 }: ForceDecompositionCardProps) {
-  const zoom = Math.min(cardWidth / 290, (cardHeight * 0.45) / 153)
+  const svgH = cardHeight * 0.52
+  // 留足上下左右边距（轴标注延伸 96 * zoom + 文字半高/半宽约 18px），避免贴边裁剪
+  const zoom = Math.min(cardWidth / 290, (svgH - 36) / 192)
 
   const ballCX = cardWidth * 0.50
-  const ballCY = cardHeight * 0.28
+  const ballCY = svgH * 0.50
 
   const theta = currentPoint.theta
   const thetaDeg = (theta * 180) / Math.PI
@@ -94,8 +96,6 @@ export const ForceDecompositionCard = React.memo(function ForceDecompositionCard
     : 0
   const G_val = m * GRAVITY
 
-  const svgH = cardHeight * 0.52
-
   return (
     <div
       className="absolute"
@@ -118,9 +118,9 @@ export const ForceDecompositionCard = React.memo(function ForceDecompositionCard
           strokeDasharray="2 2" opacity={0.6}
         />
         <text
-          x={ballCX - dx_out * 96 * zoom} y={ballCY - dy_out * 96 * zoom + 3}
+          x={ballCX - dx_out * 96 * zoom} y={ballCY - dy_out * 96 * zoom}
           fontSize={canvasSize.font(Math.max(8, 10 * zoom))}
-          fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle"
+          fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" dominantBaseline="central"
         >n</text>
 
         <line
@@ -130,9 +130,9 @@ export const ForceDecompositionCard = React.memo(function ForceDecompositionCard
           strokeDasharray="2 2" opacity={0.6}
         />
         <text
-          x={ballCX + dx_tangent * 96 * zoom} y={ballCY + dy_tangent * 96 * zoom + 3}
+          x={ballCX + dx_tangent * 96 * zoom} y={ballCY + dy_tangent * 96 * zoom}
           fontSize={canvasSize.font(Math.max(8, 10 * zoom))}
-          fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle"
+          fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" dominantBaseline="central"
         >τ</text>
 
         <line

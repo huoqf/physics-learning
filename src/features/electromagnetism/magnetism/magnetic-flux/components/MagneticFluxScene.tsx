@@ -308,7 +308,7 @@ export function MagneticFluxScene({
             sceneScale={sceneScale}
             strokeWidth={STROKE.vectorMain}
             label={`F=${r.ampereForceF.toFixed(2)}N`}
-            labelPlacement="side"
+            labelPlacement="side-opposite"
             font={font}
           />
         )}

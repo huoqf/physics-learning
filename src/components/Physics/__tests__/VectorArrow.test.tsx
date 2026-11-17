@@ -87,4 +87,34 @@ describe('VectorArrow', () => {
 
     warnSpy.mockRestore()
   })
+
+  it('labelPlacement: side 与 side-opposite 应分别置于箭杆两侧', () => {
+    const { container: leftC } = renderWithSvg(
+      <VectorArrow
+        originDesign={{ x: 100, y: 100 }}
+        vector={{ x: 0, y: -5 }}
+        type="velocity"
+        sceneScale={sceneScale}
+        label="G₀"
+        labelPlacement="side"
+      />
+    )
+    const { container: rightC } = renderWithSvg(
+      <VectorArrow
+        originDesign={{ x: 100, y: 100 }}
+        vector={{ x: 0, y: -5 }}
+        type="velocity"
+        sceneScale={sceneScale}
+        label="F"
+        labelPlacement="side-opposite"
+      />
+    )
+
+    const leftText = leftC.querySelector('text')
+    const rightText = rightC.querySelector('text')
+    expect(leftText?.getAttribute('text-anchor')).toBe('end')
+    expect(Number(leftText?.getAttribute('x'))).toBeLessThan(100)
+    expect(rightText?.getAttribute('text-anchor')).toBe('start')
+    expect(Number(rightText?.getAttribute('x'))).toBeGreaterThan(100)
+  })
 })
