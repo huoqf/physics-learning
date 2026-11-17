@@ -633,43 +633,54 @@ function RCContent({
       )}
 
       {/* 图例（多系列时显示） */}
-      {additionalSeries && additionalSeries.length > 0 && (
-        <g>
-          {/* 主系列 */}
-          <line
-            x1={plotOrigin.x + plotSize.width - 130} y1={plotOrigin.y + 10}
-            x2={plotOrigin.x + plotSize.width - 115} y2={plotOrigin.y + 10}
-            stroke={mainColor} strokeWidth={2}
-          />
-          <text
-            x={plotOrigin.x + plotSize.width - 110} y={plotOrigin.y + 13}
-            fontSize={font(FONT.small)} fill={PHYSICS_COLORS.labelText}
-          >
-            {mainLabel ?? ((series ?? 'primary') === 'primary' ? '主' : '')}
-          </text>
-          {/* 额外系列 */}
-          {additionalSeries.map((s, i) => {
-            const c = s.color ?? (s.series ? SERIES_MAP[s.series] : PHYSICS_COLORS.displacement)
-            const baseY = plotOrigin.y + 10 + (i + 1) * 14
-            return (
-              <g key={`legend-${i}`}>
-                <line
-                  x1={plotOrigin.x + plotSize.width - 130} y1={baseY}
-                  x2={plotOrigin.x + plotSize.width - 115} y2={baseY}
-                  stroke={c} strokeWidth={s.strokeWidth ?? 2}
-                  strokeDasharray={s.strokeDasharray?.join(' ')}
-                />
-                <text
-                  x={plotOrigin.x + plotSize.width - 110} y={baseY + 3}
-                  fontSize={font(FONT.small)} fill={PHYSICS_COLORS.labelText}
-                >
-                  {s.label ?? `${i + 2}`}
-                </text>
-              </g>
-            )
-          })}
-        </g>
-      )}
+      {additionalSeries && additionalSeries.length > 0 && (() => {
+        const primaryText = mainLabel ?? ((series ?? 'primary') === 'primary' ? '主' : '')
+        const allLabels = [primaryText, ...additionalSeries.map((s, i) => s.label ?? `${i + 2}`)]
+        const maxWidth = allLabels.reduce((m, txt) => {
+          const units = [...txt].reduce((acc, ch) => acc + (ch.charCodeAt(0) > 127 ? 1.05 : 0.65), 0)
+          return Math.max(m, units * font(FONT.small))
+        }, 100)
+        const legendTextX = plotOrigin.x + plotSize.width - Math.max(110, Math.ceil(maxWidth) + 14)
+        const legendLineX1 = legendTextX - 20
+        const legendLineX2 = legendTextX - 5
+        return (
+          <g>
+            {/* 主系列 */}
+            <line
+              x1={legendLineX1} y1={plotOrigin.y + 10}
+              x2={legendLineX2} y2={plotOrigin.y + 10}
+              stroke={mainColor} strokeWidth={2}
+            />
+            <text
+              x={legendTextX} y={plotOrigin.y + 13}
+              fontSize={font(FONT.small)} fill={PHYSICS_COLORS.labelText}
+            >
+              {primaryText}
+            </text>
+            {/* 额外系列 */}
+            {additionalSeries.map((s, i) => {
+              const c = s.color ?? (s.series ? SERIES_MAP[s.series] : PHYSICS_COLORS.displacement)
+              const baseY = plotOrigin.y + 10 + (i + 1) * 14
+              return (
+                <g key={`legend-${i}`}>
+                  <line
+                    x1={legendLineX1} y1={baseY}
+                    x2={legendLineX2} y2={baseY}
+                    stroke={c} strokeWidth={s.strokeWidth ?? 2}
+                    strokeDasharray={s.strokeDasharray?.join(' ')}
+                  />
+                  <text
+                    x={legendTextX} y={baseY + 3}
+                    fontSize={font(FONT.small)} fill={PHYSICS_COLORS.labelText}
+                  >
+                    {s.label ?? `${i + 2}`}
+                  </text>
+                </g>
+              )
+            })}
+          </g>
+        )
+      })()}
 
       {/* 插件顶层（微元切割、教学注释等） */}
       {children}

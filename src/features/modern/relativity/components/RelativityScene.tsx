@@ -31,7 +31,7 @@ export const RelativityScene: React.FC<RelativitySceneProps> = ({ physics, font 
   // S' 参考系：y 范围 40 ~ 300，基线 y = 220
   // S 参考系：y 范围 330 ~ 620，基线 y = 530
   const sPrimeBaseY = 230
-  const sBaseY = 530
+  const sBaseY = 570
   const sPrimeShipX = 380
 
   // 飞船半高
@@ -378,16 +378,16 @@ export const RelativityScene: React.FC<RelativitySceneProps> = ({ physics, font 
           opacity={0.6}
         />
 
-        {/* 几何辅助图解（直角三角形与勾股定理推导） */}
+        {/* 几何辅助图解（直角三角形与勾股定理推导，置于飞船跑道上方净空区） */}
         {showGeometry && (
-          <g className="geometry-diagram" transform="translate(60, 420)">
+          <g className="geometry-diagram" transform="translate(96, 365)">
             {/* 固定的直角三角形图解 */}
             {(() => {
               const bX = 0
-              const bY = 120
-              // 缩放适应面板
-              const geomScale = 0.7
-              const gBase = Math.min(triangleBase * geomScale, 180)
+              const bY = 82
+              // 缩放适应上半部净空区，避开下方运动飞船
+              const geomScale = 0.55
+              const gBase = Math.min(triangleBase * geomScale, 160)
               const gH = triangleH * geomScale
 
               return (
@@ -485,7 +485,7 @@ export const RelativityScene: React.FC<RelativitySceneProps> = ({ physics, font 
 
         {/* 模式 2：质速关系与能量构成对比 */}
         {mode === 2 && (
-          <g className="energy-diagram" transform="translate(60, 430)">
+          <g className="energy-diagram" transform="translate(60, 372)">
             <rect
               x={0}
               y={0}
@@ -551,7 +551,7 @@ export const RelativityScene: React.FC<RelativitySceneProps> = ({ physics, font 
         )}
 
         {/* 地面参考系表盘 */}
-        {renderClock(680, 480, 32, groundClockAngle, '地面参考系时间 t')}
+        {renderClock(680, 525, 32, groundClockAngle, '地面参考系时间 t')}
       </g>
     </g>
   )

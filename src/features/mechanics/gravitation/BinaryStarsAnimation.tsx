@@ -110,6 +110,7 @@ export default function BinaryStarsAnimation() {
                 color={PHYSICS_COLORS.forceNet}
                 pixelLength={FORCE_NET_ARROW_LEN}
                 label="F₁₂"
+                labelPlacement="side"
                 font={font}
               />
               <PhysicsVectorArrow
@@ -131,6 +132,7 @@ export default function BinaryStarsAnimation() {
                 color={PHYSICS_COLORS.forceNet}
                 pixelLength={FORCE_NET_ARROW_LEN}
                 label="F₂₁"
+                labelPlacement="side"
                 font={font}
               />
               <PhysicsVectorArrow

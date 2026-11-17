@@ -246,8 +246,8 @@ export function WeightlessnessChart({ layout, m, g }: WeightlessnessChartProps) 
         )
       })}
 
-      {/* 纵轴 N 刻度 */}
-      {[m * g, m * 10, m * 20].map((valN, idx) => {
+      {/* 纵轴 N 刻度（跳过与 mg 间距过近的固定整数刻度，避免默认 g=9.8 时与 500 叠字） */}
+      {[m * g, m * 20].map((valN, idx) => {
         const yPos = toChartY(valN)
         const labelText = idx === 0 ? `mg (${(m * g).toFixed(0)})` : `${valN.toFixed(0)}`
         return (

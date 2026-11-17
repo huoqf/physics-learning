@@ -126,10 +126,10 @@ export const DualRodsScene = React.memo(function DualRodsScene({
         />
 
         {/* 6. 棒名称及发热标示 */}
-        <text x={posB} y={cy + railSpacing / 2 + 28} fontSize={font(13)} fontWeight="bold" fill={CANVAS_COLORS.textMuted} textAnchor="middle">
+        <text x={posB - 8} y={cy + railSpacing / 2 + 28} fontSize={font(13)} fontWeight="bold" fill={CANVAS_COLORS.textMuted} textAnchor="end">
           导体棒 b (m_b)
         </text>
-        <text x={posA} y={cy + railSpacing / 2 + 28} fontSize={font(13)} fontWeight="bold" fill={CANVAS_COLORS.textMuted} textAnchor="middle">
+        <text x={posA + 8} y={cy + railSpacing / 2 + 28} fontSize={font(13)} fontWeight="bold" fill={CANVAS_COLORS.textMuted} textAnchor="start">
           导体棒 a (m_a)
         </text>
 

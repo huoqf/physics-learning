@@ -135,7 +135,7 @@ export function ElectrostaticShieldingScene({
               sceneScale={sceneScale}
               strokeWidth={STROKE.vectorMain}
             />
-            <text x={35} y={-20} fontSize={font(11)} fontWeight="bold" fill={DYNAMICS_COLORS.appliedForce}>
+            <text x={0} y={-36} fontSize={font(11)} fontWeight="bold" fill={DYNAMICS_COLORS.appliedForce} textAnchor="middle">
               外加场强 E₀ (向右)
             </text>
 
@@ -147,7 +147,7 @@ export function ElectrostaticShieldingScene({
               sceneScale={sceneScale}
               strokeWidth={STROKE.vectorMain}
             />
-            <text x={-140} y={20} fontSize={font(11)} fontWeight="bold" fill={EM_COLORS.electricField}>
+            <text x={0} y={34} fontSize={font(11)} fontWeight="bold" fill={EM_COLORS.electricField} textAnchor="middle">
               感应场强 E&apos; (向左)
             </text>
 

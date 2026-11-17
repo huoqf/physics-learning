@@ -170,7 +170,7 @@ export function SpectrometerScene({
       <text x={190} y={45} fontSize={smallFs} fill={colors.neutral[600]} fontFamily={CANVAS_STYLE.FONT.family}>
         速度选择器
       </text>
-      <text x={120} y={118} fontSize={smallFs} fill={colors.neutral[500]} fontWeight="bold">
+      <text x={125} y={102} fontSize={smallFs} fill={colors.neutral[500]} fontWeight="bold" textAnchor="middle">
         照相底片 (Film)
       </text>
 

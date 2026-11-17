@@ -277,12 +277,11 @@ export const DCSource: React.FC<DCSourceProps> = ({
         {/* 器材品牌小字 */}
         <text
           x={0}
-          y={8 * (height / 80)}
+          y={5 * (height / 80)}
           fill={colors.neutral[400]}
           fontSize={FONT_BASE.instrument.brand * (Math.min(width, height) / 80)}
           fontWeight="bold"
           textAnchor="middle"
-          letterSpacing={0.5}
           style={{ userSelect: 'none' }}
         >
           {label ?? 'DC SOURCE'}
@@ -291,14 +290,14 @@ export const DCSource: React.FC<DCSourceProps> = ({
         {/* 正极接线柱 (+) */}
         <circle cx={posTerminalX} cy={terminalY} r={layout.terminalR} fill={SCENE_COLORS_CIRCUIT.batteryPos} stroke={SCENE_COLORS_CIRCUIT.batteryPos} strokeWidth={1} />
         <circle cx={posTerminalX} cy={terminalY} r={layout.axisR} fill={SCENE_COLORS_CIRCUIT.batteryPos} />
-        <text x={posTerminalX} y={terminalY - 11 * (height / 80)} fill={SCENE_COLORS_CIRCUIT.batteryPos} fontSize={FONT_BASE.instrument.terminal * (Math.min(width, height) / 80)} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
+        <text x={posTerminalX + (posTerminalX >= 0 ? 11 : -11) * (width / 80)} y={terminalY + 3 * (height / 80)} fill={SCENE_COLORS_CIRCUIT.batteryPos} fontSize={FONT_BASE.instrument.terminal * (Math.min(width, height) / 80)} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
           +
         </text>
 
         {/* 负极接线柱 (-) */}
         <circle cx={negTerminalX} cy={terminalY} r={layout.terminalR} fill={SCENE_COLORS_CIRCUIT.batteryNeg} stroke={colors.neutral[900]} strokeWidth={1} />
         <circle cx={negTerminalX} cy={terminalY} r={layout.axisR} fill={colors.neutral[900]} />
-        <text x={negTerminalX} y={terminalY - 11 * (height / 80)} fill={colors.neutral[400]} fontSize={FONT_BASE.instrument.terminal * (Math.min(width, height) / 80)} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
+        <text x={negTerminalX + (negTerminalX >= 0 ? 11 : -11) * (width / 80)} y={terminalY + 3 * (height / 80)} fill={colors.neutral[400]} fontSize={FONT_BASE.instrument.terminal * (Math.min(width, height) / 80)} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
           -
         </text>
       </g>

@@ -99,7 +99,7 @@ export default function BulbVAAnimation() {
           xDomain={[0, 4.5]}
           yDomain={[0, 0.45]}
           points={physics.realCurvePoints}
-          mainLabel="理论伏安特性 (灯丝R随T升高)"
+          mainLabel="理论特性 (R随T升高)"
           color={CANVAS_COLORS.textMuted}
           additionalSeries={additionalSeries}
           markers={markers}
