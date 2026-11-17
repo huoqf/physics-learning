@@ -92,15 +92,16 @@ export const MasterModelCard: React.FC<MasterModelCardProps> = ({ model }) => {
           </div>
         )}
 
-        {/* 关联同源真题变式链 */}
+        {/* 关联同源试题与示意图 */}
         {model.relatedProblemIds.length > 0 && (
           <div className="mb-5 pt-3 border-t border-neutral-100">
             <span className="text-xs font-semibold text-neutral-500 block mb-2 flex items-center justify-between">
-              <span>🔗 绑定高考真题与原卷原图：</span>
+              <span>🔗 绑定典型试题与示意图：</span>
             </span>
             <div className="space-y-2">
               {model.relatedProblemIds.map((probId) => {
                 const prob = getProblemById(probId)
+                const isVerified = prob?.verified === true
                 return (
                   <div
                     key={probId}
@@ -113,7 +114,7 @@ export const MasterModelCard: React.FC<MasterModelCardProps> = ({ model }) => {
                         <span>{prob ? prob.title : probId}</span>
                       </div>
                       <span className="text-[11px] px-2 py-0.5 rounded bg-primary-100/60 text-primary-700 shrink-0">
-                        {prob?.source || '高考真题'}
+                        {isVerified ? (prob.source || '已核验真题') : (prob?.province || '模型演练')}
                       </span>
                     </div>
 
@@ -124,9 +125,11 @@ export const MasterModelCard: React.FC<MasterModelCardProps> = ({ model }) => {
                     )}
 
                     <div className="flex items-center justify-between text-xs text-primary-600 font-medium">
-                      <span>📄 考场模式 (纯净原图·初始无解析)</span>
+                      <span>
+                        {isVerified ? '📄 真题考场模式 (纯净原图·初始无解析)' : '📄 独立思考模式 (纯净示意图·初始无解析)'}
+                      </span>
                       <div className="flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
-                        <span>真题考场进入</span>
+                        <span>{isVerified ? '真题考场进入' : '模型破题进入'}</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </div>
                     </div>
@@ -148,7 +151,7 @@ export const MasterModelCard: React.FC<MasterModelCardProps> = ({ model }) => {
             onClick={() => handleGoAnimation(true)}
           >
             <Zap className="w-3 h-3" />
-            <span>📋 真题预设</span>
+            <span>📋 工况预设</span>
           </Button>
           <Button
             variant="secondary"

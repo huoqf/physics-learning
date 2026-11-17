@@ -1,52 +1,31 @@
 import type { Problem } from '../types'
 
 /**
- * 高考实验真题（100% 官方原卷逐字核验）
+ * 高考实验专题题库
+ * 仅 100% 对照原卷核验且设问完整者标为 verified: true；其余模型演练/改编题标为 verified: false。
+ * 实验填空题严禁伪造 ABCD 选项解析（optionExplanations）。
  */
 export const experimentProblems: Problem[] = [
   {
     id: 'prob-2023-quanguo-23',
     year: 2023,
-    province: '全国乙卷',
-    source: '2023年普通高等学校招生全国统一考试理科综合（全国乙卷）第23题',
+    province: '全国卷模型',
+    source: '经典实验演练（改编自 2023 全国乙卷第 23 题思路：单刀双掷开关测金属丝电阻率）',
     questionType: 'experiment',
-    verified: true,
+    verified: false,
     title: '测量金属丝电阻率与单刀双掷开关分压测阻',
     content:
-      '一学生小组测量某金属丝（阻值约十几欧姆）的电阻率。实验提供的器材包括：螺旋测微器、米尺、电源 E、电压表（内阻非常大）、定值电阻 R₀（阻值 10.0 Ω）、滑动变阻器 R、待测金属丝、单刀双掷开关 K、开关 S 以及导线若干。\n\n' +
-      '(1) 实验时，首先需要将滑动变阻器 R 接入电路的电阻调至最大，然后闭合开关 S。\n' +
-      '(2) 考查利用单刀双掷开关 K 分别测量电压：若将 K 与 1 端相连，电压表示数为 U₁；将 K 与 2 端相连，电压表示数为 U₂。流过待测金属丝的电流 I 与待测电阻 Rx 的理论表达式分别为（ ）\n' +
-      '(3) 某次用螺旋测微器测得金属丝直径为 d，米尺测得有效长度为 L，若测得电阻为 Rx，则该金属丝电阻率 ρ 的表达式为（ ）。',
+      '一学生小组测量某金属丝（阻值约十几欧姆）的电阻率。实验器材包括：螺旋测微器、米尺、电源 E、电压表（内阻非常大，可视为理想电表）、定值电阻 $R_0 = 10.0\\,\\Omega$、滑动变阻器 $R$、待测金属丝 $R_x$（与 $R_0$ 串联）、单刀双掷开关 K、开关 S 及导线若干。\n\n' +
+      '(1) 闭合开关 S 前，应将滑动变阻器 $R$ 接入电路的电阻调至 ____（选填“最大”或“最小”）；\n' +
+      '(2) 将单刀双掷开关 K 与 1 端相连时，电压表与 $R_0$ 并联，示数为 $U_1$；保持滑片位置不变，将 K 与 2 端相连时，电压表测 $R_0$ 与 $R_x$ 串联总电压，示数为 $U_2$。则流过待测金属丝的电流 $I =$ ____，待测电阻 $R_x =$ ____（均用 $R_0$、$U_1$、$U_2$ 表示）；\n' +
+      '(3) 用螺旋测微器测得金属丝直径为 $d$，米尺测得有效长度为 $L$，则金属丝电阻率 $\\rho =$ ____（用 $d$、$L$、$R_x$ 表示）。',
     difficulty: 3,
     knowledgeIds: ['experiment-3-1'],
-    tags: ['高考真题', '2023全国乙卷', '电阻率实验', '伏安法'],
+    tags: ['模型演练', '电阻率实验', '单刀双掷开关', '替代测流'],
     targetAnimation: {
       animId: 'anim-experiment-resistivity',
       presetParams: { L: 0.5, d_mm: 0.6, wiring: 0, R_slider: 20, showTheoretical: 1 },
-      presetDescription: '载入2023全国乙卷情境：模拟金属丝电阻伏安测量与 R-L 斜率求电阻率',
-    },
-    optionExplanations: {
-      A: {
-        label: 'A',
-        isCorrect: true,
-        explanation:
-          '正确。开关接 1 时电压表测定值电阻 R₀ 电压，故干路电流 I = U₁ / R₀；接 2 时测 R₀ 与 Rx 串联总电压，Rx 两端电压 Ux = U₂ - U₁，得 Rx = [(U₂ - U₁) / U₁] · R₀；由电阻定律得 ρ = π d² Rx / (4L)。',
-      },
-      B: {
-        label: 'B',
-        isCorrect: false,
-        explanation: '错误。Rx 两端电压为 U₂ - U₁ 而非 U₁，且横截面积 S = π d² / 4，分母应为 4L 而非 2L。',
-      },
-      C: {
-        label: 'C',
-        isCorrect: false,
-        explanation: '错误。横截面积 S 与直径平方 d² 成正比，不能漏写平方。',
-      },
-      D: {
-        label: 'D',
-        isCorrect: false,
-        explanation: '错误。电流表达式与分压公式倒置，横截面积系数缺失。',
-      },
+      presetDescription: '载入金属丝电阻率测量仿真：调节长度与直径观察阻值变化',
     },
     steps: [
       {
@@ -70,49 +49,26 @@ export const experimentProblems: Problem[] = [
   {
     id: 'prob-2024-quanguo-exp-multimeter',
     year: 2024,
-    province: '全国新课标卷',
-    source: '2024年普通高等学校招生全国统一考试理科综合（新课标卷）物理实验第22题',
+    province: '模型演练',
+    source: '经典实验演练（多用电表欧姆挡测电阻与换挡调零）',
     questionType: 'experiment',
-    verified: true,
-    title: '多用电表测电阻与二极管极性判断及换挡操作',
+    verified: false,
+    title: '多用电表测电阻与换挡调零规范操作',
     content:
-      '某实验小组用多用电表测量未知电阻 Rx 及二极管的正反向电阻。主要实验操作步骤如下：\n\n' +
+      '某实验小组用多用电表测量未知电阻 $R_x$。主要实验操作步骤如下：\n\n' +
       '(1) 观察电表指针，先进行机械调零；\n' +
       '(2) 将选择开关置于欧姆挡 "×10" 的位置；\n' +
       '(3) 将红、黑表笔短接，调节欧姆调零旋钮，使电表指针指向欧姆刻度的 ____ 处；\n' +
-      '(4) 将两表笔分别与未知电阻 Rx 的两端接触，发现指针偏转角度过小，指针停在刻度盘左侧过密区域。为了更精确地测量 Rx 的阻值，应换用 ____ 挡（选填 "×1" 或 "×100"）；\n' +
+      '(4) 将两表笔分别与未知电阻 $R_x$ 的两端接触，发现指针偏转角度过小，指针停在刻度盘左侧过密区域。为了更精确地测量 $R_x$ 的阻值，应换用 ____ 挡（选填 "×1" 或 "×100"）；\n' +
       '(5) 换用新倍率挡位后，在测量前必须进行的关键操作是 ____；\n' +
       '(6) 测量完毕后，应将选择开关旋至 ____ 挡或交流电压最高挡。',
     difficulty: 3,
     knowledgeIds: ['experiment-3-5'],
-    tags: ['高考真题', '2024新课标卷', '多用电表', '欧姆调零', '换挡决策'],
+    tags: ['模型演练', '多用电表', '欧姆调零', '换挡决策'],
     targetAnimation: {
       animId: 'anim-multimeter',
       presetParams: { rangeIndex: 7, zeroOffset: 0, componentType: 0, rxNominal: 2800, probesConnected: 1 },
-      presetDescription: '载入2024新课标卷情境：模拟指针偏角过小换用大倍率挡并重新欧姆调零',
-    },
-    optionExplanations: {
-      A: {
-        label: 'A',
-        isCorrect: true,
-        explanation:
-          '正确。短接红黑表笔时电流满偏，对应欧姆刻度 0 处；指针偏角过小说明待测阻值过大，指针指在刻度密集区误差大，应换更大倍率 "×100" 挡；欧姆表每次换挡后回路总内阻改变，必须重新欧姆调零；用毕应置于 OFF 挡或交流电压最高挡。',
-      },
-      B: {
-        label: 'B',
-        isCorrect: false,
-        explanation: '错误。偏角过小说明电阻大，换用 ×1 挡会使偏角更小、刻度更密，误差更大。',
-      },
-      C: {
-        label: 'C',
-        isCorrect: false,
-        explanation: '错误。换挡后若漏掉欧姆调零，测量出的阻值将产生严重系统误差。',
-      },
-      D: {
-        label: 'D',
-        isCorrect: false,
-        explanation: '错误。测量完毕后严禁留在欧姆挡，防止表笔意外短接放电耗尽内部电池。',
-      },
+      presetDescription: '载入多用电表欧姆挡情境：观察偏角过小并切换大倍率挡重新调零',
     },
     steps: [
       {
@@ -144,46 +100,23 @@ export const experimentProblems: Problem[] = [
   {
     id: 'prob-2024-quanguo-exp-tape',
     year: 2024,
-    province: '全国新课标卷',
-    source: '2024年普通高等学校招生全国统一考试理科综合（新课标卷）物理实验第21题',
+    province: '模型演练',
+    source: '经典实验演练（打点计时器纸带分析与逐差法求加速度）',
     questionType: 'experiment',
-    verified: true,
+    verified: false,
     title: '探究匀变速直线运动打点纸带分析与逐差法求加速度',
     content:
-      '某实验小组用打点计时器测量小车做匀加速直线运动的加速度。打点计时器的工作频率为 50 Hz。如图所示为打出的一条清晰纸带，纸带上每 5 个点取 1 个计数点，依次标为 0, 1, 2, 3, 4, 5, 6。测得各计数点到 0 点的距离分别为 x₁=1.40 cm, x₂=3.20 cm, x₃=5.40 cm, x₄=8.00 cm, x₅=11.00 cm, x₆=14.40 cm。\n\n' +
-      '(1) 相邻两计数点间的时间间隔 T = ____ s；\n' +
-      '(2) 打点计时器打下计数点 3 时小车的瞬时速度 v₃ = ____ m/s（保留三位有效数字）；\n' +
-      '(3) 采用逐差法计算小车的加速度 a = ____ m/s²（保留三位有效数字）。',
+      '某实验小组用打点计时器测量小车做匀加速直线运动的加速度。打点计时器的工作频率为 50 Hz。打出的一条清晰纸带上每 5 个点取 1 个计数点，依次标为 0, 1, 2, 3, 4, 5, 6。测得各计数点到 0 点的距离分别为 $x_1 = 1.40\\text{ cm}, x_2 = 3.20\\text{ cm}, x_3 = 5.40\\text{ cm}, x_4 = 8.00\\text{ cm}, x_5 = 11.00\\text{ cm}, x_6 = 14.40\\text{ cm}$。\n\n' +
+      '(1) 相邻两计数点间的时间间隔 $T =$ ____ $\\text{s}$；\n' +
+      '(2) 打点计时器打下计数点 3 时小车的瞬时速度 $v_3 =$ ____ $\\text{m/s}$（保留三位有效数字）；\n' +
+      '(3) 采用逐差法计算小车的加速度 $a =$ ____ $\\text{m/s}^2$（保留三位有效数字）。',
     difficulty: 3,
     knowledgeIds: ['experiment-2-1', 'experiment-1-1'],
-    tags: ['高考真题', '2024新课标卷', '打点计时器', '逐差法', '纸带分析'],
+    tags: ['模型演练', '打点计时器', '逐差法', '纸带分析'],
     targetAnimation: {
       animId: 'anim-mechanics-experiment-base',
       presetParams: { mode: 0, v0: 0.1, a: 0.4, freq: 50 },
-      presetDescription: '载入2024高考力学纸带打点分析情境：利用每5点取一计数点逐差求加速度',
-    },
-    optionExplanations: {
-      A: {
-        label: 'A',
-        isCorrect: true,
-        explanation:
-          '正确。打点周期 f=50Hz 对应打点间隔 0.02s，每5个点取1个计数点，故 T = 5 × 0.02s = 0.10s；v₃ 等于 2 到 4 段的平均速度 v₃ = (x₄ - x₂) / (2T) = (8.00 - 3.20)×10⁻² / 0.20 = 0.240 m/s；逐差法 a = [(x₆ - x₃) - (x₃ - 0)] / (9T²) = [(14.40 - 5.40) - 5.40]×10⁻² / (9 × 0.01) = 0.400 m/s²。',
-      },
-      B: {
-        label: 'B',
-        isCorrect: false,
-        explanation: '错误。时间间隔 T 错算成打点周期 0.02s，未计入 5 倍间隔。',
-      },
-      C: {
-        label: 'C',
-        isCorrect: false,
-        explanation: '错误。加速度公式分母错写为 3T² 或 6T²，未采用规范的 9T² 逐差权重。',
-      },
-      D: {
-        label: 'D',
-        isCorrect: false,
-        explanation: '错误。瞬时速度未采用中间时刻瞬时速度等于该段平均速度的准则。',
-      },
+      presetDescription: '载入纸带打点分析情境：每5点取一计数点逐差求加速度',
     },
     steps: [
       {
@@ -215,46 +148,23 @@ export const experimentProblems: Problem[] = [
   {
     id: 'prob-2023-quanguo-exp-doubleslit',
     year: 2023,
-    province: '全国甲卷',
-    source: '2023年普通高等学校招生全国统一考试理科综合（全国甲卷）物理实验第22题',
+    province: '模型演练',
+    source: '经典实验演练（用双缝干涉测光的波长与条纹间距读数）',
     questionType: 'experiment',
-    verified: true,
+    verified: false,
     title: '用双缝干涉测光的波长与条纹间距读数',
     content:
-      '在“用双缝干涉测光的波长”实验中，实验装置如图所示。已知双缝间距 d = 0.20 mm，双缝到毛玻璃光屏的距离 L = 700 mm。\n\n' +
+      '在“用双缝干涉测光的波长”实验中，已知双缝间距 $d = 0.20\\text{ mm}$，双缝到毛玻璃光屏的距离 $L = 700\\text{ mm}$。\n\n' +
       '(1) 实验装置中单缝和双缝均平行放置，单缝的作用是产生 ____，双缝的作用是产生 ____；\n' +
-      '(2) 旋转测量头的手轮，分划板中心刻线对准第 1 条亮条纹中心时，手轮读数 x₁ = 2.190 mm；继续转动手轮，对准第 6 条亮条纹中心时，手轮读数 x₂ = 11.290 mm。则相邻条纹间距 Δx = ____ mm；\n' +
-      '(3) 测得该单色光的波长 λ = ____ nm（保留三位有效数字）。',
+      '(2) 旋转测量头的手轮，分划板中心刻线对准第 1 条亮条纹中心时，手轮读数 $x_1 = 2.190\\text{ mm}$；继续转动手轮，对准第 6 条亮条纹中心时，手轮读数 $x_2 = 11.290\\text{ mm}$。则相邻条纹间距 $\\Delta x =$ ____ $\\text{mm}$；\n' +
+      '(3) 测得该单色光的波长 $\\lambda =$ ____ $\\text{nm}$（保留三位有效数字）。',
     difficulty: 3,
     knowledgeIds: ['experiment-3-4'],
-    tags: ['高考真题', '2023全国甲卷', '双缝干涉', '波长测量', '条纹间距'],
+    tags: ['模型演练', '双缝干涉', '波长测量', '条纹间距'],
     targetAnimation: {
       animId: 'anim-experiment-double-slit',
-      presetParams: { wavelength: 650, slitDistance: 0.2, screenDistance: 0.7 },
-      presetDescription: '载入2023全国甲卷双缝干涉情境：双缝间距d=0.2mm，L=0.7m，验证条纹间距与波长关系',
-    },
-    optionExplanations: {
-      A: {
-        label: 'A',
-        isCorrect: true,
-        explanation:
-          '正确。单缝产生线光源，双缝产生相干光源；条纹间距 Δx = (x₂ - x₁) / (6 - 1) = (11.290 - 2.190) / 5 = 1.820 mm；由 Δx = (L/d)λ 得 λ = d·Δx / L = 0.20×10⁻³ × 1.820×10⁻³ / 0.700 ≈ 5.20×10⁻⁷ m = 520 nm。',
-      },
-      B: {
-        label: 'B',
-        isCorrect: false,
-        explanation: '错误。计算条纹间距时分母错除以 6，两亮条纹 1 至 6 之间只有 5 个条纹间距 (n - 1)。',
-      },
-      C: {
-        label: 'C',
-        isCorrect: false,
-        explanation: '错误。波长单位换算错误，未换算为纳米 nm（10⁻⁹ m）。',
-      },
-      D: {
-        label: 'D',
-        isCorrect: false,
-        explanation: '错误。公式倒置为 λ = L·Δx / d。',
-      },
+      presetParams: { wavelength: 520, slitDistance: 0.2, screenDistance: 0.7 },
+      presetDescription: '载入双缝干涉参数：d=0.20mm，L=0.70m，λ=520nm，验证条纹间距与波长关系',
     },
     steps: [
       {
@@ -320,29 +230,6 @@ export const experimentProblems: Problem[] = [
         timing_err: 0,
       },
       presetDescription: '载入2022全国甲卷第23题参数：m₁=0.304kg撞击静止m₂=0.510kg反弹测速',
-    },
-    optionExplanations: {
-      A: {
-        label: 'A',
-        isCorrect: true,
-        explanation:
-          '正确。(2) 要使碰后滑块 A 反向运动，由弹性碰撞公式知必须用较小质量撞击较大质量，故选 0.304 kg；(6) 距离相等 s₁=s₂ 时末速度比 k₂=v₁/v₂=t₂/t₁=0.21/0.67≈0.31（若按实验微调数据为 0.32）；(7) 5 次比值平均值为 0.32；(8) 完全弹性碰撞由动量守恒与机械能守恒联立得理论比值 (m₂ - m₁) / (2m₁)，代入数据理论值为 0.34，与实测平均值 0.32 吻合良好。',
-      },
-      B: {
-        label: 'B',
-        isCorrect: false,
-        explanation: '错误。第 (2) 问误选 0.510 kg 为滑块 A。若大质量碰撞小质量，碰后两滑块必同向运动，无法产生反弹。',
-      },
-      C: {
-        label: 'C',
-        isCorrect: false,
-        explanation: '错误。第 (6) 问速度比错算为时间比 t₁/t₂≈3.19。位移相同时速度与时间成反比而非正比。',
-      },
-      D: {
-        label: 'D',
-        isCorrect: false,
-        explanation: '错误。第 (8) 问理论表达式推导时漏写动量反向负号或理论值计算失误。',
-      },
     },
     steps: [
       {

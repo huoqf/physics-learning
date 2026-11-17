@@ -81,7 +81,7 @@ export const masterModelProblems: Problem[] = [
     targetAnimation: {
       animId: 'anim-induction-dual-rods',
       presetParams: { scenario: 0, massA: 0.2, massB: 0.2, fieldB: 1.0, railL: 0.5, resSum: 1.0, initialV0: 6.0 },
-      presetDescription: '载入 2022 高考全国乙卷双杆运动真题参数',
+      presetDescription: '载入双杆初速度滑动与系统动量守恒模型参数',
     },
     steps: [
       {
@@ -115,8 +115,9 @@ export const masterModelProblems: Problem[] = [
   {
     id: 'prob-2023-hubei-15',
     year: 2023,
-    province: '湖北卷',
-    source: '2023年高考湖北卷物理第15题',
+    province: '全国卷模型',
+    source: '高考经典母题演练（交界电场与磁场复合偏转模型）',
+    questionType: 'calculation',
     verified: false,
     title: '带电粒子在交界电场与磁场中的复合运动',
     content:
@@ -124,11 +125,11 @@ export const masterModelProblems: Problem[] = [
     difficulty: 4,
     knowledgeIds: ['electricity-3-4', 'electricity-1-2', 'electricity-3-2'],
     masterModelId: 'model-combined-fields',
-    tags: ['高考压轴', '复合场', '类平抛运动', '磁偏转圆周'],
+    tags: ['压轴母题', '复合场', '类平抛运动', '磁偏转圆周'],
     targetAnimation: {
       animId: 'anim-combined-fields',
       presetParams: { mode: 0, electricE: 300, magneticB1: 0.2, magneticB2: 1.5, vParticle: 1500 },
-      presetDescription: '载入 2023 湖北高考复合场真题运动参数',
+      presetDescription: '载入电偏转与磁偏转组合场经典运动参数',
     },
     steps: [
       {
@@ -162,8 +163,9 @@ export const masterModelProblems: Problem[] = [
   {
     id: 'prob-2022-hunan-14',
     year: 2022,
-    province: '湖南卷',
-    source: '2022年高考湖南卷物理第14题',
+    province: '全国卷模型',
+    source: '高考经典母题演练（物块下落压缩竖直弹簧临界模型）',
+    questionType: 'calculation',
     verified: false,
     title: '物块下落碰撞竖直弹簧的多临界动力学分析',
     content:
@@ -171,11 +173,11 @@ export const masterModelProblems: Problem[] = [
     difficulty: 3,
     knowledgeIds: ['mechanics-6-3', 'mechanics-6-1', 'mechanics-4-2'],
     masterModelId: 'model-vertical-spring',
-    tags: ['高考真题', '竖直弹簧', '速度最大临界', '机械能守恒'],
+    tags: ['经典模型', '竖直弹簧', '速度最大临界', '机械能守恒'],
     targetAnimation: {
       animId: 'anim-vertical-spring',
       presetParams: { m: 0.8, k: 50, h: 1.0 },
-      presetDescription: '载入 2022 湖南高考竖直弹簧真题参数',
+      presetDescription: '载入竖直弹簧多临界动力学模型参数',
     },
     steps: [
       {
@@ -209,20 +211,21 @@ export const masterModelProblems: Problem[] = [
   {
     id: 'prob-2024-guangdong-13',
     year: 2024,
-    province: '广东卷',
-    source: '2024年高考广东卷物理第13题',
+    province: '全国卷模型',
+    source: '高考经典母题演练（光滑四分之一圆弧槽水平动量守恒模型）',
+    questionType: 'calculation',
     verified: false,
     title: '光滑弧形槽与小球水平系统动量守恒',
     content:
-      '如图所示，质量为 $M$ 的光滑弧形槽置于光滑水平地面上，弧形槽底端切线水平。一质量为 $m$ 的小球从弧形槽顶端距底端高度为 $h$ 处由静止释放。重力加速度为 $g$。试求：\n(1) 小球在弧形槽上下滑的全过程中，系统水平方向动量是否守恒；\n(2) 小球滑离弧形槽底端瞬间，小球与弧形槽各自的速度大小 $v_1$ 和 $v_2$；\n(3) 小球从释放到滑离底端的过程中，弧形槽在水平地面上移动的距离 $x_M$。',
+      '如图所示，质量为 $M$、半径为 $R$ 的四分之一光滑圆弧槽置于光滑水平地面上，圆弧槽底端切线水平。一质量为 $m$ 的小球从圆弧槽顶端（距底端高度 $h = R$）由静止释放。重力加速度为 $g$。试求：\n(1) 小球在弧形槽上下滑的全过程中，系统水平方向动量是否守恒；\n(2) 小球滑离弧形槽底端瞬间，小球与弧形槽各自的速度大小 $v_1$ 和 $v_2$；\n(3) 小球从释放到滑离底端的过程中，弧形槽在水平地面上移动的距离 $x_M$。',
     difficulty: 3,
     knowledgeIds: ['mechanics-7-4', 'mechanics-7-1', 'mechanics-6-3'],
     masterModelId: 'model-curved-slot',
-    tags: ['高考真题', '弧形槽', '水平动量守恒', '人船模型位移'],
+    tags: ['经典模型', '弧形槽', '水平动量守恒', '人船模型位移'],
     targetAnimation: {
       animId: 'anim-curved-slot',
       presetParams: { m_block: 0.5, M_slot: 1.5, R_slot: 2.0 },
-      presetDescription: '载入 2024 广东高考弧形槽真题参数',
+      presetDescription: '载入弧形槽与小球水平动量守恒模型参数',
     },
     steps: [
       {
@@ -236,9 +239,9 @@ export const masterModelProblems: Problem[] = [
       {
         id: 'step-2',
         description: '机械能守恒方程组与分离速度',
-        keyCondition: '弧形槽与小球均光滑，系统机械能守恒',
+        keyCondition: '弧形槽与小球均光滑，系统机械能守恒，下落高度 h = R',
         scorePoints: 4,
-        formula: '$$m g h = \\frac{1}{2} m v_1^2 + \\frac{1}{2} M v_2^2 \\implies v_1 = \\sqrt{\\frac{2 M g h}{m + M}}, \\quad v_2 = \\sqrt{\\frac{2 m^2 g h}{M(m+M)}}$$',
+        formula: '$$m g R = \\frac{1}{2} m v_1^2 + \\frac{1}{2} M v_2^2 \\implies v_1 = \\sqrt{\\frac{2 M g R}{m + M}}, \\quad v_2 = \\sqrt{\\frac{2 m^2 g R}{M(m+M)}}$$',
         explanation: '联立水平动量守恒与系统机械能守恒方程求解。',
       },
       {
@@ -256,8 +259,9 @@ export const masterModelProblems: Problem[] = [
   {
     id: 'prob-2023-jiangsu-14',
     year: 2023,
-    province: '江苏卷',
-    source: '2023年高考江苏卷物理第14题',
+    province: '全国卷模型',
+    source: '高考经典母题演练（水平传送带滑块共速与划痕模型）',
+    questionType: 'calculation',
     verified: false,
     title: '水平传送带物块滑动共速与划痕长度计算',
     content:
@@ -265,11 +269,11 @@ export const masterModelProblems: Problem[] = [
     difficulty: 3,
     knowledgeIds: ['mechanics-4-7', 'mechanics-4-2', 'mechanics-2-1'],
     masterModelId: 'model-conveyor-belt',
-    tags: ['高考真题', '传送带模型', '共速突变', '划痕相对位移'],
+    tags: ['经典模型', '传送带模型', '共速突变', '划痕相对位移'],
     targetAnimation: {
       animId: 'anim-conveyor',
       presetParams: { conveyorMode: 0, vBelt: 4.0, v0: 0, mu: 0.2, L: 6.0 },
-      presetDescription: '载入 2023 江苏高考传送带真题参数',
+      presetDescription: '载入水平传送带滑块共速与划痕模型参数',
     },
     steps: [
       {
@@ -303,8 +307,9 @@ export const masterModelProblems: Problem[] = [
   {
     id: 'prob-2024-shandong-12',
     year: 2024,
-    province: '山东卷',
-    source: '2024年高考山东卷物理第12题',
+    province: '全国卷模型',
+    source: '高考经典母题演练（平抛落点于斜面与偏角定理模型）',
+    questionType: 'calculation',
     verified: false,
     title: '平抛运动落点于斜面与速度位移偏角定理',
     content:
@@ -312,11 +317,11 @@ export const masterModelProblems: Problem[] = [
     difficulty: 3,
     knowledgeIds: ['mechanics-5-2', 'mechanics-5-1', 'mechanics-1-2'],
     masterModelId: 'model-projectile-motion',
-    tags: ['高考真题', '平抛斜面落点', '偏角倍数定理', '最大垂直距离'],
+    tags: ['经典模型', '平抛斜面落点', '偏角倍数定理', '最大垂直距离'],
     targetAnimation: {
       animId: 'anim-projectile',
       presetParams: { v0x: 10, g: 10, airResistance: 0 },
-      presetDescription: '载入 2024 山东高考平抛斜面真题参数',
+      presetDescription: '载入平抛落点斜面极值模型参数',
     },
     steps: [
       {
@@ -350,8 +355,9 @@ export const masterModelProblems: Problem[] = [
   {
     id: 'prob-2023-zhejiang-18',
     year: 2023,
-    province: '浙江卷',
-    source: '2023年高考浙江卷物理第18题',
+    province: '全国卷模型',
+    source: '高考经典母题演练（竖直平面轻绳圆周运动临界模型）',
+    questionType: 'calculation',
     verified: false,
     title: '竖直平面内轻绳圆周运动最高点临界分析',
     content:
@@ -359,11 +365,11 @@ export const masterModelProblems: Problem[] = [
     difficulty: 3,
     knowledgeIds: ['mechanics-5-4', 'mechanics-5-3', 'mechanics-4-2'],
     masterModelId: 'model-circular-critical',
-    tags: ['高考真题', '竖直圆周', '绳模型临界', '向心力'],
+    tags: ['经典模型', '竖直圆周', '绳模型临界', '向心力'],
     targetAnimation: {
       animId: 'anim-vertical-circular',
       presetParams: { r: 3, v0: 5.0, trackType: 0 },
-      presetDescription: '载入 2023 浙江高考竖直圆周真题参数',
+      presetDescription: '载入竖直圆周轻绳模型参数',
     },
     steps: [
       {
@@ -397,8 +403,9 @@ export const masterModelProblems: Problem[] = [
   {
     id: 'prob-2024-quanguo-14',
     year: 2024,
-    province: '全国新课标卷',
-    source: '2024年高考全国新课标卷理综第14题',
+    province: '全国卷模型',
+    source: '高考经典母题演练（天体环绕与轨道转移模型）',
+    questionType: 'calculation',
     verified: false,
     title: '空间站轨道运行线速度与黄金代换计算',
     content:
@@ -406,11 +413,11 @@ export const masterModelProblems: Problem[] = [
     difficulty: 2,
     knowledgeIds: ['mechanics-6-5', 'mechanics-6-4', 'mechanics-5-3'],
     masterModelId: 'model-gravitational-orbit',
-    tags: ['高考真题', '万有引力', '黄金代换', '航天变轨'],
+    tags: ['经典模型', '万有引力', '黄金代换', '航天变轨'],
     targetAnimation: {
       animId: 'anim-orbit-transfer',
       presetParams: { r1: 7.0, r3: 14.0 },
-      presetDescription: '载入 2024 全国新课标卷空间站轨道真题参数',
+      presetDescription: '载入空间站轨道与霍曼转移模型参数',
     },
     steps: [
       {
@@ -444,8 +451,9 @@ export const masterModelProblems: Problem[] = [
   {
     id: 'prob-2022-quanguo-16',
     year: 2022,
-    province: '全国甲卷',
-    source: '2022年高考全国甲卷理综第16题',
+    province: '全国卷模型',
+    source: '高考经典母题演练（一维完全弹性碰撞与能量损失模型）',
+    questionType: 'calculation',
     verified: false,
     title: '一维完全弹性碰撞末速度公式应用',
     content:
@@ -453,11 +461,11 @@ export const masterModelProblems: Problem[] = [
     difficulty: 3,
     knowledgeIds: ['mechanics-7-2', 'mechanics-7-1', 'mechanics-6-3'],
     masterModelId: 'model-momentum-collision',
-    tags: ['高考真题', '弹性碰撞', '动量守恒', '能量损失'],
+    tags: ['经典模型', '弹性碰撞', '动量守恒', '能量损失'],
     targetAnimation: {
       animId: 'anim-collision',
       presetParams: { m1: 1.0, m2: 2.0, v1: 6.0, v2: 0, isElastic: 1 },
-      presetDescription: '载入 2022 全国甲卷小球弹性碰撞真题参数',
+      presetDescription: '载入一维完全弹性碰撞经典模型参数',
     },
     steps: [
       {
@@ -491,8 +499,9 @@ export const masterModelProblems: Problem[] = [
   {
     id: 'prob-2023-quanguo-20',
     year: 2023,
-    province: '全国甲卷',
-    source: '2023年高考全国甲卷理综第20题',
+    province: '全国卷模型',
+    source: '高考经典母题演练（带电粒子在平行板电场中的侧向偏转模型）',
+    questionType: 'calculation',
     verified: false,
     title: '带电粒子在匀强电场中的侧向偏转类平抛',
     content:
@@ -500,11 +509,11 @@ export const masterModelProblems: Problem[] = [
     difficulty: 3,
     knowledgeIds: ['electricity-1-2', 'electricity-1-1', 'mechanics-5-1'],
     masterModelId: 'model-alternating-field',
-    tags: ['高考真题', '电场偏转', '类平抛运动', '偏转角'],
+    tags: ['经典模型', '电场偏转', '类平抛运动', '偏转角'],
     targetAnimation: {
       animId: 'anim-charge-in-efield',
       presetParams: { U: 150, v0: 15, q: 2, isAC: 0 },
-      presetDescription: '载入 2023 全国甲卷电场偏转真题参数',
+      presetDescription: '载入匀强电场侧向偏转类平抛运动演示参数',
     },
     steps: [
       {
@@ -538,8 +547,9 @@ export const masterModelProblems: Problem[] = [
   {
     id: 'prob-2022-beijing-14',
     year: 2022,
-    province: '北京卷',
-    source: '2022年高考北京卷物理第14题',
+    province: '全国卷模型',
+    source: '高考经典母题演练（回旋加速器最大动能与加速次数模型）',
+    questionType: 'calculation',
     verified: false,
     title: '回旋加速器最大动能与加速次数定量分析',
     content:
@@ -547,11 +557,11 @@ export const masterModelProblems: Problem[] = [
     difficulty: 3,
     knowledgeIds: ['electricity-3-3', 'electricity-3-2', 'electricity-1-2'],
     masterModelId: 'model-cyclotron-magnetic',
-    tags: ['高考真题', '回旋加速器', '最大动能', '加速次数'],
+    tags: ['经典模型', '回旋加速器', '最大动能', '加速次数'],
     targetAnimation: {
       animId: 'anim-combined-fields',
       presetParams: { mode: 1, magneticB2: 1.0, acFrequency: 24, acVoltage: 5 },
-      presetDescription: '载入 2022 北京高考回旋加速器真题参数',
+      presetDescription: '载入回旋加速器磁约束与高频同步加速模型参数',
     },
     steps: [
       {
@@ -559,7 +569,7 @@ export const masterModelProblems: Problem[] = [
         description: '最大轨道半径决定最大动能',
         keyCondition: '当圆周半径到达 D 形盒半径 R 时，动能最大 qvB = m(v^2/R)',
         scorePoints: 4,
-        formula: '$$E_{km} = \\frac{1}{2} m v_m^2 = \\frac{q^2 B^2 R^2}{2 m} \\approx 2.72 \\times 10^{-12}\\,\\text{J} \\approx 17.2\\,\\text{MeV}$$',
+        formula: '$$E_{km} = \\frac{1}{2} m v_m^2 = \\frac{q^2 B^2 R^2}{2 m} \\approx 2.76 \\times 10^{-12}\\,\\text{J} \\approx 17.2\\,\\text{MeV}$$',
         explanation: '最大动能仅由磁场 $B$ 与 D 形盒半径 $R$ 决定，与加速电压 $U$ 无关！',
       },
       {
@@ -567,8 +577,8 @@ export const masterModelProblems: Problem[] = [
         description: '电场加速次数与能量累加',
         keyCondition: '每经过缝隙电场加速 1 次增加动能 qU，总动能 Ekm = N * (qU)',
         scorePoints: 3,
-        formula: '$$N = \\frac{E_{km}}{q U} = \\frac{2.72 \\times 10^{-12}}{1.6 \\times 10^{-19} \\times 2.0 \\times 10^4} \\approx 850\\,\\text{次}$$',
-        explanation: '求解得出质子获得最大动能需要被电场加速的次数。',
+        formula: '$$N = \\frac{E_{km}}{q U} = \\frac{2.76 \\times 10^{-12}}{1.6 \\times 10^{-19} \\times 2.0 \\times 10^4} \\approx 862\\,\\text{次}$$',
+        explanation: '求解得出质子获得最大动能需要被电场加速的次数（约 862 次）。',
       },
       {
         id: 'step-3',
@@ -585,8 +595,9 @@ export const masterModelProblems: Problem[] = [
   {
     id: 'prob-2024-guangdong-8',
     year: 2024,
-    province: '广东卷',
-    source: '2024年高考广东卷物理第8题',
+    province: '全国卷模型',
+    source: '高考经典母题演练（理想变压器升压与远距离输电线损模型）',
+    questionType: 'calculation',
     verified: false,
     title: '远距离高压输电线损与理想变压器变比计算',
     content:
@@ -594,11 +605,11 @@ export const masterModelProblems: Problem[] = [
     difficulty: 2,
     knowledgeIds: ['electricity-5-2', 'electricity-5-1'],
     masterModelId: 'model-transformer-transmission',
-    tags: ['高考真题', '理想变压器', '远距离输电', '功率损耗'],
+    tags: ['经典模型', '理想变压器', '远距离输电', '功率损耗'],
     targetAnimation: {
       animId: 'anim-transformer',
       presetParams: { n1: 50, n2: 500, U1: 250 },
-      presetDescription: '载入 2024 广东高考变压器远距离输电真题参数',
+      presetDescription: '载入理想升压变压器远距离输电模型参数',
     },
     steps: [
       {
@@ -632,20 +643,21 @@ export const masterModelProblems: Problem[] = [
   {
     id: 'prob-2023-hunan-7',
     year: 2023,
-    province: '湖南卷',
-    source: '2023年高考湖南卷物理第7题',
+    province: '全国卷模型',
+    source: '高考经典母题演练（相干波源波程差与干涉加强减弱模型）',
+    questionType: 'calculation',
     verified: false,
     title: '相干波源路程差与振动加强减弱点判定',
     content:
-      '波源 $S_1$ 和 $S_2$ 在同一均匀介质中振动，产生的两列简谐横波在介质中相向传播。已知两波源振动相位完全相同，波长均加为 $\\lambda = 2\\,\\text{m}$，振幅均为 $A = 5\\,\\text{cm}$。介质中某一质点 $P$ 到两波源的距离分别为 $r_1 = 6\\,\\text{m}$ 和 $r_2 = 5\\,\\text{m}$。\n试求：\n(1) 两波源到达质点 $P$ 的路程差 $\\Delta r$；\n(2) 判断质点 $P$ 为振动加强点还是振动减弱点；\n(3) 质点 $P$ 最终稳定后的合振幅 $A_{\\text{合}}$。',
+      '波源 $S_1$ 和 $S_2$ 在同一均匀介质中振动，产生的两列简谐横波在介质中相向传播。已知两波源振动相位完全相同，波长均为 $\\lambda = 2\\,\\text{m}$，振幅均为 $A = 5\\,\\text{cm}$。介质中某一质点 $P$ 到两波源的距离分别为 $r_1 = 6\\,\\text{m}$ 和 $r_2 = 5\\,\\text{m}$。\n试求：\n(1) 两波源到达质点 $P$ 的路程差 $\\Delta r$；\n(2) 判断质点 $P$ 为振动加强点还是振动减弱点；\n(3) 质点 $P$ 最终稳定后的合振幅 $A_{\\text{合}}$。',
     difficulty: 2,
     knowledgeIds: ['wave-1-3', 'wave-1-1'],
     masterModelId: 'model-harmonic-wave',
-    tags: ['高考真题', '波的干涉', '路程差', '加强点减弱点'],
+    tags: ['经典模型', '波的干涉', '路程差', '加强点减弱点'],
     targetAnimation: {
       animId: 'anim-wave-interference',
       presetParams: { lambda: 2 },
-      presetDescription: '载入 2023 湖南高考波干涉真题参数',
+      presetDescription: '载入双波源干涉波长 λ=2m 模型参数',
     },
     steps: [
       {
@@ -678,15 +690,16 @@ export const masterModelProblems: Problem[] = [
   // 16. 光学全反射与折射率测定
   {
     id: 'prob-2024-hubei-10',
-    year: 2024, province: '湖北卷', source: '2024年高考湖北卷物理第10题',
+    year: 2024, province: '全国卷模型', source: '高考经典母题演练（半圆形玻璃砖全反射临界角模型）',
+    questionType: 'calculation',
     verified: false,
     title: '半圆形玻璃砖折射与全反射临界角几何分析',
     content:
       '如图所示，一截面为半圆形的玻璃砖，折射率为 $n = \\sqrt{2}$，半径为 $R$。一束平行单色光垂直于半圆形玻璃砖的平面边界射入玻璃砖。真空中的光速为 $c$。\n试求：\n(1) 光在玻璃砖中传播的速度大小 $v$；\n(2) 该玻璃砖发生全反射的临界角 $C$ 的正弦值与角度；\n(3) 圆弧边界上有光线射出的弧长部分 $S$。',
     difficulty: 3, masterModelId: 'model-optics-refraction',
     knowledgeIds: ['optics-1-2', 'optics-1-1'],
-    tags: ['高考真题', '全反射', '临界角', '折射率'],
-    targetAnimation: { animId: 'anim-total-reflection', presetParams: { n: 1.414, theta1: 30 }, presetDescription: '载入 2024 湖北高考全反射真题参数' },
+    tags: ['经典模型', '全反射', '临界角', '折射率'],
+    targetAnimation: { animId: 'anim-total-reflection', presetParams: { n: 1.414, theta1: 30 }, presetDescription: '载入 n=√2 介质全反射临界角模型参数' },
     steps: [
       {
         id: 'step-1',
@@ -715,17 +728,18 @@ export const masterModelProblems: Problem[] = [
     ],
   },
 
-  // 17. 真实真题：2023年高考山东卷第13题（探究等温条件下气体压强与体积的关系）
+  // 17. 真题改编：改编自 2023 年山东卷第 13 题（探究等温条件下气体压强与体积的关系）
   {
     id: 'prob-2023-shandong-13',
-    year: 2023, province: '山东卷', source: '2023年高考山东卷物理第13题',
+    year: 2023, province: '真题改编', source: '改编自 2023 年山东卷第 13 题（探究等温条件下气体压强与体积的关系）',
+    questionType: 'experiment',
     verified: false,
     title: '探究等温条件下气体压强与体积的关系（玻意耳定律实验）',
     content:
       '某同学利用注射器与数字压强传感器探究等温条件下气体压强与体积的关系。主要实验步骤如下：\n① 将注射器竖直固定在铁架台上，注射器下端通过塑料软管与压强传感器连接，活塞托盘水平固定在活塞上；\n② 记录注射器刻度示数 $V$ 和压强传感器示数 $p$；\n③ 改变托盘上砝码的质量，依次记录不同状态下的多组 $p$ 和 $V$ 值；\n④ 处理数据，绘制 $p - \\frac{1}{V}$ 图线。\n试回答下列问题：\n(1) 若绘制的 $p - \\frac{1}{V}$ 图线为过坐标原点的倾斜直线，说明在误差允许范围内，一定质量的气体在温度保持不变时满足什么规律？\n(2) 当注射器刻度示数为 $V = 10.0\\,\\text{mL}$ 时，压强传感器示数为 $p_1 = 1.05 \\times 10^5\\,\\text{Pa}$；缓慢增加砝码使压强增大到 $p_2 = 1.40 \\times 10^5\\,\\text{Pa}$，此时注射器读数理论上应为多少 mL？\n(3) 误差分析：若实验中漏记了连接注射器下端与压强传感器的软管内部容积 $\\Delta V$（死体积），试根据玻意耳定律分析，随着封闭气体压强 $p$ 的增大，学生根据刻度尺测得的 $pV$ 乘积将如何变化？',
     difficulty: 3, masterModelId: 'model-gas-thermodynamics',
     knowledgeIds: ['thermodynamics-2-1'],
-    tags: ['高考真题', '实验探究', '玻意耳定律', '等温变化', '误差分析'],
+    tags: ['真题改编', '实验探究', '玻意耳定律', '等温变化', '误差分析'],
     targetAnimation: { animId: 'anim-gas-laws', presetParams: { mode: 0, T: 300, V: 2.5e-3 }, presetDescription: '载入探究气体等温变化实验（玻意耳定律）参数' },
     steps: [
       {
@@ -752,6 +766,7 @@ export const masterModelProblems: Problem[] = [
   {
     id: 'prob-thermo-cylinder-piston',
     year: 2023, province: '全国模拟', source: '高考物理经典模型 / 气缸活塞做功与热力学第一定律',
+    questionType: 'calculation',
     verified: false,
     title: '气缸活塞封闭气体等压膨胀与热力学第一定律',
     content:
@@ -786,7 +801,8 @@ export const masterModelProblems: Problem[] = [
   // 18. 光电效应与原子核衰变方程
   {
     id: 'prob-2024-zhejiang-6',
-    year: 2024, province: '浙江卷', source: '2024年高考浙江卷物理第6题',
+    year: 2024, province: '全国卷模型', source: '高考经典母题演练（爱因斯坦光电效应方程与遏止电压模型）',
+    questionType: 'calculation',
     verified: false,
     title: '爱因斯坦光电效应方程与遏止电压定量计算',
     content:
@@ -794,8 +810,8 @@ export const masterModelProblems: Problem[] = [
     difficulty: 2,
     knowledgeIds: ['modern-1-1', 'modern-1-2'],
     masterModelId: 'model-photoelectric',
-    tags: ['高考真题', '光电效应', '最大初动能', '逸出功', '遏止电压'],
-    targetAnimation: { animId: 'anim-photoelectric', presetParams: { mode: 1, frequency: 8.0, workFunction: 2.2, voltage: -1.1 }, presetDescription: '载入 2024 浙江高考光电效应真题参数（ν=8.0×10¹⁴ Hz、U_c=1.1 V）' },
+    tags: ['经典模型', '光电效应', '最大初动能', '逸出功', '遏止电压'],
+    targetAnimation: { animId: 'anim-photoelectric', presetParams: { mode: 1, frequency: 8.0, workFunction: 2.2, voltage: -1.1 }, presetDescription: '载入光电效应遏止电压测量模型参数（ν=8.0×10¹⁴ Hz、U_c=1.1 V）' },
     steps: [
       {
         id: 'step-1', description: '遏止电压与最大初动能关系 Ekm = e * Uc', scorePoints: 3,
@@ -821,7 +837,7 @@ export const masterModelProblems: Problem[] = [
   // 19. 玻尔原子理论与氢光谱能级跃迁
   {
     id: 'prob-2024-quanguo-bohr-transition',
-    year: 2024, province: '全国新课标卷', source: '2024年高考全国新课标卷物理选择题',
+    year: 2024, province: '全国卷模型', source: '高考经典母题演练（玻尔原子能级跃迁与光子种数模型）',
     questionType: 'calculation',
     verified: false,
     title: '玻尔原子能级跃迁与自发辐射光子种数分析',
@@ -830,7 +846,7 @@ export const masterModelProblems: Problem[] = [
     difficulty: 2,
     knowledgeIds: ['modern-1-4', 'modern-1-2'],
     masterModelId: 'model-bohr-transition',
-    tags: ['高考真题', '玻尔理论', '能级跃迁', '光子种数', '光电效应综合'],
+    tags: ['经典模型', '玻尔理论', '能级跃迁', '光子种数', '光电效应综合'],
     targetAnimation: { animId: 'anim-bohr-theory', presetParams: { mode: 1, targetLevel: 4 }, presetDescription: '载入 n=4 能级自发辐射与光子跃迁参数' },
     steps: [
       {
@@ -857,7 +873,7 @@ export const masterModelProblems: Problem[] = [
   // 20. 卢瑟福 α 粒子散射实验与核式结构
   {
     id: 'prob-2023-quanguo-alpha-scatter',
-    year: 2023, province: '全国甲卷', source: '2023年高考全国甲卷物理选择题',
+    year: 2023, province: '全国卷模型', source: '高考经典母题演练（α 粒子金箔散射与库仑势能模型）',
     questionType: 'calculation',
     verified: false,
     title: 'α 粒子金箔散射实验规律与库仑散射势能',
@@ -866,7 +882,7 @@ export const masterModelProblems: Problem[] = [
     difficulty: 2,
     knowledgeIds: ['modern-1-3'],
     masterModelId: 'model-alpha-scatter',
-    tags: ['高考真题', 'α粒子散射', '库仑定律', '能量守恒', '核式结构'],
+    tags: ['经典模型', 'α粒子散射', '库仑定律', '能量守恒', '核式结构'],
     targetAnimation: { animId: 'anim-alpha-scatter', presetParams: { modelType: 1, impactParameter: 0 }, presetDescription: '载入对心碰撞反弹与库仑散射参数' },
     steps: [
       {

@@ -14,8 +14,8 @@ interface DiagramProps {
 const font = (size: number) => size
 
 /**
- * 2024高考全国新课标卷第21题（板块模型）标准矢量示意图
- * 题干模式 (showAnalysis = false)：100%还原高考卷面，绝对纯净无解题辅助线
+ * 板块模型与临界相对滑动（prob-block-board-model）标准矢量示意图
+ * 题干模式 (showAnalysis = false)：纯净无解题辅助线
  * 解析模式 (showAnalysis = true)：显示物块与木板的受力分解矢量
  */
 export const Prob2024Quanguo21Diagram: React.FC<DiagramProps> = ({ showAnalysis = false }) => {

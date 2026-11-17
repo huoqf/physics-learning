@@ -10,24 +10,24 @@ import type { Problem } from '../types'
  *   4. 通过 targetAnimation 单向参数透传与动画仿真联动，学练彻底解耦。
  */
 export const electromagnetismGaokaoProblems: Problem[] = [
-  // ── 【官方原卷真题 1】2020年7月浙江选考第6题（LC放电与能量转化原题）───────
+  // ── 【模型演练 0A】LC 振荡回路放电与场强动态分析 ─────────────────────────
   {
     id: 'prob-2020-zhejiang-07-06',
     year: 2020,
-    province: '浙江卷',
-    source: '2020年7月浙江省普通高校招生选考科目考试物理试题 第6题',
+    province: '全国卷模型',
+    source: '经典高考演练题（LC 振荡电路放电过程物理量变化分析）',
     questionType: 'choice',
-    verified: true,
+    verified: false,
     title: 'LC 振荡电路放电状态与电场磁场物理量动态分析',
     content:
-      '如图所示为某时刻 LC 振荡电路的工作状态，此时电容器上极板带正电，线圈中的电流方向如图中箭头所示（自上极板经线圈流向下极板，逆时针）。下列说法正确的是（　　）\n\nA. 电容器正在充电\nB. 回路中的磁场能正在转化为电场能\nC. 电容器两极板间的电场强度正在减小\nD. 线圈中的自感电动势正在增大',
+      '某时刻 LC 振荡电路的工作状态如下：电容器上极板带正电、下极板带负电，线圈中的电流方向自上极板经线圈流向下极板（逆时针）。下列说法正确的是（　　）\n\nA. 电容器正在充电\nB. 回路中的磁场能正在转化为电场能\nC. 电容器两极板间的电场强度正在减小\nD. 线圈中的自感电动势正在增大',
     difficulty: 3,
     knowledgeIds: ['electricity-6-1'],
-    tags: ['高考真题', '电磁振荡', 'LC回路', '放电过程', '场强与电动势'],
+    tags: ['模型演练', '电磁振荡', 'LC回路', '放电过程', '场强与电动势'],
     targetAnimation: {
       animId: 'anim-lc-oscillation',
       presetParams: { scene: 0, L: 0.4, C: 0.4, dRatio: 1.0, Q0: 1.0, showDamping: 0 },
-      presetDescription: '载入2020浙江选考第6题：上极板带正电，逆时针放电，电场能向磁场能转化',
+      presetDescription: '载入 LC 振荡电路：上极板带正电，逆时针放电，电场能向磁场能转化',
     },
     optionExplanations: {
       A: {
@@ -70,24 +70,24 @@ export const electromagnetismGaokaoProblems: Problem[] = [
     ],
   },
 
-  // ── 【官方原卷真题 2】2023年6月浙江选考第8题（收音机调谐与可变电容原题）────
+  // ── 【模型演练 0B】收音机调谐与可变电容调节 ──────────────────────────────
   {
     id: 'prob-2023-zhejiang-06-08',
     year: 2023,
-    province: '浙江卷',
-    source: '2023年6月浙江省普通高校招生选考科目考试物理试题 第8题',
+    province: '全国卷模型',
+    source: '经典高考演练题（收音机 LC 调谐回路选台频率调节）',
     questionType: 'choice',
-    verified: true,
+    verified: false,
     title: '收音机 LC 调谐电路选台频率调节',
     content:
       '某收音机调谐电路的电感线圈固定，当可变电容器的电容调为 $C_1$ 时，能接收频率为 $102.6\\text{ MHz}$ 的电台信号；若要接收频率为 $93.0\\text{ MHz}$ 的电台信号，可变电容器的电容应调为 $C_2$。下列说法正确的是（　　）\n\nA. $C_2 < C_1$，应减小可变电容器动片与定片间的距离\nB. $C_2 < C_1$，应减小可变电容器动片与定片的正对面积\nC. $C_2 > C_1$，应增大可变电容器动片与定片间的距离\nD. $C_2 > C_1$，应增大可变电容器动片与定片的正对面积',
     difficulty: 3,
     knowledgeIds: ['electricity-6-3'],
-    tags: ['高考真题', '电谐振', '调谐回路', '可变电容器', '频率调节'],
+    tags: ['模型演练', '电谐振', '调谐回路', '可变电容器', '频率调节'],
     targetAnimation: {
       animId: 'anim-em-spectrum',
       presetParams: { scene: 2, radioMode: 1, cRx: 1.22 },
-      presetDescription: '载入2023浙江选考第8题：电台频率由 102.6MHz 降至 93.0MHz，电容由 C₁ 增至 C₂ 调谐',
+      presetDescription: '载入 LC 调谐情景：电台频率由 102.6MHz 降至 93.0MHz，电容由 C₁ 增至 C₂ 调谐',
     },
     optionExplanations: {
       A: {
@@ -131,24 +131,24 @@ export const electromagnetismGaokaoProblems: Problem[] = [
     ],
   },
 
-  // ── 【官方原卷真题 3】2024年北京学考等级考第2题（电磁波谱技术应用原题）──────
+  // ── 【模型演练 0C】电磁波谱各谱段特性与现代科技应用 ──────────────────────
   {
     id: 'prob-2024-beijing-02',
     year: 2024,
-    province: '北京卷',
-    source: '2024年北京市普通高中学业水平等级性考试物理试卷 第2题',
+    province: '全国卷模型',
+    source: '经典高考演练题（电磁波谱各谱段特性与技术应用辨析）',
     questionType: 'choice',
-    verified: true,
+    verified: false,
     title: '电磁波谱各谱段特性与现代科技应用辨析',
     content:
       '关于电磁波的应用，下列说法正确的是（　　）\n\nA. 紫外线用于红外遥感\nB. 医院用 X 射线进行人体透视\nC. 微波用于金属内部裂纹探伤\nD. $\\gamma$ 射线用于夜视仪',
     difficulty: 2,
     knowledgeIds: ['electricity-6-3'],
-    tags: ['高考真题', '电磁波谱', 'X射线', '红外线', '波谱应用'],
+    tags: ['模型演练', '电磁波谱', 'X射线', '红外线', '波谱应用'],
     targetAnimation: {
       animId: 'anim-em-spectrum',
       presetParams: { scene: 2, radioMode: 0, band: 5 },
-      presetDescription: '载入2024北京高考第2题：聚焦 X 射线高频穿透特性与医学透视应用',
+      presetDescription: '载入电磁波谱演示：聚焦 X 射线高频穿透特性与医学透视应用',
     },
     optionExplanations: {
       A: {

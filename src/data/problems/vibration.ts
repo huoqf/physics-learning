@@ -1,22 +1,22 @@
 import type { Problem } from '../types'
 
 /**
- * 振动与波动高考真题库（100% 官方原卷逐字核验）
+ * 振动与波动模型演练题库
  */
 export const vibrationGaokaoProblems: Problem[] = [
   {
     id: 'prob-2023-quanguo-14',
     year: 2023,
-    province: '全国甲卷',
-    source: '2023年普通高等学校招生全国统一考试（全国甲卷）理科综合第14题',
+    province: '模型演练',
+    source: '经典模型演练（多普勒效应科技应用辨析）',
     questionType: 'choice',
-    verified: true,
+    verified: false,
     title: '多普勒效应的生活与现代科技应用辨析',
     content:
-      '多普勒效应在日常生活和科学技术中有广泛的应用。下列选项中主要利用了多普勒效应的是（　　）\n\nA. 医生利用“彩超”测定心脏跳动和血管内血液流速\nB. 铁路探伤工人利用超声波检测钢轨内部是否存在裂纹\nC. 天文学家通过观察远方星系光谱的“红移”推断宇宙正在膨胀\nD. 蝙蝠在飞行中发射超声波并接收回声来确定障碍物和猎物的位置',
+      '多普勒效应在日常生活和科学技术中有广泛的应用。下列选项中主要利用了多普勒效应的是（多选）（　　）\n\nA. 医生利用“彩超”测定心脏跳动和血管内血液流速\nB. 铁路探伤工人利用超声波检测钢轨内部是否存在裂纹\nC. 天文学家通过观察远方星系光谱的“红移”推断宇宙正在膨胀\nD. 蝙蝠在飞行中发射超声波并接收回声来确定障碍物和猎物的位置',
     difficulty: 2,
     knowledgeIds: ['vibration-2-3'],
-    tags: ['高考真题', '多普勒效应', '彩超测速', '宇宙红移'],
+    tags: ['模型演练', '多普勒效应', '彩超测速', '宇宙红移'],
     targetAnimation: {
       animId: 'anim-doppler-effect',
       presetParams: { mode: 0, sourceSpeed: 100, waveSpeed: 340, frequency: 10, observerSpeed: 0 },
@@ -57,16 +57,16 @@ export const vibrationGaokaoProblems: Problem[] = [
   {
     id: 'prob-2020-beijing-03',
     year: 2020,
-    province: '北京卷',
-    source: '2020年北京市普通高中学业水平等级性考试物理卷第3题',
+    province: '模型演练',
+    source: '经典模型演练（受迫振动频率由驱动力决定）',
     questionType: 'choice',
-    verified: true,
+    verified: false,
     title: '受迫振动的频率由驱动力频率决定',
     content:
       '把两个弹簧振子悬挂在同一个支架上，已知振子 A 的固有频率为 $9\\text{ Hz}$，振子 B 的固有频率为 $72\\text{ Hz}$。当支架在驱动力作用下以 $40\\text{ Hz}$ 的频率振动时，两个振子做受迫振动的振动频率分别为（　　）\n\nA. $9\\text{ Hz}$，$72\\text{ Hz}$\nB. $40\\text{ Hz}$，$40\\text{ Hz}$\nC. $49\\text{ Hz}$，$112\\text{ Hz}$\nD. $31\\text{ Hz}$，$32\\text{ Hz}$',
     difficulty: 2,
     knowledgeIds: ['vibration-1-3'],
-    tags: ['高考真题', '受迫振动', '驱动力频率', '固有频率'],
+    tags: ['模型演练', '受迫振动', '驱动力频率', '固有频率'],
     targetAnimation: {
       animId: 'anim-forced-resonance',
       presetParams: { mode: 1, m: 1.0, k: 39.5, gamma: 0.4, F0: 2.0, f: 1.0, showForces: 1 },
@@ -107,16 +107,16 @@ export const vibrationGaokaoProblems: Problem[] = [
   {
     id: 'prob-2021-zhejiang-06',
     year: 2021,
-    province: '浙江卷',
-    source: '2021年6月浙江省普通高校招生选考科目考试物理卷第6题',
+    province: '模型演练',
+    source: '经典模型演练（受迫振动与共振现象辨析）',
     questionType: 'choice',
-    verified: true,
+    verified: false,
     title: '受迫振动与共振现象综合辨析',
     content:
       '关于受迫振动和共振，下列说法正确的是（　　）\n\nA. 物体做受迫振动的振动频率由物体固有频率决定\nB. 物体做受迫振动的振幅仅由驱动力的振幅决定\nC. 驱动力频率越接近系统的固有频率，受迫振动的振幅越大\nD. 消除受迫振动危害的有效方法是增大驱动力的频率使其与系统的固有频率一致',
     difficulty: 3,
     knowledgeIds: ['vibration-1-3'],
-    tags: ['高考真题', '受迫振动', '共振曲线', '隔振防害'],
+    tags: ['模型演练', '受迫振动', '共振曲线', '隔振防害'],
     targetAnimation: {
       animId: 'anim-forced-resonance',
       presetParams: { mode: 1, m: 1.0, k: 39.5, gamma: 0.5, F0: 2.0, f: 1.0, showForces: 1 },

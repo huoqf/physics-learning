@@ -4,10 +4,13 @@ export const kinematicsProblems: Problem[] = [
   {
     id: 'prob-m2-1',
     year: 2023,
-    province: '全国甲',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '匀变速直线运动 — v-t 图像分析',
     content:
-      '一物体沿直线运动，其速度—时间图像如图所示。已知 $t=0$ 时物体位于坐标原点，求：\n(1) 物体在 $0\\sim 4\\,\\text{s}$ 内的位移；\n(2) 物体在 $4\\sim 6\\,\\text{s}$ 内的加速度。',
+      '一物体从 $t = 0$ 时刻由静止开始沿直线运动，先做匀加速直线运动至 $t = 4\\,\\text{s}$ 时速度达到 $8\\,\\text{m/s}$，随后在 $4\\sim 6\\,\\text{s}$ 内做匀减速直线运动直至速度减为零。已知 $t = 0$ 时物体位于坐标原点，求：\n(1) 物体在 $0\\sim 4\\,\\text{s}$ 内的位移；\n(2) 物体在 $4\\sim 6\\,\\text{s}$ 内的加速度。',
     difficulty: 2,
     knowledgeIds: ['mechanics-2-1', 'mechanics-1-3', 'mechanics-1-4'],
     steps: [
@@ -39,7 +42,10 @@ export const kinematicsProblems: Problem[] = [
   {
     id: 'prob-m2-2',
     year: 2022,
-    province: '全国乙',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '追及问题 — 匀加速追匀速',
     content:
       '甲车以 $v_0 = 10\\,\\text{m/s}$ 的速度匀速行驶，乙车从静止开始以 $a = 2\\,\\text{m/s}^2$ 的加速度匀加速追赶甲车。已知两车初始相距 $s_0 = 25\\,\\text{m}$，求：\n(1) 乙车追上甲车所需的时间；\n(2) 追上时乙车的速度。',
@@ -76,7 +82,10 @@ export const kinematicsProblems: Problem[] = [
   {
     id: 'prob-m2-3',
     year: 2021,
-    province: '北京',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '自由落体运动 — 过窗问题',
     content:
       '一物体从高处自由下落，经过一层高为 $h = 2\\,\\text{m}$ 的窗户用时 $\\Delta t = 0.2\\,\\text{s}$。求物体下落到窗户上沿时的速度 $v_0$。（取 $g = 10\\,\\text{m/s}^2$）',

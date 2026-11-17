@@ -109,8 +109,8 @@ export default function PracticePage() {
           <div className="flex items-center gap-3">
             <ClipboardList className="w-8 h-8" style={{ color: colors.secondary[600] }} />
             <div>
-              <h1 className="text-3xl font-bold text-neutral-900">真题练习</h1>
-              <p className="text-neutral-600">选择模式开始练习，或浏览全部真题解析</p>
+              <h1 className="text-3xl font-bold text-neutral-900">题库练习</h1>
+              <p className="text-neutral-600">选择模式开始练习，区分已核验高考真题与模型演练题</p>
             </div>
           </div>
           <button
@@ -236,9 +236,9 @@ export default function PracticePage() {
           </div>
         )}
 
-        {/* 浏览全部真题 */}
+        {/* 浏览全部题目 */}
         <div className="mt-8">
-          <h2 className="text-lg font-semibold text-neutral-800 mb-3">浏览全部真题</h2>
+          <h2 className="text-lg font-semibold text-neutral-800 mb-3">浏览全部题目</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredProblems.map((p) => (
               <button
@@ -249,7 +249,16 @@ export default function PracticePage() {
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <span className="text-xs px-2 py-0.5 rounded bg-primary-50 text-primary-700">{p.year}</span>
                   <span className="text-xs px-2 py-0.5 rounded bg-neutral-100 text-neutral-600">{p.province}</span>
-                  <span className="text-xs" style={{ color: colors.accent[500] }}>{'★'.repeat(p.difficulty)}</span>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded font-medium ${
+                      p.verified === true
+                        ? 'bg-success-50 text-success-700 border border-success-200'
+                        : 'bg-neutral-50 text-neutral-500 border border-neutral-200'
+                    }`}
+                  >
+                    {p.verified === true ? '已核验真题' : '模型演练'}
+                  </span>
+                  <span className="text-xs ml-auto" style={{ color: colors.accent[500] }}>{'★'.repeat(p.difficulty)}</span>
                 </div>
                 <h3 className="font-medium text-neutral-800 text-sm">{p.title}</h3>
               </button>

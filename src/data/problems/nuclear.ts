@@ -4,20 +4,20 @@ export const nuclearGaokaoProblems: Problem[] = [
   {
     id: 'prob-2024-quanguo-nuclear-decay',
     year: 2024,
-    province: '新课标卷',
-    source: '2024年全国新课标高考物理选择题',
+    province: '模型演练',
+    source: '经典模型演练（放射性衰变方程与四大核反应类型辨析）',
     title: '放射性衰变方程与四大核反应类型辨析',
     content:
-      '放射性同位素钍 $^{232}_{90}\\text{Th}$ 经过一系列 $\\alpha$ 衰变和 $\\beta$ 衰变后变成稳定的铅 $^{208}_{82}\\text{Pb}$。下列说法正确的是（　　）\n' +
+      '放射性同位素钍 $^{232}_{90}\\text{Th}$ 经过一系列 $\\alpha$ 衰变和 $\\beta$ 衰变后变成稳定的铅 $^{208}_{82}\\text{Pb}$。下列说法正确的是（多选）（　　）\n' +
       'A. 该衰变过程总共经历了 6 次 $\\alpha$ 衰变和 4 次 $\\beta$ 衰变\n' +
       'B. $\\beta$ 衰变释放出的高速电子流来自原子核外层的电子\n' +
       'C. 反应方程 $^{14}_7\\text{N} + ^4_2\\text{He} \\rightarrow ^{17}_8\\text{O} + ^1_1\\text{H}$ 属于人工核转变\n' +
       'D. 将钍 $^{232}_{90}\\text{Th}$ 置于极高温度或超高压强下，其半衰期将显著缩短',
     difficulty: 2,
     questionType: 'choice',
-    verified: true,
+    verified: false,
     knowledgeIds: ['nuclear-1-1', 'nuclear-1-2'],
-    tags: ['高考真题', '核衰变方程', '半衰期', '核反应类型'],
+    tags: ['模型演练', '核衰变方程', '半衰期', '核反应类型'],
     targetAnimation: {
       animId: 'anim-nuclear-decay',
       presetParams: { mode: 1, fieldType: 0, bField: 1.5 },
@@ -67,8 +67,8 @@ export const nuclearGaokaoProblems: Problem[] = [
   {
     id: 'prob-2023-beijing-carbon-halflife',
     year: 2023,
-    province: '北京卷',
-    source: '2023年高考北京卷物理第3题',
+    province: '模型演练',
+    source: '经典模型演练（碳-14 放射性衰变与测年计算）',
     title: '放射性衰变规律与古生物碳-14测年法',
     content:
       '在大气高层中，宇宙射线产生的快中子轰击 $^{14}_7\\text{N}$ 产生放射性同位素 $^{14}_6\\text{C}$。碳-14的半衰期为 $T = 5730\\,\\text{年}$。自然界活体生物中 $^{14}_6\\text{C}$ 与 $^{12}_6\\text{C}$ 的比率保持相对稳定；生物死亡后停止与外界碳交换，体内的 $^{14}_6\\text{C}$ 发生 $\\beta$ 衰变逐渐减少。\n' +
@@ -77,9 +77,9 @@ export const nuclearGaokaoProblems: Problem[] = [
       '(2) 计算该木质器具距今大约存续的年份。',
     difficulty: 2,
     questionType: 'calculation',
-    verified: true,
+    verified: false,
     knowledgeIds: ['nuclear-1-2', 'nuclear-1-3'],
-    tags: ['高考真题', '半衰期计算', '碳14年代测定', '指数衰变'],
+    tags: ['模型演练', '半衰期计算', '碳14年代测定', '指数衰变'],
     targetAnimation: {
       animId: 'anim-nuclear-half-life',
       presetParams: { halfLife: 4.0, initCount: 100 },
@@ -107,8 +107,8 @@ export const nuclearGaokaoProblems: Problem[] = [
   {
     id: 'prob-2024-shandong-fusion-binding',
     year: 2024,
-    province: '山东卷',
-    source: '2024年高考山东卷物理第4题',
+    province: '模型演练',
+    source: '经典模型演练（轻核聚变、比结合能与质量亏损计算）',
     title: '轻核聚变、比结合能与质量亏损计算',
     content:
       '太阳内部持续进行着轻核聚变反应。其中一种典型的反应是：四个质子（$^1_1\\text{H}$）经过一系列反应最终聚变成一个氦核（$^4_2\\text{He}$），并释放出两个正电子（$^0_1\\text{e}$）和两个中微子。\n' +
@@ -118,9 +118,9 @@ export const nuclearGaokaoProblems: Problem[] = [
       '(2) 结合“比结合能曲线”，阐述为什么轻核聚变和重核裂变都能释放核能。',
     difficulty: 3,
     questionType: 'calculation',
-    verified: true,
+    verified: false,
     knowledgeIds: ['nuclear-1-4', 'nuclear-1-5'],
-    tags: ['高考真题', '核聚变', '比结合能', '质量亏损', '质能方程'],
+    tags: ['模型演练', '核聚变', '比结合能', '质量亏损', '质能方程'],
     targetAnimation: {
       animId: 'anim-nuclear-reaction',
       presetParams: { mode: 1, reactionType: 0 },
@@ -155,21 +155,21 @@ export const nuclearGaokaoProblems: Problem[] = [
   {
     id: 'prob-2023-zhejiang-magnetic-decay',
     year: 2023,
-    province: '浙江卷',
-    source: '2023年高考浙江卷物理力电综合压轴选择题',
+    province: '模型演练',
+    source: '经典模型演练（静止原子核在匀强磁场中衰变的轨迹分析）',
     title: '静止放射性核在匀强磁场中衰变的内切圆与外切圆轨迹',
     content:
-      '静止在垂直纸面向里的匀强磁场中的放射性原子核 X 发生一次自发衰变，放出一个粒子后变成新核 Y。两粒子在磁场中做匀速圆周运动的轨迹如图所示。已知新核 Y 与释放粒子的圆周轨迹相切，且外轨与内轨半径之比为 $R_1 : R_2 = 45 : 1$。不计重力与带电粒子间库仑相互作用。\n' +
+      '静止在垂直纸面向里的匀强磁场中的放射性原子核 X 发生一次自发衰变，放出一个粒子后变成新核 Y。两粒子在磁场中做匀速圆周运动，其轨迹相切，且外轨与内轨半径之比为 $R_1 : R_2 = 45 : 1$。不计重力与带电粒子间库仑相互作用。\n' +
       '下列判断正确的是（　　）\n' +
       'A. 若两圆轨迹为外切圆，则发生的是 $\\alpha$ 衰变，且放射性母核 X 的原子序数为 92\n' +
-      'B. 若两圆轨迹为内切圆，则发生的是 $\\beta$ 衰变，且放射性母核 X 的原子序数为 44\n' +
+      'B. 若两圆轨迹为内切圆，则发生的是 $\\beta$ 衰变，且放射性母核 X 的原子序数为 46\n' +
       'C. 新核 Y 与释放粒子的动能之比等于其质量之比\n' +
       'D. 两带电粒子在磁场中做圆周运动的周期之比等于其质量之比',
     difficulty: 4,
     questionType: 'choice',
-    verified: true,
+    verified: false,
     knowledgeIds: ['nuclear-1-1'],
-    tags: ['高考真题', '压轴题', '外切圆内切圆', '磁场圆周运动', '动量守恒'],
+    tags: ['模型演练', '压轴母题', '外切圆内切圆', '磁场圆周运动', '动量守恒'],
     targetAnimation: {
       animId: 'anim-decay-magnetic-orbit',
       presetParams: { decayType: 0, bField: 1.5 },
@@ -184,7 +184,7 @@ export const nuclearGaokaoProblems: Problem[] = [
       B: {
         label: 'B 项',
         isCorrect: false,
-        explanation: '若发生 β 衰变，β 粒子带负电（-e），新核带正电，初速度相反，洛伦兹力指向同侧，形成内切圆。外大圆为 β 粒子（电荷量 e），内小圆为新核。则新核电荷量 q_Y = 45e。母核电荷数 Z_X = 45 - 1 = 44。但 B 项若仅写原子序数为 44，核算母核与新核需严谨：β 衰变新核电荷数比母核多 1，若新核为 45，母核则为 44。注意本选项的逻辑：如果大圆是粒子，新核电荷数是 45，母核是 44。但结合周期、动能等综合判断，A 项是经典铀核衰变真题标准答案。',
+        explanation: '若发生 β 衰变，β 粒子带负电（-e），新核带正电，初速度相反，洛伦兹力指向同侧，形成内切圆。外大圆为 β 粒子（电荷量 e），内小圆为新核，故新核核电荷数 Z_Y = 45。由于 β 衰变满足电荷数守恒 Z_X = Z_Y - 1，母核 X 的原子序数应为 45 - 1 = 44，而非 46。B 项错误。',
       },
       C: {
         label: 'C 项',

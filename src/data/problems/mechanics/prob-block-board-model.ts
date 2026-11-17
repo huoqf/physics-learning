@@ -17,7 +17,7 @@ export const probBlockBoardModel: Problem = {
   targetAnimation: {
     animId: 'anim-block-board',
     presetParams: { m: 1, M: 3, mu1: 0.3, mu2: 0.05, v0: 5, L: 2.5 },
-    presetDescription: '载入2024新课标卷第21题真实考场参数进行可视化仿真',
+    presetDescription: '载入板块模型临界滑脱工况参数进行可视化仿真',
   },
   steps: [
     {

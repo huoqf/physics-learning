@@ -8,7 +8,7 @@ export const waveOpticsKnowledge: KnowledgeNode[] = [
     module: 'wave-optics',
     importance: 'gaokao',
     animationIds: ['anim-double-slit-interference'],
-    problemIds: ['prob-2023-quanguo-exp-doubleslit'],
+    problemIds: ['prob-optics-doubleslit-model'],
     prerequisites: ['optics-1-2'], // 依赖光的折射定律
   },
   {

@@ -4,7 +4,10 @@ export const energyProblems: Problem[] = [
   {
     id: 'prob-m7-1',
     year: 2023,
-    province: '全国甲',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '动能定理 — 恒力做功求末速度',
     content:
       '一质量为 $m = 2\\,\\text{kg}$ 的物块静止在光滑水平面上，受到水平恒力 $F = 10\\,\\text{N}$ 的作用。求物块运动 $s = 5\\,\\text{m}$ 时的速度。',
@@ -31,7 +34,10 @@ export const energyProblems: Problem[] = [
   {
     id: 'prob-m7-2',
     year: 2022,
-    province: '全国乙',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '动能定理 — 斜面+水平面综合',
     content:
       '一质量为 $m = 1\\,\\text{kg}$ 的物块从倾角 $\\theta = 37°$ 的斜面顶端由静止滑下，斜面高 $h = 2\\,\\text{m}$，然后进入水平面继续滑行。已知物块与斜面、水平面间的动摩擦因数均为 $\\mu = 0.25$，求物块在水平面上滑行的最大距离。（$\\sin 37° = 0.6$，$\\cos 37° = 0.8$，$g = 10\\,\\text{m/s}^2$）',
@@ -60,7 +66,10 @@ export const energyProblems: Problem[] = [
   {
     id: 'prob-m7-3',
     year: 2023,
-    province: '全国乙',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '机械能守恒 — 单摆问题',
     content:
       '一长为 $L = 1\\,\\text{m}$ 的轻绳悬挂一质量为 $m = 0.5\\,\\text{kg}$ 的小球，将小球拉至与竖直方向成 $\\theta = 60°$ 处由静止释放。求：\n(1) 小球到达最低点时的速度；\n(2) 最低点时绳的拉力。（$g = 10\\,\\text{m/s}^2$）',
@@ -96,7 +105,10 @@ export const energyProblems: Problem[] = [
   {
     id: 'prob-m7-4',
     year: 2021,
-    province: '全国甲',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '机械能守恒 — 弹簧系统',
     content:
       '一质量为 $m = 2\\,\\text{kg}$ 的物块从高度 $h = 1\\,\\text{m}$ 处自由下落到竖直放置的轻弹簧上，弹簧劲度系数 $k = 200\\,\\text{N/m}$。求弹簧的最大压缩量。（$g = 10\\,\\text{m/s}^2$）',

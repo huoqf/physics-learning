@@ -203,6 +203,15 @@ export function PracticeSession({ mode, problems, onExit, onReviewKnowledge, onL
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <span className="text-xs px-2 py-0.5 rounded bg-primary-50 text-primary-700 font-medium">{problem.year}</span>
           <span className="text-xs px-2 py-0.5 rounded bg-neutral-100 text-neutral-600">{problem.province}</span>
+          <span
+            className={`text-xs px-2 py-0.5 rounded font-medium ${
+              problem.verified === true
+                ? 'bg-success-50 text-success-700 border border-success-200'
+                : 'bg-neutral-50 text-neutral-500 border border-neutral-200'
+            }`}
+          >
+            {problem.verified === true ? '✓ 已核验真题' : '模型演练'}
+          </span>
           {problem.tags?.map((t) => (
             <span key={t} className="text-xs px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
               {t}
@@ -215,7 +224,7 @@ export function PracticeSession({ mode, problems, onExit, onReviewKnowledge, onL
         )}
         <h2 className="font-semibold text-neutral-800 mb-3">{problem.title}</h2>
         <div className="text-[15px] leading-7 text-neutral-700">
-          {problem.content.split('\\n').map((line, i) => (
+          {problem.content.split('\n').map((line, i) => (
             <p key={i} className="mb-1.5"><RichText text={line} /></p>
           ))}
         </div>
@@ -240,9 +249,11 @@ export function PracticeSession({ mode, problems, onExit, onReviewKnowledge, onL
             <div className="flex items-center gap-2">
               <span className="text-xl">🎥</span>
               <div>
-                <p className="text-xs font-semibold text-primary-900">真题-仿真动画双向联动</p>
+                <p className="text-xs font-semibold text-primary-900">
+                  {problem.verified === true ? '真题-仿真动画双向联动' : '模型-仿真动画双向联动'}
+                </p>
                 <p className="text-xs text-primary-700">
-                  {problem.targetAnimation.presetDescription || '一键将高考真题物理参数载入 3D/SVG 仿真模型'}
+                  {problem.targetAnimation.presetDescription || '一键将物理参数载入仿真模型'}
                 </p>
               </div>
             </div>
@@ -251,13 +262,15 @@ export function PracticeSession({ mode, problems, onExit, onReviewKnowledge, onL
               onClick={() => onLaunchAnimation(problem.targetAnimation!.animId, problem.targetAnimation!.presetParams)}
               className="bg-primary-600 hover:bg-primary-700 text-white font-medium"
             >
-              载入真题参数并运行仿真 ➔
+              {problem.verified === true ? '载入真题参数并运行仿真 ➔' : '载入工况参数并运行仿真 ➔'}
             </Button>
           </div>
         )}
 
         {/* 选项可视化演练与推断 (M3.2 OptionVisualizer) */}
-        <OptionVisualizer problem={problem} onLaunchAnimation={onLaunchAnimation} />
+        {revealed && problem.questionType === 'choice' && (
+          <OptionVisualizer problem={problem} onLaunchAnimation={onLaunchAnimation} />
+        )}
 
         {/* 练习模式：提示按钮（展示首步描述作为思路提示） */}
         {!isTest && !revealed && problem.steps[0] && (

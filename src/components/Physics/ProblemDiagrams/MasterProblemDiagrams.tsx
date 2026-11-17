@@ -48,7 +48,7 @@ const SvgArrow: React.FC<{
   )
 }
 
-// 2. 2023高考全国乙卷第19题 (单杆切割) 纯净原图
+// 2. 单杆切割与收尾速度模型 纯净示意图
 export const Prob2023Quanguo19Diagram: React.FC<DiagramProps> = () => {
   return (
     <div className="w-full h-[210px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm flex items-center justify-center">
@@ -82,7 +82,7 @@ export const Prob2023Quanguo19Diagram: React.FC<DiagramProps> = () => {
   )
 }
 
-// 3. 2022高考全国乙卷第21题 (双杆切割) 纯净原图
+// 3. 双杆切割与动量守恒模型 纯净示意图
 export const Prob2022Quanguo21Diagram: React.FC<DiagramProps> = () => {
   return (
     <div className="w-full h-[210px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm flex items-center justify-center">
@@ -112,7 +112,7 @@ export const Prob2022Quanguo21Diagram: React.FC<DiagramProps> = () => {
   )
 }
 
-// 4. 2023高考湖北卷第15题 (复合场) 纯净原图
+// 4. 复合场组合运动模型 纯净示意图
 export const Prob2023Hubei15Diagram: React.FC<DiagramProps> = () => {
   return (
     <div className="w-full h-[220px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm flex items-center justify-center">
@@ -144,7 +144,7 @@ export const Prob2023Hubei15Diagram: React.FC<DiagramProps> = () => {
   )
 }
 
-// 5. 2022高考湖南卷第14题 (竖直弹簧) 纯净原图
+// 5. 竖直弹簧碰撞临界模型 纯净示意图
 export const Prob2022Hunan14Diagram: React.FC<DiagramProps> = () => {
   return (
     <div className="w-full h-[220px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm flex items-center justify-center">
@@ -170,7 +170,7 @@ export const Prob2022Hunan14Diagram: React.FC<DiagramProps> = () => {
   )
 }
 
-// 6. 2024高考广东卷第13题 (弧形槽与滑块) 纯净原图
+// 6. 弧形槽与滑块水平动量守恒模型 纯净示意图
 export const Prob2024Guangdong13Diagram: React.FC<DiagramProps> = () => {
   return (
     <div className="w-full h-[200px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm flex items-center justify-center">
@@ -192,7 +192,7 @@ export const Prob2024Guangdong13Diagram: React.FC<DiagramProps> = () => {
   )
 }
 
-// 7. 2023高考江苏卷第14题 (传送带) 纯净原图
+// 7. 水平传送带滑块共速模型 纯净示意图
 export const Prob2023Jiangsu14Diagram: React.FC<DiagramProps> = () => {
   return (
     <div className="w-full h-[180px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm flex items-center justify-center">
@@ -217,7 +217,7 @@ export const Prob2023Jiangsu14Diagram: React.FC<DiagramProps> = () => {
   )
 }
 
-// 8. 2024高考山东卷第12题 (平抛斜面) 纯净原图
+// 8. 平抛运动斜面落点模型 纯净示意图
 export const Prob2024Shandong12Diagram: React.FC<DiagramProps> = () => {
   return (
     <div className="w-full h-[200px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm flex items-center justify-center">
@@ -233,7 +233,7 @@ export const Prob2024Shandong12Diagram: React.FC<DiagramProps> = () => {
   )
 }
 
-// 9. 2023高考浙江卷第18题 (竖直圆周) 纯净原图
+// 9. 竖直平面圆周运动轻绳模型 纯净示意图
 export const Prob2023Zhejiang18Diagram: React.FC<DiagramProps> = () => {
   return (
     <div className="w-full h-[210px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm flex items-center justify-center">
@@ -254,7 +254,7 @@ export const Prob2023Zhejiang18Diagram: React.FC<DiagramProps> = () => {
   )
 }
 
-// 10. 2024高考全国新课标卷第14题 (航天变轨) 纯净原图
+// 10. 航天变轨模型 纯净示意图
 export const Prob2024Quanguo14Diagram: React.FC<DiagramProps> = () => {
   return (
     <div className="w-full h-[210px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm flex items-center justify-center">
@@ -276,7 +276,7 @@ export const Prob2024Quanguo14Diagram: React.FC<DiagramProps> = () => {
   )
 }
 
-// 11. 2022高考全国甲卷第16题 (小球完全弹性碰撞) 纯净原图
+// 11. 一维完全弹性碰撞模型 纯净示意图
 export const Prob2022Quanguo16Diagram: React.FC<DiagramProps> = () => {
   return (
     <div className="w-full h-[180px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm flex items-center justify-center">
@@ -297,7 +297,7 @@ export const Prob2022Quanguo16Diagram: React.FC<DiagramProps> = () => {
   )
 }
 
-// 12. 2023高考全国甲卷第20题 (电场偏转) 纯净原图
+// 12. 平行板电场侧向偏转模型 纯净示意图
 export const Prob2023Quanguo20Diagram: React.FC<DiagramProps> = () => {
   return (
     <div className="w-full h-[190px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm flex items-center justify-center">
@@ -318,7 +318,7 @@ export const Prob2023Quanguo20Diagram: React.FC<DiagramProps> = () => {
   )
 }
 
-// 13. 2022高考北京卷第14题 (回旋加速器) 纯净原图
+// 13. 回旋加速器模型 纯净示意图
 export const Prob2022Beijing14Diagram: React.FC<DiagramProps> = () => {
   return (
     <div className="w-full h-[210px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm flex items-center justify-center">
@@ -337,7 +337,7 @@ export const Prob2022Beijing14Diagram: React.FC<DiagramProps> = () => {
   )
 }
 
-// 14. 2024高考广东卷第8题 (远距离输电) 纯净原图
+// 14. 远距离高压输电模型 纯净示意图
 export const Prob2024Guangdong8Diagram: React.FC<DiagramProps> = () => {
   return (
     <div className="w-full h-[190px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm flex items-center justify-center">
@@ -362,7 +362,7 @@ export const Prob2024Guangdong8Diagram: React.FC<DiagramProps> = () => {
   )
 }
 
-// 15. 2023高考湖南卷第7题 (波的干涉) 纯净原图
+// 15. 双波源干涉模型 纯净示意图
 export const Prob2023Hunan7Diagram: React.FC<DiagramProps> = () => {
   return (
     <div className="w-full h-[190px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm flex items-center justify-center">
@@ -385,7 +385,7 @@ export const Prob2023Hunan7Diagram: React.FC<DiagramProps> = () => {
   )
 }
 
-// 16. 2024高考湖北卷第10题 (光学全反射) 纯净原图
+// 16. 半圆形玻璃砖全反射模型 纯净示意图
 export const Prob2024Hubei10Diagram: React.FC<DiagramProps> = () => {
   return (
     <div className="w-full h-[190px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm flex items-center justify-center">
@@ -403,8 +403,8 @@ export const Prob2024Hubei10Diagram: React.FC<DiagramProps> = () => {
   )
 }
 
-// 17. 2023高考山东卷第13题 (探究气体等温变化实验) 装置与p-1/V图
-export const Prob2023Shandong13Diagram: React.FC<DiagramProps> = () => {
+// 17. 探究气体等温变化实验（改编自 2023 山东第 13 题）装置与 p-1/V 图
+export const Prob2023Shandong13Diagram: React.FC<DiagramProps> = ({ showAnalysis = false }) => {
   return (
     <div className="w-full h-[210px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm flex items-center justify-center">
       <svg viewBox="0 0 540 200" className="w-full h-full block select-none">
@@ -433,10 +433,11 @@ export const Prob2023Shandong13Diagram: React.FC<DiagramProps> = () => {
           <rect x={112} y={18} width={20} height={12} fill={withAlpha(CANVAS_COLORS.grid, 0.7)} stroke={CANVAS_COLORS.axis} strokeWidth={1} />
           <text x={122} y={14} fill={CANVAS_COLORS.labelText} fontSize={font(9)} textAnchor="middle">砝码</text>
 
-          {/* 下端塑料软管 */}
+          {/* 下端塑料软管（题干模式不标注 ΔV 误差暗示） */}
           <path d="M 122 150 L 122 165 C 122 175, 160 175, 175 160 L 185 145" fill="none" stroke={CANVAS_COLORS.grid} strokeWidth={4} />
-          <path d="M 122 150 L 122 165 C 122 175, 160 175, 175 160 L 185 145" fill="none" stroke={CHART_COLORS.criticalPt} strokeWidth={2} strokeDasharray="3 1" />
-          <text x={155} y={185} fill={CHART_COLORS.criticalPt} fontSize={font(9)} textAnchor="middle">橡胶软管(ΔV)</text>
+          <text x={155} y={185} fill={showAnalysis ? CHART_COLORS.criticalPt : CANVAS_COLORS.labelText} fontSize={font(9)} textAnchor="middle">
+            {showAnalysis ? '橡胶软管(ΔV)' : '塑料软管'}
+          </text>
 
           {/* 压强传感器 */}
           <rect x={180} y={105} width={45} height={42} fill={CANVAS_COLORS.axis} rx={4} />
@@ -458,14 +459,20 @@ export const Prob2023Shandong13Diagram: React.FC<DiagramProps> = () => {
           <text x={30} y={25} fill={CANVAS_COLORS.axis} fontSize={font(11)}>p</text>
           <text x={32} y={152} fill={CANVAS_COLORS.labelText} fontSize={font(10)}>O</text>
 
-          {/* 理论 p - 1/V 理想过原点线 */}
+          {/* 过原点拟合直线 */}
           <line x1={40} y1={140} x2={190} y2={35} stroke={PHYSICS_COLORS.velocity} strokeWidth={2} />
           <circle cx={140} cy={70} r={3} fill={PHYSICS_COLORS.velocity} />
-          <text x={148} y={68} fill={PHYSICS_COLORS.velocity} fontSize={font(9)}>真实等温直线</text>
+          <text x={148} y={68} fill={PHYSICS_COLORS.velocity} fontSize={font(9)}>
+            {showAnalysis ? '真实等温直线' : '拟合图线'}
+          </text>
 
-          {/* 软管误差偏差线（虚线，反向延长不交原点） */}
-          <line x1={60} y1={140} x2={195} y2={45} stroke={PHYSICS_COLORS.forceNet} strokeWidth={1.5} strokeDasharray="4 2" />
-          <text x={170} y={115} fill={PHYSICS_COLORS.forceNet} fontSize={font(9)}>漏计软管容积 ΔV</text>
+          {/* 软管误差偏差线仅在解析模式展示，严禁初始态透题 */}
+          {showAnalysis && (
+            <>
+              <line x1={60} y1={140} x2={195} y2={45} stroke={PHYSICS_COLORS.forceNet} strokeWidth={1.5} strokeDasharray="4 2" />
+              <text x={170} y={115} fill={PHYSICS_COLORS.forceNet} fontSize={font(9)}>漏计软管容积 ΔV</text>
+            </>
+          )}
 
           <text x={125} y={178} fill={CANVAS_COLORS.axis} fontSize={font(11)} fontWeight="bold" textAnchor="middle">图乙 p - 1/V 关系图</text>
         </g>
@@ -492,7 +499,7 @@ export const ProbThermoCylinderPistonDiagram: React.FC<DiagramProps> = () => {
   )
 }
 
-// 18. 2024高考浙江卷第6题 (光电效应实验) 纯净原图
+// 18. 光电效应实验模型 纯净示意图
 export const Prob2024Zhejiang6Diagram: React.FC<DiagramProps> = () => {
   return (
     <div className="w-full h-[210px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm flex items-center justify-center">

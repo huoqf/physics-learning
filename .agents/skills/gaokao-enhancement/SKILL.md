@@ -13,171 +13,104 @@ description: 高考提分扩展 / 高考真题系统开发 / 增强现有页面�
 
 开发时优先直接读取或复制以下模版代码，严禁凭空空想格式：
 
-1. **高考真题 TypeScript 标准数据模版**：
+1. **试题 TypeScript 标准数据模版**：
    - 路径：`file://.agents/skills/gaokao-enhancement/examples/problem-sample.ts`
-   - 包含：完整的真题原文、LaTeX 渲染、真题图片路径、`targetAnimation` 预设绑定及采分点步骤。
+   - 包含：已核验真题与模型演练题双范例、`verified` / `questionType` 必填规范及 `targetAnimation` 绑定。
 
-2. **高考真题矢量图 React 组件标准模版**：
+2. **试题矢量图 React 组件标准模版**：
    - 路径：`file://.agents/skills/gaokao-enhancement/examples/DiagramSample.tsx`
-   - 包含：`PhysicsGround`、`Block`、`PhysicsVectorArrow` 复用组件以及 `font(14)` 包裹规范。
+   - 包含：`showAnalysis` 隔离、`PhysicsGround`、`Block`、`PhysicsVectorArrow` 复用组件以及 `canvasSize.font(N)` 规范。
 
-3. **高考真题一键预设与临界刻度模版**：
+3. **典型情境预设与临界刻度模版**：
    - 路径：`file://.agents/skills/gaokao-enhancement/resources/preset-meta-template.ts`
-   - 包含：`controlMeta.preset` 真题装载以及 `paramMeta.marks` 的临界点配置模版。
+   - 包含：`controlMeta.preset` 与 `paramMeta.marks` 的临界点配置模版。
 
 ---
 
 ## 🎯 Step 0：开发前铁律与规范继承
 
-在动手编写任何高考提分功能代码前，必须确认遵守以下 4 条铁律：
+在动手编写任何高考提分功能代码前，必须确认遵守以下铁律：
 
-### 0A：真题表达与配图严谨性铁律（严禁透题）
-1. **题目原文 100% 一致**：高考真题内容、选项及限制条件必须与原卷完全一致，严禁擅自修改字句或省略“恰好”、“滑动”、“光滑”等关键限定词。
-2. **KaTeX 公式准确渲染**：必须使用 `<KatexFormula formula="..." />` 或 `$v_0 = 10 \text{ m/s}$` 的行内/块级 LaTeX 语法渲染物理公式与符号。
-3. **初始态严禁透题（关键铁律）**：
-   - ❌ **题干初始配图 (`Problem.images` / `Problem.svgContent`)**：必须与高考原卷卷面 $100\%$ 一致！**绝对禁止包含任何解题辅助线、受力分解矢量箭头、求解轨迹或解答提示**，确保还原考场原貌，给孩子独立思考空间。
-   - ❌ **初始态可见文案**：动画页左屏 `controlMeta.tip`、中屏标注、卡片副标题等**任何学生不点击就能看到的位置**，同样不得写出结论性数值或矢量方向（如「剪断后 $a_C=2g\downarrow$、$a_D=0$」）。左屏只写"看哪里、怎么调"，结论归右屏 `FormulaSection` / `ExamPointSection`。边界与判据见 `08_THREE_PANEL_RULES.md §2.6.5`。
-   - ✅ **解析步骤配图 (`ProblemStep.svgContent`)**：只有当学生展开查看具体的解题步骤（如 `Step 1: 受力分析`）时，才在对应步骤下方展示受力分解矢量、辅助线或解题轨迹图。
+### 0A：真题溯源与防伪铁律（最核心）
+1. **严禁伪造真题（防伪红线）**：
+   - **只有**对照官方正式试卷或交叉核验过的网络原卷全文、且题干/选项/设问/配图均完整的真题，才允许标记 `verified: true`、`tags` 携带 `'高考真题'`，以及填写具体 `province`（如 `'全国卷'`、`'湖北卷'`）和 `source`（如 `'2025年普通高等学校招生全国统一考试（全国卷）理科综合能力测试·物理试题第14题'`）。
+   - **严禁**凭记忆、套用教材模板或拼接小题来冒充具体年份、省份与第几题！
+   - 凡未经原卷核验、或改编自真题思路、或自编的典型模型/巩固题，必须显式设置 `verified: false`：
+     - `province` 只能写 `'模型演练'` / `'全国卷模型'` / `'基础巩固'` / `'真题改编'`，严禁写真实考区名；
+     - `source` 必须写明 `'经典模型演练（...）'` 或 `'改编自 YYYY 年 XX 卷第 N 题（...）'`；
+     - `tags` 与 `targetAnimation.presetDescription` 严禁出现 `'高考真题'` 或 `'真题参数'` 字样。
+2. **题型与选项严格匹配（必填 `questionType`）**：
+   - 必须显式声明 `questionType: 'choice' | 'calculation' | 'experiment'` 和 `verified: boolean`。
+   - **严禁给实验填空题或计算解答题伪造 ABCD `optionExplanations`**！`optionExplanations` 只允许出现在 `questionType === 'choice'` 的选择题中。
+   - 多选题（`optionExplanations` 中有 ≥ 2 个 `isCorrect: true`）必须在题干括号前写明`（多选）`或`（不定项）`。
+3. **KaTeX 公式准确渲染**：叙述字段中所有 TeX 命令（如 `\alpha`、`\text{}`）必须用 `$...$` 或 `$$...$$` 包裹，不能裸露在中文句子中。
+4. **初始态严禁透题（关键铁律）**：
+   - ❌ **题干初始配图 (`Problem.images` / `ProblemDiagrams` `showAnalysis=false`)**：必须还原纯题干条件，**绝对禁止包含任何解题辅助线、受力分解矢量箭头、误差对比虚线或解答提示**；若使用 `images` 静态图，图片必须真实存在于 `public/` 目录下，严禁填写不存在的虚构路径；若题干无需图片，**严禁在文字里写“如图所示”**。
+   - ❌ **练习态 `OptionVisualizer`**：练习或测试中未点开解析前不得渲染可直接高亮对错的选项提示板。
+   - ❌ **动画页初始态可见文案**：左屏 `controlMeta.tip`、中屏标注、卡片副标题等不得写出结论性数值或矢量方向；结论归右屏 `FormulaSection` / `ExamPointSection`。
+   - ✅ **解析步骤配图 (`showAnalysis=true` / `ProblemStep.svgContent`)**：仅在展开解析步骤后展示受力分解矢量、误差对比或求解辅助线。
 
 ### 0B：真题图片复现选型
 | 复现方式 | 适用场景 | 技术路径 | 规范要求 |
 |---------|---------|---------|---------|
-| **方案 A：内联 React-SVG 矢量图**（首选） | 受力图、电路图、轨迹图、板块/传送带示意图 | `src/components/Physics/ProblemDiagrams/<ProblemId>Diagram.tsx` | 调用物理组件库（`PhysicsVectorArrow`/`Ball`/`Block`等），电路图严格遵守 [CIRCUIT_RULES.md](file:///d:/code/physic/physics-learning/.agents/skills/refactor-animation-page/references/CIRCUIT_RULES.md)，文本用 `font(14)` |
-| **方案 B：静态高清图片** | 复杂实物仪器图、历史物理实验照 | 存放于 `public/images/problems/` 下 | 使用 WebP 或 SVG 格式，响应式适配卡片宽度 |
+| **方案 A：内联 React-SVG 矢量图**（首选） | 受力图、电路图、轨迹图、板块/传送带示意图 | `src/components/Physics/ProblemDiagrams/<ProblemId>Diagram.tsx` | 遵守 `showAnalysis` 隔离，调用物理组件库，电路图严格遵守 [CIRCUIT_RULES.md](file:///d:/code/physic/physics-learning/.agents/skills/refactor-animation-page/references/CIRCUIT_RULES.md)，字号用 `canvasSize.font(N)` |
+| **方案 B：静态高清图片** | 复杂实物仪器图、历史物理实验照 | 存放于 `public/images/problems/` 下 | 使用 WebP 或 SVG 格式，且文件必须在仓库真实存在 |
 
-### 0C：真题-动画双向联动规范
-- 每道真题如具备对应仿真动画，必须包含 `targetAnimation` 字典：
+### 0C：题目-动画双向联动规范
+- 仅当题目物理模型与现有动画同构时才绑定 `targetAnimation`（概念辨析与无对应仿真场景的题不硬挂 `targetAnimation`）：
   ```typescript
   targetAnimation: {
     animId: 'anim-block-board',
-    presetParams: { m1: 1, m2: 2, mu1: 0.2, v0: 6 },
-    presetDescription: '载入2024新课标卷真题初始参数'
+    presetParams: { m: 1, M: 3, mu1: 0.3, mu2: 0.05, v0: 5, L: 2.5 },
+    presetDescription: '载入板块模型临界滑脱工况参数', // 若 verified:true 可注明真题出处
   }
   ```
 
 ### 0D：三屏内容与色彩规范继承
-- **左屏控件**：真题一键预设统一由 `controlMeta` 的 `preset` 类型声明，严禁手写散乱按钮。
-- **色彩隔离**：物理量使用 `PHYSICS_COLORS`，器材使用 `SCENE_COLORS`，UI使用 `@/theme/colors`，半透明使用 `withAlpha(token, opacity)`。
+- **左屏控件**：预设统一由 `controlMeta` 的 `preset` 类型声明，严禁手写散乱按钮。
+- **色彩隔离**：物理量使用 `PHYSICS_COLORS`，器材使用 `SCENE_COLORS`，UI 使用 `@/theme/colors`，半透明使用 `withAlpha(token, opacity)`。
 
 ### 0E：VIEWPORT & 坐标变换铁律（直接调用现成体系）
-在开发真题示意图或动画场景时，**直接调用项目现有的 Viewport 与组件体系**，无需手写繁琐的比例计算：
-1. **直接调用 Hook 与容器**：直接使用 `useAnimationViewport({ preset })` + `useSceneScale(...)` + `<AnimationSvgCanvas transform={vp.transform}>`，容器会自动处理好响应式缩放。
-2. **坐标转换唯一路径**：物理坐标转换统一通过 `worldToDesign(wx, wy, sceneScale)` 转换（返回 `{ px, py }`），**严禁手写 `x * scale + offset` 或 `x * (width / physicsWidth)` 物理比例计算**，严禁传对象参数。
-3. **禁止双重缩放**：有了 `AnimationSvgCanvas`，**严禁在同一个元素上同时使用 `viewBox` 与 `vp.transform`**。
-4. **Preset 使用约束**：必须使用标准的 `CANVAS_PRESETS.splitV` / `splitH` / `full` / `square`，**严禁使用 `wide`/`tall` 废弃 preset**，严禁手写 `width={840}` 等固定像素。
-5. **动态字号控制**：SVG 文本字号必须包裹 `font(N)`（如 `fontSize={font(14)}`）。
+1. **直接调用 Hook 与容器**：使用 `useAnimationViewport({ preset })` + `useSceneScale({ vp, preset, anchor: 'viewport' | 'center' | ... })` + `<AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>`。
+2. **坐标转换唯一路径**：物理坐标通过 `worldToDesign(wx, wy, sceneScale)` 转换（返回 `{ px, py }`），严禁手写 `x * scale + offset` 或用虚构的 `anchor: 'bottom'`。
+3. **禁止双重缩放**：有了 `AnimationSvgCanvas`，严禁在同一个元素上同时使用 `viewBox` 与 `vp.transform`。
+4. **Preset 使用约束**：必须使用 `CANVAS_PRESETS.splitV` / `splitH` / `full` / `square`，严禁使用废弃 `wide`/`tall`。
+5. **动态字号控制**：从 `useAnimationViewport` 解构 `canvasSize`，使用 `canvasSize.font(N)`（禁止从 `@/theme/spacing` 导入不存在的 `font`，也禁止写 `const font = (s: number) => s` 绕过规则）。
 
-### 0F：组件复用铁律（先查阅索引，能用组件决不手写）
-项目已建立完善的物理与 UI 组件库，**严禁手写原生 SVG 替代已知组件**：
-1. **组件单源真相 (SSOT)**：开发前必须先查阅组件索引文档 [COMPONENT_REGISTRY.md](file:///d:/code/physic/physics-learning/docs/agent-rules/ui/COMPONENT_REGISTRY.md) 或查看 `@/components/Physics` / `@/components/Chart` / `@/components/UI` 导出清单。
-2. **动态复用原则**：凡是索引中列出或 `@/components/` 导出的标准组件（小球/滑块/斜面/矢量/弹簧/轨迹/电磁器件/电表/关系图表等），必须直接 `import` 引用。
-3. **扩展免维护**：新增任何公共组件只需存放在 `@/components/` 并维护在 `COMPONENT_REGISTRY.md` 中，Skill 自动继承并生效，无需频繁修改 Skill 本身。
+### 0F：组件复用铁律
+开发前先查阅 [COMPONENT_REGISTRY.md](file:///d:/code/physic/physics-learning/docs/agent-rules/ui/COMPONENT_REGISTRY.md)，凡已有标准组件（`Ball`/`Block`/`PhysicsGround`/`PhysicsVectorArrow`/`ParticleTrajectory`/`DialMeter` 等）必须直接 `import` 复用。
 
 ---
 
 ## 🎯 Step 0B：适用范围与三屏职责分离边界（核心铁律）
 
-在开发高考提分相关功能时，必须严格区分**两类不同性质的页面模块**，严禁混淆职责：
-
-1. **高考 Master 模型专区 (`/master-models`) 与真题练习中心 (`/practice`)**：
-   - 本 Skill 的**主要主场**。
-   - 承载完整的原卷题干、选项辨析、详细采分步骤与图解，可使用 `targetAnimation` 实现一键跳转动画。
-
-2. **93 个高中物理同步基础教学动画页面 (`/animation/:id`)**：
-   - 定位是**高中物理基础概念建构与规律探索（课堂与自学）**，**绝非高考题解刷题板**！
-   - **左屏铁律**：左屏是纯粹的【交互控制台】。**严禁在左屏堆砌真题题干、长篇解析或整道题解论文**！**严禁在左屏用 TipCard 重复输出右屏的高考考点**！
-   - **预设边界**：基础动画若提供典型情境预设（`preset`），必须位于模式切换与显示辅助之后，且 `description` 严格限制为 1 句话物理情境/参数说明（例如：`设定 f=f₀，驱动频率等于固有频率发生共振`）。
-   - **考点归位**：所有高考考点总结与命题陷阱，**必须且只能归拢到右屏 `ExamPointSection`**。
+1. **高考 Master 模型专区 (`/master-models`) 与题库练习中心 (`/practice`)**：
+   - 承载题干、解析、采分步骤与 `targetAnimation` 联动，UI 必须根据 `verified === true` 明确区分「已核验真题」与「模型演练」。
+2. **同步基础教学动画页面 (`/animation/:id`)**：
+   - 定位是基础概念建构与规律探索，严禁在左屏堆砌高考真题题干/长篇题解，严禁在左屏用 TipCard 重复右屏 `ExamPointSection`。
+   - 典型情境预设遵循 [08_THREE_PANEL_RULES.md §2.6](file:///d:/code/physic/physics-learning/docs/agent-rules/ui/08_THREE_PANEL_RULES.md#L106-L127)。
 
 ---
 
-## 🛠️ Step 1：真题与动画双向联动规范 (Target Animation Linking)
+## 🛠️ Step 1：真题/模型与动画双向联动规范
 
-高考真题与基础物理动画的联动通过**只读参数透传**实现，遵循单向解耦原则：
-
-### 1.1 真题卡片跳转动画规范 (`targetAnimation`)
-- 真题数据中的 `targetAnimation` 负责定义跳转目标与初态参数：
-  ```typescript
-  targetAnimation: {
-    animId: 'anim-block-board',
-    presetParams: { m1: 1, m2: 2, mu1: 0.2, v0: 6 },
-    presetDescription: '载入2024新课标卷第21题初始物理参数',
-  }
-  ```
-- 点击后通过路由跳转至对应基础动画 `#/animation/:animId`，并将 `presetParams` 注入动画 store。
-
-### 1.2 基础动画页面预设边界（严格遵守单一信源 SSOT）
-- **禁止在基础动画左屏反向硬编码高考真题题解或解析**！
-- 基础物理动画本身的典型探究预设与教学提示，**必须且只能严格遵循**权威规则：
-  👉 [08_THREE_PANEL_RULES.md §2.6 典型情境预设与教学指引规范](file:///d:/code/physic/physics-learning/docs/agent-rules/ui/08_THREE_PANEL_RULES.md#L106-L127)
-- 核心要求速查：
-  1. **基准锚点**：预设仅用于一键载入工况初态并自动播放（`restartOnApply: true`），**严禁锁定参数滑块**，保留控制变量探究自由度；
-  2. **极简标签**：预设标签必须紧凑（≤15字，如 `⚡ 临界滑动工况`），禁止在预设项写多行长文本；
-  3. **提示归位**：实验条件、观察重点与启发问题统一收拢到底部 `controlMeta.tip`；
-  4. **考点归位**：高考考点提炼统一收拢到右屏 `ExamPointSection`。
+- 点击 `targetAnimation` 后跳转至 `#/animation/:animId?params=...`（可带 `t=criticalT` 定格临界瞬间）。
+- 预设参数键名必须全部存在于目标动画的 `defaultParams` 中（由 `tests/data/problemAnimationPreset.test.ts` 守卫）。
 
 ---
 
-## 📝 Step 2：真题数据录入规范
+## 📝 Step 2：试题数据录入规范
 
-真题集中存储在 `src/data/problems/<module>/` 目录下，并导出统一数据规范：
-
-```typescript
-import type { Problem } from '../types'
-
-export const mechanicsGaokaoProblems: Problem[] = [
-  {
-    id: 'prob-2024-quanguo-21',
-    year: 2024,
-    province: '全国新课标卷',
-    source: '2024年高考全国新课标卷第21题',
-    title: '板块模型与临界相对滑动分析',
-    content: '如图所示，质量 $m_1 = 1\\text{ kg}$ 的长木板置于光滑水平面上...',
-    images: ['/images/problems/2024_quanguo_21.svg'], // 方案 B 原图
-    difficulty: 4,
-    knowledgeIds: ['kn-block-board'],
-    masterModelId: 'model-block-board',
-    tags: ['高考压轴', '板块模型', '临界受力'],
-    targetAnimation: {
-      animId: 'anim-block-board',
-      presetParams: { m1: 1, m2: 2, mu1: 0.2, v0: 6 },
-    },
-    steps: [
-      {
-        id: 'step-1',
-        description: '受力分析与临界加速度判断',
-        keyCondition: '滑块与木板恰好不相对滑动时，静摩擦力达到最大值 f_max = μ1*m1*g',
-        scorePoints: 3,
-        formula: 'a_{\\text{max}} = \\mu_1 g',
-        explanation: '当系统加速度超过 a_max 时，两者发生相对滑动。',
-      },
-    ],
-  },
-]
-```
+题目存储在 `src/data/problems/` 下。完整结构见 `examples/problem-sample.ts`：
+- 已核验真题：`verified: true`，填写具体 `province` 与官方 `source`；
+- 模型演练/改编题：`verified: false`，`province` 写 `'模型演练'` / `'全国卷模型'` / `'基础巩固'` / `'真题改编'`，禁止虚构卷别题号。
 
 ---
 
-## 🎨 Step 3：高考 Master 模型专区卡片组件规范
+## ✅ Step 3：提交前 Checklist
 
-开发 `/master-models` 专区组件时，遵守以下卡片结构规范：
-
-1. **头部**：模型标题 + 高考频次勋章（`5年12考` / `高考压轴`）。
-2. **核心体验区**：【🎥 物理仿真动画入口】与【📋 真题一键装载】。
-3. **秒杀公式与口诀**：用 `KatexFormula`（`@/components/Formula`）展示高考常考速算模型表达式。
-4. **真题变式链**：展示同源变式题入口，实现“击破一个模型，通晓一类真题”。
-
----
-
-## ✅ Step 4：提交前 Checklist
-
-在完成高考提分功能开发后，必须进行以下检查：
-
-- [ ] 运行 `npm run check:architecture` 无报错（Viewport、Font-size、No-Marker、No-RAF 等规则）。
-- [ ] 运行 `npm run check` 测试与构建全部通过。
-- [ ] **真题题干初始配图纯净性校验**：确认 `Problem.images` / `Problem.svgContent` 无任何解题辅助线、受力分解矢量或解答提示，与高考原卷 100% 一致。
-- [ ] 坐标转换统一通过 `worldToDesign(x, y, sceneScale)` → `{ px, py }`，零手写比例与魔法数字。
-- [ ] 地面与标尺使用 `x={vp.designLeft} width={vp.designVisibleW}` 撑满可视区。
-- [ ] 严格复用物理组件（小球使用 `Ball`、滑块使用 `Block`、矢量使用 `PhysicsVectorArrow`/`VectorArrow`、轨迹使用 `ParticleTrajectory`、电表使用 `DialMeter` 等），无违规手写原生 SVG 替代。
-- [ ] 真题描述与 LaTeX 公式无渲染错乱或格式混淆。
-- [ ] 按钮与色调符合 `colors.primary` / `PHYSICS_COLORS` 规范。
+- [ ] 运行 `npm run check:architecture` 无报错。
+- [ ] 运行 `npm test -- --run` 全部通过（含 `problemProvenance.test.ts`、`problemAnimationPreset.test.ts`、`problemTextMath.test.ts`、`experimentConsistency.test.ts`）。
+- [ ] 确认 `npm run build` 构建无 TypeScript / Vite 报错。
+- [ ] 确认 `verified: true` 题目逐字对照过原卷，且 `verified: false` 题目无虚假年份/省份/题号或 `'高考真题'` 标签。
+- [ ] 确认非 `'choice'` 题型无伪造 `optionExplanations`，配图 `showAnalysis={false}` 初始态绝无透题元素。

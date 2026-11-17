@@ -172,7 +172,8 @@ export const ProblemDeconstruction: React.FC<ProblemDeconstructionProps> = ({
               {problem.targetAnimation && onLaunchAnimation && (
                 <div className="pt-2.5 border-t border-primary-100 flex items-center justify-between flex-wrap gap-2">
                   <span className="text-xs text-primary-700">
-                    {problem.targetAnimation.presetDescription || '已准备好真题真实考场参数'}
+                    {problem.targetAnimation.presetDescription ||
+                      (problem.verified === true ? '已准备好真题考场参数' : '已准备好典型模型工况参数')}
                   </span>
                   <Button
                     variant="primary"
@@ -183,8 +184,8 @@ export const ProblemDeconstruction: React.FC<ProblemDeconstructionProps> = ({
                     <Play className="w-3.5 h-3.5 fill-current" />
                     <span>
                       {problem.targetAnimation.criticalT != null
-                        ? '🎥 一键装载真题参数并定格临界帧'
-                        : '🎥 一键装载真题参数并运行动画'}
+                        ? (problem.verified === true ? '🎥 一键装载真题参数并定格临界帧' : '🎥 一键装载模型参数并定格临界帧')
+                        : (problem.verified === true ? '🎥 一键装载真题参数并运行动画' : '🎥 一键装载模型参数并运行动画')}
                     </span>
                   </Button>
                 </div>

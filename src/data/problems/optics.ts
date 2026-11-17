@@ -1,26 +1,27 @@
 import type { Problem } from '../types'
 
 /**
- * 光学高考真题库（100% 官方原卷逐字核验）
+ * 光学模型演练题库
+ * 注：原卷未逐字核验且为经典物理情景改编的题目，一律标为 verified: false，不伪造卷别与题号。
  */
 export const opticsGaokaoProblems: Problem[] = [
   {
     id: 'prob-2021-shandong-07',
     year: 2021,
-    province: '山东卷',
-    source: '2021年普通高等学校招生全国统一考试（山东卷）物理第7题',
+    province: '模型演练',
+    source: '经典模型演练（薄膜干涉空气劈尖平整度检测）',
     questionType: 'choice',
-    verified: true,
+    verified: false,
     title: '薄膜干涉与工件表面平整度检测',
     content:
-      '利用薄膜干涉可以检查精密工件表面的平整程度。如图所示，将一块平整的标准样板放在待测工件表面上，并在其一端垫入薄片，形成一个空气劈尖。用单色光垂直照射样板，从样板上方观察到明暗相间的干涉条纹。下列说法正确的是（　　）\n\nA. 干涉条纹是由样板的上表面和工件的下表面反射的光叠加形成的\nB. 干涉条纹是由样板的下表面和工件的上表面反射的光叠加形成的\nC. 若观察到的条纹向劈尖薄端弯曲，说明该处工件表面有凸起\nD. 若观察到的条纹向劈尖薄端弯曲，说明该处工件表面有凹陷',
+      '利用薄膜干涉可以检查精密工件表面的平整程度。将一块平整的标准样板放在待测工件表面上，并在其一端垫入薄片，形成一个空气劈尖。用单色光垂直照射样板，从样板上方观察到明暗相间的干涉条纹。下列说法正确的是（多选）（　　）\n\nA. 干涉条纹是由样板的上表面和工件的下表面反射的光叠加形成的\nB. 干涉条纹是由样板的下表面和工件的上表面反射的光叠加形成的\nC. 若观察到的条纹向劈尖薄端弯曲，说明该处工件表面有凸起\nD. 若观察到的条纹向劈尖薄端弯曲，说明该处工件表面有凹陷',
     difficulty: 3,
     knowledgeIds: ['wave-optics-1-5'],
-    tags: ['高考真题', '薄膜干涉', '等厚干涉', '平整度检测'],
+    tags: ['模型演练', '薄膜干涉', '等厚干涉', '平整度检测'],
     targetAnimation: {
       animId: 'anim-thin-film-interference',
       presetParams: { mode: 1, wavelength: 600, wedgeAngle_mrad: 0.3, defect: 1 },
-      presetDescription: '载入2021山东卷真题情境：观察局部凹坑导致条纹向薄端弯曲',
+      presetDescription: '载入空气劈尖情景：观察局部凹坑导致等厚条纹向薄端弯曲',
     },
     optionExplanations: {
       A: {
@@ -63,22 +64,22 @@ export const opticsGaokaoProblems: Problem[] = [
     ],
   },
   {
-    id: 'prob-2023-quanguo-exp-doubleslit',
+    id: 'prob-optics-doubleslit-model',
     year: 2023,
-    province: '全国乙卷',
-    source: '2023年普通高等学校招生全国统一考试（全国乙卷）理科综合物理实验题',
+    province: '模型演练',
+    source: '经典模型演练（双缝干涉测定单色光波长实验）',
     questionType: 'experiment',
-    verified: true,
+    verified: false,
     title: '用双缝干涉实验测定光的波长',
     content:
       '在“用双缝干涉测光的波长”实验中：\n(1) 某同学在光具座上依次安装各光学元件，安装顺序合理的是______（填选项前字母）；\nA. 光源、单缝、滤光片、双缝、遮光筒、测量头\nB. 光源、滤光片、单缝、双缝、遮光筒、测量头\nC. 光源、滤光片、双缝、单缝、遮光筒、测量头\n(2) 双缝间距 $d = 0.20\\text{ mm}$，双缝到屏的距离 $L = 1.00\\text{ m}$。用测量头测得第 1 条亮纹中心到第 5 条亮纹中心的距离为 $\\Delta s = 13.00\\text{ mm}$，则相邻亮条纹间距 $\\Delta x = $______$\\text{mm}$，测得单色光的波长 $\\lambda = $______$\\text{nm}$。',
     difficulty: 3,
     knowledgeIds: ['wave-optics-1-1', 'experiment-3-4'],
-    tags: ['高考真题', '光的干涉', '双缝干涉', '测定波长', '五星实验'],
+    tags: ['模型演练', '光的干涉', '双缝干涉', '测定波长'],
     targetAnimation: {
       animId: 'anim-experiment-double-slit',
       presetParams: { wavelength: 650, slitDistance: 0.2, screenDistance: 1.0 },
-      presetDescription: '载入2023全国乙卷真题参数：双缝间距 0.2mm，屏距 1.0m，验证条纹间距与波长',
+      presetDescription: '载入双缝干涉参数：双缝间距 0.2mm，屏距 1.0m，验证条纹间距与波长',
     },
     steps: [
       {
@@ -109,16 +110,16 @@ export const opticsGaokaoProblems: Problem[] = [
   {
     id: 'prob-2022-zhejiang-polarization',
     year: 2022,
-    province: '浙江卷',
-    source: '2022年6月浙江省普通高校招生选考科目考试物理第6题',
+    province: '模型演练',
+    source: '经典模型演练（光的偏振现象与立体电影原理）',
     questionType: 'choice',
-    verified: true,
+    verified: false,
     title: '光的偏振现象与立体电影原理',
     content:
       '下列关于光的偏振现象及其应用的说法中，正确的是（　　）\n\nA. 机械横波和纵波都能发生偏振现象，光波由于是电磁波故也能发生偏振\nB. 太阳光、白炽灯光是自然光，其光矢量在垂直于传播方向的平面内沿各个方向振动的强度是均匀的\nC. 观看立体电影时，观众戴的 3D 眼镜两镜片透振方向相互平行\nD. 摄影师在拍摄水底游鱼时，在相机镜头前安装偏振滤光片，是为了增大水面反射光的透射',
     difficulty: 2,
     knowledgeIds: ['wave-optics-1-3'],
-    tags: ['高考真题', '光的偏振', '横波', '3D眼镜', '防眩光'],
+    tags: ['模型演练', '光的偏振', '横波', '3D眼镜', '防眩光'],
     targetAnimation: {
       animId: 'anim-polarization',
       presetParams: { mode: 0, polarizerAngle: 45, analyzerAngle: 135 },

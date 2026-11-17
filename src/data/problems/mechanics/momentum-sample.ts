@@ -4,7 +4,10 @@ export const momentumProblems: Problem[] = [
   {
     id: 'prob-m8-1',
     year: 2023,
-    province: '全国甲',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '动量定理 — 冲击力计算',
     content:
       '一质量为 $m = 0.4\\,\\text{kg}$ 的篮球从 $h = 1.25\\,\\text{m}$ 高处自由下落，与地面碰撞后反弹至 $h\' = 0.8\\,\\text{m}$。已知碰撞时间 $\\Delta t = 0.1\\,\\text{s}$，求篮球受到地面的平均冲击力。（$g = 10\\,\\text{m/s}^2$）',
@@ -33,7 +36,10 @@ export const momentumProblems: Problem[] = [
   {
     id: 'prob-m8-2',
     year: 2022,
-    province: '全国乙',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '动量守恒 — 反冲运动',
     content:
       '一质量为 $M = 100\\,\\text{kg}$ 的静止小船漂浮在水面上，船上一质量为 $m = 50\\,\\text{kg}$ 的人以相对船的速度 $v = 4\\,\\text{m/s}$ 水平向后跳离小船。求：\n(1) 人跳离后船的速度；\n(2) 若人跳离时船头距岸 $s = 10\\,\\text{m}$，求人落水点距岸的距离。',
@@ -70,7 +76,10 @@ export const momentumProblems: Problem[] = [
   {
     id: 'prob-m8-3',
     year: 2021,
-    province: '北京',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '动量守恒 — 碰撞问题',
     content:
       '一质量为 $m_1 = 2\\,\\text{kg}$ 的小球以 $v_1 = 5\\,\\text{m/s}$ 的速度与静止的质量为 $m_2 = 3\\,\\text{kg}$ 的小球发生正碰。已知碰撞后 $m_1$ 的速度为 $v_1\' = 1\\,\\text{m/s}$，方向不变。求：\n(1) 碰撞后 $m_2$ 的速度；\n(2) 判断碰撞类型（弹性/非弹性）。',
@@ -106,7 +115,10 @@ export const momentumProblems: Problem[] = [
   {
     id: 'prob-m8-4',
     year: 2023,
-    province: '全国乙',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '弹性碰撞 — 一维弹性碰撞',
     content:
       '一质量为 $m_1 = 1\\,\\text{kg}$ 的小球以 $v_1 = 6\\,\\text{m/s}$ 的速度与静止的质量为 $m_2 = 2\\,\\text{kg}$ 的小球发生弹性正碰。求碰撞后两球的速度。',

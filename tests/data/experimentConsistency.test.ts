@@ -38,10 +38,10 @@ describe('高考实验专题 · 高中物理规范与知识体系守卫', () => 
     }
   })
 
-  it('实验真题符合 SKILL 规范（无透题、解析完整、真题属性核验）', () => {
+  it('实验专题题目符合 SKILL 规范（显式溯源、无透题、无伪造选项、解析完整）', () => {
     for (const prob of experimentProblems) {
-      // 1. 真题元数据核验
-      expect(prob.verified).toBe(true)
+      // 1. 显式溯源与元数据核验（真题需 verified: true，改编/演练必须显式 verified: false）
+      expect(typeof prob.verified).toBe('boolean')
       expect(prob.year).toBeGreaterThanOrEqual(2020)
       expect(prob.province).toBeTruthy()
       expect(prob.source).toBeTruthy()
@@ -53,12 +53,13 @@ describe('高考实验专题 · 高中物理规范与知识体系守卫', () => 
         expect(knowledgeIndex[kId], `题目 ${prob.id} 引用的知识点 ${kId} 不存在`).toBeDefined()
       }
 
-      // 3. 步骤与选项严谨性
+      // 3. 实验填空/探究题步骤完整且不得伪造选择题 optionExplanations
       expect(prob.steps.length).toBeGreaterThanOrEqual(2)
       expect(prob.steps.every((s) => s.formula && s.explanation)).toBe(true)
-      expect(prob.optionExplanations, `题目 ${prob.id} 缺少选项解析`).toBeDefined()
-      const options = Object.values(prob.optionExplanations ?? {})
-      expect(options.some((o) => o.isCorrect)).toBe(true)
+      expect(
+        prob.optionExplanations,
+        `实验题 ${prob.id} 不得挂载伪造的 ABCD optionExplanations`,
+      ).toBeUndefined()
     }
   })
 

@@ -4,7 +4,10 @@ export const projectileProblems: Problem[] = [
   {
     id: 'prob-m5-1',
     year: 2023,
-    province: '全国甲',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '平抛运动 — 基本参数计算',
     content:
       '一物体从高度 $h = 20\\,\\text{m}$ 处以水平初速度 $v_0 = 10\\,\\text{m/s}$ 做平抛运动。求：\n(1) 物体落地时间；\n(2) 水平射程；\n(3) 落地时速度的大小和方向。（$g = 10\\,\\text{m/s}^2$）',
@@ -13,7 +16,7 @@ export const projectileProblems: Problem[] = [
     targetAnimation: {
       animId: 'anim-projectile',
       presetParams: { v0x: 10, modelMode: 1 },
-      presetDescription: '载入2023全国甲卷真题参数 (v₀=10m/s, 偏角验证)',
+      presetDescription: '载入平抛运动模型参数 (v₀=10 m/s，偏角验证)',
     },
     steps: [
       {
@@ -44,7 +47,10 @@ export const projectileProblems: Problem[] = [
   {
     id: 'prob-m5-2',
     year: 2022,
-    province: '全国乙',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '平抛运动 — 与斜面结合',
     content:
       '一物体从倾角 $\\theta = 37°$ 的斜面顶端以水平初速度 $v_0 = 5\\,\\text{m/s}$ 做平抛运动，最终落在斜面上。求：\n(1) 物体在空中飞行的时间；\n(2) 物体落地点与抛出点的距离。（$g = 10\\,\\text{m/s}^2$，$\\sin 37° = 0.6$，$\\cos 37° = 0.8$）',
@@ -81,7 +87,10 @@ export const projectileProblems: Problem[] = [
   {
     id: 'prob-m5-3',
     year: 2021,
-    province: '北京',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '圆周运动 — 竖直面内圆周运动',
     content:
       '一质量为 $m = 0.5\\,\\text{kg}$ 的小球用长 $L = 0.4\\,\\text{m}$ 的轻绳系住，在竖直面内做圆周运动。求：\n(1) 小球能通过最高点的最小速度；\n(2) 若在最高点速度为 $v = 3\\,\\text{m/s}$，求绳的拉力。（$g = 10\\,\\text{m/s}^2$）',
@@ -110,7 +119,10 @@ export const projectileProblems: Problem[] = [
   {
     id: 'prob-m5-4',
     year: 2023,
-    province: '全国乙',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '向心力 — 圆锥摆',
     content:
       '一质量为 $m$ 的小球用长为 $L$ 的轻绳悬挂，在水平面内做匀速圆周运动，绳与竖直方向的夹角为 $\\theta$。求：\n(1) 小球做圆周运动的角速度 $\\omega$；\n(2) 绳的拉力 $T$。',

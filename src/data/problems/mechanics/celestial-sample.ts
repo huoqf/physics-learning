@@ -4,7 +4,10 @@ export const celestialProblems: Problem[] = [
   {
     id: 'prob-m6-1',
     year: 2023,
-    province: '全国甲',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '万有引力定律 — 天体质量计算',
     content:
       '已知地球半径 $R = 6.4 \\times 10^6\\,\\text{m}$，地球表面重力加速度 $g = 10\\,\\text{m/s}^2$，引力常量 $G = 6.67 \\times 10^{-11}\\,\\text{N}\\cdot\\text{m}^2/\\text{kg}^2$。求：\n(1) 地球的质量；\n(2) 地球的平均密度。',
@@ -32,7 +35,10 @@ export const celestialProblems: Problem[] = [
   {
     id: 'prob-m6-2',
     year: 2022,
-    province: '全国乙',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '人造卫星 — 同步卫星参数',
     content:
       '已知地球质量 $M = 6.0 \\times 10^{24}\\,\\text{kg}$，半径 $R = 6.4 \\times 10^6\\,\\text{m}$，地球自转周期 $T = 24\\,\\text{h}$，引力常量 $G = 6.67 \\times 10^{-11}\\,\\text{N}\\cdot\\text{m}^2/\\text{kg}^2$。求地球同步卫星的：\n(1) 轨道半径；\n(2) 线速度；\n(3) 向心加速度。',
@@ -69,7 +75,10 @@ export const celestialProblems: Problem[] = [
   {
     id: 'prob-m6-3',
     year: 2021,
-    province: '北京',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '卫星变轨 — 轨道转移',
     content:
       '一卫星在半径为 $r_1$ 的圆轨道 I 上运行，速度为 $v_1$。在某点加速后进入椭圆转移轨道 II，远地点距离地心为 $r_2$，然后在远地点再次加速进入半径为 $r_2$ 的圆轨道 III。求：\n(1) 卫星在轨道 I 上的速度 $v_1$；\n(2) 卫星在椭圆轨道 II 近地点的速度 $v_{\\text{近}}$；\n(3) 卫星在轨道 III 上的速度 $v_3$。',
@@ -98,7 +107,7 @@ export const celestialProblems: Problem[] = [
         formula:
           '$$v_{\\text{近}} = \\sqrt{\\frac{2GMr_2}{r_1(r_1 + r_2)}}$$\n$$v_3 = \\sqrt{\\frac{GM}{r_2}}$$',
         explanation:
-          '$v_{\\text{近}} > v_1$，因为在近地点需要加速才能进入转移轨道；$v_3 < v_{\\text{远}}$，因为在远地点需要加速才能进入高轨道。',
+          '$v_{\\text{近}} > v_1$，因为在近地点需要加速才能进入转移轨道；$v_3 > v_{\\text{远}}$，因为在远地点需要加速才能进入高轨道。',
         knowledgeId: 'mechanics-7-5'
       }
     ]

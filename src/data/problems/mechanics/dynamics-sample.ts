@@ -4,44 +4,47 @@ export const dynamicsProblems: Problem[] = [
   {
     id: 'prob-m3-1',
     year: 2023,
-    province: '全国乙',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '斜面摩擦力 — 静摩擦与滑动摩擦',
     content:
-      '一质量为 $m = 2\\,\\text{kg}$ 的物块静止在倾角 $\\theta = 30°$ 的斜面上。已知物块与斜面间的动摩擦因数 $\\mu = 0.5$，最大静摩擦力等于滑动摩擦力，取 $g = 10\\,\\text{m/s}^2$。求：\n(1) 物块受到的摩擦力大小和方向；\n(2) 若给物块一个沿斜面向下的初速度 $v_0 = 2\\,\\text{m/s}$，求物块的加速度。',
+      '一质量为 $m = 2\\,\\text{kg}$ 的物块静止在倾角 $\\theta = 30^\\circ$ 的斜面上。已知物块与斜面间的动摩擦因数 $\\mu = 0.8$，最大静摩擦力等于滑动摩擦力，取 $g = 10\\,\\text{m/s}^2$。求：\n(1) 物块静止时受到的摩擦力大小和方向；\n(2) 若给物块一个沿斜面向下的初速度 $v_0 = 2\\,\\text{m/s}$，求物块下滑过程中的加速度大小和方向。',
     difficulty: 3,
     knowledgeIds: ['mechanics-3-3', 'mechanics-3-1', 'mechanics-4-2'],
     steps: [
       {
         id: 'prob-m3-1-step-1',
         description: '分析重力沿斜面的分力',
-        formula: '$$F_{\\parallel} = mg\\sin\\theta = 2 \\times 10 \\times \\sin 30° = 10\\,\\text{N}$$',
-        explanation: '重力沿斜面向下的分力是使物块下滑的驱动力。',
+        formula: '$$F_{\\parallel} = mg\\sin\\theta = 2 \\times 10 \\times \\sin 30^\\circ = 10\\,\\text{N}$$',
+        explanation: '重力沿斜面向下的分力有使物块下滑的趋势。',
         knowledgeId: 'mechanics-3-1'
       },
       {
         id: 'prob-m3-1-step-2',
-        description: '判断物块是否滑动',
+        description: '校验静止平衡条件',
         formula:
-          '$$f_{\\max} = \\mu N = \\mu mg\\cos\\theta = 0.5 \\times 2 \\times 10 \\times \\cos 30° \\approx 8.66\\,\\text{N}$$',
+          '$$f_{\\max} = \\mu N = \\mu mg\\cos\\theta = 0.8 \\times 2 \\times 10 \\times \\cos 30^\\circ \\approx 13.86\\,\\text{N}$$',
         explanation:
-          '最大静摩擦力约为 8.66N，而重力沿斜面分力为 10N，$F_{\\parallel} > f_{\\max}$，所以物块会下滑。但题目说物块静止，说明有外力或其他约束。重新审题：物块静止，说明静摩擦力等于重力分力。',
+          '最大静摩擦力约为 13.86 N，大于重力沿斜面向下的分力 10 N（$F_{\\parallel} < f_{\\max}$），因此物块能够稳定静止在斜面上。',
         knowledgeId: 'mechanics-3-3'
       },
       {
         id: 'prob-m3-1-step-3',
-        description: '静止时的摩擦力',
+        description: '静止时的静摩擦力',
         formula: '$$f = F_{\\parallel} = 10\\,\\text{N}$$',
         explanation:
-          '物块静止，由平衡条件知静摩擦力等于重力沿斜面向下的分力，方向沿斜面向上。',
+          '物块静止，由平衡条件知静摩擦力等于重力沿斜面向下的分力，大小 10 N，方向沿斜面向上。',
         knowledgeId: 'mechanics-3-3'
       },
       {
         id: 'prob-m3-1-step-4',
-        description: '有初速度时的加速度',
+        description: '有向下初速度时的加速度',
         formula:
-          '$$a = \\frac{F_{\\parallel} - f_{\\text{滑}}}{m} = \\frac{mg\\sin\\theta - \\mu mg\\cos\\theta}{m} = g(\\sin\\theta - \\mu\\cos\\theta)$$\n$$a = 10 \\times (0.5 - 0.5 \\times 0.866) \\approx 0.67\\,\\text{m/s}^2$$',
+          '$$a = \\frac{f_{\\text{滑}} - F_{\\parallel}}{m} = g(\\mu\\cos\\theta - \\sin\\theta) = 10 \\times (0.8 \\times \\frac{\\sqrt{3}}{2} - 0.5) \\approx 1.93\\,\\text{m/s}^2$$',
         explanation:
-          '物块向下滑动时受滑动摩擦力，方向沿斜面向上。由牛顿第二定律求加速度。',
+          '物块沿斜面向下滑动时受沿斜面向上的滑动摩擦力，由于 $f_{\\text{滑}} > F_{\\parallel}$，物块沿斜面向下做匀减速直线运动，加速度大小约 $1.93\\,\\text{m/s}^2$，方向沿斜面向上。',
         knowledgeId: 'mechanics-4-2'
       }
     ]
@@ -49,7 +52,10 @@ export const dynamicsProblems: Problem[] = [
   {
     id: 'prob-m3-2',
     year: 2022,
-    province: '全国甲',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '共点力平衡 — 三力平衡',
     content:
       '一质量为 $m$ 的小球用两根轻绳悬挂于天花板，绳 $OA$ 与竖直方向成 $\\alpha = 30°$，绳 $OB$ 水平。求：\n(1) 绳 $OA$ 的拉力 $T_A$；\n(2) 绳 $OB$ 的拉力 $T_B$。',
@@ -84,10 +90,13 @@ export const dynamicsProblems: Problem[] = [
   {
     id: 'prob-m4-1',
     year: 2023,
-    province: '全国乙',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '牛顿第二定律 — 连接体问题',
     content:
-      '如图，质量分别为 $m_1 = 2\\,\\text{kg}$ 和 $m_2 = 3\\,\\text{kg}$ 的物块 $A$、$B$ 叠放在光滑水平面上，$A$ 与 $B$ 之间的动摩擦因数 $\\mu = 0.3$。现对 $B$ 施加水平向右的力 $F = 20\\,\\text{N}$，求：\n(1) 两物块的加速度；\n(2) $A$ 受到的摩擦力大小。',
+      '质量分别为 $m_1 = 2\\,\\text{kg}$ 和 $m_2 = 3\\,\\text{kg}$ 的物块 $A$、$B$ 叠放在光滑水平面上（$A$ 在 $B$ 上方），$A$ 与 $B$ 之间的动摩擦因数 $\\mu = 0.3$。现对 $B$ 施加水平向右的力 $F = 20\\,\\text{N}$（设 $g = 10\\,\\text{m/s}^2$），求：\n(1) 两物块的加速度；\n(2) $A$ 受到的摩擦力大小。',
     difficulty: 4,
     knowledgeIds: ['mechanics-4-2', 'mechanics-4-5', 'mechanics-3-3'],
     steps: [
@@ -130,7 +139,10 @@ export const dynamicsProblems: Problem[] = [
   {
     id: 'prob-m4-2',
     year: 2021,
-    province: '北京',
+    province: '基础巩固',
+    source: '基础模型巩固演练',
+    questionType: 'calculation',
+    verified: false,
     title: '牛顿第二定律 — 超重与失重',
     content:
       '一质量为 $m = 50\\,\\text{kg}$ 的人站在电梯中的台秤上。电梯先以 $a_1 = 2\\,\\text{m/s}^2$ 的加速度匀加速上升，然后匀速上升，最后以 $a_2 = 2\\,\\text{m/s}^2$ 的加速度匀减速上升。求：\n(1) 加速上升时台秤的示数；\n(2) 减速上升时台秤的示数。',
@@ -158,10 +170,13 @@ export const dynamicsProblems: Problem[] = [
   {
     id: 'prob-m5x-1',
     year: 2024,
-    province: '新课标卷',
+    province: '模型演练',
+    source: '经典模型演练（机车恒定功率启动与动能定理）',
+    questionType: 'calculation',
+    verified: false,
     title: '力与运动综合 — 恒定功率启动与收尾速度及位移分析',
     content:
-      '一质量为 $m = 2.0\\,\\text{kg}$ 的智能模型小车在水平平直轨道上由静止以恒定额定功率 $P = 120\\,\\text{W}$ 启动，小车运动过程中受到的阻力恒为 $f = 15\\,\\text{N}$。已知小车从初速度 $v_0 = 2.0\\,\\text{m/s}$ 开始经历时间 $t = 4.0\\,\\text{s}$ 恰好达到最大收尾速度 $v_m$。\n求：\n(1) 小车能达到的最大收尾速度 $v_m$；\n(2) 当小车速度为 $v = 4.0\\,\\text{m/s}$ 时，小车的加速度 $a$ 大小；\n(3) 小车在达到最大速度前 $4.0\\,\\text{s}$ 内沿水平轨道滑行的位移 $x$。',
+      '一质量为 $m = 2.0\\,\\text{kg}$ 的智能模型小车在水平平直轨道上以恒定额定功率 $P = 120\\,\\text{W}$ 行驶，运动过程中受到的阻力恒为 $f = 15\\,\\text{N}$。已知小车从初速度 $v_0 = 2.0\\,\\text{m/s}$ 开始经历时间 $t = 1.25\\,\\text{s}$ 后，速度达到 $v_1 = 7.0\\,\\text{m/s}$。\n求：\n(1) 小车最终能达到的最大收尾速度 $v_m$；\n(2) 当小车速度为 $v = 4.0\\,\\text{m/s}$ 时，小车的加速度 $a$ 大小；\n(3) 小车在这 $1.25\\,\\text{s}$ 内沿水平轨道滑行的位移 $x$。',
     difficulty: 4,
     knowledgeIds: ['mechanics-5x-1', 'mechanics-4-2', 'mechanics-7-2'],
     targetAnimation: {
@@ -174,7 +189,7 @@ export const dynamicsProblems: Problem[] = [
         id: 'prob-m5x-1-step-1',
         description: '收尾平衡条件与最大速度求解',
         formula: '$$a = 0 \\implies F = f \\implies v_m = \\frac{P}{f} = \\frac{120}{15} = 8.0\\,\\text{m/s}$$',
-        explanation: '当牵引力等于阻力时，合外力为零，加速度为零，小车速度达到最大值。',
+        explanation: '当牵引力等于阻力时，合外力为零，加速度为零，小车速度趋近于最大收尾速度 $8.0\\,\\text{m/s}$。',
         knowledgeId: 'mechanics-5x-1',
       },
       {
@@ -187,7 +202,7 @@ export const dynamicsProblems: Problem[] = [
       {
         id: 'prob-m5x-1-step-3',
         description: '变力做功与全程动能定理求位移',
-        formula: '$$Pt - fx = \\frac{1}{2}mv_m^2 - \\frac{1}{2}mv_0^2$$\n$$120 \\times 4.0 - 15x = \\frac{1}{2} \\times 2.0 \\times (8.0^2 - 2.0^2)$$\n$$480 - 15x = 60 \\implies 15x = 420 \\implies x = 28.0\\,\\text{m}$$',
+        formula: '$$Pt - fx = \\frac{1}{2}mv_1^2 - \\frac{1}{2}mv_0^2$$\n$$120 \\times 1.25 - 15x = \\frac{1}{2} \\times 2.0 \\times (7.0^2 - 2.0^2)$$\n$$150 - 15x = 45 \\implies 15x = 105 \\implies x = 7.0\\,\\text{m}$$',
         explanation: '变力牵引过程中严禁使用匀变速直线运动规律，必须使用力的空间累积效应——动能定理求解位移。',
         knowledgeId: 'mechanics-5x-1',
       },
