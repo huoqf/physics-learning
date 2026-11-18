@@ -332,7 +332,7 @@ function syncMemoryDoc(tableLines, count) {
     '> **生成命令**：`node scripts/gen-annotations.mjs`',
     '> **数据来源**：`src/ANNOTATIONS.md`（自动生成，请勿手动编辑）',
     '> **更新方式**：修改 `src/data/registries/*.ts` 后运行 `node scripts/gen-annotations.mjs` 重新生成',
-    '> **冲突仲裁**：当本表与 codebase-memory 图谱结果冲突时，以本表为准',
+    '> **冲突仲裁**：当本表与静态图谱（如 codebase-memory MCP）结果冲突时，以本表为准',
     '',
     ...tableLines,
     '',

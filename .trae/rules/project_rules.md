@@ -10,7 +10,7 @@
 | 手写 `<line>` + `<marker>` 矢量箭头 | `VectorArrow` / `PhysicsVectorArrow` | 铁律1-5 |
 | `viewBox={...}` 与 `vp.transform` 同时使用 | 移除 `viewBox`，仅用 `AnimationSvgCanvas` | 铁律1-8 |
 | `createSceneScaleFromViewport({ mode: 'visibleArea' })` | `useSceneScale({ vp, preset, anchor })` | 铁律1-3 |
-| 手写 `x * scaleX + offsetX` 坐标计算 | `worldToDesign({ x, y }, sceneScale)` | 铁律1-2 |
+| 手写 `x * scaleX + offsetX` 坐标计算 | `worldToDesign(x, y, sceneScale)` | 铁律1-2 |
 | `originPixel` prop | `originDesign` prop | 铁律1-5 |
 | 新页面手写 `<input type="range">` / 散乱左屏容器 | `paramMeta` → `ParamControl` / `controlMeta` → `ControlPanel` | 铁律6 |
 | `<foreignObject>` 内嵌 React 图表 | HTML 层 flex 分区，图表与 SVG 平级 | 铁律1-10 |
@@ -24,7 +24,7 @@
 
 > **Trae IDE 默认加载的项目规范文件。**
 > 详细规范见下方「快速索引」部分。
-> 最后更新：2026-08-01（修正铁律1-9 Canvas+SVG混合路径描述；CANVAS_PRESETS表头"viewBox设计坐标"→"设计尺寸"）
+> 最后更新：2026-11-18（修正 worldToDesign 3参数签名、铁律6 SidebarExtra 清零状态、presetCompensation 过渡口径与 10 项守卫数量）
 
 ---
 
@@ -74,14 +74,14 @@
 | 3 | **组件职责边界**：页面组件薄壳（路由+布局+数据注入）；三屏不交叉（详见 `02_UI_RULES.md §5.1`）；动画状态统一 `useAnimationStore` | 页面塞业务逻辑；右侧屏放参数控件；左侧屏放公式推导；另建 `usePhysicsState` |
 | 4 | **HashRouter only**：禁止 BrowserRouter（Electron `file://` 下路由 404） | BrowserRouter |
 | 5 | **组件复用优先**：场景中存在可复用组件时必须直接使用，禁止在 `features/` 中重复手写等效实现（详见下方展开） | 手写地面纹理/球体/滑块/矢量箭头/图表轴等已有组件实现 |
-| 6 | **左屏控制台声明式优先**：左屏必须使用 `LeftPanel` 体系；数值参数优先 `paramMeta → ParamControl`，模式/开关/预设/提示优先 `controlMeta → ControlPanel`；`SidebarExtra` 仅保留复杂自定义控制 | 新页面手写散乱左屏容器、简单模式切换/开关仍写 SidebarExtra、直接手写 `input[type=range]` |
+| 6 | **左屏控制台声明式优先**：左屏必须使用 `LeftPanel` 体系；数值参数优先 `paramMeta → ParamControl`，模式/开关/预设/提示优先 `controlMeta → ControlPanel`；`SidebarExtra` 已清零且禁止恢复，新交互扩展 `controlMeta` 与 `ControlPanel` | 新页面手写散乱左屏容器、恢复 `SidebarExtra`、直接手写 `input[type=range]` |
 
 ### 铁律 1 展开：统一来源十一条子约束
 
 1. **颜色/间距/圆角/阴影/动效** → 必须从 `src/theme/` 子模块引用
    - 禁的是**裸值**（`style={{ padding: 12 }}`、`#2563eb`、`fontSize={13}`），**不是** Tailwind 类名：`p-3` / `gap-2` / `rounded-lg` 是比例尺索引，与 `spacing.ts` 的 `spacing` 表同源（`3: '12px'`），合法。详见 `02_UI_RULES.md §2.1`。
    - **同一几何量被多处依赖时（尤其被脚本或计算引用）必须提成语义 token**，例如左屏内边距 → `LEFT_PANEL_PADDING`（分段器宽度预算据此现算）。派生数字禁止手写副本。
-2. **坐标转换** → 新页面必须走 `worldToDesign()`（`src/scene`，通过 `useSceneScale` 构造 `SceneScale`）；`physicsToCanvas()`（`src/utils/coordinate.ts`）仅用于维护旧组件存量代码（输出容器像素，不经过 `vp.transform`）
+2. **坐标转换** → 新页面必须走 `worldToDesign(x, y, sceneScale)`（`src/scene`，通过 `useSceneScale` 构造 `SceneScale`）；`physicsToCanvas()`（`src/utils/coordinate.ts`）仅用于维护旧组件存量代码（输出容器像素，不经过 `vp.transform`）
 3. **场景缩放** → 新页面统一使用 `useSceneScale`（`src/hooks/useSceneScale.ts`）构造 `SceneScale`，通过 `anchor` 模式选择缩放策略；物理坐标→设计坐标统一使用 `worldToDesign`（`src/scene`，`worldToPixel` 的语义别名）。`createSceneScaleFromViewport` 的 `visibleArea`/`centerScale` 模式已 `@deprecated`（输出容器像素单位，不适合在 `<g transform={vp.transform}>` 内使用），存量迁移逐步替换；`transform` 模式保持可用（输出设计坐标）
 4. **动画调度** → 必须通过 `src/utils/animation.ts` 的 Hook（禁止直接调用 `requestAnimationFrame`）
 5. **矢量箭头** → 必须使用 `VectorArrow` 或 `PhysicsVectorArrow` 组件；物理矢量（力/速度/加速度/电流/电场等）优先使用 `PhysicsVectorArrow`（禁止 `pixelLength`，长度通过 `sceneScale.refMagnitudes` 归一化）；视觉标注/几何图形/等长力示意使用 `VectorArrow`；禁止手写 `<line>` + `<marker>`；`originPixel` 已 deprecated，新代码必须使用 `originDesign`
@@ -119,7 +119,7 @@
 | `square` | 650×650 | 圆形或旋转对称（圆周运动、向心力） |
 
 > **新增动画组件只允许使用以上四个有效 preset**。如首次开发无法确定布局，默认选 `full`。
-> 存量 `wide`/`tall` 迁移时传 `{ presetCompensation: 1.2 }`，详见 `07_CANVAS_SVG_CHART_RULES.md §2.3`。
+> 存量 `wide`/`tall` 临时迁移时可暂传 `{ presetCompensation: 1.2 }`，完成 `physicsScaleDesign` / `font(N)` 调优及迁移验收后应删除；新建页面严禁传 `presetCompensation`。详见 `07_CANVAS_SVG_CHART_RULES.md §2.3`。
 
 ### 铁律 5 展开：组件复用
 
@@ -193,7 +193,7 @@
 
 ## 7. 提交 Checklist
 
-- **自动项**：跑 `npm run check`（`build` → 全量单测 → 9 项架构守卫 → 联合真机实测 `check:runtime`），全绿才算过；依赖审计另跑 `npm run check:all`。
+- **自动项**：跑 `npm run check`（`build` → 全量单测 → 10 项架构守卫 → 联合真机实测 `check:runtime`），全绿才算过；依赖审计另跑 `npm run check:all`。
   守卫与规范的逐条对应见 [CHECKLIST.md](../docs/agent-rules/process/CHECKLIST.md) 第一节。
 - **人工项**：20 条脚本判不了的内容（教学有效性、三屏分配、文案口味、视觉），见 CHECKLIST.md 第二节。
 

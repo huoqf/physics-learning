@@ -109,16 +109,14 @@ export default function XxxAnimation() {
   })
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
-        <XxxScene
-          physics={physics}
-          showVectors={showVectors}
-          canvasSize={canvasSize}
-          sceneScale={sceneScale}
-        />
-      </AnimationSvgCanvas>
-    </div>
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+      <XxxScene
+        physics={physics}
+        showVectors={showVectors}
+        canvasSize={canvasSize}
+        sceneScale={sceneScale}
+      />
+    </AnimationSvgCanvas>
   )
 }
 ```
@@ -176,7 +174,7 @@ export default function XxxAnimation() {
       </div>
 
       {/* ─── 下方：SVG 动画区 ─── */}
-      <div ref={containerRef} className="flex-1 min-h-0 bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden">
+      <div className="flex-1 min-h-0 bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden">
         <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
           <XxxScene
             physics={physics}
@@ -202,7 +200,7 @@ export default function XxxAnimation() {
 return (
   <div className="w-full h-full flex flex-row gap-2 overflow-hidden">
     {/* 左侧：SVG 动画区 */}
-    <div ref={containerRef} className="flex-1 min-h-0 bg-white rounded-xl shadow-sm overflow-hidden">
+    <div className="flex-1 min-h-0 bg-white rounded-xl shadow-sm overflow-hidden">
       <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
         <XxxScene physics={physics} showVectors={showVectors} canvasSize={canvasSize} sceneScale={sceneScale} />
       </AnimationSvgCanvas>
@@ -270,7 +268,7 @@ return (
 - [ ] 图表区和动画区各占合理比例（默认各 50%）
 - [ ] 物理计算在 hook 中，不在 JSX 中
 - [ ] Scene 组件零物理公式
-- [ ] `controlsMode` 选择正确（timed / loop / param）
+- [ ] `controlsMode` 选择正确（timed / loop / param / pause-only）
 - [ ] Registry 已注册
 - [ ] 如使用 CenterExtra：已添加 `CenterExtra: lazy(...)` 声明
 - [ ] 视觉验证：图表数据随动画实时更新

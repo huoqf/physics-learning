@@ -5,7 +5,8 @@ description: 新建动画页面 / 创建新的物理动画组件 / 新增动画�
 
 # 新建动画页面 Skill
 
-> 本 Skill 提供新建页面的标准决策路径和骨架代码，按步骤执行即可。
+> 本 Skill 提供新建基础教学动画页面的标准决策路径和骨架代码，按步骤执行即可。
+> 若需搭建真题联动、压轴模型专区或录入试题，请改用 `gaokao-enhancement` Skill（放在 `master-models`/`practice`/`problems`，基础动画页禁止出现「高考/真题/压轴/母题」字样，受 `check:exam-isolation` 守卫）。
 
 ---
 
@@ -31,9 +32,10 @@ description: 新建动画页面 / 创建新的物理动画组件 / 新增动画�
 
 ### C. 选 controlsMode
 
-- 绝大多数力学/电磁学用 `'timed'`（有时间轴的过程动画，默认可省略）
-- 稳态光学现象（衍射、薄膜干涉、偏振、折射反射）→ 严格使用 `'param'`（纯参数探索，无倒计时）
-- 永续循环无终点（相干波前扩散、热运动/布朗运动）→ `'loop'`
+- 绝大多数力学/电磁学过程动画用 `'timed'`（有起点/终点的过程演示，默认可省略）
+- 稳态光学现象（衍射、薄膜干涉、偏振、折射反射）或纯参数驱动无时间推进 → 严格使用 `'param'`
+- 永续循环无终点（相干波前扩散、热运动/布朗运动、圆周运动）→ `'loop'`
+- 由左屏开关触发过程、仅需中途定格分析（如瞬时切断绳弹簧）→ `'pause-only'`
 
 ---
 
@@ -160,7 +162,7 @@ return (
     <div className="flex-1 min-h-0 bg-white rounded-lg p-2 border border-slate-200 shadow-sm flex flex-col">
       <VelocityTimeChart points={vtPoints} currentTime={time} tMax={10} title="v-t" />
     </div>
-    <div ref={containerRef} className="flex-1 min-h-0 relative">
+    <div className="flex-1 min-h-0 relative">
       <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
         <<Topic>Scene ... />
       </AnimationSvgCanvas>
@@ -176,8 +178,7 @@ import { Ball, PhysicsGround, PhysicsVectorArrow } from '@/components/Physics'
 import { PHYSICS_COLORS, CANVAS_COLORS, STROKE } from '@/theme/physics'
 import { worldToDesign } from '@/scene'
 import type { SceneScale } from '@/scene'
-import type { ViewportInfo } from '@/utils/useViewport'
-import type { CanvasSize } from '@/utils'
+import type { CanvasSize, ViewportInfo } from '@/utils'
 import type { <Topic>PhysicsResult } from '../hooks/use<Topic>Physics'
 
 interface <Topic>SceneProps {
@@ -242,7 +243,7 @@ export function use<Topic>Physics({ v0, a, time }: { v0: number; a: number; time
 
 ---
 
-## Step 3：Registry 注册（5 个文件，同一任务必须全部完成）
+## Step 3：Registry 注册（4 个文件 + 1 次同步命令，同一任务必须全部完成）
 
 ### `src/data/registries/<domain>.ts`
 
@@ -302,7 +303,15 @@ export function build<Topic>Quantities(
 'anim-<topic>': { loader: () => import('./quantities/<domain>/<topic>'), builderName: 'build<Topic>Quantities' },
 ```
 
-### `src/data/knowledge/<domain>.ts` — 确认 knowledgeId 存在
+### `src/data/knowledge/<domain>.ts` — 确认 `knowledgeId` 存在（由 `knowledgeTree.ts` 自动聚合）
+
+### 刷新动画映射表（第 5 处同步）
+
+```bash
+node scripts/gen-annotations.mjs
+```
+
+自动更新 `src/ANNOTATIONS.md` 与 `MEMORY.md` 的动画映射表。
 
 ---
 

@@ -1,6 +1,6 @@
 # ROADMAP — 高中物理交互动画学习软件
 
-> 最后更新：2026-06-07
+> 最后更新：2026-11-18
 
 ---
 
@@ -52,7 +52,7 @@
 ```
 技术栈：React 19 + Vite 6 + TypeScript 5.5 + TailwindCSS 4
 状态管理：Zustand | 路由：HashRouter | 公式：KaTeX（离线）
-渲染：SVG（教学）/ Canvas（高频）/ PixiJS（复杂场景，[M4]引入）
+渲染：SVG（教学）/ Canvas（高频）/ PixiJS（候选，当前未引入）
 存储：IndexedDB（主）+ LocalStorage（配置）≤ 200MB
 打包：浏览器优先，后期 Electron；base: './'，禁止运行时 CDN
 ```
@@ -67,7 +67,7 @@
 |------|------|
 | 路由 | 强制 HashRouter |
 | 离线 | KaTeX/图标/题库全部打包，禁止运行时 CDN |
-| 坐标 | 所有渲染必须通过 `src/utils/coordinate.ts` |
+| 坐标 | 新页面统一走 `useAnimationViewport` + `useSceneScale` + `worldToDesign`（`src/utils/coordinate.ts` 仅用于存量维护） |
 | 动画 | 所有动画必须通过 `src/utils/animation.ts` |
 | 纯函数 | `src/physics/` `src/math/` 不得依赖 DOM/React/window |
 | 依赖 | 新增 npm 包必须先在 `process/PROCESS_LOG.md` 申报 |

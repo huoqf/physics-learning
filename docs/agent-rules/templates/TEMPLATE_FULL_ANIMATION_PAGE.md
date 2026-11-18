@@ -66,26 +66,24 @@ export default function XxxAnimation() {
     refMagnitudes: { velocity: 10, force: 5 },
   })
 
-  // ── 6. 渲染 ──
+  // ── 6. 渲染（AnimationSvgCanvas 内部自带 containerRef 外层 div，禁止重复套壳） ──
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
-        <defs>
-          {/* 渐变、滤镜等 */}
-        </defs>
-        <rect
-          width={CANVAS_PRESETS.full.width}
-          height={CANVAS_PRESETS.full.height}
-          fill={PHYSICS_COLORS.white}
-        />
-        <XxxScene
-          physics={physics}
-          showVectors={showVectors}
-          canvasSize={canvasSize}
-          sceneScale={sceneScale}
-        />
-      </AnimationSvgCanvas>
-    </div>
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+      <defs>
+        {/* 渐变、滤镜等 */}
+      </defs>
+      <rect
+        width={CANVAS_PRESETS.full.width}
+        height={CANVAS_PRESETS.full.height}
+        fill={PHYSICS_COLORS.white}
+      />
+      <XxxScene
+        physics={physics}
+        showVectors={showVectors}
+        canvasSize={canvasSize}
+        sceneScale={sceneScale}
+      />
+    </AnimationSvgCanvas>
   )
 }
 ```
@@ -134,7 +132,7 @@ export function useXxxPhysics({
 
 ```tsx
 import { useRef, useCallback, useState, useEffect } from 'react'
-import { useAnimationFrame } from '@/utils/animation'
+import { useAnimationFrame } from '@/utils'
 
 interface XxxState {
   x: number; y: number; vx: number; vy: number; ax: number
@@ -376,7 +374,7 @@ export default function XxxCenterExtra() {
 - [ ] 物理计算在 hook 中，不在 JSX 中
 - [ ] Scene 组件零物理公式
 - [ ] Registry 已注册（id：`anim-xxx`）
-- [ ] `controlsMode` 选择正确（timed / loop / param）
+- [ ] `controlsMode` 选择正确（timed / loop / param / pause-only）
 - [ ] 知识树节点已关联
 - [ ] 如有图表：已添加 `CenterExtra` 或手写 split 布局
 - [ ] 视觉验证：播放/暂停/重置正常

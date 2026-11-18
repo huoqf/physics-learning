@@ -67,9 +67,7 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 **施工优先级（按复核结论，不按行数）**：AnimationPage（该拆）→ RotatingCoil（可选，触发性迁移）→ RelationChart（不拆）
 
-> **全仓超长文件的唯一真源是 `npm run check:large-files` 的输出**，本表只列「已进入复核线且尚未处置」的文件。
-> 当前另有 2 个 800+ 文件已在 `scripts/check-large-files.mjs` 的 `ALLOWLIST` 中（`data/problems/masterProblems.ts`
-> 894 行、`data/registries/mechanics-dynamics.ts` 832 行），均为纯数据文件，不在此表重复登记。
+> `check-large-files` 硬门禁已撤除（详见 `ARCHITECTURE_RULES.md §12.1`）。本节只记录「已进入复核线且尚未处置」的候选文件，纯数据文件（如 `data/problems/masterProblems.ts`、`data/registries/mechanics-dynamics.ts`）豁免拆分。
 
 | # | 文件 | 当前行数 | 消费者 | 测试 | 拆分方案 | 风险 |
 |:-:|------|-----:|--------|:---:|---------|:---:|

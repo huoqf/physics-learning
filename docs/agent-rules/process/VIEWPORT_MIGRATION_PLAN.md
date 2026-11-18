@@ -13,7 +13,7 @@
 useAnimationViewport({ preset }) → 获取 { containerRef, canvasSize, vp, preset }
 useSceneScale({ vp, preset, anchor, physicsWidth, physicsHeight }) → SceneScale
 AnimationSvgCanvas(containerRef, transform={vp.transform}) → SVG 容器
-worldToDesign({ x, y }, sceneScale) → 物理坐标 → 设计坐标
+worldToDesign(x, y, sceneScale) → 物理坐标 → 设计坐标
 PhysicsVectorArrow/VectorArrow → 矢量箭头（在 AnimationSvgCanvas 内部使用）
 ```
 

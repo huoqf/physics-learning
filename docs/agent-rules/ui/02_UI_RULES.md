@@ -38,7 +38,7 @@
 | `src/theme/physics/vectorStyle.ts` | VectorType 枚举、视觉权重、颜色映射（矢量系统权威来源） | `@/theme/physics` |
 | `src/theme/physics/arrowStyle.ts` | ArrowGeometry 箭头几何规格 | `@/theme/physics` |
 
-Tailwind 配置从 `src/theme/colors.ts` 导入，不在 `tailwind.config.*` 中重复定义颜色值。
+Tailwind `@theme` 与语义 utility 类在 `src/index.css` 中定义，与 `src/theme/colors.ts` 保持同源（TailwindCSS v4 无 `tailwind.config.*`）。
 
 ### 2.1 「禁止硬编码」的执行口径（2026-10 明确）
 
@@ -161,7 +161,7 @@ Canvas/SVG 中的颜色按**语义层级**严格隔离，禁止混用：
 三屏布局密度上限：
 - 左侧参数区：最多 **5个参数**
 - Canvas 中间：最多 **7个元素**，Canvas内文字标注 ≤ 5个
-- 右侧看板：最多 **8行物理量** + 高考要点卡片（文字凝练，不强卡条数与字数）
+- 右侧看板：最多 **8行物理量** + 规律要点卡片（文字凝练，不强卡条数与字数；基础动画页面禁写「高考/真题/压轴」等应试词，详见 `check:exam-isolation`）
 
 ---
 
@@ -186,7 +186,7 @@ Canvas/SVG 中的颜色按**语义层级**严格隔离，禁止混用：
 |------|----------|--------|----------|
 | 左侧屏 | 交互控制 | ParamControl、SegmentedControl、ToggleSwitch、OptionButton、TipCard | 公式体系、知识讲解、高考考点 |
 | 中间屏 | 现象展示 | 动画、图表、数据表、实时标注、AnimationControls、InfoBar | 完整知识清单、系统性公式推导、高考总结 |
-| 右侧屏 | 知识展示 | 物理量、公式（含适用条件）、高考要点、易错点 | 参数调节、模式切换、播放状态控制 |
+| 右侧屏 | 知识展示 | 物理量、公式（含适用条件）、核心要点、易错点 | 参数调节、模式切换、播放状态控制 |
 
 **职责分离铁律**：
 - 左侧屏只承载参数、模式、状态等交互控制
@@ -206,11 +206,13 @@ Canvas/SVG 中的颜色按**语义层级**严格隔离，禁止混用：
 
 状态变化有 300ms transition；已掌握节点有 `box-shadow: glowRing.mastered（详见 src/theme/shadow.ts）` 光晕。
 
-### 高考重要性标签（5级，使用 accent 金色系）
+### 重要性标签（5级，使用 accent 金色系）
 
-| importance | 标签 | 样式 |
-|-----------|------|------|
-| `gaokao` | 高考高频 ⭐ | accent-100 背景，accent-700 文字，左侧4px金色竖条 |
+> 术语隔离：下表 `gaokao` 为内部枚举键值；在**基础动画页面**（`src/features/<domain>/`、`src/data/knowledge/`、`src/data/quantities/`）的可见文案中禁止出现「高考/真题/压轴/母题」等词（由 `npm run check:exam-isolation` 守卫），仅 `/practice`、`/master-models`、`/analysis` 可展示考纲/真题标签。
+
+| importance | 内部/真题专区标签 | 基础动画推荐展示 | 样式 |
+|-----------|------|------|------|
+| `gaokao` | 高考高频 ⭐ | 核心必考 / 重点 ⭐ | accent-100 背景，accent-700 文字，左侧4px金色竖条 |
 | `hard` | 难点 | danger-100 背景，danger-700 文字 |
 | `core` | 核心 | primary-100 背景，primary-700 文字 |
 | `basic` | 基础 | neutral-100 背景，neutral-600 文字 |
@@ -254,7 +256,7 @@ Primary（primary-600）/ Secondary（white + primary边框）/ Ghost（transpar
 
 字体栈：`'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif`
 
-> **⚠️ Tailwind 文字类使用约束**：禁止直接使用 Tailwind 默认字号类（`text-xs` 12px、`text-sm` 14px、`text-base` 16px 等），必须改用上表语义类（`text-body`、`text-body-sm` 等）或明确 `text-[15px]` 等精确值。`text-xs` / `text-sm` 的默认像素值与本规范排版层级不对齐，直接使用将导致字号漂移。
+> **⚠️ Tailwind 文字类使用约束**：正文与标题禁止直接使用 `text-sm`（14px）/ `text-base`（16px）替代排版层级，必须使用 `src/index.css` 中定义的语义类（`text-body` 15px、`text-body-sm` 13px、`text-ui-xs/sm/base/md` 8–11px）或精确值 `text-[Npx]`。**唯一例外**：左屏紧凑控件标签与分区标题统一使用 `text-xs`（12px，参见 `08_THREE_PANEL_RULES.md §2.5`）。
 
 **Canvas/SVG 内字体**：动画组件中的 SVG 文字标注必须使用 `useCanvasSize()` 返回的 `font()` 函数缩放（如 `fontSize={font(11)}`），禁止裸值 `fontSize={11}`。`font()` 内置 clamp(7, 16) 保证可读性。设计基准值参考 `ANIM_FONT`（`@/theme/animationTokens`）。
 
@@ -363,7 +365,7 @@ Primary（primary-600）/ Secondary（white + primary边框）/ Ghost（transpar
 > `modulepreload`（首屏 CSS +28.93 kB、gzip +8.04 kB，且 katex JS 被预加载）。
 > 因此公式类组件单独成 `@/components/Formula` barrel，**只允许在懒加载页面中引用**，禁止经由 UI barrel 透出。
 
-> **barrel import 规则**：所有组件从对应目录的 barrel 入口导入，禁止子路径导入（如 `@/components/Physics/Ball`）。
+> **barrel import 规则**：`src/components/{Physics,Chart,Layout,UI,Formula}` 下的所有组件与 `src/theme/*` token 均必须从对应目录的 barrel 入口导入，禁止子路径导入（如 `@/components/Physics/Ball`、`@/theme/physics/colors`）。`@/utils/*` 中的专用工具（如 `@/utils/lazyWithPreload`）不强制全量汇聚至 `@/utils/index.ts`。
 >
 > ```ts
 > // 推荐：子目录 barrel
@@ -389,7 +391,7 @@ Primary（primary-600）/ Secondary（white + primary边框）/ Ghost（transpar
 - 禁止在 Canvas 内使用 lucide 图标（用 SVG 路径手绘）
 - 禁止单页面试验深色模式（当前阶段浅色优先）
 - 禁止发明新颜色或新 token（先更新 src/theme/ 对应文件）
-- 禁止在 `tailwind.config.*` 中重复定义颜色值（从 colors.ts 导入）
+- 禁止脱离 `src/theme/` 与 `src/index.css` 私自重复定义颜色色阶
 
 ---
 

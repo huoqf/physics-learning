@@ -35,6 +35,7 @@ npm run check:all    # 以上 + 依赖安全审计（audit:deps）
 | `check:quantity-labels` | 右屏物理量 label 与 symbol 自洽 | 右屏规范 |
 | `check:control-meta` | 左屏声明式协议（禁 TeX / 声明顺序 / 卷别与应试禁词 / 透题） | 铁律 6、`08_THREE_PANEL_RULES.md §2.6` |
 | `check:formula-condition` | 守恒/定律类公式必须声明适用条件 | 右屏规范 |
+| `check:exam-isolation` | 基础动画页、`knowledge/`、`quantities/` 与考纲/真题隔离，及 `animationIds` 引用完整 | `ARCHITECTURE_RULES`、三屏规范 |
 | `check:runtime` | 联合真机巡检：分段器选项折行（`--only seg-wrap`）+ 中屏 SVG 标注压字/被裁（`--only text-overlap`），双视口共享单次服务 | `08_THREE_PANEL_RULES.md §2.6.6`、`07 §4` |
 | `audit:deps` | 依赖安全（`npm audit --audit-level=moderate`） | ARCHITECTURE §11 |
 
@@ -57,11 +58,11 @@ npm run check:all    # 以上 + 依赖安全审计（audit:deps）
 ### 2. 脚本覆盖不到的提交纪律
 
 - [ ] 新增动画的 5 处注册齐全：`data/registries/<domain>.ts`（含 `paramMeta`/`controlMeta`/`defaultParams as const`）、
-      `data/quantities/<domain>/<topic>.ts`、`data/physicsQuantities.ts`、`data/knowledgeTree.ts`、
+      `data/quantities/<domain>/<topic>.ts`、`data/physicsQuantities.ts`、`data/knowledge/<domain>.ts`（由 `knowledgeTree.ts` 自动聚合）、
       以及跑 `node scripts/gen-annotations.mjs` 刷新 `src/ANNOTATIONS.md` 与 `MEMORY.md`
 - [ ] 物理计算只写在 `src/physics/`（或 `model/`），看板与场景 import 同一实现，不各算一遍
 - [ ] 新增依赖已在 `PROCESS_LOG.md` 申报，并同步 `ARCHITECTURE_RULES.md §11.1` 依赖清单
-- [ ] `PROCESS_LOG.md` 与当月 `logs/YYYY-MM.md` 已记录
+- [ ] `PROCESS_LOG.md` 已记录（如有周归档则同步 `logs/YYYY-Wxx.md`）
 
 ---
 

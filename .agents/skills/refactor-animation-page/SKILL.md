@@ -19,7 +19,7 @@ description: 重构动画页面 / 重构已有组件 / 迁移旧动画 / 修复�
 |---------|---------|
 | `CANVAS_PRESETS.wide` / `.tall` | → `full` / `splitV` / `splitH` / `square`（见 Step 1） |
 | `viewBox={...}` + `vp.transform` 同时存在 | 移除 `viewBox`，改用 `AnimationSvgCanvas` |
-| `presetCompensation: 1.2`（或任何值） | 删除此行。视觉偏差用 `physicsScaleDesign` 或 `font(N)` 中的 N 值微调补偿 |
+| `presetCompensation: 1.2`（或任何值） | 仅作 `wide/tall` 迁移临时过渡，完成重构调优后删除此行；视觉偏差用 `physicsScaleDesign` 或 `font(N)` 中的 N 值微调补偿 |
 | 图表区 `h-[Npx] shrink-0` 写死高度 | → `flex-1 min-h-0` |
 | 裸 `requestAnimationFrame(...)` | → `useAnimationLifecycle` / `useAnimationFrame` |
 
