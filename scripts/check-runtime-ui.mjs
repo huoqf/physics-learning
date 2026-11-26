@@ -362,7 +362,7 @@ for (const WIDTH of WIDTHS) {
       continue
     }
 
-    // 1. 分段器折行 & 左屏横向溢出实测（含 Canvas-only 页面的左屏控件，不能跳过）
+    // 1. 分段器折行 & 左屏横向溢出实测（默认初始态）
     if (RUN_SEG) {
       const rows = await scanSegWrapOnPage(page)
       segTotalBtns += rows.length
@@ -370,21 +370,16 @@ for (const WIDTH of WIDTHS) {
         if (r.lines > 1.35) segFailures.push({ id, vw: WIDTH, state: 'default', ...r })
       }
       const leftOv = await scanLeftOverflowOnPage(page)
-      if (leftOv) leftOverflows.push({ id, vw: WIDTH, ...leftOv })
-      if (DEEP) {
-        const res = await runDeepSegWrapOnPage(page, id)
-        segTotalStates += res.states
-        for (const f of res.failures) segFailures.push({ vw: WIDTH, ...f })
-      }
+      if (leftOv) leftOverflows.push({ id, vw: WIDTH, state: 'default', ...leftOv })
     }
 
-    // 2. 中屏 SVG 压字与裁切实测
+    // 2. 中屏 SVG 压字与裁切实测（默认初始态）
+    let skipDeepOverlap = false
     if (RUN_OVERLAP) {
       if (!wideSvg && hasCanvas) {
         if (CANVAS_ONLY_PAGES.has(id)) {
           uncovered.push({ id, vw: WIDTH })
-          okPages++
-          consecutiveFail = 0
+          skipDeepOverlap = true
         } else {
           unreachable.push({
             id,
@@ -395,13 +390,35 @@ for (const WIDTH of WIDTHS) {
             aborted = true
             break
           }
+          continue
         }
-        continue
+      } else {
+        const { out, clipped, textCount } = await scanTextOverlapOnPage(page)
+        vwText += textCount
+        for (const o of out) found.push({ anim: id, vw: WIDTH, state: 'default', ...o })
+        for (const c of clipped) clipFound.push({ anim: id, vw: WIDTH, state: 'default', ...c })
       }
-      const { out, clipped, textCount } = await scanTextOverlapOnPage(page)
-      vwText += textCount
-      for (const o of out) found.push({ anim: id, vw: WIDTH, ...o })
-      for (const c of clipped) clipFound.push({ anim: id, vw: WIDTH, ...c })
+    }
+
+    // 3. 深度模式：逐个切换分段器非默认选项，覆盖隐藏控件折行、左屏横向溢出及各模式下的 SVG 叠图/裁切
+    if (DEEP && (RUN_SEG || (RUN_OVERLAP && wideSvg && !skipDeepOverlap))) {
+      const res = await runDeepSegWrapOnPage(page, id, {
+        skipWrap: !RUN_SEG,
+        onState: async (state) => {
+          if (RUN_SEG) {
+            const leftOv = await scanLeftOverflowOnPage(page)
+            if (leftOv) leftOverflows.push({ id, vw: WIDTH, state, ...leftOv })
+          }
+          if (RUN_OVERLAP && wideSvg && !skipDeepOverlap) {
+            const { out, clipped, textCount } = await scanTextOverlapOnPage(page)
+            vwText += textCount
+            for (const o of out) found.push({ anim: id, vw: WIDTH, state, ...o })
+            for (const c of clipped) clipFound.push({ anim: id, vw: WIDTH, state, ...c })
+          }
+        },
+      })
+      segTotalStates += res.states
+      for (const f of res.failures) segFailures.push({ vw: WIDTH, ...f })
     }
 
     okPages++
@@ -445,7 +462,10 @@ if (RUN_SEG) {
     console.log(`❌ [seg-wrap ${f.vw}px] ${f.id}  「${f.text}」  折 ${f.lines} 行  单格 ${f.cellW}px  [${f.state}]`)
   }
   for (const o of leftOverflows) {
-    console.log(`❌ [left-overflow ${o.vw}px] ${o.id}  scrollDiff=${o.scrollDiff}px  元素「${o.culprit}」超出 ${o.over}px`)
+    console.log(
+      `❌ [left-overflow ${o.vw}px] ${o.id}  scrollDiff=${o.scrollDiff}px  元素「${o.culprit}」超出 ${o.over}px` +
+        (o.state && o.state !== 'default' ? `  [${o.state}]` : ''),
+    )
   }
   const deepNote = DEEP ? ` / 深度切换 ${segTotalStates} 次` : ''
   console.log(
@@ -508,6 +528,7 @@ if (RUN_OVERLAP) {
 
   const fmt = (r) =>
     `  「${r.a}」×「${r.b}」  ${r.ow}×${r.oh}px  字号 ${r.fs}` +
+    (r.state && r.state !== 'default' ? `  [${r.state}]` : '') +
     (ONLY_PAGES ? `  @(${r.at?.[0]},${r.at?.[1]})/@(${r.bt?.[0]},${r.bt?.[1]})` : '') +
     (WIDTHS.length > 1 && r.widths.length === 1 ? `  仅 ${r.widths[0]}px` : '')
 
@@ -521,6 +542,7 @@ if (RUN_OVERLAP) {
     for (const c of clipRows) {
       console.log(
         `  ${c.anim}  「${c.txt}」  ${c.box[0]}×${c.box[1]}px  超出 ${c.over}px（${c.sides}）` +
+          (c.state && c.state !== 'default' ? `  [${c.state}]` : '') +
           (ONLY_PAGES ? `  @(${c.at[0]},${c.at[1]})  裁切盒=${c.clip.join(',')}` : '') +
           (WIDTHS.length > 1 && c.widths.length === 1 ? `  仅 ${c.widths[0]}px` : ''),
       )

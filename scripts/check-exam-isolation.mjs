@@ -16,11 +16,13 @@ import { join, relative } from 'node:path'
 
 const ROOT = process.cwd()
 const FEATURES_DIR = join(ROOT, 'src', 'features')
+const COMPONENTS_DIR = join(ROOT, 'src', 'components')
 const KNOWLEDGE_DIR = join(ROOT, 'src', 'data', 'knowledge')
 const QUANTITIES_DIR = join(ROOT, 'src', 'data', 'quantities')
 const REGISTRY_DIR = join(ROOT, 'src', 'data', 'registries')
 
 const COMMENT_LINE_RE = /^\s*(\/\/|\/?\*|\*|\{\/\*)/
+const SHARED_ANIM_COMPONENT_DIRS = ['Formula', 'Layout', 'UI', 'Physics']
 const EXAM_FEATURE_ALLOW_DIRS = new Set([
   'analysis',
   'practice',
@@ -30,12 +32,12 @@ const EXAM_FEATURE_ALLOW_DIRS = new Set([
 ])
 
 const FEATURE_FORBIDDEN_RE =
-  /高考|真题|压轴|母题|题眼|秒杀|解题专项|随堂小测|回答正确|答对了|通关模式|真题模式|考点结论|高考实验|(?:\d{2,4}\s*)?(?:全国|新课标|新高考)[一二三甲乙丙丁ⅠⅡⅢ]?\s*卷|山东卷|浙江卷|北京卷|江苏卷|广东卷|湖北卷/
+  /高考|真题|(?<!电)压轴|母题|核心考点|考点|题眼|秒杀|解题专项|随堂小测|回答正确|答对了|通关模式|真题模式|考点结论|高考实验|(?:\d{2,4}\s*)?(?:全国|新课标|新高考)[一二三甲乙丙丁ⅠⅡⅢ]?\s*卷|山东卷|浙江卷|北京卷|江苏卷|广东卷|湖北卷/
 
-const KNOWLEDGE_TITLE_FORBIDDEN_RE = /高考|真题|压轴|母题|考点/
+const KNOWLEDGE_TITLE_FORBIDDEN_RE = /高考|真题|(?<!电)压轴|母题|考点/
 
 const QUANTITY_EXAM_LEAK_RE =
-  /真题|母题|高考图像斜率法|高考实验专题对应页面|\d{4}\s*(?:年)?\s*(?:全国|新课标|山东|浙江|北京|江苏|广东|湖北|湖南|河北|安徽|福建|四川|辽宁|重庆|天津|上海|海南|甲卷|乙卷)|(?:全国|新课标)[一二三甲乙]?卷/
+  /真题|母题|高考|新高考|秒杀|(?<!电)压轴|题眼|必考|高频考点|命题陷阱|破题神技|大题|★{2,}|⭐{2,}|\d{4}\s*(?:年)?\s*(?:全国|新课标|山东|浙江|北京|江苏|广东|湖北|湖南|河北|安徽|福建|四川|辽宁|重庆|天津|上海|海南|甲卷|乙卷)|(?:全国|新课标)[一二三甲乙]?卷/
 
 function walkTs(dir) {
   const files = []
@@ -54,9 +56,18 @@ function walkTs(dir) {
 
 const violations = []
 let checkedFeatures = 0
+let checkedSharedComponents = 0
 let checkedQuantities = 0
 let checkedKnowledgeNodes = 0
 let checkedAnimRefs = 0
+
+function stripBlockCommentsPreservingLines(text) {
+  return text.replace(/(?:\{\s*)?\/\*[\s\S]*?\*\/(?:\s*\})?/g, (m) => m.replace(/[^\r\n]/g, ''))
+}
+
+function stripInlineComment(line) {
+  return line.replace(/(?<!:)\/\/.*$/, '')
+}
 
 // 1. 动画场景与功能模块（非刷题/析题页）隔离检查
 for (const entry of readdirSync(FEATURES_DIR)) {
@@ -76,6 +87,31 @@ for (const entry of readdirSync(FEATURES_DIR)) {
           file: rel,
           line: i + 1,
           reason: `动画模块非注释代码出现应试/刷题词「${m[0]}」（应属 /practice 或 /master-models）：${line.trim().slice(0, 80)}`,
+        })
+      }
+    }
+  }
+}
+
+// 1.5 共享动画组件目录隔离检查（Formula / Layout / UI / Physics，跳过 ProblemDiagrams）
+for (const dirName of SHARED_ANIM_COMPONENT_DIRS) {
+  const sub = join(COMPONENTS_DIR, dirName)
+  if (!statSync(sub).isDirectory()) continue
+  for (const file of walkTs(sub)) {
+    const rel = relative(ROOT, file).replaceAll('\\', '/')
+    if (rel.includes('/ProblemDiagrams/')) continue
+    checkedSharedComponents += 1
+    const lines = stripBlockCommentsPreservingLines(readFileSync(file, 'utf8')).split(/\r?\n/)
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      if (COMMENT_LINE_RE.test(line)) continue
+      const codeOnly = stripInlineComment(line)
+      const m = codeOnly.match(FEATURE_FORBIDDEN_RE)
+      if (m) {
+        violations.push({
+          file: rel,
+          line: i + 1,
+          reason: `共享动画组件出现应试/刷题词「${m[0]}」（所有动画页共享组件严禁硬编码应试词汇）：${line.trim().slice(0, 80)}`,
         })
       }
     }
@@ -161,5 +197,5 @@ if (violations.length > 0) {
 }
 
 console.log(
-  `✅ check:exam-isolation passed: ${checkedFeatures} 个动画模块文件 / ${checkedQuantities} 个看板文件 / ${checkedKnowledgeNodes} 个知识节点 / ${checkedAnimRefs} 条动画引用均保持学练严格隔离。`,
+  `✅ check:exam-isolation passed: ${checkedFeatures} 个动画模块文件 / ${checkedSharedComponents} 个共享组件文件 / ${checkedQuantities} 个看板文件 / ${checkedKnowledgeNodes} 个知识节点 / ${checkedAnimRefs} 条动画引用均保持学练严格隔离。`,
 )

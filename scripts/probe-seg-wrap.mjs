@@ -80,23 +80,47 @@ export const scanSegWrapOnPage = (page) =>
     return out
   })
 
-/** 深度模式：逐个点击分段器选项，覆盖 `showIf` 切换后才渲染的控件 */
-export async function runDeepSegWrapOnPage(page, id) {
+/** 深度模式：逐个点击分段器非当前默认选项，覆盖 `showIf` 切换后才渲染的控件与不同模式下的画面状态 */
+export async function runDeepSegWrapOnPage(page, id, options = {}) {
+  const { skipWrap = false, onState = null } = options
   const failures = []
   let states = 0
-  const groupSizes = await page.evaluate(() =>
-    [...document.querySelectorAll('div.grid.bg-neutral-100.rounded-lg')].map((t) => t.children.length),
+  const groups = await page.evaluate(() =>
+    [...document.querySelectorAll('div.grid.bg-neutral-100.rounded-lg')].map((t) => {
+      const btns = [...t.children]
+      const activeIdx = btns.findIndex((b) => b.classList.contains('bg-white'))
+      return { size: btns.length, activeIdx: activeIdx >= 0 ? activeIdx : 0 }
+    }),
   )
-  for (let gi = 0; gi < groupSizes.length; gi++) {
-    for (let oi = 0; oi < groupSizes[gi]; oi++) {
+  for (let gi = 0; gi < groups.length; gi++) {
+    const { size, activeIdx } = groups[gi]
+    for (let oi = 0; oi < size; oi++) {
+      if (oi === activeIdx) continue
       const btn = page.locator('div.grid.bg-neutral-100.rounded-lg').nth(gi).locator('> button').nth(oi)
       if (!(await btn.count())) continue
       await btn.click({ force: true }).catch(() => {})
       await page.waitForTimeout(250)
       states++
-      const sub = await scanSegWrapOnPage(page)
-      for (const r of sub) {
-        if (r.lines > 1.35) failures.push({ id, state: `mode#${gi}.${oi}`, ...r })
+      const stateLabel = `mode#${gi}.${oi}`
+      if (!skipWrap) {
+        const sub = await scanSegWrapOnPage(page)
+        for (const r of sub) {
+          if (r.lines > 1.35) failures.push({ id, state: stateLabel, ...r })
+        }
+      }
+      if (onState) {
+        await onState(stateLabel)
+      }
+    }
+    if (size > 1) {
+      const restoreBtn = page
+        .locator('div.grid.bg-neutral-100.rounded-lg')
+        .nth(gi)
+        .locator('> button')
+        .nth(activeIdx)
+      if (await restoreBtn.count()) {
+        await restoreBtn.click({ force: true }).catch(() => {})
+        await page.waitForTimeout(150)
       }
     }
   }

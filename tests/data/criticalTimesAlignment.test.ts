@@ -24,11 +24,33 @@ import { CRITICAL_TIME_STEP } from '@/utils/criticalTime'
 interface CriticalPoint {
   time: number
   label: string
+  autoPause?: boolean
 }
 
 type CriticalTimesFn = (p: Record<string, number>) => CriticalPoint[]
 
 const onGrid = (t: number) => Math.abs(Math.round(t * 100) - t * 100) < 1e-6
+
+function buildModeSnapshots(cfg: NonNullable<ReturnType<typeof getAnimationConfig>>) {
+  const baseParams = { ...(cfg.defaultParams ?? {}) } as Record<string, number>
+  const snapshots: Array<{ tag: string; params: Record<string, number> }> = [
+    { tag: 'default', params: baseParams },
+  ]
+
+  for (const ctrl of cfg.controlMeta ?? []) {
+    if (ctrl.type === 'segmented' && ctrl.options.length > 0) {
+      for (const opt of ctrl.options) {
+        if (typeof opt.value === 'number' && baseParams[ctrl.key] !== opt.value) {
+          snapshots.push({
+            tag: `${ctrl.key}=${opt.value}`,
+            params: { ...baseParams, [ctrl.key]: opt.value },
+          })
+        }
+      }
+    }
+  }
+  return snapshots
+}
 
 describe('临界时刻 · 必须落在播放条 0.01 s 网格上', () => {
   it('滑块滑离木板：定格时滑块还在板上（向左对齐）', () => {
@@ -120,38 +142,83 @@ describe('临界时刻 · 必须落在播放条 0.01 s 网格上', () => {
     expect(charging[2].label).toContain('充满')
   })
 
-  it('全量注册表：所有 timed 动画须提供 criticalTimes 且（除精确读数点外）对齐 0.01s 网格', async () => {
+  it('全量注册表（含所有 segmented 模式快照）：timed 模式须提供 criticalTimes 且（除精确读数点外）对齐 0.01s 网格', async () => {
     await ensureExtendedRegistry()
     const ids = getAllAnimationIds()
     expect(ids.length).toBeGreaterThanOrEqual(130)
 
-    const exactTimeExceptions = new Set(['anim-lc-oscillation'])
+    // 三个电磁振荡/电磁波/电磁波谱 entry 共用 EMOscillationAnimation 场次 0 的精确 T/4 相位读数点
+    const exactTimeExceptions = new Set(['anim-lc-oscillation', 'anim-em-wave', 'anim-em-spectrum'])
 
     for (const id of ids) {
       const cfg = getAnimationConfig(id)
       expect(cfg, `${id} 配置缺失`).toBeDefined()
       if (!cfg) continue
 
-      const params = { ...(cfg.defaultParams ?? {}) } as Record<string, number>
-      const controlsMode =
-        typeof cfg.controlsMode === 'function' ? cfg.controlsMode(params) : (cfg.controlsMode ?? 'timed')
+      for (const snap of buildModeSnapshots(cfg)) {
+        const controlsMode =
+          typeof cfg.controlsMode === 'function'
+            ? cfg.controlsMode(snap.params)
+            : (cfg.controlsMode ?? 'timed')
 
-      if (controlsMode !== 'timed') continue
+        if (controlsMode !== 'timed') continue
 
-      expect(cfg.criticalTimes, `${id} 为 timed 模式但未配置 criticalTimes`).toBeDefined()
-      const maxTime =
-        typeof cfg.maxTime === 'function' ? (cfg.maxTime(params) ?? 30) : (cfg.maxTime ?? 30)
-      const list =
-        typeof cfg.criticalTimes === 'function' ? cfg.criticalTimes(params) : (cfg.criticalTimes ?? [])
+        expect(cfg.criticalTimes, `${id} (${snap.tag}) 为 timed 模式但未配置 criticalTimes`).toBeDefined()
+        const maxTime =
+          typeof cfg.maxTime === 'function' ? (cfg.maxTime(snap.params) ?? 30) : (cfg.maxTime ?? 30)
+        const list =
+          typeof cfg.criticalTimes === 'function'
+            ? cfg.criticalTimes(snap.params)
+            : (cfg.criticalTimes ?? [])
 
-      let prev = 0
-      for (const pt of list) {
-        expect(pt.time, `${id} 临界点 ${pt.label} <= 0`).toBeGreaterThan(0)
-        expect(pt.time, `${id} 临界点 ${pt.label} 超出 maxTime=${maxTime}`).toBeLessThanOrEqual(maxTime + 1e-9)
-        expect(pt.time, `${id} 临界点未按时间严格升序`).toBeGreaterThan(prev)
-        prev = pt.time
-        if (!exactTimeExceptions.has(id)) {
-          expect(onGrid(pt.time), `${id} 临界点 ${pt.label}=${pt.time} 未落在 0.01s 网格`).toBe(true)
+        let prev = 0
+        for (const pt of list) {
+          expect(pt.time, `${id} (${snap.tag}) 临界点 ${pt.label} <= 0`).toBeGreaterThan(0)
+          expect(pt.time, `${id} (${snap.tag}) 临界点 ${pt.label} 超出 maxTime=${maxTime}`).toBeLessThanOrEqual(
+            maxTime + 1e-9,
+          )
+          expect(pt.time, `${id} (${snap.tag}) 临界点未按时间严格升序`).toBeGreaterThan(prev)
+          prev = pt.time
+          if (!exactTimeExceptions.has(id)) {
+            expect(onGrid(pt.time), `${id} (${snap.tag}) 临界点 ${pt.label}=${pt.time} 未落在 0.01s 网格`).toBe(true)
+          }
+        }
+      }
+    }
+  })
+
+  it('全量注册表（含所有 segmented 模式快照）：param 模式不得含 criticalTimes，loop 模式不得含 autoPause', async () => {
+    await ensureExtendedRegistry()
+    const ids = getAllAnimationIds()
+
+    for (const id of ids) {
+      const cfg = getAnimationConfig(id)
+      expect(cfg, `${id} 配置缺失`).toBeDefined()
+      if (!cfg) continue
+
+      for (const snap of buildModeSnapshots(cfg)) {
+        const mode =
+          typeof cfg.controlsMode === 'function'
+            ? cfg.controlsMode(snap.params)
+            : (cfg.controlsMode ?? 'timed')
+        const points: CriticalPoint[] =
+          typeof cfg.criticalTimes === 'function'
+            ? cfg.criticalTimes(snap.params)
+            : (cfg.criticalTimes ?? [])
+
+        if (mode === 'param') {
+          expect(
+            points,
+            `${id} (${snap.tag}) 为 param 模式，但返回了 ${points.length} 个 criticalTimes`,
+          ).toHaveLength(0)
+        }
+        if (mode === 'loop') {
+          for (const pt of points) {
+            expect(
+              pt.autoPause,
+              `${id} (${snap.tag}) 为 loop 模式，但临界点「${pt.label}」设置了 autoPause=true`,
+            ).not.toBe(true)
+          }
         }
       }
     }
