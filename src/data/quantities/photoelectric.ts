@@ -85,22 +85,24 @@ export function buildPhotoelectricQuantities(
       name: '遏止电压关系式',
       latex: 'eU_c = E_{\\text{km}}',
       level: 'core',
+      condition: '存在光电子逸出（ν ≥ ν₀），光电子最大初动能 E_km 仅与入射光频率及金属逸出功有关，与光强无关',
     },
     {
       name: '截止频率',
       latex: '\\nu_0 = \\frac{W_0}{h}',
       level: 'important',
+      condition: '由光电效应方程在 E_km = 0 时得到，仅由金属自身逸出功 W₀ 决定',
     },
   ]
 
-  // 高考要点
+  // 要点
   const gaokaoPoints: PhysicsPanelData['gaokaoPoints'] = [
     {
-      text: '光电效应图像判读：I-U 图中截止点对应遏止电压 Uc，饱和值对应光强',
+      text: '光电效应图像判读：I-U 图中反向遏止点对应遏止电压 Uc；入射光频率一定（且 ν ≥ ν₀）时，饱和光电流随光照强度增大而增大',
       importance: 'gaokao',
     },
     {
-      text: 'E_km - ν 图：斜率为普朗克常数 h，横轴截距为截止频率 ν₀',
+      text: 'E_km - ν 图：斜率为普朗克常量 h，横轴截距为截止频率 ν₀（纵轴截距绝对值为逸出功 W₀）',
       importance: 'gaokao',
     },
     {

@@ -49,13 +49,13 @@ export function buildVerticalSpringQuantities(
       { name: '挂球动力学方程', latex: 'mg-kx=ma', condition: '取向下为正，x为弹簧伸长量', level: 'core' },
       { name: '平衡位置 C', latex: 'kx_C=mg \\implies x_C=\\frac{mg}{k}', level: 'core', note: '速度和动能在此处最大' },
       { name: '最低点 D', latex: 'x_D=2x_C=\\frac{2mg}{k}', condition: '从原长处静止释放', level: 'important' },
-      { name: '能量守恒', latex: 'mgx=\\frac12mv^2+\\frac12kx^2', condition: '从原长释放到伸长量为x的位置', level: 'core' },
+      { name: '能量守恒', latex: 'mgx=\\frac12mv^2+\\frac12kx^2', condition: '物块、弹簧与地球组成的系统机械能守恒（弹性限度内且忽略阻力，从原长释放到伸长 x）', level: 'core' },
     ] : [
       { name: '触网前自由落体', latex: 'mg=ma \\implies a=g', condition: 'A→B，尚未接触弹簧', level: 'important' },
-      { name: '触网至平衡位置', latex: 'mg-kx=ma', condition: 'B→C，0\\le x<x_C', level: 'core', note: '合外力向下但逐渐减小，速度继续增大' },
+      { name: '触网至平衡位置', latex: 'mg-kx=ma', condition: 'B→C，0 ≤ x < x_C', level: 'core', note: '合外力向下但逐渐减小，速度继续增大' },
       { name: '平衡位置 C', latex: 'kx_C=mg \\implies a=0,\\;v=v_{\\max}', level: 'core', note: '此时速度及动能达到最大' },
-      { name: '最低点 D 能量方程', latex: 'mg(h+x_D)=\\frac12kx_D^2', condition: 'D点速度为0，弹簧压缩最大', level: 'important' },
-      { name: '过平衡点至最低点', latex: 'kx-mg=m|a|', condition: 'C→D，x_C<x\\le x_D', level: 'core', note: '合外力向上，速度减小' },
+      { name: '最低点 D 能量方程', latex: 'mg(h+x_D)=\\frac12kx_D^2', condition: '物块、弹簧与地球组成的系统机械能守恒（弹性限度内且忽略阻力，D 点速度为 0）', level: 'important' },
+      { name: '过平衡点至最低点', latex: 'kx-mg=m|a|', condition: 'C→D，x_C < x ≤ x_D', level: 'core', note: '合外力向上，速度减小' },
     ],
     gaokaoPoints: [
       { text: mode === 1 ? '【速度最大点】挂球从原长释放后，速度与动能最大的位置仍在平衡位置 C（mg = kx），不是最低点 D。' : '【速度最大点误区】小球速度与动能最大的位置在平衡位置 C（mg = kx），而非刚接触弹簧的 B 点。', importance: 'hard' as const },

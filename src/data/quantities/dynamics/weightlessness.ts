@@ -71,13 +71,13 @@ export function handleWeightlessness(
       { label: '超失重状态', value: stateName, unit: '', highlight: stateName === '超重' ? 'positive' as const : stateName === '完全失重' ? 'extreme' as const : stateName === '失重' ? 'negative' as const : undefined }
     ],
     formulas: [
-      { name: '视重计算公式', latex: 'N = m(g + a)', level: 'core', condition: '取向上为正方向' },
-      { name: '牛顿第二定律', latex: 'N - mg = ma', level: 'core', condition: '取向上为正方向' }
+      { name: '视重计算公式', latex: 'N = m(g + a_y)', level: 'core', condition: '取竖直向上为正方向，仅受重力与支持力时（a_y 为竖直方向加速度分量）' },
+      { name: '牛顿第二定律', latex: 'N - mg = m a_y', level: 'core', condition: '取竖直向上为正方向，a_y > 0 为超重，a_y < 0 为失重' }
     ],
     gaokaoPoints: [
-      { text: '【实重与视重】物体的真实重力 mg 保持不变，改变的仅是支持力（视重）。', importance: 'core' as const },
-      { text: '【加速度决定态】状态仅由 a 的方向决定：a 向上则超重，a 向下则失重，与速度方向无关。', importance: 'gaokao' as const },
-      { text: '【完全失重】当 a = -g 时，支持力 N = 0，物体在空中处于漂浮态。', importance: 'core' as const }
+      { text: '【实重与视重】物体的真实重力 mg 保持不变，改变的仅是支持力或拉力（视重）。', importance: 'core' as const },
+      { text: '【竖直加速度分量决定】超重或失重仅取决于加速度的竖直分量 a_y 的方向：a_y 向上则超重，a_y 向下则失重，与速度方向无关。', importance: 'gaokao' as const },
+      { text: '【完全失重】当 a_y = -g 时，支持力 N = 0（视重为零），物体与接触面间弹力消失（相对自由下落参考系处于漂浮状态）。', importance: 'core' as const }
     ]
   }
 }

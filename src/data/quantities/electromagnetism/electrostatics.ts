@@ -18,6 +18,7 @@ import {
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { CANVAS_PRESETS } from '@/theme/spacing'
+import { formatScientific } from '@/utils/formatNumber'
 import type { PhysicsPanelData, PhysicsQuantity } from '../types'
 
 const VACUUM_PERMITTIVITY = 8.85e-12
@@ -49,17 +50,17 @@ export function handleElectrostatics(
             { label: 'q₁', value: `${q1 > 0 ? '+' : ''}${q1.toFixed(1)}`, unit: 'μC', highlight: q1 > 0 ? 'positive' as const : 'negative' as const },
             { label: 'q₂', value: `${q2 > 0 ? '+' : ''}${q2.toFixed(1)}`, unit: 'μC', highlight: q2 > 0 ? 'positive' as const : 'negative' as const },
             { label: '间距 r', value: r.toFixed(1), unit: 'cm' },
-            { label: '库仑力 F', value: F.toExponential(2), unit: 'N', highlight: 'extreme' as const },
+            { label: '库仑力 F', value: formatScientific(F, 2), unit: 'N', highlight: 'extreme' as const },
             { label: '作用类型', value: attractive ? '相互吸引' : '相互排斥', unit: '', highlight: attractive ? 'negative' as const : 'positive' as const },
             { label: '接触均分后单球电量', symbol: "q'", value: `${q1New > 0 ? '+' : ''}${q1New.toFixed(2)}`, unit: 'μC' },
           ],
           formulas: [
-            { name: '库仑定律', latex: 'F = k \\frac{q_1 q_2}{r^2}', level: 'core', condition: '仅适用于点电荷与真空' },
-            { name: '静电力常量', latex: 'k = 9 \\times 10^9 \\;\\text{N·m}^2\\text{/C}^2', level: 'core' },
+            { name: '库仑定律', latex: 'F = k \\frac{|q_1 q_2|}{r^2}', level: 'core', condition: '真空中静止点电荷（带电体尺度远小于间距 r 时可视为点电荷）' },
+            { name: '静电力常量', latex: 'k = 9 \\times 10^9 \\;\\text{N·m}^2\\text{/C}^2', level: 'core', condition: '国际单位制 SI 下的真空静电力常量' },
             { name: '接触起电电荷均分', latex: "q_1' = q_2' = \\frac{q_1 + q_2}{2}", level: 'core', condition: '两个完全相同的金属球接触后再分开' },
           ],
           gaokaoPoints: [
-            { text: '库仑定律仅适用于点电荷与真空（或空气近似）。', importance: 'gaokao' as const },
+            { text: '库仑定律仅适用于真空中静止点电荷（或空气近似、均匀带电球体间以球心距为 r）。', importance: 'gaokao' as const },
             { text: '相同金属球接触起电：异种电荷先中和再平分，同种电荷总电量平分，总电荷量始终守恒。', importance: 'gaokao' as const },
             { text: '库仑力与万有引力具有相似形式（都与距离平方成反比），但本质不同。', importance: 'core' as const },
             { text: '同号电荷相斥，异号电荷相吸——方向由符号决定。', importance: 'basic' as const },
@@ -75,12 +76,12 @@ export function handleElectrostatics(
             { label: 'Q₃', value: `${q3 > 0 ? '+' : ''}${q3.toFixed(1)}`, unit: 'μC', highlight: q3 > 0 ? 'positive' as const : 'negative' as const },
           ],
           formulas: [
-            { name: '库仑定律', latex: 'F = k \\frac{q_1 q_2}{r^2}', level: 'core', condition: '仅适用于点电荷与真空' },
-            { name: '平衡条件', latex: '\\sum \\vec{F} = 0', level: 'core', condition: '三电荷平衡时各电荷合力为零' },
+            { name: '库仑定律', latex: 'F = k \\frac{|q_1 q_2|}{r^2}', level: 'core', condition: '真空中静止点电荷之间' },
+            { name: '平衡条件', latex: '\\sum \\vec{F} = 0', level: 'core', condition: '三电荷平衡时各电荷所受库仑力合力为零' },
           ],
           gaokaoPoints: [
-            { text: '库仑定律仅适用于点电荷与真空。', importance: 'gaokao' as const },
-            { text: '三个点电荷平衡条件：两大夹小、两同夹异、远小近大。', importance: 'gaokao' as const },
+            { text: '库仑定律仅适用于真空中静止点电荷（空气中近似成立）。', importance: 'gaokao' as const },
+            { text: '三个点电荷平衡条件：两大夹小、两同夹异、近小远大。', importance: 'gaokao' as const },
             { text: '中间电荷一定与两侧电荷电性相反。', importance: 'core' as const },
             { text: '中间电荷的电荷量一定小于两侧电荷。', importance: 'core' as const },
           ],
@@ -104,8 +105,8 @@ export function handleElectrostatics(
         return {
           quantities: [
             ...base,
-            { label: '场强 E', value: E.toExponential(2), unit: 'N/C', highlight: 'extreme' as const },
-            { label: '静电力 F', value: F.toExponential(2), unit: 'N', highlight: 'extreme' as const },
+            { label: '场强 E', value: formatScientific(E, 2), unit: 'N/C', highlight: 'extreme' as const },
+            { label: '静电力 F', value: formatScientific(F, 2), unit: 'N', highlight: 'extreme' as const },
             { label: '力与场强方向', value: qTest === 0 ? '无作用力' : (qTest > 0 ? '两者同向' : '两者反向'), unit: '', highlight: qTest >= 0 ? 'positive' as const : 'negative' as const },
           ],
           formulas: [
@@ -115,7 +116,7 @@ export function handleElectrostatics(
           gaokaoPoints: [
             { text: '电场强度 E 是描述电场自身力性质的物理量，与试探电荷 q 的电性及大小无关。', importance: 'gaokao' as const },
             { text: '正试探电荷受到的电场力方向与 E 同向；负试探电荷受到的电场力方向与 E 反向。', importance: 'gaokao' as const },
-            { text: '场强大小由场源电荷及位置决定，与距离的平方成反比。', importance: 'core' as const },
+            { text: '真空中点电荷产生的场强大小由场源电荷及位置决定，与到点电荷距离的平方成反比。', importance: 'core' as const },
           ],
         }
       } else {
@@ -152,13 +153,13 @@ export function handleElectrostatics(
           quantities: [
             ...base,
             { label: '电荷配置', value: configName, unit: '' },
-            { label: '合场强 E', value: Enet.toExponential(2), unit: 'N/C', highlight: 'extreme' as const },
-            { label: '合力 F', value: Fnet.toExponential(2), unit: 'N', highlight: 'extreme' as const },
+            { label: '合场强 E', value: formatScientific(Enet, 2), unit: 'N/C', highlight: 'extreme' as const },
+            { label: '合力 F', value: formatScientific(Fnet, 2), unit: 'N', highlight: 'extreme' as const },
             { label: '力与场强方向', value: qTest === 0 ? '无作用力' : (qTest > 0 ? '两者同向' : '两者反向'), unit: '', highlight: qTest >= 0 ? 'positive' as const : 'negative' as const },
           ],
           formulas: [
             { name: '电场叠加原理', latex: '\\vec{E} = \\vec{E}_1 + \\vec{E}_2', level: 'core', condition: '多个点电荷电场强度的矢量合成' },
-            { name: '平行四边形定则', latex: 'E = \\sqrt{E_1^2 + E_2^2 + 2E_1E_2\\cos\\theta}', level: 'core' },
+            { name: '平行四边形定则', latex: 'E = \\sqrt{E_1^2 + E_2^2 + 2E_1E_2\\cos\\theta}', level: 'core', condition: '两分场强矢量的夹角为 θ' },
           ],
           gaokaoPoints: [
             { text: '空间中某点的合场强等于各场源电荷在该点产生分场强的矢量和（遵循平行四边形定则）。', importance: 'gaokao' as const },
@@ -273,15 +274,16 @@ export function handleElectrostatics(
         quantities: quantitiesList,
         formulas: [
           {
-            name: '类平抛偏转位移',
+            name: '类平抛偏转位移（拓展）',
             latex: 'y = \\frac{1}{2}at^2 = \\frac{q U l^2}{2 m d v_0^2}',
-            level: 'core',
-            condition: '仅适用于恒定匀强偏转电场（忽略重力）'
+            level: 'supplementary',
+            condition: '垂直射入恒定匀强偏转电场且未打到极板（忽略重力，由运动分解与牛顿第二定律联立推导）',
           },
           {
             name: '速度偏转角',
             latex: '\\tan\\theta = \\frac{v_y}{v_0}',
-            level: 'core'
+            level: 'derived',
+            condition: '带电粒子垂直射入恒定匀强偏转电场（忽略重力）',
           }
         ],
         gaokaoPoints: [
@@ -294,13 +296,13 @@ export function handleElectrostatics(
             importance: 'hard'
           },
           {
-            text: '临界逃逸大题：若飞出电场所需时间 t_exit = L/v₀ 大于撞板临界时间，则粒子无法逃逸直接撞击极板。',
+            text: '临界逃逸分析：若飞出电场所需时间 t = L/v₀ 大于撞板临界时间，则粒子无法逃逸直接撞击极板。',
             importance: 'core'
           }
         ],
         warnings: [
           {
-            text: '易错点：粒子飞出极板后进入无场区，将以飞出瞬间的末速度做匀速直线运动，误认为其继续做曲线运动。',
+            text: '易错点：忽略重力时，粒子飞出极板后进入无场区，将以飞出瞬间的末速度做匀速直线运动，切勿误认为其继续做曲线运动。',
             level: 'warning'
           }
         ]
@@ -383,18 +385,18 @@ export function handleElectrostatics(
             {
               name: isCharge ? '充电电压方程' : '放电电压方程',
               latex: isCharge ? 'u_C = E\\left(1 - e^{-t/RC}\\right)' : 'u_C = E\\,e^{-t/RC}',
-              level: 'core',
-              condition: isCharge ? 'S 闭合，电容器从零开始充电' : 'S 断开，电容经 R 放电',
+              level: 'supplementary',
+              condition: isCharge ? 'S 闭合，电容器从零开始充电（拓展演示式，高中定性掌握趋势即可）' : 'S 断开，电容经 R 放电（拓展演示式，高中定性掌握趋势即可）',
             },
             {
               name: '电流方程',
               latex: isCharge
                 ? 'i = \\frac{E}{R}\\,e^{-t/RC}'
                 : 'i = -\\frac{E}{R}\\,e^{-t/RC}',
-              level: 'core',
+              level: 'supplementary',
               condition: isCharge
-                ? '闭合瞬间电流最大 i₀ = E/R，随后按 e 指数衰减'
-                : '负号表示放电电流方向与充电时相反',
+                ? '闭合瞬间电流最大 i₀ = E/R，随后逐渐衰减至零（拓展解析式）'
+                : '负号表示放电电流方向与充电时相反（拓展解析式）',
             },
             {
               name: '时间常数',
@@ -407,8 +409,8 @@ export function handleElectrostatics(
               // 充电：面积 = 已充入的电量 C·u_C；放电：面积 = 已放出的电量 CE − C·u_C。
               // 两种情形公式不同，写同一个会在放电模式下把 758 μC 错读成 441 μC。
               latex: isCharge
-                ? '\\int_0^t i\\,\\mathrm{d}t = \\Delta Q = C\\,u_C'
-                : '\\int_0^t |i|\\,\\mathrm{d}t = CE - C\\,u_C',
+                ? '\\sum i\\,\\Delta t = \\Delta Q = C\\,u_C'
+                : '\\sum |i|\\,\\Delta t = CE - C\\,u_C',
               level: 'important',
               condition: isCharge
                 ? 'i–t 图线与时间轴围成的面积'
@@ -424,8 +426,8 @@ export function handleElectrostatics(
                 ? '无论 R 多大，电源做功总有一半变成电阻内能'
                 : '放电：储存的 ½CE² 全部在电阻上转为内能',
               note: isCharge
-                ? `本题 W源 = ${sourceWork.toExponential(2)} J，其中一半（${energyFull.toExponential(2)} J）储存在电场中`
-                : `本题初态储能 ${energyFull.toExponential(2)} J，放完后全部在电阻上变为内能`,
+                ? `本题 W源 = ${formatScientific(sourceWork, 2)} J，其中一半（${formatScientific(energyFull, 2)} J）储存在电场中`
+                : `本题初态储能 ${formatScientific(energyFull, 2)} J，放完后全部在电阻上变为内能`,
             },
           ],
           gaokaoPoints: [
@@ -627,13 +629,13 @@ export function handleElectrostatics(
           { label: '电场力做功 W', value: W_electric.toFixed(4), unit: 'J', highlight: 'extreme' as const },
         ],
         formulas: [
-          { name: '电势叠加原理', latex: '\\varphi = \\sum k \\frac{Q_i}{r_i}', level: 'core', condition: '点电荷电场的代数叠加' },
-          { name: '电场力做功', latex: 'W_e = q(\\varphi_{start} - \\varphi_{current})', level: 'core' },
+          { name: '电势叠加原理（拓展）', latex: '\\varphi = \\sum k \\frac{Q_i}{r_i}', level: 'supplementary', condition: '真空中点电荷代数叠加，取无穷远处为零电势点（φ∞ = 0）' },
+          { name: '电场力做功', latex: 'W_{AB} = q(\\varphi_A - \\varphi_B) = qU_{AB}', level: 'core', condition: '与电荷移动路径无关（代入电荷 q 与电势差的正负号运算）' },
         ],
         gaokaoPoints: [
           { text: '电场线与等势面在空间任意位置绝对垂直；顺着电场线方向，电势降低最快。', importance: 'gaokao' as const },
           { text: '根据电场线与等势面的拓扑网格，定性分析粒子做曲线运动时的动能与电势能转化。', importance: 'gaokao' as const },
-          { text: '等势面上各点的电势相等，但电场强度 E 的大小不一定相等（其大小取决于等势面的疏密）。', importance: 'core' as const },
+          { text: '等势面上各点的电势相等，但电场强度 E 的大小不一定相等（其大小取决于等差等势面的疏密）。', importance: 'core' as const },
         ],
         warnings: [
           { text: '易错点：误认为等势面上各点的场强 E 也一定相等。', level: 'warning' as const },
@@ -655,17 +657,17 @@ export function handleElectrostatics(
           { label: 'A点电势 φ_A', value: phiA.toFixed(1), unit: 'V', color: PHYSICS_COLORS.electricPotential },
           { label: 'B点电势 φ_B', value: phiB.toFixed(1), unit: 'V', color: PHYSICS_COLORS.electricPotential },
           { label: '两点电势差 U_AB', value: U_AB.toFixed(1), unit: 'V', highlight: 'extreme' as const },
-          { label: '电势能变化 ΔEp', value: delta_Ep.toExponential(4), unit: 'J', color: PHYSICS_COLORS.potentialEnergy, highlight: 'extreme' as const },
+          { label: '电势能变化 ΔEp', value: formatScientific(delta_Ep, 4), unit: 'J', color: PHYSICS_COLORS.potentialEnergy, highlight: 'extreme' as const },
           { label: '图像切线斜率 |k|', value: slopeK.toFixed(1), unit: 'V/m', color: colors.accent[500], highlight: 'extreme' as const },
         ],
         formulas: [
-          { name: '两点电势差', latex: 'U_{AB} = \\varphi_A - \\varphi_B', level: 'core' },
-          { name: '电场力做功与电势能', latex: 'W_{AB} = q U_{AB} = E_{pA} - E_{pB} = -\\Delta E_p', level: 'core' },
-          { name: '图像斜率与场强', latex: 'E = \\left|\\frac{d\\varphi}{dx}\\right|', level: 'core', condition: '沿位移方向' }
+          { name: '两点电势差', latex: 'U_{AB} = \\varphi_A - \\varphi_B', level: 'core', condition: '电势差绝对值与零电势参考点选取无关' },
+          { name: '电场力做功与电势能', latex: 'W_{AB} = q U_{AB} = E_{pA} - E_{pB} = -\\Delta E_p', level: 'core', condition: '仅电场力做功或求电场力单独做的功时，带 q 正负号代数运算' },
+          { name: '图像斜率与场强分量', latex: '|E_x| = \\left|\\frac{\\Delta \\varphi}{\\Delta x}\\right|', level: 'core', condition: 'φ-x 图像某点切线斜率的绝对值（仅沿 x 轴的一维电场中才等于合场强 E）' }
         ],
         gaokaoPoints: [
           { text: '【功与路径无关】电荷在非匀强电场中沿任意手绘扭曲路径从 A 移动到 B，电场力所做的功及电势能的变化量仅由起点和终点的位置决定，与路径的几何形态或长度完全无关。', importance: 'gaokao' as const },
-          { text: '【φ-x 图像破题神技】φ-x 图像切线斜率的绝对值在物理上等于该处的电场强度大小 E = |dφ/dx|。斜率为零处场强为零；斜率越陡峭，表示该处场强越大。', importance: 'gaokao' as const },
+          { text: '【φ-x 图像关键性质】φ-x 图像切线斜率的绝对值等于场强沿 x 方向的分量 |Ex| = |Δφ/Δx|（一维电场中即合场强大小）。斜率为零处该方向场强分量为零；斜率越陡峭，该方向场强越大。', importance: 'gaokao' as const },
           { text: '【电势高低判定】顺着电场线方向，电势逐步降低；逆着电场线方向，电势逐步升高。', importance: 'core' as const }
         ],
         warnings: [
@@ -717,18 +719,18 @@ export function handleElectrostatics(
           quantities: [
             ...base,
             { label: '板间匀强场强', symbol: 'E', value: (m.electricField / 1000).toFixed(1), unit: 'kV/m', color: PHYSICS_COLORS.electricField },
-            { label: '所受电场力', symbol: 'F_e', value: m.electricForce.toExponential(2), unit: 'N', color: PHYSICS_COLORS.electricForce },
-            { label: '所受重力', symbol: 'G', value: m.gravityForce.toExponential(2), unit: 'N', color: PHYSICS_COLORS.gravity },
+            { label: '所受电场力', symbol: 'F_e', value: formatScientific(m.electricForce, 2), unit: 'N', color: PHYSICS_COLORS.electricForce },
+            { label: '所受重力', symbol: 'G', value: formatScientific(m.gravityForce, 2), unit: 'N', color: PHYSICS_COLORS.gravity },
             { label: '悬浮平衡电压', symbol: 'U_平', value: m.balanceVoltage.toFixed(1), unit: 'V', highlight: m.isBalanced ? 'positive' as const : 'extreme' as const },
             { label: '油滴带电量', symbol: 'q', value: `${m.chargeQIn1e19.toFixed(1)}×10⁻¹⁹`, unit: 'C', highlight: 'extreme' as const },
             { label: '元电荷整数倍', symbol: 'n', value: `${m.n}`, unit: '个' },
             { label: '油滴比荷', symbol: 'q/m', value: m.specificChargeDrop.toFixed(2), unit: 'C/kg' },
-            { label: '电子比荷', symbol: 'e/m_e', value: m.specificChargeElectron.toExponential(2), unit: 'C/kg' },
+            { label: '电子比荷', symbol: 'e/m_e', value: formatScientific(m.specificChargeElectron, 2), unit: 'C/kg' },
           ],
           formulas: [
             { name: '油滴受力平衡', latex: 'q \\frac{U}{d} = mg \\implies q = \\frac{mgd}{U}', level: 'core', condition: '带电油滴在平行板间静止或匀速竖直运动' },
             { name: '电荷量子化与元电荷', latex: 'q = n e \\quad (n \\in \\mathbb{Z}^+)', level: 'core', condition: '密立根通过测量大量油滴电荷量的最大公约数求得 e' },
-            { name: '比荷（荷质比）定义', latex: '\\text{比荷} = \\frac{q}{m}', level: 'core', condition: '电子比荷约为 1.76×10¹¹ C/kg（汤姆孙测定）' },
+            { name: '比荷定义', latex: '\\text{比荷} = \\frac{q}{m}', level: 'core', condition: '电子比荷约为 1.76×10¹¹ C/kg（汤姆孙测定）' },
           ],
           gaokaoPoints: [
             { text: '密立根油滴实验首次精确测定了元电荷数值 e ≈ 1.60×10⁻¹⁹ C，并证实了电荷量是量子化的（只能取 e 的整数倍）。', importance: 'gaokao' as const },

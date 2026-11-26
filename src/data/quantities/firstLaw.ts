@@ -136,8 +136,8 @@ export function buildFirstLawQuantities(
     formulas.push({
       name: '理想气体内能',
       latex: '\\Delta U = n C_V \\Delta T',
-      level: 'important',
-      condition: '定容热容下温度与内能呈线性关系'
+      level: 'supplementary',
+      condition: '一定质量理想气体（高中阶段仅需定性理解理想气体内能只与温度有关）'
     })
     formulas.push({
       name: '沙箱过程分解',
@@ -158,11 +158,11 @@ export function buildFirstLawQuantities(
         importance: 'hard'
       })
       gaokaoPoints.push({
-        text: '【高考图像必考辨析】绝热线比等温线更陡！过同一起点，绝热线斜率绝对值为等温线的 γ 倍 (γ=1.67)。压缩时绝热压强高于等温，膨胀时绝热压强低于等温。',
+        text: '图像辨析：p-V 图中绝热线比等温线更陡！过同一状态点时，绝热线斜率绝对值为同点等温线的 γ 倍（单原子理想气体 γ ≈ 1.67）。压缩时绝热压强高于等温，膨胀时绝热压强低于等温。',
         importance: 'gaokao'
       })
       warnings.push({
-        text: '绝热压缩时温度必定升高！“绝热”并不等于“等温”，这是高频易错题！',
+        text: '绝热压缩时温度必定升高！“绝热”指与外界无热交换（Q=0），并不等于“等温”（ΔT=0）！',
         level: 'warning'
       })
     } else {

@@ -39,13 +39,13 @@ export function buildCircularQuantities(
 
       const formulas: Formula[] = isAdvanced
         ? [
-            { name: '位置方程 x', latex: 'x = r \\cos(\\omega t)', level: 'important' },
-            { name: '位置方程 y', latex: 'y = r \\sin(\\omega t)', level: 'important' },
-            { name: '向心加速度', latex: 'a_n = \\omega^2 r = \\frac{v^2}{r}', level: 'core' },
+            { name: '位置方程 x', latex: 'x = r \\cos(\\omega t)', level: 'important', condition: '以圆心为原点、t = 0 时位于 +x 轴的逆时针匀速圆周运动' },
+            { name: '位置方程 y', latex: 'y = r \\sin(\\omega t)', level: 'important', condition: '以圆心为原点、t = 0 时位于 +x 轴的逆时针匀速圆周运动' },
+            { name: '向心加速度', latex: 'a_n = \\omega^2 r = \\frac{v^2}{r}', level: 'core', condition: '适用于任意圆周运动，方向始终指向圆心' },
           ]
         : [
-            { name: '线速度与角速度', latex: 'v = \\omega r', level: 'core' },
-            { name: '周期公式', latex: 'T = \\frac{2\\pi}{\\omega}', level: 'core' },
+            { name: '线速度与角速度', latex: 'v = \\omega r', level: 'core', condition: '圆周运动中线速度大小与角速度关系（r 为轨道半径）' },
+            { name: '周期公式', latex: 'T = \\frac{2\\pi}{\\omega}', level: 'core', condition: '匀速圆周运动' },
           ]
 
       const gaokaoPoints: GaokaoPoint[] = isAdvanced
@@ -117,7 +117,7 @@ export function buildCircularQuantities(
             label: trackType === 0 ? '绳拉力 T' : '杆/轨道约束力 N',
             value: pt.state === 'flying'
               ? '0.00'
-              : `${(trackType === 0 ? Math.max(0, pt.N) : pt.N).toFixed(2)} ${pt.N > 0.01 ? '(向心拉/压)' : pt.N < -0.01 ? '(离心支/推)' : ''}`,
+              : `${(trackType === 0 ? Math.max(0, pt.N) : pt.N).toFixed(2)} ${pt.N > 0.01 ? '(向心拉/压)' : pt.N < -0.01 ? '(向外支/推)' : ''}`,
             unit: 'N'
           },
           { label: '运动状态', value: pt.state === 'on-track' ? '轨道滑动' : '脱轨飞行', unit: '' }
@@ -131,7 +131,7 @@ export function buildCircularQuantities(
         ]
 
         gaokaoPoints = [
-          { text: '绳模型与杆模型：绳模型约束力为拉力 T，必须 T≥0，最高点临界速度为 v = √gr；杆模型对小球可拉可撑，在最高点通过的能量临界条件为 v > 0。', importance: 'gaokao' as const },
+          { text: '绳模型与杆模型：绳模型约束力为拉力 T，必须 T≥0，最高点临界速度为 v = √gr；杆模型对小球可拉可撑，在最高点通过的临界速度为 v ≥ 0（最小速度 v_min = 0）。', importance: 'gaokao' as const },
           { text: '弹力方向判定：在杆模型中，最高点速度 v > √gr 时受到向下的拉力；当 v < √gr 时受到向上的支撑力；v = √gr 时不受弹力。', importance: 'hard' as const },
           { text: '超重与失重：最低点是约束力最大的地方，处于超重状态，公式为 N = mg + mv²/r。', importance: 'core' as const },
           { text: '合外力与向心力：竖直平面圆周运动的合外力包括法向的向心力和切向力。向心力是效果力，改变速度方向；切向力改变速度大小。在受力分析中，绝不能将向心力或合外力作为独立的性质力画出。', importance: 'core' as const }
@@ -205,8 +205,8 @@ export function buildCircularQuantities(
             {
               name: '过原点最小二乘拟合',
               latex: 'k = \\frac{\\sum \\omega_i^{2} F_i}{\\sum \\omega_i^{4}}',
-              level: 'core',
-              condition: '由实验采样点求出斜率，而不是直接套 m·r',
+              level: 'supplementary',
+              condition: '数值线性回归方法（高中阶段直接通过 F-ω² 图像过原点连线求斜率验证）',
             },
             {
               name: '控制变量：质量加倍',
@@ -273,7 +273,7 @@ export function buildCircularQuantities(
           label: trackType === 0 ? '绳拉力 T' : '杆/轨道约束力 N',
           value: pt.state === 'flying'
             ? '0.00'
-            : `${(trackType === 0 ? Math.max(0, pt.N) : pt.N).toFixed(2)} ${pt.N > 0.01 ? '(向心拉/压)' : pt.N < -0.01 ? '(离心支/推)' : ''}`,
+            : `${(trackType === 0 ? Math.max(0, pt.N) : pt.N).toFixed(2)} ${pt.N > 0.01 ? '(向心拉/压)' : pt.N < -0.01 ? '(向外支/推)' : ''}`,
           unit: 'N'
         },
         { label: '运动状态', value: pt.state === 'on-track' ? '轨道滑动' : '脱轨飞行', unit: '' }
@@ -287,7 +287,7 @@ export function buildCircularQuantities(
       ]
 
       const gaokaoPoints: GaokaoPoint[] = [
-        { text: '绳模型与杆模型：绳模型约束力为拉力 T，必须 T≥0，最高点临界速度为 v = √gr；杆模型对小球可拉可撑，在最高点通过的能量临界条件为 v > 0。', importance: 'gaokao' as const },
+        { text: '绳模型与杆模型：绳模型约束力为拉力 T，必须 T≥0，最高点临界速度为 v = √gr；杆模型对小球可拉可撑，在最高点通过的临界速度为 v ≥ 0（最小速度 v_min = 0）。', importance: 'gaokao' as const },
         { text: '弹力方向判定：在杆模型中，最高点速度 v > √gr 时受到向下的拉力；当 v < √gr 时受到向上的支撑力；v = √gr 时不受弹力。', importance: 'hard' as const },
         { text: '超重与失重：最低点是约束力最大的地方，处于超重状态，公式为 N = mg + mv²/r。', importance: 'core' as const },
         { text: '合外力与向心力：竖直平面圆周运动的合外力包括法向的向心力和切向力。向心力是效果力，改变速度方向；切向力改变速度大小。在受力分析中，绝不能将向心力或合外力作为独立的性质力画出。', importance: 'core' as const }
@@ -319,10 +319,10 @@ export function buildCircularQuantities(
             { label: '运动状态', value: state.stable ? '稳定圆锥摆' : '转速不足', unit: '' },
           ],
           formulas: [
-            { name: '竖直方向平衡', latex: 'T\\cos\\theta = mg', level: 'core' },
-            { name: '水平方向提供向心力', latex: 'T\\sin\\theta = m\\omega^2 r', level: 'core' },
-            { name: '合外力形式', latex: 'F_{\\text{合}} = mg\\tan\\theta = m\\omega^2 r', level: 'core' },
-            { name: '摆角与转速', latex: '\\cos\\theta = \\frac{g}{\\omega^2 L}', condition: '\\omega \\ge \\sqrt{g/L}', level: 'important' },
+            { name: '竖直方向平衡', latex: 'T\\cos\\theta = mg', level: 'core', condition: '圆锥摆稳定做水平面内匀速圆周运动（悬线与竖直方向夹角 θ）' },
+            { name: '水平方向提供向心力', latex: 'T\\sin\\theta = m\\omega^2 r', level: 'core', condition: '拉力水平分力提供向心力（圆周半径 r = L sinθ）' },
+            { name: '合外力形式', latex: 'F_{\\text{合}} = mg\\tan\\theta = m\\omega^2 r', level: 'core', condition: '稳定圆锥摆（悬线处于张紧状态）' },
+            { name: '摆角与转速', latex: '\\cos\\theta = \\frac{g}{\\omega^2 L}', condition: '需满足稳定最小角速度 ω ≥ √(g/L)', level: 'important' },
           ],
           gaokaoPoints: [
             { text: '圆锥摆中，拉力的水平分量提供向心力，竖直分量与重力平衡。', importance: 'core' as const },
@@ -345,10 +345,10 @@ export function buildCircularQuantities(
           { label: '运动状态', value: state.slipping ? '相对圆盘滑动' : '随圆盘转动', unit: '' },
         ],
         formulas: [
-          { name: '静摩擦力提供向心力', latex: 'f = m\\omega^2 r', level: 'core' },
-          { name: '最大静摩擦力', latex: 'f_{\\max} = \\mu mg', level: 'core' },
-          { name: '临界条件', latex: '\\mu mg = m\\omega_{\\text{crit}}^2 r', level: 'important' },
-          { name: '临界角速度', latex: '\\omega_{\\text{crit}} = \\sqrt{\\frac{\\mu g}{r}}', level: 'core' },
+          { name: '静摩擦力提供向心力', latex: 'f = m\\omega^2 r', level: 'core', condition: '随水平圆盘一起匀速转动且未发生相对滑动（ω ≤ ω_crit）' },
+          { name: '最大静摩擦力', latex: 'f_{\\max} = \\mu mg', level: 'core', condition: '水平圆盘表面（近似取最大静摩擦因数等于动摩擦因数 μ）' },
+          { name: '临界条件', latex: '\\mu mg = m\\omega_{\\text{crit}}^2 r', level: 'important', condition: '物块刚要相对圆盘滑动的临界状态' },
+          { name: '临界角速度', latex: '\\omega_{\\text{crit}} = \\sqrt{\\frac{\\mu g}{r}}', level: 'core', condition: '水平圆盘转动物块不滑动的最大允许角速度' },
         ],
         gaokaoPoints: [
           { text: '圆盘模型中，指向圆心的静摩擦力提供向心力。', importance: 'core' as const },

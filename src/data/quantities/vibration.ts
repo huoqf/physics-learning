@@ -162,7 +162,7 @@ export function buildVibrationQuantities(
           },
         ],
         gaokaoPoints: [
-          { text: '【高考辨析】单摆只有在最大偏角很小（一般 θ₀ ≤ 10°）时，回复力 F_回 = -mg sinθ ≈ -mgθ 才能近似满足简谐运动条件 F = -kx。', importance: 'core' },
+          { text: '【简谐近似条件】单摆只有在最大偏角很小（一般 θ₀ < 5°）时，回复力 F_回 = -mg sinθ ≈ -mgθ 才能近似满足简谐运动条件 F = -kx。', importance: 'core' },
           { text: '【大角偏离】大偏角（如 60°）单摆周期变长，其主要原因是随着摆角增大，切向回复力 -mg sinθ 的增长速度慢于简谐所需的线性增长速度。', importance: 'hard' },
           { text: '【等时性破坏】在精密计时工具中，必须对摆幅大小进行限制或采用摆轮补偿，以克服因振幅改变导致的周期漂移（非等时性）。', importance: 'gaokao' },
         ],
@@ -191,24 +191,27 @@ export function buildVibrationQuantities(
             name: '单摆能量守恒关系',
             latex: 'E = E_k + E_p = \\dfrac{1}{2}mv^2 + mgL(1 - \\cos\\theta)',
             level: 'core',
+            condition: '忽略空气阻力与悬点摩擦，摆动过程中仅重力做功（摆线拉力不做功）',
             note: '重力势能以最低点（θ = 0）为零势能参考面。',
           },
           {
             name: '最低点最大速度公式',
             latex: 'v_{max} = \\sqrt{2gL(1-\\cos\\theta_0)}',
             level: 'important',
+            condition: '从最大摆角 θ₀ 处由静止释放且忽略阻力（不限小角度）',
             note: '由最高点静止释放到最低点，由重力做功全部转化为动能得出。',
           },
           {
             name: '最低点拉力极值公式',
             latex: 'F_{拉,max} = mg(3 - 2\\cos\\theta_0)',
             level: 'important',
-            note: '在最低点合外力提供向心力：F_拉 - mg = m v²/L。结合机械能守恒可推出此高考结论。',
+            condition: '从最大摆角 θ₀ 处由静止释放且忽略阻力，仅摆线拉力与重力提供向心力',
+            note: '在最低点合外力提供向心力：F_拉 - mg = m v²/L。结合机械能守恒可推出此常用结论。',
           },
         ],
         gaokaoPoints: [
           { text: '【能量转化】摆动过程中，在最高点势能最大，动能为 0；在最低点势能为 0，动能最大。无阻力时，总机械能始终守恒。', importance: 'core' },
-          { text: '【拉力极值】单摆经过最低点时拉力最大。高考极频考点结论：从 θ₀ 释放时，最低点拉力 F_拉 = mg(3 - 2cosθ₀)。特别地，从 60° 释放时最低点拉力为 2mg。', importance: 'gaokao' },
+          { text: '【拉力极值】单摆经过最低点时拉力最大。重要推论：从 θ₀ 释放时，最低点拉力 F_拉 = mg(3 - 2cosθ₀)。特别地，从 60° 释放时最低点拉力为 2mg。', importance: 'gaokao' },
           { text: '【合力辨析】在最低点，小球加速度切向分量为 0，法向（向心）加速度最大；因此最低点合力方向严格竖直向上，不为 0。', importance: 'hard' },
         ],
       }
@@ -228,13 +231,14 @@ export function buildVibrationQuantities(
             name: '单摆周期公式',
             latex: 'T_0 = 2\\pi \\sqrt{\\dfrac{L}{g}}',
             level: 'core',
-            note: '仅由摆长 L 和重力加速度 g 决定，与质量 m 和振幅无关。',
+            condition: '单摆理想模型且最大摆角 θ₀ < 5°（小摆角近似）',
+            note: '在小摆角近似下，周期仅由 L 和 g 决定，与质量 m 和振幅无关。',
           },
           {
             name: '单摆位移方程',
             latex: '\\theta = \\theta_0 \\cos(\\omega_0 t + \\varphi)',
             level: 'important',
-            condition: '摆角 θ₀ ≤ 10° 时（小摆角近似简谐运动）',
+            condition: '最大摆角 θ₀ < 5° 时（小摆角近似简谐运动）',
           },
           {
             name: '单摆角频率',
@@ -243,9 +247,9 @@ export function buildVibrationQuantities(
           },
         ],
         gaokaoPoints: [
-          { text: '【简谐条件】单摆在最大偏角很小（一般 θ₀ ≤ 10°）时，回复力 F_回 = -mg sinθ ≈ -mgθ，才可以近似看作简谐运动。', importance: 'core' },
+          { text: '【简谐条件】单摆在最大偏角很小（一般 θ₀ < 5°）时，回复力 F_回 = -mg sinθ ≈ -mgθ，才可以近似看作简谐运动。', importance: 'core' },
           { text: '【等时性质】单摆周期具有等时性，只与 L 和 g 有关。在超重电梯中 g_等效 > g，周期变小；失重时变大；完全失重时不摆动。', importance: 'gaokao' },
-          { text: '【受力分析】单摆的回复力是重力切向分力提供的；在最低点，小球合外力不为零（绳子拉力和重力径向分力之合提供向心力）。', importance: 'hard' },
+          { text: '【受力分析】单摆的回复力是重力切向分力提供的；在最低点，小球合外力不为零（绳子拉力与重力的合力提供向心力）。', importance: 'hard' },
         ],
       }
     }
@@ -276,10 +280,10 @@ export function buildVibrationQuantities(
       ],
       formulas: [
         {
-          name: '向右传播行波',
+          name: '向右传播简谐波（拓展）',
           latex: 'y(x,t)=A\\sin\\left(2\\pi f\\left(t-\\dfrac{x}{v}\\right)+\\varphi_0\\right)',
-          level: 'core',
-          condition: 't ≥ x/v（因果性：扰动未到则为 0）',
+          level: 'supplementary',
+          condition: 't ≥ x/v（波传到 x 处后该点才开始振动）',
           note: '相位沿传播方向滞后',
         },
         {
@@ -298,7 +302,7 @@ export function buildVibrationQuantities(
           importance: 'gaokao',
         },
         {
-          text: '【起振方向】由波的传播方向与邻点带动关系判断：靠近波源一侧的邻点“领先”，可判读某点振动方向。',
+          text: '【质点振动方向判断】由波的传播方向与邻点带动关系判断：靠近波源一侧的邻点“领先”，可判读某点振动方向（各质点起振方向与波源相同）。',
           importance: 'hard',
         },
       ],
@@ -322,10 +326,10 @@ export function buildVibrationQuantities(
       ],
       formulas: [
         {
-          name: '单缝夫琅禾费强度',
+          name: '单缝衍射强度分布（拓展）',
           latex: 'I=I_0\\operatorname{sinc}^2\\!\\left(\\dfrac{\\pi d\\sin\\theta}{\\lambda}\\right)',
-          level: 'important',
-          note: '高中定性：d 与 λ 可比时衍射显著',
+          level: 'supplementary',
+          note: '高中定性：d 与 λ 可比或 d ≤ λ 时衍射显著',
         },
       ],
       gaokaoPoints: [
@@ -347,17 +351,18 @@ export function buildVibrationQuantities(
       formulas: [
         {
           name: '干涉加强/减弱',
-          latex: '\\delta=r_2-r_1=\\begin{cases}n\\lambda & \\text{加强}\\\\(n+\\tfrac12)\\lambda & \\text{减弱}\\end{cases}',
+          latex: '\\delta=|r_2-r_1|=\\begin{cases}n\\lambda & \\text{加强}\\\\(n+\\tfrac12)\\lambda & \\text{减弱}\\end{cases}',
           level: 'core',
+          condition: '两相干波源振动步调一致（同相），n = 0, 1, 2, ...（若反相则加强与减弱条件互换）',
         },
       ],
       gaokaoPoints: [
         {
-          text: '【相干条件】两列波频率相同、相位差恒定（且振动方向大体相同）才能产生稳定干涉图样。',
+          text: '【相干条件】两列波频率相同、相位差恒定且振动方向相同才能产生稳定干涉图样。',
           importance: 'gaokao',
         },
         {
-          text: '【程差判据】到两波源的路程差 δ=nλ 为振动加强；δ=(n+1/2)λ 为振动减弱（反相时结论对调）。',
+          text: '【程差判据】到两波源的路程差 δ = |r₂ - r₁| = nλ 为振动加强；δ = (n+1/2)λ 为振动减弱（反相时结论对调）。',
           importance: 'gaokao',
         },
       ],

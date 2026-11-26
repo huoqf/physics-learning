@@ -1,6 +1,6 @@
 import type { PhysicsPanelData, PhysicsQuantity, Formula, GaokaoPoint, ParamDefs } from '../types'
 import { normalizeParams } from '../types'
-import { getBoardSystemState } from '../../../physics/blockBoard'
+import { getBoardSystemState } from '../../../physics/blockBoard'
 import { GRAVITY } from '@/physics/constants'
 
 interface Params {
@@ -41,9 +41,20 @@ export function handleBlockBoard(
   const param = { m, M, mu1, mu2, v0, L, g }
   const state = getBoardSystemState(param, time)
 
-  // 力的计算
-  const F_f1 = mu1 * m * g
-  const F_f2 = state.hasFallen ? mu2 * M * g : mu2 * (M + m) * g
+  // 力的计算（按运动阶段区分滑动摩擦、静摩擦与无接触状态）
+  const boardCanMove = mu1 * m * g > mu2 * (M + m) * g
+  const F_f1 = state.phase === 'sliding'
+    ? mu1 * m * g
+    : state.phase === 'together'
+      ? m * mu2 * g
+      : 0
+  const F_f2 = state.phase === 'sliding'
+    ? (boardCanMove ? mu2 * (M + m) * g : F_f1)
+    : state.phase === 'together'
+      ? mu2 * (M + m) * g
+      : state.phase === 'fallen'
+        ? (state.vBoard > 1e-4 ? mu2 * M * g : 0)
+        : 0
 
   const quantities = [
     ...base,

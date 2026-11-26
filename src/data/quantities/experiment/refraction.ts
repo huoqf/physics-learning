@@ -132,7 +132,7 @@ export function buildExperimentRefractionQuantities(
         color: PHYSICS_COLORS.velocity,
       },
       {
-        label: '图线割线斜率',
+        label: '图线斜率',
         symbol: 'k',
         value: parseFloat(res.nMeas.toFixed(3)),
         unit: '',
@@ -154,15 +154,15 @@ export function buildExperimentRefractionQuantities(
       name: '单位圆无量角器法',
       latex: 'n = \\frac{AA\'}{BB\'}',
       level: 'derived' as const,
-      condition: '以入射点 O 为圆心作任意半径 R 的辅助圆',
-      note: "sin θ₁ = AA'/R，sin θ₂ = BB'/R，比值消去半径 R",
+      condition: '以入射点 O 为圆心作任意半径 R 的辅助圆，AA\'、BB\' 分别为入射光线与折射光线交圆周的点到法线的垂线段长度',
+      note: "由直角三角形得 sin θ₁ = AA'/R、sin θ₂ = BB'/R，两式相除消去圆半径 R",
     },
     {
       name: '图像斜率法',
       latex: '\\sin \\theta_1 = n \\cdot \\sin \\theta_2',
       level: 'derived' as const,
-      condition: '多次改变入射角 θ₁',
-      note: '以 sin θ₂ 为横轴、sin θ₁ 为纵轴作图，图线割线斜率 k 即为待测折射率 n',
+      condition: '多次改变入射角 θ₁ 测量多组角度',
+      note: '以 sin θ₂ 为横轴、sin θ₁ 为纵轴作正比例直线，图线斜率 k 即为待测折射率 n',
     },
     {
       name: '全反射临界角与出射判定',

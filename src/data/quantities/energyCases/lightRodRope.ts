@@ -87,12 +87,12 @@ export function buildLightRodRopeQuantities(
     formulas: [
       { name: '沿绳速度关联', latex: 'v_{A\\parallel} = v_{B\\parallel} = v_\\parallel', note: 'AB绳绷紧时，两球沿绳分速度相等', level: 'important' },
       { name: '单体与系统能量', latex: 'W_{\\text{绳}} = \\Delta E_{\\text{单}}, \\quad E_{\\text{系统}} = E_A + E_B', note: '绳不做功阶段各自守恒，绳做功阶段系统守恒', level: 'core' },
-      { name: '拉直碰撞损失', latex: '\\Delta E_{\\text{内}} = \\frac{1}{2}\\frac{m_1 m_2}{m_1 + m_2}(v_{A\\parallel} - v_{B\\parallel})^2', note: '拉直瞬间沿绳方向发生完全非弹性碰撞，系统机械能损失', level: 'core' },
+      { name: '拉直碰撞损失', latex: '\\Delta E_{\\text{内}} = \\frac{1}{2}\\frac{m_1 m_2}{m_1 + m_2}(v_{A\\parallel} - v_{B\\parallel})^2', condition: '仅在 OA 绳松弛（沿 AB 绳方向无外冲量）时成立', note: '拉直瞬间沿绳方向发生完全非弹性碰撞，系统机械能损失', level: 'derived' },
     ],
     gaokaoPoints: [
       { text: '【状态判断】绳子张力为 0 时进入松弛阶段，小球各自做抛体或单摆，各自机械能守恒；拉直瞬间发生碰撞，机械能发生损失。', importance: 'gaokao' as const },
       { text: '【速度关联】绷紧摆动时，小球 A 和 B 沿绳连线方向的速度分量相等。小球 B 的合速度为沿绳与垂直绳方向的速度矢量和。', importance: 'hard' as const },
-      { text: '【高考口诀】记住高考解题三大步骤：“看绳辨状态，沿绳解速度，分段列守恒”。这能帮助你快速理清多状态突变大题。', importance: 'gaokao' as const },
+      { text: '【分析步骤】分阶段分析三大步骤：“看绳辨状态，沿绳解速度，分段列守恒”，有助于清晰理清多状态突变过程。', importance: 'gaokao' as const },
     ],
   }
 }

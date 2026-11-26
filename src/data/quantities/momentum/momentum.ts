@@ -45,8 +45,9 @@ export function handleMomentum(
         { label: '动量 p', value: pVal.toFixed(1), unit: 'kg·m/s', highlight: 'positive' as const },
       ],
       formulas: [
-        { name: '动量定义', latex: 'p = mv', level: 'core' as const },
-        { name: '动量与动能关系', latex: 'E_k = \\frac{p^2}{2m}', level: 'important' as const, condition: '仅适用于动能与动量的数值关系' },
+        { name: '动量定义', latex: 'p = mv', level: 'core' as const, condition: '矢量，方向与瞬时速度 v 方向相同（一维须规定正方向）' },
+        { name: '动量变化量', latex: '\\Delta p = p\' - p = mv\' - mv', level: 'core' as const, condition: '矢量相减，一维先规定正方向，用正负号代表方向' },
+        { name: '动量与动能关系', latex: 'E_k = \\frac{p^2}{2m}', level: 'important' as const, condition: '仅适用于动能与动量大小之间的标量数值换算' },
       ],
       gaokaoPoints: [
         { text: '动量是状态量，求某时刻动量须用该时刻的瞬时速度', importance: 'core' as const },
@@ -75,12 +76,12 @@ export function handleMomentum(
       ],
       formulas: [
         { name: '动量定义（一维）', latex: 'p = mv', level: 'core' as const, condition: '一维计算必须先规定正方向，用正负号表示方向' },
-        { name: '系统总动量', latex: 'p_{\\text{总}} = p_A + p_B', level: 'core' as const },
-        { name: '动量与动能转化', latex: 'E_k = \\frac{p^2}{2m}', level: 'important' as const, note: 'p 不变时，m↑ 则 E_k↓，动量大不代表动能一定大' },
+        { name: '系统总动量', latex: 'p_{\\text{总}} = p_A + p_B', level: 'core' as const, condition: '两物体沿同一直线运动，按规定正方向求矢量和' },
+        { name: '动量与动能关系', latex: 'E_k = \\frac{p^2}{2m}', level: 'important' as const, condition: '仅适用于单个质点动量与动能大小换算', note: 'p 不变时，m↑ 则 E_k↓，动量大不代表动能一定大' },
       ],
       gaokaoPoints: [
         { text: '动量是矢量，一维计算必须先规定正方向，用正负号表示', importance: 'gaokao' as const },
-        { text: '熟记 E_k = p²/(2m)，高考高频使用', importance: 'gaokao' as const },
+        { text: '掌握 E_k = p²/(2m)，便于在动量与能量综合问题中建立联系', importance: 'gaokao' as const },
         { text: '动量大则动能一定大？错！p 相同时 m 越大 E_k 越小', importance: 'hard' as const },
       ],
     }

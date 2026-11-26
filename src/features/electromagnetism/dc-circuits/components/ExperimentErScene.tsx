@@ -51,7 +51,7 @@ export const ExperimentErScene: React.FC<ExperimentErSceneProps> = ({ physics, f
             />
             <rect x={bounds.left + 5} y={voltmeter0.center.y - 47} width={255} height={22} fill={PHYSICS_COLORS.velocity} rx={4} />
             <text x={bounds.left + 132} y={voltmeter0.center.y - 32} fill={CANVAS_COLORS.white} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
-              戴维南等效电源：E' = {E_meas.toFixed(2)}V, r' = {r_meas.toFixed(2)}Ω
+              等效电源：E' = {E_meas.toFixed(2)}V, r' = {r_meas.toFixed(2)}Ω
             </text>
           </g>
         ) : (

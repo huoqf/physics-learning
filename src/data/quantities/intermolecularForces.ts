@@ -64,30 +64,30 @@ export function buildIntermolecularForcesQuantities(
       },
       {
         name: '分子力做功与势能增量',
-        latex: 'W_{分子力} = -\\Delta E_p = -\\int F_{合} \\,\\mathrm{d}r',
+        latex: 'W_{\\text{分子力}} = -\\Delta E_p',
         level: 'core',
         condition: '势能零点选在无限远处 (r → ∞ 处 E_p = 0)',
         note: '分子力做正功势能减小，做负功势能增加；r=r₀ 时势能取极小值',
       },
       {
         name: '引力与斥力随距离衰减率',
-        latex: 'F_{斥} \\propto \\dfrac{1}{r^{12}}, \\quad F_{引} \\propto \\dfrac{1}{r^6}',
-        level: 'important',
-        condition: 'Lennard-Jones 唯象模型',
+        latex: 'F_{斥} \\propto \\dfrac{1}{r^{13}}, \\quad F_{引} \\propto \\dfrac{1}{r^7}',
+        level: 'supplementary',
+        condition: '由 Lennard-Jones 势能模型对距离 r 求导得到的唯象作用力规律',
         note: '斥力随距离变化比引力快得多，故靠近时斥力剧增，远离时引力占优',
       },
     ],
     gaokaoPoints: [
       {
-        text: '合力为零与势能极小的横坐标严格全等：当 r = r₀ 时，合力 F_合 = 0，分子势能 E_p 达到最小值（势阱底部）。',
+        text: '合力为零与势能极小的横坐标严格相等：当 r = r₀ 时，合力 F_合 = 0，分子势能 E_p 达到最小值（势阱底部）。',
         importance: 'gaokao',
       },
       {
-        text: '无论从 r₀ 增大还是减小距离，分子力都做负功，分子势能都增大。即 r > r₀ 时引力做负功势能增大；r < r₀ 时斥力做负功势能增大。',
+        text: '无论从 r₀ 增大还是减小距离，分子力都做负功，分子势能都增大。即 r > r₀ 时引力占优做负功势能增大；r < r₀ 时斥力占优做负功势能增大。',
         importance: 'gaokao',
       },
       {
-        text: '引力最大值对应的横坐标约为 1.11 r₀，该点为 E_p-r 曲线的一阶导数极值点（拐点）。',
+        text: '当 r > r₀ 时，随间距增大分子合力（表现为引力）先增大后减小，合力极大值约出现在 r ≈ 1.11 r₀（对应 E_p-r 曲线斜率最大的位置）。',
         importance: 'hard',
       },
     ],

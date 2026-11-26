@@ -46,15 +46,15 @@ export function handleConveyor(
   ]
 
   const formulas: Formula[] = [
-    { name: '相对速度判据', latex: 'v_{\\text{rel}} = v_{\\text{物}} - v_{\\text{带}}', level: 'core' },
-    { name: '滑动摩擦方向', latex: 'f_k = -\\mu N\\,\\operatorname{sgn}(v_{\\text{rel}})', level: 'core' },
+    { name: '相对速度判据', latex: 'v_{\\text{rel}} = v_{\\text{物}} - v_{\\text{带}}', level: 'core', condition: '水平带以向右为正方向；倾斜带以沿传送带向上为正方向' },
+    { name: '滑动摩擦方向', latex: 'f_k = -\\mu N\\,\\operatorname{sgn}(v_{\\text{rel}})', level: 'supplementary', condition: '物体与传送带存在相对滑动时（v_rel ≠ 0），摩擦力方向与相对速度方向相反' },
     mode === 'horizontal'
-      ? { name: '水平带滑动加速度', latex: 'a = \\pm \\mu g', level: 'core' }
-      : { name: '倾斜带切向方程', latex: 'ma = f - mg\\sin\\theta', level: 'core' },
+      ? { name: '水平带滑动加速度', latex: 'a = \\pm \\mu g', level: 'core', condition: '水平传送带共速前相对滑动阶段（正方向向右，取正取负由相对运动方向决定）' }
+      : { name: '倾斜带切向方程', latex: 'ma = f - mg\\sin\\theta', level: 'core', condition: '倾斜传送带（倾角 θ = 15°，取沿斜面向上为正方向）' },
     mode === 'horizontal'
-      ? { name: '水平带共速后', latex: 'v_{\\text{物}}=v_{\\text{带}} \\Rightarrow f=0', level: 'important' }
-      : { name: '倾斜带保持共速', latex: '\\mu \\ge \\tan\\theta', condition: '\\theta=15^\\circ', level: 'important' },
-    { name: '摩擦生热', latex: 'Q = \\mu N\\int |v_{\\text{物}}-v_{\\text{带}}|\\,dt', level: 'important' },
+      ? { name: '水平带共速后', latex: 'v_{\\text{物}}=v_{\\text{带}} \\Rightarrow f=0', level: 'important', condition: '水平传送带且速度达到一致后（无外力维持时摩擦力消失）' }
+      : { name: '倾斜带保持共速', latex: '\\mu \\ge \\tan\\theta', condition: '仅适用于倾斜带（本演示倾角特例 θ = 15°）且物块与带共速后不发生下滑', level: 'important' },
+    { name: '摩擦生热', latex: 'Q = f\\,s_{\\text{相对}} = \\mu N\\,s_{\\text{相对}}', level: 'important', condition: '滑动摩擦阶段，s_相对 为物块与传送带的相对路程' },
   ]
 
   const gaokaoPoints: GaokaoPoint[] = [

@@ -126,7 +126,7 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
           gaokaoPoints: [
             { text: '【左手定则三维空间判定】伸开左手，使大拇指与四指垂直且在同一平面内，让磁感线穿过手心（B入掌心），四指指向电流方向，大拇指所指即为安培力方向。', importance: 'gaokao' },
             { text: '【三者方向关系】安培力 F 垂直于磁场 B 和电流 I 决定的平面，但 B 和 I 不一定垂直。当 B 与 I 夹角为 θ 时，F = BIL sinθ。', importance: 'core' },
-            { text: '【有效长度考点】公式中的 L 指的是"有效长度"，即在磁场中且通电的那段导线在垂直磁场方向的投影长度。', importance: 'gaokao' },
+            { text: '【有效长度】公式中的 L 指"有效长度"，即在磁场中且通电的那段导线首尾两端连线在垂直于磁场方向上的投影长度（闭合通电线圈在匀强磁场中有效长度为零）。', importance: 'gaokao' },
           ],
           warnings: [
             { text: '易错点：极易混淆左手定则（判定安培力/洛伦兹力方向）与右手定则（判定感应电流/感应电动势方向）。口诀：左力右感。', level: 'danger' },
@@ -173,19 +173,19 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
             { label: '导体棒状态', value: stateText, unit: '', highlight: res.state === 'equilibrium' ? 'positive' : 'negative' },
           ],
           formulas: [
-            { name: '安培力大小', latex: 'F_{\\text{安}} = BIL', level: 'core' as const },
+            { name: '安培力大小', latex: 'F_{\\text{安}} = BIL', level: 'core' as const, condition: '匀强磁场且直导线与磁场方向垂直（夹角 θ 时为 F = BIL sinθ）' },
             ...(bFieldDir === 0 ? [
-              { name: '沿斜面合外力', latex: 'R_{\\parallel} = F_{\\text{安}}\\cos\\theta - mg\\sin\\theta', level: 'core' as const, condition: '竖直磁场' },
-              { name: '斜面正压力', latex: 'N = mg\\cos\\theta + F_{\\text{安}}\\sin\\theta', level: 'core' as const, condition: '竖直磁场' },
+              { name: '沿斜面合外力', latex: 'R_{\\parallel} = F_{\\text{安}}\\cos\\theta - mg\\sin\\theta', level: 'core' as const, condition: '竖直方向匀强磁场' },
+              { name: '斜面正压力', latex: 'N = mg\\cos\\theta + F_{\\text{安}}\\sin\\theta', level: 'core' as const, condition: '竖直方向匀强磁场' },
             ] : bFieldDir === 1 ? [
-              { name: '沿斜面合外力', latex: 'R_{\\parallel} = F_{\\text{安}} - mg\\sin\\theta', level: 'core' as const, condition: '垂直斜面磁场' },
-              { name: '斜面正压力', latex: 'N = mg\\cos\\theta', level: 'core' as const, condition: '垂直斜面磁场' },
+              { name: '沿斜面合外力', latex: 'R_{\\parallel} = F_{\\text{安}} - mg\\sin\\theta', level: 'core' as const, condition: '垂直斜面方向匀强磁场' },
+              { name: '斜面正压力', latex: 'N = mg\\cos\\theta', level: 'core' as const, condition: '垂直斜面方向匀强磁场' },
             ] : [
-              { name: '沿斜面合外力', latex: 'R_{\\parallel} = (F_{\\text{安}} - mg)\\sin\\theta', level: 'core' as const, condition: '水平磁场' },
-              { name: '斜面正压力', latex: 'N = (mg - F_{\\text{安}})\\cos\\theta', level: 'core' as const, condition: '水平磁场' },
+              { name: '沿斜面合外力', latex: 'R_{\\parallel} = (F_{\\text{安}} - mg)\\sin\\theta', level: 'core' as const, condition: '水平方向匀强磁场' },
+              { name: '斜面正压力', latex: 'N = (mg - F_{\\text{安}})\\cos\\theta', level: 'core' as const, condition: '水平方向匀强磁场' },
             ]),
-            { name: '静摩擦平衡条件', latex: '|R_{\\parallel}| \\le \\mu N \\implies f = -R_{\\parallel}', level: 'core' as const },
-            { name: '滑动摩擦与加速度', latex: 'f = -\\mu N \\operatorname{sgn}(R_{\\parallel}) \\implies a = \\frac{R_{\\parallel} + f}{m}', level: 'core' as const, condition: '滑动状态下' },
+            { name: '静摩擦平衡条件', latex: '|R_{\\parallel}| \\le \\mu N \\implies f = -R_{\\parallel}', level: 'core' as const, condition: '导体棒在斜面上保持静止平衡时（近似取 μ_s = μ）' },
+            { name: '滑动摩擦与加速度', latex: '|f| = \\mu N, \\quad a = \\frac{R_{\\parallel} + f}{m}', level: 'core' as const, condition: '由静止开始滑动时 f 与 R_∥ 反向（一般情形 f 与相对速度反向）' },
           ],
           gaokaoPoints: [
             { text: '【受力分析与分解】解决磁场力与斜面平衡问题时，必须画出二维侧视受力图。将各力沿平行于斜面和垂直于斜面两个方向进行正交分解。', importance: 'gaokao' },
@@ -217,7 +217,7 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
             ...base,
             { label: '电荷极性', value: q > 0 ? '正电荷 (+q)' : '负电荷 (-q)', unit: '', highlight: q > 0 ? 'positive' : 'negative' },
             { label: '入射速度 v', value: v0.toFixed(1), unit: 'm/s', color: PHYSICS_COLORS.velocity },
-            { label: '磁场强度 B', value: B.toFixed(1), unit: 'T', color: PHYSICS_COLORS.magneticField },
+            { label: '磁感应强度 B', value: B.toFixed(1), unit: 'T', color: PHYSICS_COLORS.magneticField },
             { label: '洛伦兹力 F_洛', value: Math.abs(F_lorentz).toFixed(2), unit: 'N', color: PHYSICS_COLORS.lorentzForce, highlight: F_lorentz === 0 ? 'zero' : 'extreme' },
             { label: '轨道半径 R', value: R.toFixed(2), unit: 'm', color: PHYSICS_COLORS.textMuted },
           ],
@@ -232,6 +232,7 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
               name: '向心力与半径公式',
               latex: 'qvB = m\\frac{v^2}{R} \\implies R = \\frac{mv}{qB}',
               level: 'core',
+              condition: '带电粒子垂直进入匀强磁场且仅受洛伦兹力（忽略重力）',
             }
           ],
           gaokaoPoints: [
@@ -242,7 +243,7 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
           ],
           warnings: [
             {
-              text: '易错点：应用左手定则判断洛伦兹力方向时，四指指向正电荷的运动方向，对于负电荷，四指应指向运动的反方向（即电流的相反方向）。',
+              text: '易错点：应用左手定则判断洛伦兹力方向时，四指指向正电荷的运动方向，对于负电荷，四指应指向运动的反方向（即等效电流方向）。',
               level: 'danger',
             }
           ]
@@ -257,9 +258,9 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
         return {
           quantities: [
             ...base,
-            { label: '磁场强度 B', value: B.toFixed(1), unit: 'T', color: PHYSICS_COLORS.magneticField },
+            { label: '磁感应强度 B', value: B.toFixed(1), unit: 'T', color: PHYSICS_COLORS.magneticField },
             { label: '电场强度 E', value: E.toFixed(1), unit: 'V/m', color: PHYSICS_COLORS.electricField },
-            { label: '粒子荷质比 q/m', value: qOverM.toFixed(1), unit: 'C/kg' },
+            { label: '粒子比荷 q/m', value: qOverM.toFixed(1), unit: 'C/kg' },
             { label: '过滤速度 v_滤', value: v_filter.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity, highlight: 'extreme' },
             { label: '入射速度 v', value: v0.toFixed(1), unit: 'm/s', color: PHYSICS_COLORS.velocity },
             { label: '电场力/质量 FE/m', value: F_electric.toFixed(2), unit: 'N/kg', color: PHYSICS_COLORS.electricForce },
@@ -271,12 +272,13 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
               name: '复合场受力平衡',
               latex: 'F_{\\text{洛}} = F_{\\text{电}} \\implies qvB = qE',
               level: 'core',
-              condition: '沿中轴直线穿出时',
+              condition: '匀强电场与匀强磁场正交，粒子沿中轴直线穿出时（忽略重力）',
             },
             {
               name: '过滤速度公式',
               latex: 'v = \\frac{E}{B}',
               level: 'core',
+              condition: '正交电磁场速度选择器，粒子平衡穿出条件（与比荷 q/m 无关）',
             }
           ],
           gaokaoPoints: [
@@ -335,17 +337,17 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
               { label: '射出点距离 x_out', value: exitDistance.toFixed(2), unit: 'm', color: PHYSICS_COLORS.velocity },
             ],
             formulas: [
-              { name: '回旋半径', latex: 'R = \\frac{mv}{qB}', level: 'core' },
-              { name: '运动周期', latex: 'T = \\frac{2\\pi m}{qB}', level: 'core' },
-              { name: '偏转圆心角', latex: '\\Delta\\phi = 2\\theta\\ (或 2(\\pi-\\theta))', level: 'core' },
-              { name: '运动时间', latex: 't = \\frac{\\Delta\\phi}{2\\pi}T', level: 'core' },
+              { name: '回旋半径', latex: 'R = \\frac{mv}{qB}', level: 'core', condition: '带电粒子垂直进入匀强磁场（仅受洛伦兹力）' },
+              { name: '运动周期', latex: 'T = \\frac{2\\pi m}{qB}', level: 'core', condition: '匀强磁场匀速圆周运动（周期 T 与速率 v、半径 R 无关）' },
+              { name: '偏转圆心角', latex: '\\Delta\\phi = 2\\theta\\ (或 2(\\pi-\\theta))', level: 'core', condition: '粒子以与平直单边界夹角 θ 射入匀强磁场' },
+              { name: '运动时间', latex: 't = \\frac{\\Delta\\phi}{2\\pi}T', level: 'core', condition: '匀强磁场中做圆周运动扫过圆心角 Δφ 所需时间' },
             ],
             gaokaoPoints: [
               { text: '粒子在单边界磁场中运动时，射入角 θ 决定了偏转角，且射出点距离始终为弦长 L = 2R*sinθ。', importance: 'gaokao' as const },
               { text: '运动时间由偏转圆心角唯一决定，与速度大小 v 完全无关。', importance: 'core' as const },
             ],
             warnings: [
-              { text: '易错防坑：在偏转角一定的情况下，切勿因速度变大而误认为运动时间变长。时间仅与圆心角 and 周期有关！', level: 'danger' }
+              { text: '易错防坑：在偏转角一定的情况下，切勿因速度变大而误认为运动时间变长。时间仅与圆心角和周期有关！', level: 'danger' }
             ],
           }
         } else if (boundaryType === 1) {
@@ -361,8 +363,8 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
               { label: '运动时间 t', value: res.t.toFixed(2), unit: 's', color: PHYSICS_COLORS.heatLoss },
             ],
             formulas: [
-              { name: '临界穿透条件', latex: 'R_{crit} = \\frac{d}{1 \\mp \\cos\\theta}', level: 'important' },
-              { name: '穿透判定', latex: 'R \\ge R_{crit} \\implies 穿透', level: 'core' },
+              { name: '临界穿透条件', latex: 'R_{crit} = \\frac{d}{1 \\mp \\cos\\theta}', level: 'important', condition: '宽度为 d 的双平行边界匀强磁场，轨迹圆恰好与另一边界相切' },
+              { name: '穿透判定', latex: 'R \\ge R_{crit} \\implies 穿透', level: 'core', condition: '半径大于或等于相切临界半径时从另一侧边界射出' },
             ],
             gaokaoPoints: [
               { text: '双平行边界的临界穿透条件是轨迹圆与边界恰好相切，即 R(1 ∓ cosθ) = d。', importance: 'gaokao' as const },
@@ -385,15 +387,15 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
               { label: '运动时间 t', value: res.t.toFixed(2), unit: 's', color: PHYSICS_COLORS.heatLoss, highlight: 'extreme' as const },
             ],
             formulas: [
-              { name: '圆形磁场对称性', latex: '径向射入 \\implies 径向射出', level: 'important' },
-              { name: '偏转角与半径关系', latex: '\\tan\\frac{\\Delta\\phi}{2} = \\frac{R_b}{R}', level: 'core' },
+              { name: '圆形磁场对称性', latex: '径向射入 \\implies 径向射出', level: 'important', condition: '粒子初速度方向指向圆形匀强磁场区域的圆心' },
+              { name: '偏转角与半径关系', latex: '\\tan\\frac{\\Delta\\phi}{2} = \\frac{R_b}{R}', level: 'core', condition: '粒子沿径向射入半径为 R_b 的圆形匀强磁场' },
             ],
             gaokaoPoints: [
               { text: '圆形磁场“对称性定理”：沿径向（指向圆心）射入磁场的粒子，射出时其速度反向延长线必过磁场圆心。', importance: 'gaokao' as const },
               { text: '该对称性使偏转角中垂线正好经过磁场圆心，形成直角三角形关系：tan(Δφ/2) = R_b / R。', importance: 'core' as const },
             ],
             warnings: [
-              { text: '易错防坑：注意此径向对称性仅在粒子“射向磁场圆心”时成立。如果入射速度不指向磁场圆心，出射必不对称！', level: 'danger' }
+              { text: '易错防坑：注意“径向射入、径向射出”仅在粒子射向磁场圆心时成立。若入射速度不指向圆心，出射速度反向延长线不再过圆心，但入射角与出射角相对圆边界仍具有对称性。', level: 'danger' }
             ],
           }
         }
@@ -411,12 +413,12 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
               { label: '最大射出距离 x_max', value: xMax.toFixed(2), unit: 'm', color: PHYSICS_COLORS.heatLoss },
             ],
             formulas: [
-              { name: '弦长公式', latex: 'L = 2R\\sin\\frac{\\Delta\\phi}{2}', level: 'core' },
-              { name: '最大放电半径', latex: 'r_{max} = 2R = \\frac{2mv}{qB}', level: 'important' },
+              { name: '弦长公式', latex: 'L = 2R\\sin\\frac{\\Delta\\phi}{2}', level: 'core', condition: '粒子在匀强磁场中做圆周运动，偏转角为 Δφ' },
+              { name: '最大到达半径', latex: 'r_{\\max} = 2R = \\frac{2mv}{qB}', level: 'important', condition: '从同一点以相同速率向磁场内不同方向射入的粒子（即直径 2R）' },
             ],
             gaokaoPoints: [
               { text: '旋转圆（初速大小不变，方向改变）的轨迹圆心轨迹是以入射点为圆心、半径为 R 的圆弧。', importance: 'gaokao' as const },
-              { text: '无边界时，旋转圆的包络线为以入射点为圆心、半径为 2R 的圆（也称为最大“放电”区域）。', importance: 'core' as const },
+              { text: '无边界时，旋转圆的包络线为以入射点为圆心、半径为 2R 的圆（即粒子能够到达的最大覆盖区域）。', importance: 'core' as const },
             ],
             warnings: [
               { text: '易错防坑：画边界切点临界时，应确保轨迹圆心位于其圆心轨迹圆弧上，切点为粒子轨迹与边界的切点，而非任意几何交点。', level: 'danger' }
@@ -431,11 +433,11 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
               { label: '运动周期 T', value: T.toFixed(2), unit: 's', color: PHYSICS_COLORS.lorentzForce },
             ],
             formulas: [
-              { name: '圆心轨迹线', latex: '垂直于入射速度的射线', level: 'core' },
-              { name: '缩放关系', latex: 'R \\propto v', level: 'core' },
+              { name: '圆心轨迹线', latex: '垂直于入射速度的射线', level: 'core', condition: '入射点与速度方向固定、速率 v 变化的一组比荷相同粒子' },
+              { name: '缩放关系', latex: 'R \\propto v', level: 'core', condition: '同一匀强磁场 B 中同种比荷粒子' },
             ],
             gaokaoPoints: [
-              { text: '缩放圆（初速方向不变，大小改变）的各轨迹圆心在一条垂直于速度方向 of 直线上平移。', importance: 'gaokao' as const },
+              { text: '缩放圆（初速方向不变，大小改变）的各轨迹圆心在一条垂直于速度方向的直线上平移。', importance: 'gaokao' as const },
               { text: '在双边界磁场中，随着速度 v 变大，轨迹圆变大。相切于上边界的圆即为“穿透”的临界状态。', importance: 'core' as const },
             ],
             warnings: [
@@ -451,8 +453,8 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
               { label: '运动周期 T', value: T.toFixed(2), unit: 's', color: PHYSICS_COLORS.lorentzForce },
             ],
             formulas: [
-              { name: '圆心轨迹线', latex: '与入射边界平行的直线', level: 'core' },
-              { name: '入射宽度', latex: '\\Delta x_{in} = \\Delta x_{out}', level: 'core' },
+              { name: '圆心轨迹线', latex: '与入射边界平行的直线', level: 'core', condition: '一束比荷与初速度均相同、平行射入直边界磁场的粒子' },
+              { name: '平行直边界宽度', latex: '\\Delta x_{in} = \\Delta x_{out}', level: 'core', condition: '仅适用于平行粒子束从同一直边界或平行直边界射出时' },
             ],
             gaokaoPoints: [
               { text: '平移圆（一束平行粒子，速度大小与方向皆同）的圆心在一条与入射边界平行的直线上平移。', importance: 'gaokao' as const },
@@ -509,7 +511,7 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
           { label: '电荷电性', value: particleSign > 0 ? '正电荷 (+q)' : '负电荷 (-q)', unit: '', highlight: particleSign > 0 ? 'positive' as const : 'negative' as const },
           { label: '初速度 v', value: velocity.toFixed(1), unit: 'm/s', color: PHYSICS_COLORS.velocity },
           { label: '入射角 α', value: `${angle.toFixed(0)}°`, unit: '', color: PHYSICS_COLORS.labelTextLight },
-          { label: '磁场强度 B', value: B.toFixed(1), unit: 'T', color: PHYSICS_COLORS.magneticField },
+          { label: '磁感应强度 B', value: B.toFixed(1), unit: 'T', color: PHYSICS_COLORS.magneticField },
           { label: '轨道半径 R', value: R.toFixed(2), unit: 'm', color: PHYSICS_COLORS.lorentzForce, highlight: 'positive' as const },
           { label: '运动周期 T', value: (2 * Math.PI / omega).toFixed(2), unit: 's', color: PHYSICS_COLORS.period },
           { label: '停留时间 t', value: curT.toFixed(2), unit: `s (出射时刻: ${tOut.toFixed(2)}s)`, color: PHYSICS_COLORS.heatLoss, highlight: time > tOut ? 'extreme' as const : undefined },

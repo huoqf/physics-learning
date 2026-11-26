@@ -121,7 +121,7 @@ export function buildExperimentResistivityQuantities(
     {
       name: '电阻定律',
       latex: 'R = \\rho \\frac{L}{S} = \\rho \\frac{4L}{\\pi d^2}',
-      condition: '适用于粗细均匀的金属导体',
+      condition: '适用于温度不变、粗细均匀的金属导体',
       level: 'core',
     },
     {
@@ -139,19 +139,21 @@ export function buildExperimentResistivityQuantities(
     {
       name: '限流回路的电流',
       latex: 'I = \\frac{E}{R_{\\text{测}} + R + r}',
-      condition: `本页 E = ${r.E.toFixed(1)} V、r = ${r.rSource.toFixed(1)} Ω；调大变阻器 R 会同时压低 I 与 U`,
+      condition: `本页 E = ${r.E.toFixed(1)} V、r = ${r.rSource.toFixed(1)} Ω（近似忽略电表内阻对干路总电阻的影响）`,
       level: 'important',
     },
   ]
 
-  // 3. 高考考点
+  // 3. 核心要点
   const gaokaoPoints: PhysicsPanelData['gaokaoPoints'] = [
     {
-      text: `伏安法内/外接选择：金属丝电阻很小（本页 Rx ≈ ${r.Rx_real.toFixed(2)} Ω，远小于 √(R_A·R_V) ≈ 39 Ω），属典型小电阻，必须选电流表外接法。外接法因电压表分流，测得的 R 与反推的 ρ 都偏小（本页 δρ ≈ ${rhoRelError.toFixed(3)}%），但偏差极小。`,
+      text: p.wiring === 0
+        ? `伏安法内/外接选择：金属丝电阻很小（本页 Rx ≈ ${r.Rx_real.toFixed(2)} Ω，远小于 √(RA·RV) ≈ 39 Ω），属典型小电阻，宜选电流表外接法。外接法因电压表分流，测得的 R 与反推的 ρ 均略偏小（当前 δρ ≈ ${rhoRelError.toFixed(3)}%）。`
+        : `伏安法内/外接选择：金属丝电阻很小（本页 Rx ≈ ${r.Rx_real.toFixed(2)} Ω），当前切换为电流表内接法；单点法受电流表分压影响测得 R 偏大，而 R-L 图像斜率法可消去 RA 截距误差（斜率推得 δρ ≈ ${rhoRelError.toFixed(3)}%）。`,
       importance: 'gaokao',
     },
     {
-      text: '螺旋测微器读数规则：固定刻度读出整毫米数和半毫米刻度，可动刻度读出 50 分度估读值（精确到 0.001 mm，即三位小数）。',
+      text: '螺旋测微器读数规则：固定刻度读出整毫米数和半毫米刻度，可动刻度读出 50 分度估读值（分度值/精确度为 0.01 mm，需估读到 0.001 mm）。',
       importance: 'gaokao',
     },
     {
@@ -163,7 +165,7 @@ export function buildExperimentResistivityQuantities(
       importance: 'gaokao',
     },
     {
-      text: '为什么优先用"图像斜率法"而不是"单点法"：单点法 ρ = πd²R/(4L) 会把电表内阻的系统误差全部吃进去；而 R-L 图线的斜率只由电阻随长度的增长速率决定，纵轴截距（如内接法多出来的 R_A）被自动消掉，故高考实验题几乎都要求作图求斜率。',
+      text: '为什么优先用"图像斜率法"而不是"单点法"：单点法 ρ = πd²R/(4L) 会把电表内阻的系统误差全部吃进去；而 R-L 图线的斜率只由电阻随长度的增长速率决定，纵轴截距（如内接法多出来的 RA）被自动消掉，故实验数据处理时常优先采用作图求斜率。',
       importance: 'gaokao',
     },
   ]

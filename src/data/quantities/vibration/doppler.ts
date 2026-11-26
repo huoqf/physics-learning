@@ -66,9 +66,9 @@ export function buildDopplerQuantities(
   } else {
     quantities.push(
       { label: '波源移动速度', symbol: 'v_s', value: +vs.toFixed(0), unit: 'm/s' },
-      { label: '前方视在波长', symbol: "λ'", value: +lambdaFront.toFixed(2), unit: 'm' },
+      { label: '前方压缩后观测波长', symbol: "λ'", value: +lambdaFront.toFixed(2), unit: 'm' },
       { label: '前方接收频率', symbol: "f'", value: +fFront.toFixed(1), unit: 'Hz' },
-      { label: '后方视在波长', symbol: "λ''", value: +lambdaBack.toFixed(2), unit: 'm' },
+      { label: '后方拉伸后观测波长', symbol: "λ''", value: +lambdaBack.toFixed(2), unit: 'm' },
       { label: '后方接收频率', symbol: "f''", value: +fBack.toFixed(1), unit: 'Hz' },
       { label: '迎面频移量', symbol: 'Δf', value: +(deltaF > 0 ? `+${deltaF.toFixed(1)}` : deltaF.toFixed(1)), unit: 'Hz' },
     )
@@ -78,28 +78,28 @@ export function buildDopplerQuantities(
     quantities,
     formulas: [
       {
-        name: '多普勒频率综合公式',
+        name: '多普勒频率综合公式（拓展）',
         latex: "f' = f_0 \\frac{v \\pm v_o}{v \\mp v_s}",
-        condition: '分子靠近取+远离取-，分母靠近取-远离取+',
-        level: 'core',
+        condition: '机械波传播需要介质，波源自身振动频率 f₀ 不变；分子靠近取+远离取-，分母靠近取-远离取+（高中定性理解频率变化趋势即可）',
+        level: 'supplementary',
       },
       {
-        name: '观察者运动接收频率公式',
+        name: '观察者运动接收频率公式（拓展）',
         latex: "f' = f_0 \\frac{v \\pm v_o}{v} = \\frac{v \\pm v_o}{\\lambda_0}",
-        condition: '波源静止，空间波长保持 λ₀ 不变',
-        level: 'core',
+        condition: '波源相对介质静止、机械波波长 λ₀ 不变且波源自身频率不变（拓展推导）',
+        level: 'supplementary',
       },
       {
-        name: '波源运动前方压缩波长',
+        name: '波源运动前方压缩波长（拓展）',
         latex: "\\lambda' = \\frac{v - v_s}{f_0} = \\lambda_0 - v_s T",
-        condition: '波源朝观察者运动时前方空间波长变短',
-        level: 'core',
+        condition: '机械波传播依赖介质，波源朝观察者运动且 v_s < v（波源自身频率 f₀ 不变）',
+        level: 'supplementary',
       },
       {
         name: '超音速马赫角公式',
         latex: "\\sin\\theta = \\frac{v}{v_s} = \\frac{1}{Ma}",
-        condition: '波源超音速时激波包络面半顶角',
-        level: 'derived',
+        condition: '波源在均匀介质中超音速运动（v_s > v）时激波包络面半顶角',
+        level: 'supplementary',
       },
     ],
     gaokaoPoints: [

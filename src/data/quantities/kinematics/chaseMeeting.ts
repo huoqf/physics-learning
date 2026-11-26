@@ -43,25 +43,26 @@ export function handleChaseMeeting(
     const vMax = p.vMax ?? 40
 
     const state = calculatePoliceChase(vA, deltaX0, t0, aB, vMax, time)
+    const canCatchUpSpeed = vA <= vMax
     const tEqual = t0 + vA / aB
-    const tMeetText = state.tMeet !== null ? `${state.tMeet.toFixed(2)}` : '尚未追上'
+    const tMeetText = state.tMeet !== null ? `${state.tMeet.toFixed(2)}` : '无法追上'
 
     return {
       quantities: [
         ...base,
-        { label: '轿车位置 xₐ', value: state.xA.toFixed(2), unit: 'm' },
-        { label: '警车位置 xᵦ', value: state.xB.toFixed(2), unit: 'm' },
+        { label: '轿车位移 sₐ', value: state.xA.toFixed(2), unit: 'm' },
+        { label: '警车位移 sᵦ', value: state.xB.toFixed(2), unit: 'm' },
         { label: '当前车距 Δx', value: state.deltaX.toFixed(2), unit: 'm' },
-        { label: '共速时刻 t', value: tEqual.toFixed(2), unit: 's' },
-        { label: '追上时刻 t', value: tMeetText, unit: 's' },
+        { label: '共速时刻 t', value: canCatchUpSpeed ? tEqual.toFixed(2) : '无法共速', unit: canCatchUpSpeed ? 's' : '' },
+        { label: '追上时刻 t', value: tMeetText, unit: state.tMeet !== null ? 's' : '' },
       ],
       formulas: [
         { name: '轿车位移', latex: `x_A = v_A \\cdot t`, level: 'core' },
-        { name: '共速时刻', latex: `t = t_0 + \\frac{v_A}{a_B}`, level: 'core', condition: '警车加速期内' },
+        { name: '共速时刻', latex: `t = t_0 + \\frac{v_A}{a_B}`, level: 'core', condition: '警车加速期内且 v_A ≤ v_max' },
       ],
       gaokaoPoints: [
         { text: 'x-t 图交点看相遇，斜率看速度；不可与 v-t 图混淆', importance: 'core' as const },
-        { text: '速度相等是距离具有极值的临界点，此时两车间距最大', importance: 'gaokao' as const },
+        { text: '速度相等是距离具有极值的临界点；后车由静止加速追匀速前车（且 v_A ≤ v_max）时，共速瞬间间距最大', importance: 'gaokao' as const },
         { text: '警车做匀加速运动时，其 x-t 对应二次函数抛物线', importance: 'hard' as const },
       ],
     }
@@ -72,7 +73,7 @@ export function handleChaseMeeting(
     const aB = p.aB_meet ?? 2
 
     const state = calculateMeeting(vA, vL, aB, time)
-    const tMeetText = state.tMeet !== null ? `${state.tMeet.toFixed(2)}` : '尚未相遇'
+    const tMeetText = state.tMeet !== null ? `${state.tMeet.toFixed(2)}` : '无法相遇'
 
     return {
       quantities: [
@@ -80,15 +81,15 @@ export function handleChaseMeeting(
         { label: '甲车位置 xₐ', value: state.xA.toFixed(2), unit: 'm' },
         { label: '乙车位置 xᵦ', value: state.xB.toFixed(2), unit: 'm' },
         { label: '两车间距 Δx', value: state.deltaX.toFixed(2), unit: 'm' },
-        { label: '相遇时刻 t', value: tMeetText, unit: 's' },
+        { label: '相遇时刻 t', value: tMeetText, unit: state.tMeet !== null ? 's' : '' },
       ],
       formulas: [
-        { name: '甲车位移', latex: `x_A = v_A \\cdot t`, level: 'core' },
-        { name: '乙车位移', latex: `x_B = L - \\frac{1}{2} a_B t^2`, level: 'core' },
+        { name: '甲车位置', latex: `x_A = v_A \\cdot t`, level: 'core' },
+        { name: '乙车位置', latex: `x_B = L - \\frac{1}{2} a_B t^2`, level: 'core', condition: '以甲车起点为原点、向右为正，乙车从 x = L 处由静止相向匀加速' },
         { name: '相遇条件', latex: `v_A \\cdot t = L - \\frac{1}{2} a_B t^2`, level: 'core' },
       ],
       gaokaoPoints: [
-        { text: '相向而行时，两车位移之和等于初始距离即为相遇', importance: 'core' as const },
+        { text: '相向而行时，两车位移大小之和（路程之和）等于初始距离即为相遇', importance: 'core' as const },
         { text: 'x-t 图交点表示两车在同一时刻到达同一位置', importance: 'gaokao' as const },
         { text: '若乙车匀速，则相遇时间 t = L/(vₐ+vᵦ)', importance: 'hard' as const },
       ],

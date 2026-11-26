@@ -3,6 +3,7 @@
  */
 import { SECOND_LAW_COLORS } from '@/theme/physics'
 import { secondLawSharedState } from '@/features/thermodynamics/secondLaw/sharedState'
+import { formatScientific } from '@/utils/formatNumber'
 import type { PhysicsPanelData } from './types'
 
 export function buildSecondLawQuantities(
@@ -34,7 +35,7 @@ export function buildSecondLawQuantities(
       {
         label: '微观态数',
         symbol: 'Ω',
-        value: omega > 1000 ? omega.toExponential(1) : omega.toFixed(0),
+        value: omega > 1000 ? formatScientific(omega, 1) : omega.toFixed(0),
         unit: '',
         color: SECOND_LAW_COLORS.warmParticle,
       },
@@ -56,14 +57,14 @@ export function buildSecondLawQuantities(
       {
         name: isReversePump ? '电冰箱/热泵能量守恒' : '玻尔兹曼熵公式',
         latex: isReversePump ? 'Q_1 = Q_2 + W' : 'S = k_B \\ln \\Omega',
-        level: 'core',
-        condition: isReversePump ? '外界做功 W 将热量 Q₂ 泵向高温端 Q₁' : '微观态等概率假设',
+        level: isReversePump ? 'core' : 'supplementary',
+        condition: isReversePump ? '外界做功 W 将热量 Q₂ 泵向高温端 Q₁' : '宏观态对应的微观态数 Ω 等概率分布',
       },
       {
         name: '热力学第二定律（孤立系统熵增）',
         latex: '\\Delta S \\ge 0',
         level: 'core',
-        condition: '自发过程',
+        condition: '孤立系统中的自发过程',
       },
     ],
     gaokaoPoints: [
@@ -86,7 +87,7 @@ export function buildSecondLawQuantities(
     ],
     warnings: [
       {
-        text: '【高考高频命题陷阱】“热量不能从低温传到高温”是错误的伪命题！题干缺少“自发地”时切勿盲选，电冰箱消耗电功完全可以逆向泵热！',
+        text: '常见辨析：“热量不能从低温传到高温”缺少“自发地”前缀时表述错误！电冰箱消耗电功完全可以从低温箱内吸热并向外界放热。',
         level: 'danger',
       },
       {

@@ -28,9 +28,9 @@ export function handleAc(
       const freq = omega / (2 * Math.PI)
 
       const formulas = [
-        { name: '磁通量公式', latex: '\\Phi = BS\\cos(\\omega t + \\theta_0)', level: 'core' as const },
-        { name: '感应电动势', latex: 'e = E_m\\sin(\\omega t + \\theta_0)', level: 'core' as const },
-        { name: '峰值电动势', latex: 'E_m = NBS\\omega', level: 'core' as const },
+        { name: '磁通量公式', latex: '\\Phi = BS\\cos(\\omega t + \\theta_0)', level: 'core' as const, condition: '匀强磁场中矩形线圈匀速转动，θ₀ 为 t = 0 时线圈法线与磁场 B 的夹角（中性面处 θ₀ = 0）' },
+        { name: '感应电动势', latex: 'e = E_m\\sin(\\omega t + \\theta_0)', level: 'core' as const, condition: '匀强磁场匀速转动产生正弦交流电（从中性面位置计时 θ₀ = 0）' },
+        { name: '峰值电动势', latex: 'E_m = NBS\\omega', level: 'core' as const, condition: '线圈在匀强磁场中绕垂直磁感线的轴以角速度 ω 匀速转动，与转轴位置无关' },
       ]
 
       const gaokaoPoints = [
@@ -39,12 +39,12 @@ export function handleAc(
       ]
 
       const warnings = [
-        { text: '易错提醒：转速 n 翻倍时，图象周期 T 减半的同时，波峰高度 Em 同步翻倍。', level: 'danger' as const },
+        { text: '易错提醒：转速 n 翻倍时，图像周期 T 减半的同时，波峰高度 Em 同步翻倍。', level: 'danger' as const },
       ]
 
       if (mode === 1) {
         formulas.push(
-          { name: '一般表达式', latex: '\\Phi = BS\\cos(\\omega t + \\theta_0)', level: 'core' as const },
+          { name: '任意初始相位磁通量', latex: '\\Phi = BS\\cos(\\omega t + \\theta_0)', level: 'core' as const, condition: 't = 0 时线圈平面与中性面夹角为 θ₀' },
         )
       }
 
@@ -87,10 +87,16 @@ export function handleAc(
         ],
         formulas: [
           {
-            name: '有效值通用定义',
-            latex: 'I_{eff} = \\sqrt{\\frac{1}{T}\\int_0^T i^2(t)dt}',
+            name: '有效值定义（热效应）',
+            latex: 'I_{\\text{有效}}^2 R T = Q',
             level: 'core' as const,
-            condition: '适用于任意周期性交变电流',
+            condition: '任意周期性交变电流与恒定电流通过相同电阻 R，在一周期 T 内产生的热量 Q 相等',
+          },
+          {
+            name: '有效值积分定义（拓展）',
+            latex: 'I_{eff} = \\sqrt{\\frac{1}{T}\\int_0^T i^2(t)dt}',
+            level: 'supplementary' as const,
+            condition: '拓展积分表示，高中阶段直接按热效应定义或常见波形规律求解',
           },
           {
             name: '正弦波特例',
@@ -106,7 +112,7 @@ export function handleAc(
           { text: '电容器耐压值看峰值，电表读数/保险丝看有效值', importance: 'hard' as const },
         ],
         warnings: [
-          { text: '本结论仅适用于标准正弦（或余弦）交变电流', level: 'info' as const },
+          { text: '有效值与峰值关系 I = I_m/√2、U = U_m/√2 仅适用于标准正弦（或余弦）式交变电流；非正弦交变电流须按热效应定义计算。', level: 'info' as const },
         ],
       }
     }
@@ -140,7 +146,7 @@ export function handleAc(
           {
             name: '功率守恒',
             latex: 'P_{in} = P_{out} \\quad (U_1 I_1 = U_2 I_2)',
-            condition: '理想变压器任意负载',
+            condition: '理想变压器（括号内 U₁I₁ = U₂I₂ 仅适用于单一副线圈且接纯电阻负载）',
             level: 'core' as const,
           },
           {
@@ -208,16 +214,16 @@ export function handleAc(
           { label: '输电效率', symbol: 'η', value: (eta * 100).toFixed(1), unit: '%', color: TRANSMISSION_COLORS.efficiency, highlight: 'extreme' },
         ],
         formulas: [
-          { name: '输电线电流', latex: 'I_{line} = \\frac{P_1}{U_2}', level: 'core' },
-          { name: '线路等效折算电阻', latex: 'R_{eq3} = \\frac{R_{load}}{k^2} \\quad (k = \\frac{n_4}{n_3})', level: 'derived' },
-          { name: '电压损失与损耗功率', latex: '\\Delta U = I_{line}r, \\quad P_{loss} = I_{line}^2r', level: 'core' },
-          { name: '降压原副线圈电压', latex: 'U_3 = U_2 - \\Delta U, \\quad U_4 = U_3 \\cdot k', level: 'core' },
-          { name: '输电效率', latex: '\\eta = \\frac{P_{user}}{P_1} = \\frac{U_3}{U_2} = 1 - \\frac{\\Delta U}{U_2}', level: 'core' },
+          { name: '输电线电流', latex: 'I_{line} = \\frac{P_1}{U_2}', level: 'core', condition: '正弦交流电有效值（P₁ 为输送电功率，U₂ 为升压后高压输电端电压）' },
+          { name: '线路等效折算电阻', latex: 'R_{eq3} = \\frac{R_{load}}{k^2} \\quad (k = \\frac{n_4}{n_3})', level: 'derived', condition: '理想降压变压器单一副线圈接纯电阻负载 R_load（拓展折算）' },
+          { name: '电压损失与损耗功率', latex: '\\Delta U = I_{line}r, \\quad P_{loss} = I_{line}^2r', level: 'core', condition: '输电线总电阻为 r（用线电流与线损电压计算，严禁代入 U₂²/r）' },
+          { name: '降压原副线圈电压', latex: 'U_3 = U_2 - \\Delta U, \\quad U_4 = U_3 \\cdot k', level: 'core', condition: '理想降压变压器（k = n₄/n₃），忽略变压器自身电阻压降' },
+          { name: '输电效率', latex: '\\eta = \\frac{P_{user}}{P_1} = \\frac{U_3}{U_2} = 1 - \\frac{\\Delta U}{U_2}', level: 'core', condition: '理想升降压变压器无铜损铁损，能量仅损耗在输电线电阻 r 上' },
         ],
         gaokaoPoints: [
-          { text: '高压输电优越性：提高 U₂ ⇒ 减小 I_line ⇒ 大幅减少 P_loss = I²r（电压变 n 倍，损耗降为 1/n² ）。', importance: 'gaokao' },
+          { text: '高压输电优越性：在输送功率 P₁ 一定且输电线电阻 r 不变时，提高 U₂ ⇒ 减小 I_line ⇒ 大幅减少 P_loss = I²r（电压增为 n 倍，损耗降为 1/n²）。', importance: 'gaokao' },
           { text: '动态负载铁律：用户增加 ⇒ R_load↓ ⇒ 折算电阻 R_eq3↓ ⇒ 总电阻↓ ⇒ I_line↑ ⇒ ΔU↑ ⇒ U₃↓ ⇒ U₄↓（用电器变暗）。', importance: 'gaokao' },
-          { text: '等效电阻秒杀法：将变压器副线圈负载 R_load 折算到原线圈回路，公式为 R_eq = R_load / k²。', importance: 'hard' },
+          { text: '等效电阻分析法：将变压器副线圈负载 R_load 折算到原线圈回路，公式为 R_eq = R_load / k²。', importance: 'hard' },
           { text: '稳压补偿手段：用电高峰时 U₄ 降低，增大 k = n₄/n₃（即增加降压变压器副线圈匝数）可使 U₄ 回升。', importance: 'hard' },
         ],
         warnings: [

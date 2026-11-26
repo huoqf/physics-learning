@@ -75,12 +75,12 @@ export function buildExperimentNewtonSecondQuantities(
   }
   if (state.balanceMode === 1) {
     warnings.push({
-      text: '未平衡摩擦力：存在阻力阈值，小推力下小车无法启动，a-F 图像将出现正横轴截距（不通过原点）',
+      text: '未补偿阻力（或补偿不足）：存在阻力阈值，较小拉力下小车无法启动，a-F 图像将出现正横轴截距（不通过原点）',
       level: 'warning',
     })
   } else if (state.balanceMode === 2) {
     warnings.push({
-      text: '平衡摩擦力过度（倾角偏大）：未挂槽码时重力分力已使小车加速下滑，a-F 图像出现正纵轴截距',
+      text: '补偿阻力过度（木板倾角偏大）：未挂槽码时重力分力已使小车加速下滑，a-F 图像出现正纵轴截距',
       level: 'warning',
     })
   }
@@ -98,24 +98,24 @@ export function buildExperimentNewtonSecondQuantities(
         name: '牛顿第二定律控制变量关系',
         latex: 'a = \\frac{F}{M}',
         level: 'core',
-        condition: '平衡摩擦力后且满足槽码质量 m ≪ M（使 F ≈ mg）',
-        note: '先保持 M 不变探究 a-F 正比关系，再保持 F 不变探究 a 与 1/M 的正比关系',
+        condition: '恰当补偿阻力后，且满足槽码质量远小于小车总质量 m ≪ M（使细绳拉力 F ≈ mg）',
+        note: '先保持 M 不变探究 a 与 F 正比关系（图线斜率 1/M），再保持 F 不变探究 a 与 1/M 的正比关系',
       },
       {
         name: '系统精确连接体动力学公式',
         latex: 'T = \\frac{M}{M + m} mg, \\quad a = \\frac{mg}{M + m}',
         level: 'important',
-        condition: '已恰好平衡摩擦力且绳子不可伸长',
-        note: '可见 T 始终小于 mg；只有 m ≪ M 时 M/(M+m) → 1，图像才保持直线而不向下弯曲',
+        condition: '已恰当补偿阻力且细绳不可伸长（50 Hz 交流电源测 a）',
+        note: '可见细绳拉力 T 始终小于 mg；只有 m ≪ M 时 M/(M+m) → 1，a-F 图像才保持直线而不向下弯曲',
       },
     ],
     gaokaoPoints: [
       {
-        text: '控制变量法：探究 a 与 F 关系时保持小车总质量 M 不变；探究 a 与 m 关系时画 a-1/M 图像以将反比关系转化为过原点直线',
+        text: '控制变量法：探究 a 与 F 关系时保持小车总质量 M 不变；保持槽码质量 m（拉力 F）不变，探究 a 与小车总质量 M 的关系时画 a-1/M 图像以将反比关系转化为过原点直线',
         importance: 'core',
       },
       {
-        text: '平衡摩擦力操作要点：垫高长木板不带滑轮一端，不挂槽码、连好纸带，轻推小车使打出的纸带点迹均匀（匀速下滑）；改变小车或槽码质量时无需重新平衡摩擦力',
+        text: '补偿阻力操作要点：垫高长木板不带滑轮一端，不挂槽码、连好纸带并接通电源，轻推小车使打出的纸带点迹均匀（匀速下滑）；改变小车或槽码质量时无需重新补偿阻力',
         importance: 'gaokao',
       },
       {
@@ -123,7 +123,7 @@ export function buildExperimentNewtonSecondQuantities(
         importance: 'gaokao',
       },
       {
-        text: '图像截距故障分析：a-F 图在 F 轴有正截距 → 摩擦力未平衡或平衡不足；在 a 轴有正截距 → 平衡摩擦力过度（倾角偏大）',
+        text: '图像截距故障分析：a-F 图在 F 轴有正截距 → 阻力未补偿或补偿不足；在 a 轴有正截距 → 补偿阻力过度（倾角偏大）',
         importance: 'hard',
       },
     ],

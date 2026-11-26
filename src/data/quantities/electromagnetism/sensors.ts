@@ -44,8 +44,8 @@ export function buildSensorQuantities(
     )
 
     formulas.push(
-      { name: '闭合电路欧姆定律', latex: 'I = \\frac{E_{cc}}{R_0 + R_G + R_{\\text{coil}}}', level: 'core' },
-      { name: '继电器吸合判定', latex: 'I \\ge I_{\\text{pull}} \\implies \\text{电磁铁吸合}', level: 'important' },
+      { name: '闭合电路欧姆定律', latex: 'I = \\frac{E_{cc}}{R_0 + R_G + R_{\\text{coil}}}', level: 'core', condition: '纯电阻控制回路，E_cc 为电源电动势（电源内阻忽略或归入 R_coil）' },
+      { name: '继电器吸合判定', latex: 'I \\ge I_{\\text{pull}} \\implies \\text{电磁铁吸合}', level: 'important', condition: '继电器动作电流阈值为 I_pull' },
     )
 
     gaokaoPoints.push(
@@ -75,13 +75,13 @@ export function buildSensorQuantities(
     )
 
     formulas.push(
-      { name: 'NTC 热敏方程', latex: 'R(T) = R_{25} e^{B\\left(\\frac{1}{T} - \\frac{1}{T_{25}}\\right)}', level: 'important' },
-      { name: '回路欧姆定律', latex: 'I = \\frac{E_{cc}}{R_0 + R_T + R_{\\text{coil}}}', level: 'core' },
+      { name: 'NTC 热敏方程（拓展）', latex: 'R(T) = R_{25} e^{B\\left(\\frac{1}{T} - \\frac{1}{T_{25}}\\right)}', level: 'supplementary', condition: '拓展经验式，式中 T 与 T₂₅ 须取热力学温度（K）' },
+      { name: '回路欧姆定律', latex: 'I = \\frac{E_{cc}}{R_0 + R_T + R_{\\text{coil}}}', level: 'core', condition: '纯电阻控制回路，电源内阻忽略或归入 R_coil' },
     )
 
     gaokaoPoints.push(
       {
-        text: 'NTC 负温度系数特性：随温度升高阻值按指数规律剧烈减小。金属热电阻则随温度升高电阻线性增大，注意两者的考点辨析！',
+        text: 'NTC 负温度系数特性：随温度升高阻值按指数规律剧烈减小。金属热电阻则随温度升高电阻线性增大，注意两者的特性辨析。',
         importance: 'gaokao',
       },
       {
@@ -104,15 +104,15 @@ export function buildSensorQuantities(
     )
 
     formulas.push(
-      { name: '洛伦兹力微观平衡', latex: 'qvB = q\\frac{U_H}{b}', level: 'core' },
-      { name: '霍尔电压决定式', latex: 'U_H = k \\frac{IB}{d} = \\frac{1}{nq}\\frac{IB}{d}', level: 'core' },
+      { name: '洛伦兹力微观平衡', latex: 'qvB = q\\frac{U_H}{b}', level: 'core', condition: '载流子稳定定向移动，匀强磁场垂直于电流平面（忽略重力）' },
+      { name: '霍尔电压决定式', latex: 'U_H = k \\frac{IB}{d} = \\frac{1}{nq}\\frac{IB}{d}', level: 'core', condition: '半导体/金属霍尔元件达到稳态平衡时，d 为沿磁场方向厚度' },
     )
 
     gaokaoPoints.push(
       {
         text: isHole
-          ? '高考高频考点【P型半导体（空穴导电，q>0）】：正电荷定向移动受向上的洛伦兹力偏转积聚，【上表面电势高于下表面】。'
-          : '高考高频考点【N型半导体（电子导电，q<0）】：自由电子定向移动受向上的洛伦兹力偏转积聚，【上表面电势低于下表面】！',
+          ? 'P型半导体（空穴导电，q>0）：图示电流与磁场方向下，正电荷受向上的洛伦兹力偏转积聚，上表面电势高于下表面。'
+          : 'N型半导体（电子导电，q<0）：图示电流与磁场方向下，自由电子受向上的洛伦兹力偏转积聚，上表面电势低于下表面。',
         importance: 'gaokao',
       },
       {
@@ -120,7 +120,7 @@ export function buildSensorQuantities(
         importance: 'gaokao',
       },
       {
-        text: '霍尔效应应用大题模型：霍尔电压 UH 正比于 B 和 I，反比于薄片厚度 d 与载流子密度 n。可用于高精度测磁场、转速测量仪与无触点点火开关。',
+        text: '霍尔效应应用模型：霍尔电压 UH 正比于 B 和 I，反比于薄片厚度 d 与载流子密度 n。可用于高精度测磁场、转速测量仪与无触点开关。',
         importance: 'core',
       },
     )
@@ -148,7 +148,7 @@ export function buildSensorQuantities(
         importance: 'gaokao',
       },
       {
-        text: '新高考电容加速度计模型：小车加减速时惯性力推动中间动片极板移动改变 d，引起电容 C 变化，电路产生微弱充放电电流脉冲，检测信号即反映加速度大小与方向。',
+        text: '电容加速度计模型：小车加减速时，由于惯性，中间动极板相对外壳发生位移、弹簧形变提供加速度，从而改变极板间距 d，引起电容 C 变化并产生微弱充放电电流脉冲，检测信号即可反映加速度大小与方向。',
         importance: 'gaokao',
       },
       {

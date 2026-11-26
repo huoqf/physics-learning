@@ -130,24 +130,25 @@ export function handleManBoat(
 
   const formulas = !isDouble
     ? [
-        { name: '瞬时动量平衡', latex: 'm_1 v_1 + M v_{\\text{boat}} = 0', level: 'core' as const },
-        { name: '位移守恒关系', latex: 'm_1 s_1 + M s_{\\text{boat}} = 0 \\implies m_1 s_1 = M |s_{\\text{boat}}|', level: 'core' as const },
-        { name: '质心守恒公式', latex: 'x_{\\text{cm}} = \\frac{m_1 x_1 + M x_{\\text{boatCenter}}}{m_1 + M} = \\text{const}', level: 'important' as const },
+        { name: '水平方向动量守恒', latex: 'm_1 v_1 + M v_{\\text{boat}} = 0', level: 'core' as const, condition: '系统初始静止（初动量为零）且水平方向合外力为零（忽略水的阻力）' },
+        { name: '平均动量守恒（位移关系）', latex: 'm_1 s_1 + M s_{\\text{boat}} = 0 \\implies m_1 |s_1| = M |s_{\\text{boat}}|', level: 'core' as const, condition: '系统初始静止且水平方向合外力为零，位移为对地水平位移' },
+        { name: '几何位移约束（船长 L）', latex: '|s_1| + |s_{\\text{boat}}| = L', level: 'core' as const, condition: '人从船一端走到另一端（人与船反向运动，对地位移大小之和等于船长 L）' },
+        { name: '质心位置不变（拓展）', latex: 'x_{\\text{cm}} = \\frac{m_1 x_1 + M x_{\\text{boatCenter}}}{m_1 + M} = \\text{const}', level: 'supplementary' as const, condition: '系统初动量为零且水平方向不受外力时质心水平坐标保持不变' },
       ]
     : [
-        { name: '多物体瞬时动量守恒', latex: 'm_1 v_1 + m_2 v_2 + M v_{\\text{boat}} = 0', level: 'core' as const },
-        { name: '多物体平均动量守恒', latex: 'm_1 \\Delta x_1 + m_2 \\Delta x_2 + M \\Delta x_{\\text{boat}} = 0', level: 'core' as const },
-        { name: '总质心守恒公式', latex: 'x_{\\text{cm}} = \\frac{m_1 x_1 + m_2 x_2 + M x_{\\text{boatCenter}}}{m_1 + m_2 + M} = 0', level: 'important' as const },
+        { name: '多物体瞬时动量守恒', latex: 'm_1 v_1 + m_2 v_2 + M v_{\\text{boat}} = 0', level: 'core' as const, condition: '系统初始静止（初动量为零）且水平方向合外力为零（忽略水的阻力）' },
+        { name: '多物体平均动量守恒', latex: 'm_1 \\Delta x_1 + m_2 \\Delta x_2 + M \\Delta x_{\\text{boat}} = 0', level: 'core' as const, condition: '系统初始静止且水平方向合外力为零，位移为对地水平位移' },
+        { name: '总质心位置不变（拓展）', latex: 'x_{\\text{cm}} = \\frac{m_1 x_1 + m_2 x_2 + M x_{\\text{boatCenter}}}{m_1 + m_2 + M} = \\text{const}', level: 'supplementary' as const, condition: '系统初动量为零且水平方向不受外力时总质心水平坐标保持不变' },
       ]
 
   const gaokaoPoints = !isDouble
     ? [
-        { text: '系统初始静止且水平方向无外力，系统的质心坐标绝对守恒', importance: 'core' as const },
-        { text: '位移关系中的位移必须是以地面为参考系的绝对位移，满足 m1*s1 = M*s2', importance: 'gaokao' as const },
+        { text: '系统初始静止且水平方向合外力为零，总质心位置保持不变', importance: 'core' as const },
+        { text: '位移关系中的位移必须是以地面为参考系的绝对位移，满足 m₁|s₁| = M|s_boat|', importance: 'gaokao' as const },
         { text: '位移与过程无关，不管人是加速、匀速还是中途停留，最终位移均相同', importance: 'gaokao' as const },
       ]
     : [
-        { text: '双人相向走动交换位置时，若两者质量相同，则整个过程中船的位移为零', importance: 'core' as const },
+        { text: '双人相向走动交换位置后，若两者质量相同，则全过程船的总位移为零', importance: 'core' as const },
         { text: '双人依次走动与同时走动效果相同，表明系统的状态仅由初始和末尾位置决定，与中间过程无关', importance: 'gaokao' as const },
         { text: '多物体的平均动量守恒公式，需要注意位移的矢量方向正负号，建立一维坐标轴计算', importance: 'gaokao' as const },
       ]

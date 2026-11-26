@@ -70,7 +70,7 @@ export function buildMicroQuantitiesData(
         condition: isSphere ? '固体、液体分子尺寸估算' : '气体分子平均间距估算',
         note: isSphere
           ? `固体/液体分子紧密接触，分子本身大小即为其所占体积`
-          : `气体分子间距极大，计算结果为分子间平均距离并非分子自身半径`,
+          : `气体分子间距极大，计算结果为分子间平均距离并非分子自身直径（大小）`,
       },
       {
         name: '微观实体总数估算',
@@ -81,7 +81,7 @@ export function buildMicroQuantitiesData(
     ],
     gaokaoPoints: [
       {
-        text: '阿伏伽德罗常数 NA 是联系宏观物理量（质量、体积、摩尔质量、摩尔体积）与微观物理量（分子质量、分子体积、分子个数）的桥梁纽带。',
+        text: '阿伏加德罗常量 NA 是联系宏观物理量（质量、体积、摩尔质量、摩尔体积）与微观物理量（分子质量、分子体积、分子个数）的桥梁纽带。',
         importance: 'gaokao',
       },
       {

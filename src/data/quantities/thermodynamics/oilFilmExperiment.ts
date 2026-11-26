@@ -52,9 +52,9 @@ export function buildOilFilmExperimentData(
     formulas: [
       {
         name: '单滴纯油酸体积',
-        latex: 'V = \\dfrac{1}{N_{drop}} \\cdot \\rho_{浓度} \\; (\\text{mL}) = \\dfrac{1}{N_{drop} \\cdot \\text{ratio}} \\times 10^{-6} \\; (\\text{m}^3)',
+        latex: 'V = \\dfrac{1}{N_{drop}} \\cdot \\phi_{\\text{体积}} \\; (\\text{mL}) = \\dfrac{1}{N_{drop} \\cdot \\text{ratio}} \\times 10^{-6} \\; (\\text{m}^3)',
         level: 'core',
-        condition: '滴管已校准，每滴体积均匀',
+        condition: '滴管已校准且每滴体积均匀，φ_体积 = 1/ratio 为油酸体积分数（1 mL = 10⁻⁶ m³）',
       },
       {
         name: '油膜单分子层模型直径公式',
@@ -64,7 +64,7 @@ export function buildOilFilmExperimentData(
         note: '若痱子粉过厚阻碍铺展，S 偏小导致 d 偏大',
       },
       {
-        name: '阿伏伽德罗常数反推公式',
+        name: '阿伏加德罗常量反推公式',
         latex: 'N_A = \\dfrac{V_{mol}}{V_0} = \\dfrac{M}{\\rho \\cdot \\frac{1}{6}\\pi d^3}',
         level: 'important',
         condition: '由测得分子直径结合摩尔质量反推 NA',
@@ -72,7 +72,7 @@ export function buildOilFilmExperimentData(
     ],
     gaokaoPoints: [
       {
-        text: '三大基本假设（高考简答必背）：①油酸分子在水面上形成单分子油膜；②将油酸分子简化为球形模型；③油酸分子一个紧挨一个无间隙紧密排列。',
+        text: '三大基本假设：①油酸分子在水面上形成单分子油膜；②将油酸分子简化为球形模型；③油酸分子一个紧挨一个无间隙紧密排列。',
         importance: 'gaokao',
       },
       {
@@ -80,7 +80,7 @@ export function buildOilFilmExperimentData(
         importance: 'gaokao',
       },
       {
-        text: '误差分析打靶（高考实验高频）：①痱子粉撒得太厚未完全散开 → S 偏小 → d 偏大；②油酸酒精溶液挥发浓度升高但仍按原浓度计算 → 实际纯油酸体积增大 → 计算的 V 偏小 → d 偏小；③计算一滴体积时滴数数多了 → 计算的单滴体积偏小 → d 偏小。',
+        text: '实验误差分析：①痱子粉撒得太厚未完全散开 → S 偏小 → d 偏大；②油酸酒精溶液挥发浓度升高但仍按原浓度计算 → 实际纯油酸体积增大 → 计算的 V 偏小 → d 偏小；③计算一滴体积时滴数数多了 → 计算的单滴体积偏小 → d 偏小。',
         importance: 'hard',
       },
     ],
@@ -94,7 +94,7 @@ export function buildOilFilmExperimentData(
         level: 'warning',
       },
       {
-        text: '分子直径计算结果数量级必须在 10⁻¹⁰ m（约 1~3 Å）。如果算出的数量级为 10⁻⁷ 或 10⁻¹³，说明单位换算有严重错误。',
+        text: '油酸分子直径数量级通常在 10⁻¹⁰~10⁻⁹ m（约 1~10 Å，实测常见约 1 nm 量级）。若算出的数量级偏离到 10⁻⁷ 或 10⁻¹³ m，需排查单位换算错误。',
         level: 'warning',
       },
     ],

@@ -62,8 +62,8 @@ export function buildACImpedanceQuantities(
       {
         label: '容抗',
         symbol: 'X_C',
-        value: Number.isFinite(XC) ? +XC.toFixed(1) : 999999,
-        unit: Number.isFinite(XC) ? 'Ω' : '∞',
+        value: Number.isFinite(XC) ? +XC.toFixed(1) : '∞',
+        unit: 'Ω',
       },
       {
         label: '谐振频率',
@@ -86,24 +86,28 @@ export function buildACImpedanceQuantities(
     ],
     formulas: [
       {
-        name: '感抗公式',
+        name: '感抗公式（拓展）',
         latex: 'X_L = 2\\pi f L',
-        level: 'core',
+        level: 'supplementary',
+        condition: '正弦交流电拓展定量式（高中只需定性了解频率 f 越大、自感 L 越大，对交流电阻碍越大）',
       },
       {
-        name: '容抗公式',
+        name: '容抗公式（拓展）',
         latex: 'X_C = \\frac{1}{2\\pi f C}',
-        level: 'core',
+        level: 'supplementary',
+        condition: '正弦交流电拓展定量式（高中只需定性了解直流不能通过，频率 f 越大、电容 C 越大，阻碍越小）',
       },
       {
         name: '交流电路欧姆定律',
         latex: 'I = \\frac{U}{Z} = \\frac{U}{\\sqrt{R^2 + X^2}}',
-        level: 'core',
+        level: 'supplementary',
+        condition: '正弦交变电流有效值或最大值关系（拓展定量式，X 为感抗与容抗之差）',
       },
       {
         name: 'LC谐振频率',
         latex: 'f_0 = \\frac{1}{2\\pi\\sqrt{LC}}',
         level: 'derived',
+        condition: '理想 LC 振荡电路固有频率（当 X_L = X_C 时发生电谐振）',
       },
     ],
     gaokaoPoints: [

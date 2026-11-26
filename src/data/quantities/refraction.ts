@@ -40,9 +40,15 @@ export function buildRefractionQuantities(
 
   const formulas: PhysicsPanelData['formulas'] = [
     {
-      name: '斯涅尔定律',
+      name: '折射定律',
       latex: 'n = \\frac{\\sin\\theta_1}{\\sin\\theta_2}',
-      condition: '光从折射率 n₁ 的介质射入折射率 n₂ 的介质',
+      condition: '光从真空（近似空气）斜射入折射率为 n 的介质；两一般介质间满足 n₁sinθ₁ = n₂sinθ₂',
+      level: 'core',
+    },
+    {
+      name: '折射率与光速关系',
+      latex: 'n = \\frac{c}{v}',
+      condition: 'c 为真空中光速，v 为介质中光速，任何介质均有 n > 1',
       level: 'core',
     },
   ]
@@ -61,7 +67,7 @@ export function buildRefractionQuantities(
       text: '「插针法测定玻璃的折射率」：以 P₁P₂ 定出入射光线、P₃P₄ 定出射光线，量出 i、r 后由 n = sin i / sin r 计算，完整测量流程见实验专题《测定玻璃的折射率》。',
       importance: 'gaokao',
     },
-    { text: '折射率 n = sinθ₁ / sinθ₂，n 越大折射角越小', importance: 'core' },
+    { text: '光从真空/空气以相同入射角（θ₁ > 0）斜射入介质时，n = sinθ₁ / sinθ₂，介质折射率 n 越大，折射角 θ₂ 越小', importance: 'core' },
   ]
 
   if (advancedMode === 1) {

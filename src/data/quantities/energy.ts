@@ -57,9 +57,9 @@ export function buildEnergyQuantities(
             { label: '最大速度 vmax', value: cpParams.v_max.toFixed(1), unit: 'm/s', highlight: 'extreme' as const },
           ],
           formulas: [
-            { name: '牵引力', latex: 'F = \\frac{P}{v}', note: '低速时限流 F_max = 3f' },
-            { name: '加速度', latex: 'a = \\frac{F - f}{m}' },
-            { name: '最大速度', latex: 'v_{\\max} = \\frac{P}{f}' },
+            { name: '牵引力', latex: 'F = \\frac{P}{v}', level: 'core', condition: '恒定额定功率起动阶段（低速时受最大静牵引力限制）', note: '低速时限流 F_max = 3f' },
+            { name: '加速度', latex: 'a = \\frac{F - f}{m}', level: 'core', condition: '水平平直路面牵引加速（F 为牵引力，f 为阻力）' },
+            { name: '最大速度', latex: 'v_{\\max} = \\frac{P}{f}', level: 'core', condition: '加速度减小为零（牵引力 F = 阻力 f）达到匀速时' },
           ],
           gaokaoPoints: [
             { text: '恒定功率起动：F=P/v，随速度增大牵引力减小，加速度减小，最终匀速。', importance: 'core' as const },
@@ -85,14 +85,14 @@ export function buildEnergyQuantities(
             { label: '最大速度 vmax', value: caParams.v_max.toFixed(1), unit: 'm/s', highlight: 'extreme' as const },
           ],
           formulas: [
-            { name: '匀加速牵引力', latex: 'F = ma + f', condition: '第一阶段（匀加速），F 恒定' },
-            { name: '临界速度', latex: 'v_c = \\frac{P_{\\text{rated}}}{ma + f}', note: '匀加速阶段结束时的速度' },
-            { name: '变加速牵引力', latex: 'F = \\frac{P_{\\text{rated}}}{v}', condition: '第二阶段（恒功率），F 随 v 增大而减小' },
-            { name: '最大速度', latex: 'v_{\\max} = \\frac{P_{\\text{rated}}}{f}' },
+            { name: '匀加速牵引力', latex: 'F = ma + f', level: 'core', condition: '第一阶段（匀加速），F 恒定' },
+            { name: '临界速度', latex: 'v_c = \\frac{P_{\\text{rated}}}{ma + f}', level: 'important', condition: '第一阶段结束、功率刚达到额定功率 P_rated 时', note: '匀加速阶段结束时的速度' },
+            { name: '变加速牵引力', latex: 'F = \\frac{P_{\\text{rated}}}{v}', level: 'core', condition: '第二阶段（恒功率），F 随 v 增大而减小' },
+            { name: '最大速度', latex: 'v_{\\max} = \\frac{P_{\\text{rated}}}{f}', level: 'core', condition: '变加速至 F = f（a = 0）达到稳定最大速度时' },
           ],
           gaokaoPoints: [
             { text: '恒定加速度起动分两阶段：先匀加速（F 恒定，P 递增），达到额定功率后变加速（P 恒定，F 递减）。', importance: 'core' as const },
-            { text: '拐点 vc=Prated/(ma+f) 是高考高频考点，v-t 图在此处由直线变为曲线。', importance: 'gaokao' as const },
+            { text: '拐点 vc = Prated/(ma+f) 是恒加速度起动切向功率达到额定的临界速度，v-t 图在此处由倾斜直线变为向下弯曲的曲线。', importance: 'gaokao' as const },
             { text: '两种起动模型最终都达到 vmax=Prated/f，区别在于到达的方式不同。', importance: 'hard' as const },
           ],
         }
@@ -124,9 +124,9 @@ export function buildEnergyQuantities(
             { label: '实时动能 Ek', value: state.Ek.toFixed(1), unit: 'J' },
           ],
           formulas: [
-            { name: '拉力功', latex: 'W = F \\cdot s', level: 'core', condition: '拉力作用阶段' },
-            { name: '动能定义', latex: 'E_k = \\frac{1}{2}mv^2', level: 'core' },
-            { name: '动能定理', latex: 'W = \\Delta E_k = E_{k\\text{末}} - E_{k\\text{初}}', level: 'core' },
+            { name: '拉力功', latex: 'W = F \\cdot s', level: 'core', condition: '恒力与位移同向的拉力作用阶段' },
+            { name: '动能定义', latex: 'E_k = \\frac{1}{2}mv^2', level: 'core', condition: '宏观低速物体（动能为标量、状态量）' },
+            { name: '动能定理', latex: 'W = \\Delta E_k = E_{k\\text{末}} - E_{k\\text{初}}', level: 'core', condition: '适用于恒力或变力、直线或曲线运动，W 为合外力做的总功' },
           ],
           gaokaoPoints: [
             { text: '动能是状态量，功是过程量。动能定理是状态变化与过程做功的纽带。', importance: 'core' as const },
@@ -158,14 +158,14 @@ export function buildEnergyQuantities(
             { label: '实时速度 v', value: state.v.toFixed(2), unit: 'm/s' },
           ],
           formulas: [
-            { name: '重力做正功', latex: 'W_{\\text{重}} = mgh', level: 'core', condition: '与曲面路径无关' },
-            { name: '摩擦变力做功', latex: 'W_{\\text{摩}} = \\int -f \\, ds', level: 'important', note: '切向摩擦力 f = \\mu N 随速度与角度变化' },
-            { name: '动能定理', latex: 'W_{\\text{总}} = W_{\\text{重}} + W_{\\text{摩}} = \\Delta E_k', level: 'core' },
+            { name: '重力做正功', latex: 'W_{\\text{重}} = mgh', level: 'core', condition: '与曲面路径无关，仅取决于初末高度差 h' },
+            { name: '摩擦变力做功', latex: 'W_{\\text{摩}} = \\int -f \\, ds', level: 'supplementary', condition: '沿圆弧切向摩擦力为变力（高中通常用动能定理 W_摩 = ΔEk − W_重 间接求解）' },
+            { name: '动能定理', latex: 'W_{\\text{总}} = W_{\\text{重}} + W_{\\text{摩}} = \\Delta E_k', level: 'core', condition: '适用于变力做功与曲线运动，W_总 为各外力做功的代数和' },
           ],
           gaokaoPoints: [
             { text: '重力是恒力，在曲面下滑时位移方向时刻改变，但功只与垂直高度差相关：W_重 = mgh。', importance: 'core' as const },
             { text: '摩擦力是典型的变力，大小随支持力 N = mg·cosθ + mv²/R 实时变大。求变摩擦力功通常优先使用动能定理：W_摩 = ΔEk - W_重。', importance: 'gaokao' as const },
-            { text: '在变加速度曲线运动中，应用动能定理直接跳过了向心力公式与牛二定律复杂的非线性积分，是高考解答题的首选法则。', importance: 'hard' as const },
+            { text: '在变加速度曲线运动中，应用动能定理直接绕开了向心力公式与牛顿第二定律的复杂变力计算，是求解曲线运动做功与速率变化的核心法则。', importance: 'hard' as const },
           ],
         }
       }
@@ -221,9 +221,9 @@ export function buildEnergyQuantities(
             { label: '实时速度 v', value: state.v.toFixed(2), unit: 'm/s' },
           ],
           formulas: [
-            { name: '胡克定律', latex: 'F_s = -kx', note: '恢复力方向与形变方向相反', level: 'core' },
-            { name: '弹性势能', latex: 'E_{pe} = \\frac{1}{2}kx^2', note: '拉伸或压缩相同位移弹性势能相等', level: 'core' },
-            { name: '弹力功与能变', latex: 'W_s = -\\Delta E_{pe} = \\frac{1}{2}kx_1^2 - \\frac{1}{2}kx_2^2', level: 'important' },
+            { name: '胡克定律', latex: 'F_s = -kx', condition: '弹簧在弹性限度内，x 为相对原长的形变量', note: '恢复力方向与形变方向相反', level: 'core' },
+            { name: '弹性势能', latex: 'E_{pe} = \\frac{1}{2}kx^2', condition: '弹簧在弹性限度内且以原长位置为零势能参考点', note: '拉伸或压缩相同形变量时弹性势能相等', level: 'core' },
+            { name: '弹力功与能变', latex: 'W_s = -\\Delta E_{pe} = \\frac{1}{2}kx_1^2 - \\frac{1}{2}kx_2^2', condition: '弹性限度内弹簧弹力做功', level: 'important' },
           ],
           gaokaoPoints: [
             { text: '弹性势能的零点通常规定在弹簧处于自然原长处，拉伸和压缩时势能均非负（Epe ∝ x²）。', importance: 'core' as const },
@@ -265,12 +265,12 @@ export function buildEnergyQuantities(
           formulas: [
             { name: '摆球高度', latex: 'h = L(1 - \\cos\\theta)', note: '以最低点为零参考面时', level: 'important' },
             { name: '重力势能', latex: 'E_p = mg(h - h_{\\text{参}})', note: 'h为距离最低点高度，h_参为零势能面高度', level: 'core' },
-            { name: '机械能守恒', latex: 'E_k + E_p = \\text{常量}', level: 'core', condition: '无空气阻力下' },
+            { name: '机械能守恒', latex: 'E_k + E_p = \\text{常量}', level: 'core', condition: '不计空气阻力，细线拉力始终与速度垂直不做功，只有重力做功' },
           ],
           gaokaoPoints: [
-            { text: '单摆振动过程中重力与拉力的合力提供回复力，仅有重力做功，系统机械能严格守恒。', importance: 'core' as const },
-            { text: '在最高点小球速度为0，动能为0，重力势能达到最大值；在最低点高度为0，势能为0，速度达到最大值。', importance: 'basic' as const },
-            { text: '动能和重力势能随着往复摆动进行此消彼长的正弦转化，总和恒定不变。', importance: 'gaokao' as const },
+            { text: '单摆振动过程中重力沿圆弧切线方向的分力提供回复力，细线拉力始终不做功、仅有重力做功，系统机械能守恒。', importance: 'core' as const },
+            { text: '在最高点小球速度为0，动能为0，重力势能达到最大值；在最低点重力势能最小（取最低点为零势能面时势能为 0），速度达到最大值。', importance: 'basic' as const },
+            { text: '动能和重力势能随着往复摆动周期性相互转化，总和恒定不变。', importance: 'gaokao' as const },
           ],
         }
       } else {
@@ -338,9 +338,9 @@ export function buildEnergyQuantities(
             { label: '竖直分力 Fy', value: Fy.toFixed(1), unit: 'N' },
           ],
           formulas: [
-            { name: '恒力做功', latex: 'W = Fs\\cos\\theta', note: 'θ 为力与位移方向的夹角', level: 'core' },
-            { name: '水平分力', latex: 'F_x = F\\cos\\theta', level: 'important' },
-            { name: '竖直分力', latex: 'F_y = F\\sin\\theta', level: 'important' },
+            { name: '恒力做功', latex: 'W = Fs\\cos\\theta', condition: '力 F 的大小与方向恒定，θ 为力与位移方向的夹角', level: 'core' },
+            { name: '水平分力', latex: 'F_x = F\\cos\\theta', condition: '力 F 与水平方向夹角为 θ', level: 'important' },
+            { name: '竖直分力', latex: 'F_y = F\\sin\\theta', condition: '力 F 与水平方向夹角为 θ', level: 'important' },
           ],
           gaokaoPoints: [
             { text: 'W = Fscosθ，θ 为力与位移方向的夹角，cosθ 本质是力在位移方向上的投影系数。', importance: 'core' as const },
@@ -365,15 +365,15 @@ export function buildEnergyQuantities(
               : []),
           ],
           formulas: [
-            { name: '支持力', latex: 'F_N = mg - F\\sin\\theta', condition: '斜向上拉时；斜向下推时 FN=mg+Fsinθ', level: 'important' },
-            { name: '滑动摩擦力', latex: 'f = \\mu F_N', note: '脱地时 FN=0，摩擦力消失', level: 'core' },
-            { name: '拉力做功', latex: 'W_F = Fs\\cos\\theta', level: 'core' },
-            { name: '摩擦力做功', latex: 'W_f = -fs', level: 'important', note: '负号表示摩擦力做负功' },
-            { name: '合力做功', latex: 'W_{\\text{net}} = W_F + W_f', note: '合力功即动能定理的左边', level: 'core' },
+            { name: '支持力', latex: 'F_N = mg - F\\sin\\theta', condition: '斜向上拉且未脱离地面（F sinθ < mg）时；斜向下推时 FN = mg + F sinθ', level: 'important' },
+            { name: '滑动摩擦力', latex: 'f = \\mu F_N', condition: '物体沿粗糙水平面滑动且与地面存在正压力时（脱地时 F_N = 0）', level: 'core' },
+            { name: '拉力做功', latex: 'W_F = Fs\\cos\\theta', condition: '恒力 F 作用且物体产生水平位移 s', level: 'core' },
+            { name: '摩擦力做功', latex: 'W_f = -fs', condition: '滑动摩擦力大小 f 恒定且方向始终与运动位移反向', level: 'important' },
+            { name: '合力做功', latex: 'W_{\\text{net}} = W_F + W_f', condition: '仅受重力、支持力、拉力与滑动摩擦力且重力与支持力不做功时', level: 'core' },
           ],
           gaokaoPoints: [
             { text: '斜向上拉时 FN=mg−Fsinθ，摩擦力减小；斜向下推时 FN=mg+Fsinθ，摩擦力增大。', importance: 'core' as const },
-            { text: '脱地临界条件：Fsinθ≥mg 时，FN=0，滑动摩擦力消失——这是高考受力分析的高频陷阱。', importance: 'gaokao' as const },
+            { text: '脱地临界条件：Fsinθ ≥ mg 时，FN = 0，滑动摩擦力消失；求解摩擦力前应先检验支撑面弹力是否存在。', importance: 'gaokao' as const },
             { text: '合力功等于各力做功的代数和，Wnet = WF + Wf，正负号直接代入计算。', importance: 'hard' as const },
           ],
         }

@@ -77,7 +77,7 @@ export function handleVelocity(
       ],
       gaokaoPoints: [
         { text: '速度是矢量，方向就是物体此时的运动方向', importance: 'core' as const },
-        { text: '平均速度 = 位移 / 时间，方向与位移同向，与平均速率无关', importance: 'hard' as const },
+        { text: '平均速度 = 位移 / 时间（矢量，方向与位移同向），其大小一般不等于平均速率（|平均速度| ≤ 平均速率，仅单向直线运动时大小相等）', importance: 'hard' as const },
         { text: '只有变速运动中平均速度才与瞬时速度不等，"Δt→0"才成为求瞬时速度的方法', importance: 'hard' as const },
       ],
     }
@@ -130,17 +130,42 @@ export function handleVelocity(
       const avgSpeed = time > 0 ? currentState.x / time : 0
       const avgRate = time > 0 ? totalDist / time : 0
 
+      const isReturned = totalDist > Math.abs(currentState.x) + 0.05
       return {
         quantities: [
           ...base,
           { label: '当前阶段', value: stageName, unit: '' },
           { label: '路程 s', value: totalDist, unit: 'm' },
           { label: '平均速度 v̄', value: avgSpeed, unit: 'm/s' },
-          { label: '平均速率 v_率', value: avgRate, unit: 'm/s' },
-          { label: '核心对比', value: '位移≠路程，平均速度≠平均速率', unit: '' },
+          { label: '平均速率', value: avgRate, unit: 'm/s' },
+          {
+            label: '核心对比',
+            value: isReturned ? '折返后：|位移| < 路程，|v̄| < 平均速率' : '单向运动时：位移大小 = 路程，|v̄| = 平均速率',
+            unit: '',
+          },
+        ],
+        formulas: [
+          {
+            name: '平均速度定义式',
+            latex: '\\bar{v} = \\frac{\\Delta x}{\\Delta t}',
+            level: 'core',
+            condition: '普遍适用（矢量，方向与位移 Δx 方向相同）',
+          },
+          {
+            name: '平均速率定义式',
+            latex: '\\bar{v}_{\\text{速率}} = \\frac{s}{\\Delta t}',
+            level: 'core',
+            condition: '普遍适用（标量，s 为实际运动轨迹长度即路程；仅单向直线运动时 |v̄| = 平均速率）',
+          },
+          {
+            name: '匀变速直线运动平均速度推论',
+            latex: '\\bar{v} = \\frac{v_0 + v}{2}',
+            level: 'important',
+            condition: '仅适用于匀变速直线运动（多阶段变加速或往返折返一般不适用）',
+          },
         ],
         gaokaoPoints: [
-          { text: '往返全程位移为0，平均速度即为0', importance: 'gaokao' as const },
+          { text: '往返并回到出发点时，全程位移为 0，平均速度为 0（但路程与平均速率不为 0）', importance: 'gaokao' as const },
           { text: '速度正负仅代表方向，不代表大小', importance: 'core' as const },
           { text: '多阶段运动求全程平均速度，必须用总位移÷总时间', importance: 'hard' as const },
         ],
@@ -153,10 +178,24 @@ export function handleVelocity(
         { label: '割线斜率 v̄', value: vBar, unit: 'm/s' },
         { label: '切线斜率 v', value: vInst, unit: 'm/s', highlight: 'positive' as const },
         { label: '绝对残差 |v̄-v|', value: residual, unit: 'm/s', highlight: residual < 0.1 ? 'zero' as const : 'negative' as const },
-        { label: '微积分映射', value: 'v = dx/dt = x\'(t)', unit: '' },
+        { label: '瞬时速度极限', value: 'Δt → 0 时 Δx/Δt → v', unit: '' },
+      ],
+      formulas: [
+        {
+          name: '瞬时速度极限思想',
+          latex: 'v = \\lim_{\\Delta t \\to 0} \\frac{\\Delta x}{\\Delta t}',
+          level: 'core',
+          condition: 'Δt 趋近于 0 时，x-t 割线斜率趋近于该时刻切线斜率',
+        },
+        {
+          name: '平均速度公式',
+          latex: '\\bar{v} = \\frac{\\Delta x}{\\Delta t}',
+          level: 'core',
+          condition: '对应 x-t 图像上两点连线（割线）的斜率',
+        },
       ],
       gaokaoPoints: [
-        { text: 'x-t 图线切线斜率表速度，拐点速度为零', importance: 'gaokao' as const },
+        { text: 'x-t 图像切线斜率表示瞬时速度，切线水平处（极值点/折返点）瞬时速度为零', importance: 'gaokao' as const },
         { text: '运动方向由斜率正负决定', importance: 'core' as const },
         { text: '纸带求瞬时速度，本质利用了中间时刻速度思想', importance: 'hard' as const },
       ],

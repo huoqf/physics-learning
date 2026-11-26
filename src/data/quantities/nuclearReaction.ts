@@ -55,8 +55,8 @@ export function buildNuclearReactionQuantities(
     )
 
     formulas.push(
-      { name: '质量亏损公式', latex: '\\Delta m = [Z m_p + (A - Z) m_n] - M_X', level: 'core' as const },
-      { name: '爱因斯坦质能方程', latex: '\\Delta E = \\Delta m c^2 = \\Delta m \\times 931.5\\text{ MeV}', level: 'core' as const },
+      { name: '质量亏损公式', latex: '\\Delta m = [Z m_p + (A - Z) m_n] - M_X', level: 'core' as const, condition: '自由核子结合成原子核前后静质量之差（通常以原子质量单位 u 计量）' },
+      { name: '爱因斯坦质能方程', latex: '\\Delta E = \\Delta m c^2 = \\Delta m \\times 931.5\\text{ MeV}', level: 'core' as const, condition: '当质量亏损 Δm 以原子质量单位 u 计，1 u 对应约 931.5 MeV 能量（SI 下以 kg 计用 Δm·c²）' },
       { name: '比结合能公式', latex: 'E_{\\text{avg}} = \\frac{E_b}{A}', level: 'core' as const },
       { name: '结合能与释放核能关系', latex: '\\Delta E = E_{\\text{后总结合能}} - E_{\\text{前总结合能}}', level: 'important' as const },
     )
@@ -98,7 +98,7 @@ export function buildNuclearReactionQuantities(
         { text: '轻核聚变：两个轻核结合成较重原子核的反应。反应前后的比结合能大幅上升，释放巨大核能。', importance: 'basic' as const },
         { text: '聚变优越性：聚变平均每个核子释放能量（约 3.5 MeV）远大于裂变（约 0.85 MeV），原料海水中极丰富且产物无长半衰期强放射性。', importance: 'gaokao' as const },
         { text: '发生条件：必须克服核子间巨大的库仑排斥力，使核子接近到核力作用距离（10⁻¹⁵ m），故需要几千万开尔文的高温（热核反应）。', importance: 'core' as const },
-        { text: '新高考速查：四大核反应类型辨析——衰变（箭头左边仅一种核）、人工核转变（微粒轰击原子核）、裂变（重核吸收慢中子分裂成两中等核）、聚变（两轻核聚合成较重核）。', importance: 'gaokao' as const },
+        { text: '四大核反应类型辨析：衰变（箭头左边仅一种原子核）、人工核转变（微观粒子轰击原子核）、裂变（重核俘获慢中子分裂成两个中等质量核）、聚变（两轻核聚合成较重核）。', importance: 'gaokao' as const },
       )
 
       mnemonic = '氘氚碰壁聚氦核，扔出中子能量多；要想迈过库仑障，超高温度必经过。'
@@ -115,7 +115,7 @@ export function buildNuclearReactionQuantities(
         { label: '反应后总质量 M_后', value: mAfter.toFixed(6), unit: 'u' },
         { label: '质量亏损 Δm', value: deltaM.toFixed(6), unit: 'u', highlight: 'positive' as const },
         { label: '单核释放能量 ΔE', value: `${eReleased.toFixed(1)} (约200)`, unit: 'MeV', highlight: 'extreme' as const },
-        { label: '净增中子倍数', value: '3 倍 (放出3个快中子)', unit: '' },
+        { label: '每次裂变放出中子数', value: '3 个 (净增 2 个)', unit: '' },
       )
 
       formulas.push(
@@ -125,9 +125,9 @@ export function buildNuclearReactionQuantities(
 
       gaokaoPoints.push(
         { text: '重核裂变：重核在慢中子轰击下分裂成两个中等质量原子核的反应。反应前后的比结合能上升。', importance: 'basic' as const },
-        { text: '链式反应条件：铀-235对慢中子（热中子）反应概率极高，裂变放出的快中子必须用减速剂（石墨、重水）减速才能维持链式反应。', importance: 'gaokao' as const },
+        { text: '链式反应条件：铀-235对慢中子（热中子）反应概率极高，裂变放出的快中子必须用慢化剂（石墨、重水、普通水）减速才能维持链式反应。', importance: 'gaokao' as const },
         { text: '临界体积：裂变物质能够维持链式反应所需的最小体积。体积过小会导致大量中子逃逸，使反应熄灭。', importance: 'core' as const },
-        { text: '核反应堆核心构件：燃料棒（铀棒）、减速剂（重水/石墨）、控制棒（吸收中子能力极强的镉/硼棒，控制速率）、防护层（水泥厚铅墙）。', importance: 'gaokao' as const },
+        { text: '核反应堆核心构件：燃料棒（铀棒）、慢化剂（重水/石墨）、控制棒（吸收中子能力极强的镉/硼棒，控制速率）、防护层（水泥厚铅墙）。', importance: 'gaokao' as const },
       )
 
       mnemonic = '慢中子轰击铀核裂，裂变释放快中子；代代相传指数升，临界体积是生死。'
@@ -154,7 +154,7 @@ export function buildNuclearReactionQuantities(
 
       gaokaoPoints.push(
         { text: '链式反应特点：每次裂变放出 2~3 个快中子，在足够体积下呈 3ⁿ 指数级爆炸式蔓延，微秒级瞬间释放出毁灭性核能（原子弹原理）。', importance: 'gaokao' as const },
-        { text: '人工核转变考点辨析：不是自发的（衰变是自发的），必须由外来高速粒子轰击靶核（例如发现质子、发现中子、制造人工放射性同位素）。', importance: 'gaokao' as const },
+        { text: '人工核转变辨析：不是自发的（衰变是自发的），必须由外来微观粒子轰击靶核（例如发现质子、发现中子、制造人工放射性同位素）。', importance: 'gaokao' as const },
         { text: '控制棒调控机理：镉棒或硼棒插入越深，吸收中子越多，反应速度越慢；向上提起则反应加快。', importance: 'core' as const },
       )
 

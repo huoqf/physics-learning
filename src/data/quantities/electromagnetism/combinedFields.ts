@@ -8,6 +8,7 @@ import {
 } from '../../../physics/fieldsCascade'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { PARTICLES, DEFLECT, SCALE } from '@/features/electromagnetism/magnetism/combined-fields/model/combinedFieldsModel'
+import { formatScientific } from '@/utils/formatNumber'
 import type { PhysicsPanelData, PhysicsQuantity } from '../types'
 
 export function handleCombinedFields(
@@ -45,18 +46,18 @@ export function handleCombinedFields(
         { label: '选择器电场 E', value: E.toFixed(0), unit: 'N/C', color: PHYSICS_COLORS.electricField },
         { label: '选择器磁场 B₁', value: B1.toFixed(2), unit: 'T', color: PHYSICS_COLORS.magneticField },
         { label: '平衡通过速度 v₀', value: bal.passVelocity.toFixed(0), unit: 'm/s', color: PHYSICS_COLORS.velocity, highlight: bal.balanced ? 'positive' : undefined },
-        { label: '电场力 Fe', value: bal.electricForce.toExponential(2), unit: 'N', color: PHYSICS_COLORS.electricField },
-        { label: '洛伦兹力 f_L', value: bal.magneticForce.toExponential(2), unit: 'N', color: PHYSICS_COLORS.magneticField },
+        { label: '电场力 Fe', value: formatScientific(bal.electricForce, 2), unit: 'N', color: PHYSICS_COLORS.electricField },
+        { label: '洛伦兹力 f_L', value: formatScientific(bal.magneticForce, 2), unit: 'N', color: PHYSICS_COLORS.magneticField },
         { label: '偏转磁场 B₂', value: B2.toFixed(2), unit: 'T', color: PHYSICS_COLORS.magneticField },
         { label: '磁偏转半径 R', value: (rPhys * 100).toFixed(2), unit: 'cm', color: PHYSICS_COLORS.velocity, highlight: 'positive' },
       ],
       formulas: [
-        { name: '速度选择器平衡', latex: 'v = \\frac{E}{B_1}', level: 'core', condition: 'qE = qvB₁，直线通过' },
-        { name: '偏转圆周半径', latex: 'R = \\frac{mv}{qB_2}', level: 'core', condition: '洛伦兹力提供向心力' },
+        { name: '速度选择器平衡', latex: 'v = \\frac{E}{B_1}', level: 'core', condition: '匀强电场与匀强磁场正交，且 qE = qvB₁ 时直线通过（忽略重力）' },
+        { name: '偏转圆周半径', latex: 'R = \\frac{mv}{qB_2}', level: 'core', condition: '带电粒子垂直进入匀强磁场 B₂，洛伦兹力提供向心力（忽略重力）' },
       ],
       gaokaoPoints: [
         { text: '【只选速度】速度选择器只选择粒子速度 v = E/B，与粒子的电荷量、正负电性以及质量均无关。', importance: 'gaokao' },
-        { text: '【同位素分选】荷质比 (q/m) 不同的粒子在偏转磁场中的回旋半径 R 不同，从而在底片上分离。', importance: 'gaokao' },
+        { text: '【同位素分选】比荷 (q/m) 不同的粒子在偏转磁场中的回旋半径 R 不同，从而在底片上分离。', importance: 'gaokao' },
       ],
       warnings: [
         { text: '易错点：若粒子从下端小孔反向射入，电场力与洛伦兹力同向，绝不可能直线通过。', level: 'danger' },
@@ -80,7 +81,7 @@ export function handleCombinedFields(
         { name: '最大动能（极高频）', latex: 'E_{k,\\max} = \\frac{q^2 B_2^2 R_{\\max}^2}{2m}', level: 'important', condition: '与加速电压 U 无关，由 D 盒半径锁死' },
       ],
       gaokaoPoints: [
-        { text: '【电压无关论】最大动能与加速电压 U 无关，U 仅决定加速次数 n。这是高考选择题极高频陷阱。', importance: 'gaokao' },
+        { text: '【电压无关论】最大动能与加速电压 U 无关，U 仅决定加速次数 n（易错辨析：勿将最大动能误认为随 U 增大而增大）。', importance: 'gaokao' },
         { text: '【外轨密集性】根据 R ∝ √n 可知，随着圈数 n 的增大，相邻轨道的间距 ΔR 越来越密。', importance: 'gaokao' },
       ],
       warnings: [
@@ -106,8 +107,8 @@ export function handleCombinedFields(
         { label: '磁偏转半径 R', value: (rPhys * 100).toFixed(2), unit: 'cm', color: PHYSICS_COLORS.velocity, highlight: 'positive' },
       ],
       formulas: [
-        { name: '类平抛偏角正切', latex: '\\tan\\theta = \\frac{qEL}{mv_0^2}', level: 'core' },
-        { name: '电磁速度衔接', latex: 'v = \\frac{v_0}{\\cos\\theta}', level: 'important', note: '电场加速改变速度大小，磁场偏转仅改变方向' },
+        { name: '类平抛偏角正切', latex: '\\tan\\theta = \\frac{qEL}{mv_0^2}', level: 'derived', condition: '带电粒子垂直进入长 L 的匀强偏转电场（忽略重力且未打到极板）' },
+        { name: '电磁速度衔接', latex: 'v = \\frac{v_0}{\\cos\\theta}', level: 'important', condition: '粒子以偏角 θ 射出偏转电场并进入磁感应强度为 B₂ 的匀强磁场（仅电场加速、磁场只偏转方向）', note: '电场加速改变速度大小，磁场偏转仅改变方向' },
       ],
       gaokaoPoints: [
         { text: '【类平抛与圆周衔接】粒子从电场边缘射出时的末速度大小和方向，是磁场匀速圆周运动的初速度大小和方向。', importance: 'gaokao' },

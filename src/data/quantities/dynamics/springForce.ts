@@ -160,7 +160,7 @@ function tensionPanel(
       { name: '拉力的弹力本质', latex: 'T = k_e \\Delta x', level: 'important', condition: '绳在弹性限度内' },
     ],
     gaokaoPoints: [
-      { text: '绳的拉力同样是弹力：绳被拉伸后要收缩，从而对物体产生沿绳指向绳内部的拉力。', importance: 'core' as const },
+      { text: '绳的拉力同样是弹力：绳被拉伸后要收缩，从而对物体产生沿绳指向绳收缩方向的拉力。', importance: 'core' as const },
       { text: '绳只能拉、不能压，所以绳对物体的力一定沿绳指向绳的固定端，方向不可能反过来。', importance: 'gaokao' as const },
       { text: '绳伸长量 Δx = T / k_e 极小（真实细绳远小于 1 mm），「绳不可伸长」只是把这段形变近似成零；动画把 k_e 取到 50~300 N/m 并放大 200 倍，伸长才看得见。', importance: 'hard' as const },
     ],
@@ -208,7 +208,7 @@ function cutRopePanel(
     gaokaoPoints: [
       { text: '切断瞬间细绳弹力可突变为 0，因为细绳形变量极小、微元质量可忽略。', importance: 'core' as const },
       { text: '弹簧的弹力取决于两端的形变量，由于物体位移在瞬时不能突变，故弹簧弹力在瞬间保持不变。', importance: 'core' as const },
-      { text: '高考解题切入点：先分析剪断前各连接体受力（求出弹簧力），再分析剪断瞬时，保持弹簧力不变而将绳子拉力置为 0，对各个物体进行隔离分析。', importance: 'gaokao' as const },
+      { text: '解题切入点：先分析剪断前各连接体受力（求出弹簧力），再分析剪断瞬时，保持弹簧弹力不变而将细绳拉力置为 0，对各个物体进行隔离分析。', importance: 'gaokao' as const },
     ],
   }
 }

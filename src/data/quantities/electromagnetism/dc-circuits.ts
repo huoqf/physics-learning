@@ -57,8 +57,8 @@ export function handleDcCircuits(
         )
 
         formulasList = [
-          { name: '部分电路欧姆定律', latex: 'I = \\frac{U}{R}', level: 'core', condition: '适用于纯电阻部分电路' },
-          { name: '电功率公式', latex: 'P = UI', level: 'core' }
+          { name: '部分电路欧姆定律', latex: 'I = \\frac{U}{R}', level: 'core', condition: '纯电阻线性元件（温度不变，电阻 R 恒定；非纯电阻如电动机不适用）' },
+          { name: '电功率公式', latex: 'P = UI', level: 'core', condition: '适用于任意电路电功率计算（纯电阻电路中才可写为 I²R 或 U²/R）' }
         ]
 
         gaokaoPointsList = [
@@ -68,7 +68,7 @@ export function handleDcCircuits(
 
         warningsList = [
           { text: '易错点：小灯泡在电压为 0 时仍具有"冷态电阻"（本例中约为 5 Ω），阻值不为 0。', level: 'warning' },
-          { text: '易错点：对于非线性元件，某状态下的电阻值只能用工作点与原点连线的斜率 R = U/I 计算，绝不能用切线斜率（动态电阻）代替。', level: 'danger' }
+          { text: '易错点：对于非线性元件，某状态下的电阻值只能用工作点与原点连线的割线比值 R = U/I 计算（U-I 图中为割线斜率，I-U 图中为割线斜率倒数），绝不能用切线斜率（动态电阻）代替。', level: 'danger' }
         ]
       } else if (mode === 1) {
         const res = calculateMeterExpansion(1, U, Rg, Ig, Rs, Rp)
@@ -256,7 +256,7 @@ export function handleDcCircuits(
             latex: chainLatex,
             level: 'derived' as const,
             condition: isUp ? '滑动变阻器阻值调大' : '滑动变阻器阻值调小',
-            note: '根据"串反并同"口诀：与变阻器串联的元件其电流/电压变化相反；与其并联的相同。',
+            note: '根据"串反并同"口诀（需电源有内阻或干路串联定值电阻，理想恒压源直接并联支路不适用）：与变阻器串联的元件变化相反，与其并联的相同。',
           },
           {
             name: '欧姆定律',
@@ -291,7 +291,7 @@ export function handleDcCircuits(
         ],
         gaokaoPoints: [
           {
-            text: '【秒杀核心：串反并同】与变化的电阻串联的元件，其电流/电压变化相反；并联的元件则相同。',
+            text: '【动态规律：串反并同】在电源存在内阻或干路串联有定值电阻时，与变化电阻串联的元件电流/电压变化相反，并联的元件变化相同（理想恒压源直接并联支路不适用）。',
             importance: 'gaokao',
           },
           {
@@ -323,7 +323,7 @@ export function handleDcCircuits(
             level: 'warning',
           },
         ],
-        mnemonic: '串反并同，整体到局部，极限秒杀',
+        mnemonic: '串反并同（内阻 r ≠ 0），先整体再局部，阻值归零或无穷极限检验',
       }
     }
     case 'anim-closed-circuit': {
@@ -413,6 +413,7 @@ export function handleDcCircuits(
             name: '电源输出功率',
             latex: 'P_{\\text{出}} = I^2 R = \\frac{E^2 R}{(R + r)^2}',
             level: 'core',
+            condition: '仅适用于纯电阻外电路',
           },
           {
             name: '能量分配守恒',
@@ -422,11 +423,11 @@ export function handleDcCircuits(
         ],
         gaokaoPoints: [
           {
-            text: '【U-I 图像几何性质】路端电压与电流关系图像中，纵轴截距为电动势 E，横轴截距为短路电流 I_短 = E/r，斜率绝对值即为电源内阻 r。',
+            text: '【U-I 图像几何性质】路端电压与电流关系图像中，纵轴截距为电动势 E，横轴截距为短路电流 I_短 = E/r（纵轴从 0 开始时），斜率绝对值即为电源内阻 r。',
             importance: 'gaokao',
           },
           {
-            text: '【电源输出功率极值】当外电阻 R 等于内电阻 r 时，电源的输出功率达到最大值 P_max = E² / (4r)，此时电源的传输效率刚好为 50%。',
+            text: '【电源输出功率极值】纯电阻外电路中，当可调外电阻 R 的取值范围包含 r 且 R = r 时，电源输出功率达到最大值 P_max = E² / (4r)，此时电源的传输效率刚好为 50%。',
             importance: 'gaokao',
           },
           {
@@ -491,7 +492,7 @@ export function handleDcCircuits(
             name: '欧姆表测量电流公式',
             latex: 'I = \\frac{E}{R_{\\text{内}} + R_x}',
             level: 'core' as const,
-            condition: '全电路欧姆定律的变形应用',
+            condition: '闭合电路欧姆定律的变形应用',
           },
           {
             name: '欧姆中值电阻',
@@ -502,7 +503,7 @@ export function handleDcCircuits(
         ],
         gaokaoPoints: [
           {
-            text: '【非均匀欧姆刻度】因为 I 与 Rx 呈非线性反比关系，故欧姆表盘刻度不均匀，呈现"左密右疏"、"从右向左递增"的特点。',
+            text: '【非均匀欧姆刻度】因为 I = E/(R_内 + R_x) 随 Rx 增大而非线性减小（既非正比也非反比），故欧姆表盘刻度不均匀，呈现"左密右疏"、"从右向左递增"的特点。',
             importance: 'gaokao',
           },
           {
@@ -554,7 +555,7 @@ export function handleDcCircuits(
               condition: '电压表分流产生系统误差',
             },
             {
-              name: '戴维南等效电源模型（电路甲）',
+              name: '等效电源模型（电路甲）',
               latex: 'E\' = E \\cdot \\frac{R_V}{R_V + r}, \\quad r\' = \\frac{r R_V}{r + R_V}',
               level: 'derived' as const,
               condition: '电源与电压表并联等效为一个新电源',
@@ -576,7 +577,7 @@ export function handleDcCircuits(
         ],
         gaokaoPoints: [
           {
-            text: '【电路甲误差特点】采用电流表外接法，电压表分流。U-I 图线中，纵截距（E_测）与斜率绝对值（r_测）均小于真实值，两线相交于横轴短路电流点。在高考误差分析中极常考。',
+            text: '【电路甲误差特点】采用电流表外接法，电压表分流。U-I 图线中，纵截距（E_测）与斜率绝对值（r_测）均小于真实值，两线相交于横轴短路电流点，是误差分析的典型规律。',
             importance: 'gaokao',
           },
           {
@@ -594,7 +595,7 @@ export function handleDcCircuits(
             level: 'danger',
           },
           {
-            text: '【坐标轴非原点陷阱】本页为了看清全局画的是完整坐标（纵轴从 0 开始）。而高考题里的 U-I 图纵轴常被"截断"（不从 0 开始），此时横截距绝不是短路电流！求内阻严禁套用 r = E / I_截，必须使用斜率绝对值 r = |ΔU / ΔI| 计算。',
+            text: '【坐标轴非原点陷阱】本页为了看清全局画的是完整坐标（纵轴从 0 开始）。而常见测绘电路图的 U-I 图纵轴常被"截断"（不从 0 开始），此时横截距绝不是短路电流！求内阻严禁套用 r = E / I_截，必须使用斜率绝对值 r = |ΔU / ΔI| 计算。',
             level: 'warning',
           }
         ]
@@ -657,7 +658,7 @@ export function handleDcCircuits(
             }
           ] : []),
           {
-            text: '【物理雷区】欧姆定律 I = U/R 绝对不适用于电动机整体！计算电流或电压分配时，必须根据电功率分配方程 U_M = E_反 + I*r_M，切勿直接代入 I = U_M / r_M。',
+            text: '【物理雷区】正常转动时欧姆定律 I = U/R 不适用于电动机整体！计算电流或功率分配时，必须根据电功率守恒方程 U_M I = I² r_M + P_机 求解，切勿直接代入 I = U_M / r_M。',
             level: 'danger',
           }
         ]

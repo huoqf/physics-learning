@@ -118,9 +118,10 @@ export function handleProjectile(
   }
 
   const formulas: import('../types').Formula[] = [
-    { name: '水平分运动', latex: 'x = v_{0x} t', level: 'core' },
-    { name: '竖直分运动', latex: 'y = \\frac{1}{2}gt^2', level: 'core' },
-    { name: '偏角核心二级结论', latex: '\\tan\\theta = 2\\tan\\alpha', level: 'important', condition: '速度反向延长线过水平位移中点' },
+    { name: '水平分运动', latex: 'x = v_{0x} t', level: 'core', condition: '忽略空气阻力，水平方向不受力，做匀速直线运动' },
+    { name: '竖直分运动', latex: 'y = \\frac{1}{2}gt^2', level: 'core', condition: '忽略空气阻力，仅受重力，竖直方向做自由落体运动' },
+    { name: '分速度公式', latex: 'v_x = v_{0x}, \\quad v_y = gt', level: 'core', condition: '忽略空气阻力，仅受重力（合速度 v = √(v_x² + v_y²)）' },
+    { name: '偏角核心二级结论', latex: '\\tan\\theta = 2\\tan\\alpha', level: 'important', condition: '平抛落地前瞬时适用；速度反向延长线过水平位移中点' },
   ]
 
   if (strobeOn) {
@@ -133,8 +134,8 @@ export function handleProjectile(
 
   if (modelMode === 2) {
     formulas.push(
-      { name: '斜面平抛落点', latex: '\\tan\\phi = \\frac{y}{x} = \\frac{gt}{2v_{0x}}', level: 'core', condition: '落到斜面上' },
-      { name: '垂直击中斜面', latex: '\\tan(90^\\circ - \\phi) = \\frac{v_y}{v_x} = \\frac{gt}{v_{0x}}', level: 'important', condition: '速度垂直斜面' }
+      { name: '斜面平抛落点', latex: '\\tan\\phi = \\frac{y}{x} = \\frac{gt}{2v_{0x}}', level: 'core', condition: '从斜面顶端平抛落回同一倾角为 φ 的斜面' },
+      { name: '垂直击中迎面斜面', latex: '\\tan(90^\\circ - \\phi) = \\frac{v_y}{v_x} = \\frac{gt}{v_{0x}}', level: 'important', condition: '仅适用于从斜面外平抛撞击迎面倾角为 φ 的斜面（从斜面顶端抛回同一斜面不可能垂直击中）' }
     )
   }
 
@@ -151,7 +152,7 @@ export function handleProjectile(
     })
   } else if (strobeMode === 1 && airResistance > 0) {
     gaokaoPoints.push({
-      text: '【频闪前提】Δy = gT² 只在忽略空气阻力时成立。开启阻力后竖直方向不是匀加速，频闪图层与判据同步关闭，避免把结论用错场景。',
+      text: '【频闪前提】Δ(Δy) = gT² 只在忽略空气阻力时成立。开启阻力后竖直方向不是匀加速，频闪图层与判据同步关闭，避免把结论用错场景。',
       importance: 'core' as const,
     })
   }

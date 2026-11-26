@@ -43,14 +43,14 @@ export function handleInclinedPlane(
       { label: '临界下滑角 θ_crit', value: `${res.criticalTheta.toFixed(1)}`, unit: '°', highlight: 'extreme' as const },
     ],
     formulas: [
-      { name: '垂直斜面平衡', latex: 'F_N = mg\\cos\\theta', level: 'core' },
-      { name: '最大静摩擦力', latex: 'F_{f\\text{max}} = \\mu F_N = \\mu mg\\cos\\theta', level: 'core' },
-      { name: '下滑临界条件', latex: '\\tan\\theta_{\\text{crit}} = \\mu', level: 'important' },
-      { name: '加速下滑规律', latex: 'a = g\\sin\\theta - \\mu g\\cos\\theta', level: 'important', condition: '\\theta > \\theta_{\\text{crit}}' },
-      { name: '静止平衡规律', latex: 'F_f = mg\\sin\\theta', level: 'core', condition: '\\theta \\le \\theta_{\\text{crit}}' }
+      { name: '垂直斜面平衡', latex: 'F_N = mg\\cos\\theta', level: 'core', condition: '物体紧贴倾角为 θ 的固定斜面且垂直斜面方向无外力' },
+      { name: '最大静摩擦力', latex: 'F_{f\\text{max}} = \\mu F_N = \\mu mg\\cos\\theta', level: 'core', condition: '近似取最大静摩擦因数等于动摩擦因数 μ（倾角为 θ 的斜面）' },
+      { name: '下滑临界条件', latex: '\\tan\\theta_{\\text{crit}} = \\mu', level: 'important', condition: '物体在粗糙斜面上由静止恰好要开始下滑时' },
+      { name: '加速下滑规律', latex: 'a = g\\sin\\theta - \\mu g\\cos\\theta', level: 'important', condition: '固定斜面上倾角 θ > θ_crit 时' },
+      { name: '静止平衡规律', latex: 'F_f = mg\\sin\\theta', level: 'core', condition: '静止在斜面上且 θ ≤ θ_crit 时' }
     ],
     gaokaoPoints: [
-      { text: '判断物块下滑的关键，在于比较沿斜面的动力分量 mg sinθ 与最大静摩擦力 f_max 的大小，临界判定为 tan θ_crit = μ。', importance: 'gaokao' as const },
+      { text: '判断物块下滑的关键，在于比较重力沿斜面向下的分力 mg sinθ 与最大静摩擦力 f_max 的大小，临界判定为 tan θ_crit = μ。', importance: 'gaokao' as const },
       { text: '当 θ > θ_crit 时，物体开始加速下滑，摩擦力变为滑动摩擦力 f = μ mg cosθ，加速度随角度增大而增大。', importance: 'core' as const },
       { text: '改变质量 m 无法改变物体是否下滑的本质状态！通过调节质量 m 的滑动条可发现临界角完全不动，破除“越重越容易下滑”的直觉误区。', importance: 'gaokao' as const },
     ]

@@ -37,21 +37,22 @@ export function buildClapeyronQuantities(
         note: 'PV/T = nR = const（等质量理想气体）',
       },
       {
-        name: '全分子总动能',
+        name: '单原子理想气体总动能',
         latex: 'E_k = \\dfrac{3}{2} nRT',
         level: 'important',
-        condition: '理想气体，T 为热力学温度',
+        condition: '理想气体分子总平动动能（单原子分子理想气体即全部分子总动能），T 为热力学温度',
       },
       {
         name: '温度转换',
         latex: 'T(\\text{K}) = t(°C) + 273.15',
         level: 'derived',
+        condition: 'T 为热力学温度，t 为摄氏温度',
         note: '热力学温度与摄氏温度的换算',
       },
     ],
     gaokaoPoints: [
-      { text: '大题压轴 ★★★★★：变质量气体问题（充气、抽气、分装）转化为等质量气体方程处理的建模思维。', importance: 'gaokao' },
-      { text: 'PV/T 比值恒定是判断状态变化是否符合理想气体方程的关键。', importance: 'core' },
+      { text: '变质量气体问题（充气、抽气、分装）通过整体法或比例法转化为一定质量的理想气体状态方程处理。', importance: 'gaokao' },
+      { text: '仅对一定质量的理想气体，PV/T 比值才保持恒定。', importance: 'core' },
     ],
     warnings: [
       { text: '公式中的 T 必须是热力学温度（K），任何时候禁止代入摄氏度 ℃ 进行乘除运算！', level: 'danger' },

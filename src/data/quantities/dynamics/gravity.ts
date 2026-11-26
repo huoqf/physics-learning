@@ -1,6 +1,7 @@
 import type { PhysicsPanelData, PhysicsQuantity, ParamDefs } from '../types'
 import { normalizeParams } from '../types'
 import { GRAVITATIONAL_CONSTANT } from '@/physics/constants'
+import { formatScientific } from '@/utils/formatNumber'
 
 interface Params {
   mode: number
@@ -73,19 +74,19 @@ export function handleGravity(
     return {
       quantities: [
         ...base,
-        { label: `${name1}质量 m₁`, value: realM1.toExponential(2), unit: 'kg' },
-        { label: `${name2}质量 m₂`, value: realM2.toExponential(2), unit: 'kg' },
-        { label: '天体间距 r', value: realR.toExponential(2), unit: 'm' },
-        { label: '万有引力 F', value: F_val.toExponential(2), unit: 'N', highlight: 'positive' as const },
-        { label: '引力常数 G', value: '6.67×10⁻¹¹', unit: 'N·m²/kg²' }
+        { label: `${name1}质量 m₁`, value: formatScientific(realM1, 2), unit: 'kg' },
+        { label: `${name2}质量 m₂`, value: formatScientific(realM2, 2), unit: 'kg' },
+        { label: '天体间距 r', value: formatScientific(realR, 2), unit: 'm' },
+        { label: '万有引力 F', value: formatScientific(F_val, 2), unit: 'N', highlight: 'positive' as const },
+        { label: '引力常量 G', value: '6.67×10⁻¹¹', unit: 'N·m²/kg²' }
       ],
       formulas: [
-        { name: '万有引力定律', latex: 'F = G \\frac{m_1 m_2}{r^2}', level: 'core', condition: '质点或均匀球体' }
+        { name: '万有引力定律', latex: 'F = G \\frac{m_1 m_2}{r^2}', level: 'core', condition: '两质点或质量分布均匀的球体之间，r 为球心间距' }
       ],
       gaokaoPoints: [
         { text: '万有引力是重力的本源，重力通常是引力的分力。', importance: 'core' as const },
         { text: '天体间距远大于自身半径时，天体才能简化为质点。', importance: 'basic' as const },
-        { text: '引力常数 G 由卡文迪什通过扭秤实验测得，被誉为"称量地球第一人"。', importance: 'gaokao' as const }
+        { text: '引力常量 G 由卡文迪什通过扭秤实验测得，被誉为"称量地球第一人"。', importance: 'gaokao' as const }
       ]
     }
   } else {
@@ -100,11 +101,12 @@ export function handleGravity(
         { label: '比例关系占比', value: 'F ∝ m₁m₂/r²', unit: '' }
       ],
       formulas: [
-        { name: '比例变化关系', latex: 'F \\propto \\frac{m_1 m_2}{r^2}', level: 'core' }
+        { name: '万有引力定律完整式', latex: 'F = G \\frac{m_1 m_2}{r^2}', level: 'core', condition: '两质点或质量分布均匀的球体，r 为球心距（图示采用归一化相对单位）' },
+        { name: '比例变化关系', latex: 'F \\propto \\frac{m_1 m_2}{r^2}', level: 'derived', condition: '质点或均匀球体，比较质量与距离变化倍数时' }
       ],
       gaokaoPoints: [
         { text: '引力大小与物体质量乘积成正比，与距离平方成反比。', importance: 'core' as const },
-        { text: '万有引力具有相互性，天体1对2的引力等于天体2对1的引力。', importance: 'core' as const },
+        { text: '万有引力具有相互性，天体 1 对天体 2 的引力与天体 2 对天体 1 的引力大小相等、方向相反（是一对作用力与反作用力）。', importance: 'core' as const },
         { text: '在轨道运动中，万有引力提供环绕天体所需的向心力。', importance: 'gaokao' as const }
       ]
     }

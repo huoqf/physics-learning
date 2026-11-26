@@ -81,8 +81,8 @@ export function buildDispersionQuantities(
     {
       name: '柯西经验色散律',
       latex: 'n(\\lambda) = n_D + B\\left(\\frac{1}{\\lambda^{2}} - \\frac{1}{\\lambda_D^{2}}\\right)',
-      condition: '同一介质中，波长越短折射率越大 —— 色散现象的根本原因',
-      level: 'core',
+      condition: '拓展经验公式：说明透明介质中波长越短折射率越大（高中只需掌握 n_紫 > n_红 的定性结论）',
+      level: 'supplementary',
     },
     {
       name: '折射定律（斯涅尔定律）',
@@ -93,14 +93,14 @@ export function buildDispersionQuantities(
     {
       name: '三棱镜偏向角',
       latex: '\\delta = i + i_2 - A',
-      condition: '光线经两次折射后偏离原方向的角度',
+      condition: '置于空气中的三棱镜主截面（顶角为 A），光线经两侧面各一次折射后不发生全反射出射',
       level: 'important',
     },
     {
       name: '最小偏向角',
       latex: '\\delta_{\\min} = 2\\arcsin\\!\\left(n\\sin\\frac{A}{2}\\right) - A',
-      condition: '光路左右对称时取得，此时光在棱镜内平行于底边',
-      level: 'important',
+      condition: '拓展推导：光在三棱镜主截面内传播左右对称（i₁ = i₂）时偏向角取极小值',
+      level: 'supplementary',
     },
     {
       name: '全反射临界角',
@@ -140,11 +140,11 @@ export function buildDispersionQuantities(
       importance: 'hard',
     },
     {
-      text: '紫光在玻璃中传播最慢（v = c/n 最小），经历相同的几何路程用时最长，故偏折最显著。',
+      text: '同一玻璃中紫光折射率 n 最大，故在玻璃中传播最慢（v = c/n 最小），经界面折射时偏折最显著。',
       importance: 'core',
     },
     {
-      text: '色散只能发生在界面处逐次偏折的复色光上，单色光经三棱镜只偏折不色散。',
+      text: '折射色散源于复色光中不同色光的折射率不同；单色光经三棱镜只发生偏折而不发生色散。',
       importance: 'core',
     },
     {

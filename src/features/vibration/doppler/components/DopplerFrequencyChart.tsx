@@ -132,7 +132,7 @@ export const DopplerFrequencyChart: FC<DopplerFrequencyChartProps> = ({
         <div className="w-28 shrink-0">
           <div className="text-[11px] font-bold text-emerald-800 flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-            波源本征基准
+            波源固有频率基准
           </div>
           <div className="text-xs font-mono font-bold text-emerald-600">
             f₀ = {frequency.toFixed(1)} Hz

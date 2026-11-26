@@ -51,8 +51,8 @@ export function buildReflectionQuantities(
 
   if (advancedMode === 1) {
     gaokaoPoints.push(
-      { text: '平面镜旋转模型（★五星考点）：反射光偏转 2Δα', importance: 'gaokao' },
-      { text: '入射光不动，镜面转 Δα → 法线转 Δα → 反射光偏 2Δα', importance: 'hard' },
+      { text: '平面镜旋转模型：入射光线方向不变，镜面绕入射点转过 Δα，反射光线同方向偏转 2Δα', importance: 'gaokao' },
+      { text: '入射光方向不变，镜面转 Δα → 法线转 Δα → 反射光偏转 2Δα', importance: 'hard' },
     )
   }
 

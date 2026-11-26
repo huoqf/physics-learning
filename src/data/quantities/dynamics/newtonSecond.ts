@@ -77,9 +77,9 @@ export function handleNewtonSecond(
       { label: '当前位移 s', value: s, unit: 'm' },
     ],
     formulas: [
-      { name: '牛顿第二定律', latex: 'F_{\\text{合}} = ma', level: 'core' },
+      { name: '牛顿第二定律', latex: 'F_{\\text{合}} = ma', level: 'core', condition: '惯性参考系、宏观低速物体，a 与 F_合 同向瞬时对应' },
       { name: '合外力计算', latex: 'F_{\\text{合}} = F - f', level: 'core', condition: '水平面上，拉力与摩擦力方向相反' },
-      { name: '滑动摩擦力', latex: 'f = \\mu N = \\mu mg', level: 'core', condition: '水平面上滑动时' }
+      { name: '滑动摩擦力', latex: 'f = \\mu N = \\mu mg', level: 'core', condition: '水平面相对滑动且竖直方向无其他外力时 N = mg' }
     ],
     gaokaoPoints: [
       { text: '加速度 a 与合外力 F_合 瞬时对应，力变则 a 变。', importance: 'gaokao' as const },

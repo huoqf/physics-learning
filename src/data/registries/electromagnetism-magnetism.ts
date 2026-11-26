@@ -214,10 +214,10 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
         showIf: 'mode', showIfValue: 1 },
       // §6 教学提示
       { type: 'tip', group: '教学提示',
-        content: '调节入射速度 v 或磁场强度 B，观察洛伦兹力大小和轨道半径的变化。利用左手定则判断正/负电荷在向里（⊗）的磁场中的偏转方向。',
+        content: '调节入射速度 v 或磁感应强度 B，观察洛伦兹力大小和轨道半径的变化。利用左手定则判断正/负电荷在向里（⊗）的磁场中的偏转方向。',
         showIf: 'mode', showIfValue: 0 },
       { type: 'tip', group: '教学提示',
-        content: '调节电场强度 E 或磁场强度 B，改变滤出速度（v_滤 = E/B）。只有速度刚好等于该值的粒子，才能受力平衡做匀速直线运动穿出极板。',
+        content: '调节电场强度 E 或磁感应强度 B，改变滤出速度（v_滤 = E/B）。只有速度刚好等于该值的粒子，才能受力平衡做匀速直线运动穿出极板。',
         showIf: 'mode', showIfValue: 1 },
     ],
   },
@@ -317,7 +317,7 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
     paramMeta: [
       { key: 'velocity', label: '初速度 v', min: 1.0, max: 5.0, step: 0.1, unit: 'm/s' },
       { key: 'angle', label: '入射角 α', min: 0, max: 180, step: 1, unit: '°' },
-      { key: 'magneticB', label: '磁场强度 B', min: 0.2, max: 2.0, step: 0.1, unit: 'T' },
+      { key: 'magneticB', label: '磁感应强度 B', min: 0.2, max: 2.0, step: 0.1, unit: 'T' },
     ],
   },
 })

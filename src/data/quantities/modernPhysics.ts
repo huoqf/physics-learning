@@ -44,16 +44,19 @@ export function buildModernPhysicsQuantities(
       {
         name: '氢原子能级公式',
         latex: 'E_n = \\frac{E_1}{n^2} = -\\frac{13.6}{n^2} \\text{ eV}',
+        condition: '孤立氢原子定态能级（量子数 n = 1, 2, 3, ...，取电离态 E_∞ = 0）',
         level: 'core',
       },
       {
         name: '轨道半径公式',
         latex: 'r_n = n^2 r_1 = n^2 \\cdot 0.53 \\times 10^{-10} \\text{ m}',
+        condition: '氢原子玻尔半经典定态轨道（量子数 n = 1, 2, 3, ...）',
         level: 'core',
       },
       {
         name: '玻尔跃迁辐射条件',
         latex: 'h\\nu = |E_m - E_n|',
+        condition: '电子在两定态能级 m 与 n 之间跃迁，释放或吸收的光子能量恰好等于能级差（吸收光子能量大于等于 |E_n| 时发生电离）',
         level: 'core',
       },
     ]
@@ -211,9 +214,9 @@ export function buildModernPhysicsQuantities(
     ]
 
     const gaokaoPoints: PhysicsPanelData['gaokaoPoints'] = [
-      { text: '光子激发：光子能量必须“严丝合缝”等于能级差；若不相等则完全不吸收。', importance: 'gaokao' },
-      { text: '电子碰撞：实物粒子动能只需“大于或等于”能级差，通过非弹性碰撞带走余能。', importance: 'gaokao' },
-      { text: '考题陷阱：审题注意“一群处于激发态”与“单个处于激发态”的谱线种数区别。', importance: 'gaokao' },
+      { text: '光子激发：吸收跃迁时，光子能量必须等于两能级差（或 hν ≥ |Eₙ| 使原子发生电离）；若既不等于能级差又不足以电离，则不被吸收。', importance: 'gaokao' },
+      { text: '电子碰撞：实物粒子动能只需大于或等于能级差即可使原子跃迁，多余能量仍留在实物粒子中。', importance: 'gaokao' },
+      { text: '常见辨析：审题注意“一群处于激发态的氢原子”与“一个处于激发态的氢原子”辐射出的谱线种数区别。', importance: 'gaokao' },
     ]
 
     const warnings = []

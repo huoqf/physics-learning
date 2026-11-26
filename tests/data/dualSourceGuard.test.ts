@@ -33,8 +33,20 @@ function value(panel: ReturnType<typeof buildPhysicsQuantities>, label: string) 
   return panel.quantities.find((q) => q.label.startsWith(label))?.value
 }
 
+const SUP_TO_DIGIT: Record<string, string> = {
+  '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4',
+  '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9',
+  '⁻': '-', '⁺': '+',
+}
+
 function num(panel: ReturnType<typeof buildPhysicsQuantities>, label: string): number {
-  return Number.parseFloat(String(value(panel, label)))
+  const raw = String(value(panel, label)).trim()
+  const sci = raw.match(/^([+-]?\d+(?:\.\d+)?)\s*×\s*10([⁻⁺⁰¹²³⁴⁵⁶⁷⁸⁹]+)/)
+  if (sci) {
+    const exp = sci[2].split('').map((c) => SUP_TO_DIGIT[c] ?? '').join('')
+    return Number(`${sci[1]}e${exp}`)
+  }
+  return Number.parseFloat(raw)
 }
 
 describe('A 组 · 中屏与看板共用同一套常量/函数', () => {

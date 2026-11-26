@@ -47,35 +47,52 @@ export function buildThinLensQuantities(
     }
   }
 
-  const formulas: PhysicsPanelData['formulas'] = [
-    { name: '透镜成像公式', latex: '\\frac{1}{u} + \\frac{1}{v} = \\frac{1}{f}', level: 'core' },
-    { name: '放大率公式', latex: 'M = -\\frac{v}{u}', level: 'core' },
+  const formulas: NonNullable<PhysicsPanelData['formulas']> = [
+    {
+      name: '透镜成像公式',
+      latex: '\\frac{1}{u} + \\frac{1}{v} = \\frac{1}{f}',
+      level: 'supplementary',
+      condition: '薄透镜近轴光线（单实正符号约定：凸透镜 f > 0，凹透镜 f < 0；实像 v > 0，虚像 v < 0）',
+    },
+    {
+      name: '横向放大率公式',
+      latex: 'M = -\\frac{v}{u}',
+      level: 'supplementary',
+      condition: '放大倍数为 |v/u|；M < 0 表示倒立实像，M > 0 表示正立虚像',
+    },
   ]
 
-  if (mode === 1) {
+  if (mode === 1 && !isConcave) {
     formulas.push({
       name: '共轭法方程',
       latex: 'u^2 - Lu + Lf = 0',
-      condition: '物屏距离 L > 4f',
-      level: 'important',
+      condition: '凸透镜成像，物屏距离 L > 4f',
+      level: 'supplementary',
     })
   }
 
-  const gaokaoPoints: PhysicsPanelData['gaokaoPoints'] = [
-    { text: '一倍焦距分虚实，二倍焦距分大小', importance: 'gaokao' },
-    { text: '物近像远像变大（实像），物近像近像变小（虚像）', importance: 'gaokao' },
-  ]
+  const gaokaoPoints: PhysicsPanelData['gaokaoPoints'] = isConcave
+    ? [
+        { text: '凹透镜对光有发散作用，物体在任意有限物距（u > 0）下均成正立、缩小的虚像', importance: 'core' },
+        { text: '凹透镜所成虚像位于物同侧一倍焦距以内（|v| < |f|），物近像近像略变大', importance: 'core' },
+      ]
+    : [
+        { text: '凸透镜：一倍焦距分虚实，二倍焦距分大小', importance: 'gaokao' },
+        { text: '凸透镜：物近像远像变大（实像），物近像近像变小（虚像）', importance: 'gaokao' },
+      ]
 
-  if (mode === 0) {
-    gaokaoPoints.push(
-      { text: 'u > 2f：倒立缩小实像；f < u < 2f：倒立放大实像', importance: 'core' },
-      { text: 'u < f：正立放大虚像（放大镜原理）', importance: 'core' },
-    )
-  } else {
-    gaokaoPoints.push(
-      { text: '共轭法测焦距：固定 L > 4f，移动透镜找两个成像位置', importance: 'extend' },
-      { text: 'L_min = 4f（恰好 4f 时两次成像重合，故实用条件为 L > 4f）', importance: 'extend' },
-    )
+  if (!isConcave) {
+    if (mode === 0) {
+      gaokaoPoints.push(
+        { text: 'u > 2f：倒立缩小实像；f < u < 2f：倒立放大实像', importance: 'core' },
+        { text: 'u < f：正立放大虚像（放大镜原理）', importance: 'core' },
+      )
+    } else {
+      gaokaoPoints.push(
+        { text: '共轭法测焦距：固定 L > 4f，移动凸透镜找两个清晰成像位置', importance: 'extend' },
+        { text: 'L_min = 4f（恰好 4f 时两次成像重合，故实用条件为 L > 4f）', importance: 'extend' },
+      )
+    }
   }
 
   const warnings: PhysicsPanelData['warnings'] = []
@@ -88,6 +105,8 @@ export function buildThinLensQuantities(
     formulas,
     gaokaoPoints,
     warnings,
-    mnemonic: '一倍焦距分虚实，二倍焦距分大小；物近像远像变大',
+    mnemonic: isConcave
+      ? '凹透镜发散光线，始终成正立缩小的虚像'
+      : '一倍焦距分虚实，二倍焦距分大小；物近像远像变大',
   }
 }

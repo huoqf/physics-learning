@@ -112,15 +112,15 @@ export function buildNuclearDecayQuantities(
     ]
 
     const formulas = [
-      { name: '质量数守恒', latex: 'A = Z + N', level: 'core' as const },
-      { name: '爱因斯坦质能方程', latex: 'E = m c^2', level: 'important' as const, condition: '用于计算结合能与质量亏损' },
+      { name: '核子数关系式', latex: 'A = Z + N', level: 'core' as const, condition: '质量数 A 等于质子数 Z 与中子数 N 之和（仅适用于核子数统计，反应前后质量数守恒但质量存在亏损）' },
+      { name: '爱因斯坦质能方程', latex: 'E = m c^2', level: 'important' as const, condition: '用于计算静止能量或结合能与质量亏损 ΔE = Δm·c²' },
     ]
 
     const gaokaoPoints = [
       { text: '原子核由质子和中子组成，二者统称为核子。', importance: 'basic' as const },
       { text: '核子数（质量数）= 质子数 + 中子数。核电荷数 = 质子数。', importance: 'gaokao' as const },
       { text: '同位素：具有相同质子数而中子数不同的原子核互为同位素。', importance: 'gaokao' as const },
-      { text: '强核力是强相互作用的表现，是短程力，作用范围约在 10⁻¹⁵ m 数量级内。', importance: 'core' as const },
+      { text: '强核力是强相互作用的表现，是短程力，作用范围约在 1.5 × 10⁻¹⁵ m（约 1.5 fm）以内。', importance: 'core' as const },
       { text: '强核力在相邻核子间起作用：r < 0.8 fm 表现为斥力；0.8~2 fm 表现为引力；> 2.5 fm 极速归零。', importance: 'gaokao' as const },
     ]
 
@@ -141,16 +141,16 @@ export function buildNuclearDecayQuantities(
     const quantities = [
       { label, value: isE || isB ? val.toFixed(1) : '—', unit },
       { label: '出射初速度 v₀', value: (p.initVelocity * 0.1).toFixed(2), unit: 'c' },
-      { label: 'α 射线偏转半径', value: isB && val !== 0 ? (8.0 / Math.abs(val) / (p.initVelocity / 4)).toFixed(1) : '—', unit: 'cm (视觉缩放)' },
-      { label: 'β 射线偏转半径', value: isB && val !== 0 ? (1.6 / Math.abs(val) / (p.initVelocity / 4)).toFixed(1) : '—', unit: 'cm (视觉缩放)' },
+      { label: 'α 射线偏转半径', value: isB && val !== 0 ? (8.0 / Math.abs(val) * (p.initVelocity / 4)).toFixed(1) : '—', unit: 'cm (视觉缩放)' },
+      { label: 'β 射线偏转半径', value: isB && val !== 0 ? (1.6 / Math.abs(val) * (p.initVelocity / 4)).toFixed(1) : '—', unit: 'cm (视觉缩放)' },
       { label: 'γ 射线偏转半径', value: '不偏转', unit: '' },
     ]
 
     const formulas = [
-      { name: '洛伦兹力公式', latex: 'F = q v B', level: 'core' as const, condition: '磁场偏转' },
-      { name: '磁场圆周半径', latex: 'R = \\frac{m v}{q B}', level: 'core' as const },
-      { name: '电场强度力公式', latex: 'F = q E', level: 'core' as const, condition: '电场偏转' },
-      { name: '电场侧移距离', latex: 'y = \\frac{q E L^2}{2 m v^2}', level: 'important' as const, condition: '类平抛运动' },
+      { name: '洛伦兹力公式', latex: 'F = q v B', level: 'core' as const, condition: '粒子以速度 v 垂直进入匀强磁场 B（v ⊥ B）' },
+      { name: '磁场圆周半径', latex: 'R = \\frac{m v}{q B}', level: 'core' as const, condition: '带电粒子垂直进入匀强磁场（静止母核衰变时子核与射出粒子满足反冲动量守恒）' },
+      { name: '电场力公式', latex: 'F = q E', level: 'core' as const, condition: '在匀强偏转电场中所受静电力（q 为电荷量）' },
+      { name: '电场侧移距离', latex: 'y = \\frac{q E L^2}{2 m v^2}', level: 'derived' as const, condition: '粒子垂直进入长 L 的匀强电场做类平抛运动且未撞板' },
     ]
 
     const gaokaoPoints = [

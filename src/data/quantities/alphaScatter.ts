@@ -62,8 +62,8 @@ export function buildAlphaScatterQuantities(
     {
       label: '最近接近距离',
       symbol: 'r_min',
-      value: rMinPx.toFixed(1),
-      unit: 'px',
+      value: isRutherford ? rMinPx.toFixed(1) : '—',
+      unit: isRutherford ? 'px' : '',
     },
   ]
 
@@ -77,7 +77,7 @@ export function buildAlphaScatterQuantities(
     {
       name: '最近距离能量守恒',
       latex: 'E_k = \\frac{1}{2} m_\\alpha v_0^2 = k \\frac{2 \\times 79 e^2}{r_{\\min}}',
-      condition: '正对对心碰撞时动能完全转化为电势能',
+      condition: '正对金原子核对心入射且忽略金核反冲（m_Au ≫ m_α，α 粒子动能全部转化为库仑电势能）',
       level: 'important',
     },
   ]
@@ -95,6 +95,6 @@ export function buildAlphaScatterQuantities(
     formulas,
     gaokaoPoints,
     warnings: [],
-    mnemonic: '绝大多数一直走，少数偏转大角度，极少数反弹回头看，核积极小重如山。',
+    mnemonic: '绝大多数一直走，少数偏转大角度，极少数反弹回头看，核体积小重如山。',
   }
 }

@@ -56,17 +56,17 @@ export function buildPolarizationQuantities(
 
     formulas = [
       {
-        name: '马吕斯定律 (Malus\' Law)',
+        name: '马吕斯定律 (拓展)',
         latex: 'I = I_0 \\cos^2\\theta',
-        condition: 'θ 为起偏器与检偏器透振方向的夹角。当夹角为 90° 时，透射光强为 0',
-        level: 'core',
+        condition: 'I₀ 为入射检偏器的线偏振光强，θ 为其振动方向与检偏器透振方向夹角（θ = 90° 时消光）',
+        level: 'supplementary',
       },
     ]
 
     gaokaoPoints = [
       { text: '光的偏振现象证明了光是横波。只有横波才能发生偏振现象，纵波没有偏振现象。', importance: 'gaokao' },
-      { text: '自然光：太阳、日光灯等发出的光。其光矢量的振动在垂直于传播方向的平面内是各向均匀分布的。', importance: 'gaokao' },
-      { text: '偏振光：光矢量的振动只沿着某一个特定方向（称为线偏振光），或者有特定偏向的光。', importance: 'gaokao' },
+      { text: '自然光：太阳、日光灯等发出的光。其振动在垂直于传播方向的平面内是各向均匀分布的。', importance: 'gaokao' },
+      { text: '偏振光：振动只沿着某一个特定方向（线偏振光），或者有特定偏向的光。', importance: 'gaokao' },
       { text: '当两偏振片透振方向平行时，透射光最亮；两偏振片垂直时，透射光强衰减为零（消光现象）。', importance: 'gaokao' },
     ]
   } else if (modeVal === 1) {
@@ -91,10 +91,10 @@ export function buildPolarizationQuantities(
 
     formulas = [
       {
-        name: '振动的正交分解',
+        name: '振动的正交分解（拓展）',
         latex: 'A_{\\parallel} = A_0 \\cos\\alpha, \\quad A_{\\perp} = A_0 \\sin\\alpha',
-        condition: '当偏振光偏振面与检偏器透振方向夹角为 α 时，平行分量透射，垂直分量被阻挡',
-        level: 'core',
+        condition: '当偏振光振动方向与检偏器透振方向夹角为 α 时，平行分量透射，垂直分量被阻挡',
+        level: 'supplementary',
       },
       {
         name: '重影漏光强度公式',
@@ -123,18 +123,18 @@ export function buildPolarizationQuantities(
 
     formulas = [
       {
-        name: '反射偏振消光公式',
+        name: '反射偏振消光公式（拓展）',
         latex: 'I_{\\text{ref}} = I_{\\text{ref,0}} \\cos^2\\theta',
-        condition: '当偏振滤镜的透振方向旋转至竖直方向 (90°) 时，与反射水平偏振光正交，反射眩光消减为零',
-        level: 'core',
+        condition: '以布儒斯特角入射使反射光为完全水平偏振光时，将偏振滤镜透振方向旋至竖直 (θ = 90°) 可消光；一般角度下反射光为部分偏振光，仅能大幅减弱眩光',
+        level: 'supplementary',
       },
     ]
 
     gaokaoPoints = [
       { text: '光的反射与折射偏振：自然光射入水面或玻璃砖等介质表面时，其反射光和折射光都包含偏振成分。', importance: 'gaokao' },
-      { text: '布儒斯特角：存在某一特定入射角，使反射光成为完全的水平偏振光（拓展内容，不属高考要求）。', importance: 'extend' },
+      { text: '布儒斯特角：存在某一特定入射角，使反射光成为完全的水平偏振光（拓展了解内容，不作课标要求）。', importance: 'extend' },
       { text: '照相机前加装偏振镜（或戴上偏振太阳镜）的作用：通过旋转偏振片使其透振方向变为竖直，从而阻挡水平方向振动的反射眩光。', importance: 'gaokao' },
-      { text: '反射眩光被阻挡后，水底小鱼散发的自然光虽然损失了 50% 的分量，但因为刺眼的眩光完全被滤除，画面对比度极大提升，从而能清晰看清小鱼。', importance: 'gaokao' },
+      { text: '反射眩光被大幅阻挡后，水底小鱼散发的自然光虽然损失了 50% 的分量，但因大部分刺眼的反射眩光被滤除，画面对比度显著提升。', importance: 'gaokao' },
     ]
   }
 

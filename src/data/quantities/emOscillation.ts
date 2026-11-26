@@ -220,25 +220,25 @@ function buildLCPanel(params: Record<string, number>, time: number): PhysicsPane
       level: 'important' as const,
     },
     {
-      name: '回路自感电动势与动力学方程',
-      latex: '|e_L| = L\\left|\\frac{\\Delta i}{\\Delta t}\\right|, \\quad u_C = L\\frac{di}{dt} + iR',
+      name: '回路自感电动势',
+      latex: '|e_L| = L\\left|\\frac{\\Delta i}{\\Delta t}\\right|',
       condition: 'LC / 弱阻尼 RLC 闭合回路（开关 S 接 2）',
-      note: '电流 i 为零瞬间（q、u_C 达极值），电流变化率 |di/dt| 与线圈自感电动势 |e_L| 反而达到最大值。',
+      note: '电流 i 为零瞬间（q、u_C 达极值），电流变化率 |Δi/Δt| 与线圈自感电动势 |e_L| 反而达到最大值。',
       level: 'important' as const,
     },
     {
       name: '理想 LC 瞬时电荷与电流',
-      latex: 'q = Q_0\\cos(\\omega t), \\quad i = -\\frac{dq}{dt} = \\omega Q_0\\sin(\\omega t)',
+      latex: 'q = Q_0\\cos(\\omega t), \\quad i = I_m\\sin(\\omega t), \\quad I_m = \\omega Q_0',
       condition: '无阻尼理想 LC；以正电荷自上极板 A 流出经开关 2（左回路逆时针）为正方向',
-      note: '电流与电荷相位差 90°；依据 d(q²)/dt = -2qi，q 与 i 同号为放电过程、异号为充电过程。',
+      note: '电流与电荷相位差 90°；q 与 i 同号为放电过程、异号为充电过程。',
       level: 'core' as const,
     },
     {
-      name: '电磁振荡能量守恒',
+      name: '电磁振荡能量守恒（拓展磁场能公式）',
       latex: 'E = E_e + E_m = \\frac{q^2}{2C} + \\frac{1}{2}Li^2 = \\frac{Q_0^2}{2C}',
-      condition: '无阻尼理想回路（开关 S 接 2 且忽略辐射损耗）',
+      condition: '无阻尼理想回路（开关 S 接 2 且忽略辐射损耗；高中阶段定性理解电场能与磁场能相互转化）',
       note: '电场能与磁场能周期性互换；开关接 1 直流充电稳态下能量全部以电场能储存。',
-      level: 'core' as const,
+      level: 'supplementary' as const,
     },
   ]
 
@@ -254,7 +254,7 @@ function buildLCPanel(params: Record<string, number>, time: number): PhysicsPane
 
   const gaokaoPoints: GaokaoPoint[] = [
     {
-      text: '极值互补与导数关系：q、u_C、E_e 与 |di/dt|、|e_L| 同步最大（此时 i = 0、E_m = 0）；电流 i、磁感应强度 B 与磁场能 E_m 同步最大（此时 q = 0、u_C = 0、|di/dt| = 0）。',
+      text: '极值互补与变化率关系：q、u_C、E_e 与 |Δi/Δt|、|e_L| 同步最大（此时 i = 0、E_m = 0）；电流 i、磁感应强度 B 与磁场能 E_m 同步最大（此时 q = 0、u_C = 0、|Δi/Δt| = 0）。',
       importance: 'gaokao' as const,
     },
     {
@@ -366,7 +366,7 @@ function buildEMWavePanel(params: Record<string, number>): PhysicsPanelData {
       importance: 'core' as const,
     },
     {
-      text: '频率越高（波长越短），电磁波的穿透能力越强、电离能力越强。',
+      text: '频率越高（波长越短），单个光子能量越大、粒子性越显著；波长越长（频率越低），越容易发生衍射、波动性越显著（高能段的 X 射线和 γ 射线穿透能力很强）。',
       importance: 'hard' as const,
     },
   ]
@@ -377,7 +377,7 @@ function buildEMWavePanel(params: Record<string, number>): PhysicsPanelData {
       level: 'warning' as const,
     },
     {
-      text: '物理学史考点：麦克斯韦建立了电磁场理论并预言电磁波，赫兹通过火花放电实验首次证实了电磁波的存在。',
+      text: '物理学史：麦克斯韦建立了电磁场理论并预言电磁波，赫兹通过火花放电实验首次证实了电磁波的存在。',
       level: 'info' as const,
     },
   ]
@@ -403,15 +403,15 @@ function buildSpectrumPanel(params: Record<string, number>): PhysicsPanelData {
       {
         name: '调幅信号表达式 (AM)',
         latex: 's_{\\text{AM}}(t) = [A_0 + s_m(t)]\\cos(\\omega_c t)',
-        condition: '调幅过程（振幅随音频信号线性变化，包络与原信号同形）',
+        condition: '拓展表达：调幅波振幅随低频信号线性变化（高中只需定性看懂 AM/FM 波形特征）',
         note: '高频载波角频率 ω_c 远大于低频音频角频率 ω_m；调幅波包络的上下轮廓线与音频信号同形。',
-        level: 'core' as const,
+        level: 'supplementary' as const,
       },
       {
         name: '二极管检波半波整流与包络检波',
         latex: 'v_{\\text{检波}}(t) = \\max(0, s_{\\text{AM}}(t)) \\xrightarrow{\\text{RC滤波}} s_m(t)',
-        condition: '调幅接收解调过程（二极管单向导电切除负半周，RC 滤波平滑包络并隔直还原；调频波需用鉴频器）',
-        level: 'important' as const,
+        condition: '拓展演示：调幅接收解调过程（高中只需了解解调/检波是把低频信号从高频载波中还原出来）',
+        level: 'supplementary' as const,
       },
     ]
 
@@ -498,7 +498,7 @@ function buildSpectrumPanel(params: Record<string, number>): PhysicsPanelData {
         importance: 'gaokao' as const,
       },
       {
-        text: '高考高频题眼：由接收高频电台转为低频电台，需使固有频率减小，方法是增大 C（增大正对面积 S、减小间距 d）或增大 L（插入铁芯、增加匝数）。',
+        text: '调谐操作要点：由接收高频电台转为低频电台，需使固有频率减小，方法是增大 C（增大正对面积 S、减小间距 d）或增大 L（插入铁芯、增加匝数）。',
         importance: 'gaokao' as const,
       },
       {
@@ -509,7 +509,7 @@ function buildSpectrumPanel(params: Record<string, number>): PhysicsPanelData {
 
     const warnings: WarningItem[] = [
       {
-        text: '高考易混淆术语：调制是发送端将低频信号加到高频波上；调谐是接收端通过电谐振选择电台；解调（检波）是从高频载波中还原声音信号。',
+        text: '易混淆术语辨析：调制是发送端将低频信号加到高频波上；调谐是接收端通过电谐振选择电台；解调（检波）是从高频载波中还原信号。',
         level: 'danger' as const,
       },
     ]
@@ -563,7 +563,7 @@ function buildSpectrumPanel(params: Record<string, number>): PhysicsPanelData {
       importance: 'gaokao' as const,
     },
     {
-      text: '顺序即频率由低到高、波长由长到短、穿透能力由弱到强、电离能力由弱到强。',
+      text: '顺序即频率由低到高、波长由长到短；从无线电波到 γ 射线波动性逐渐减弱、粒子性逐渐增强，高能段的 X 射线、γ 射线具有很强穿透与电离能力。',
       importance: 'gaokao' as const,
     },
     {

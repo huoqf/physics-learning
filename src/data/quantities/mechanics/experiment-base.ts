@@ -82,19 +82,20 @@ export function buildMechanicsExperimentBaseQuantities(
           name: '逐差法求加速度',
           latex: 'a = \\frac{(x_6 - x_3) - (x_3 - x_0)}{9T^2}',
           level: 'core',
-          condition: '匀变速直线运动打点纸带',
-          note: 'T 为计数周期（每 5 个打点取 1 个计数点，T = 5T₀ = 0.10 s），切勿代入打点周期 0.02 s',
+          condition: '匀变速直线运动打点纸带（50 Hz 交流电源，打点周期 T₀ = 0.02 s）',
+          note: 'T 为计数周期（每 5 个打点取 1 个计数点，T = 5T₀ = 0.10 s），切勿直接代入 0.02 s',
         },
         {
           name: '中间时刻瞬时速度',
-          latex: 'v_n = \\frac{x_n + x_{n+1}}{2T}',
+          latex: 'v_n = \\frac{x_{n+1} - x_{n-1}}{2T}',
           level: 'core',
-          note: 'T 同为计数周期',
+          condition: '匀变速直线运动打点纸带（50 Hz 交流电源，计数周期 T）',
+          note: 'x 为计数点坐标，T 同为计数周期（亦可用相邻两段位移之和 (sₙ + sₙ₊₁)/(2T)）',
         },
       ],
       gaokaoPoints: [
         { text: '区分连续相等时间间隔内的位移差 Δx = aT²', importance: 'gaokao' },
-        { text: '逐差法可减小实验偶发误差，避免首尾点测量误差放大', importance: 'gaokao' },
+        { text: '逐差法可减小实验偶然误差，充分利用各段测量数据，避免首尾点测量误差放大', importance: 'gaokao' },
       ],
       warnings: [
         ...(measuredAcceleration === null
@@ -155,6 +156,7 @@ export function buildMechanicsExperimentBaseQuantities(
           name: '光电门测加速度',
           latex: 'v_2^2 - v_1^2 = 2as',
           level: 'core',
+          condition: '滑块在平直气垫导轨（或斜面）上做匀变速直线运动，s 为两光电门间距',
         },
       ],
       gaokaoPoints: [

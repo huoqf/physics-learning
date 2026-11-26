@@ -116,7 +116,7 @@ export function buildDoubleSlitInterferenceQuantities(
         color: isOverRange ? PHYSICS_COLORS.alertRed : PHYSICS_COLORS.displacement,
       },
       {
-        label: '逐差实测条纹间距',
+        label: '累积实测条纹间距',
         symbol: 'Δx_测',
         value: measuredDeltaX.toFixed(3),
         unit: 'mm',
@@ -138,7 +138,7 @@ export function buildDoubleSlitInterferenceQuantities(
   const formulas: PhysicsPanelData['formulas'] = isExperimentMode
     ? [
         {
-          name: '逐差法条纹间距公式',
+          name: '累积法条纹间距公式',
           latex: `\\Delta x = \\frac{|x_{${targetFringe}} - x_1|}{${targetFringe - 1}}`,
           condition: `测出第 1 条与第 ${targetFringe} 条亮条纹位置，消除单格读数偶然误差`,
           level: 'core',
@@ -162,7 +162,7 @@ export function buildDoubleSlitInterferenceQuantities(
         {
           name: '双缝干涉条纹间距公式',
           latex: '\\Delta x = \\frac{L}{d} \\lambda',
-          condition: '两缝发出的光满足相干条件（频率相同、相位差恒定、振动方向一致）',
+          condition: '单色相干光且满足近轴条件 d ≪ L（两缝发出的光频率相同、相位差恒定、振动方向一致）',
           level: 'core',
           note: 'Δx 表示相邻两条亮条纹（或暗条纹）中心线之间的距离',
         },
@@ -189,7 +189,7 @@ export function buildDoubleSlitInterferenceQuantities(
           importance: 'gaokao',
         },
         {
-          text: `逐差法测间距：不能直接只测相邻两纹间距，应测出第 1 条与第 ${targetFringe} 条亮纹间距再除以 (${targetFringe}-1) 求平均值。`,
+          text: `累积法测间距：不能直接只测相邻两纹间距，应测出第 1 条与第 ${targetFringe} 条亮纹间距再除以 (${targetFringe}-1) 求平均值。`,
           importance: 'gaokao',
         },
         {

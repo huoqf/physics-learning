@@ -47,10 +47,12 @@ export function handleUniformAcceleration(
         { label: 'v̄=v(t/2)?', value: Math.abs(avgV - vAtHalfT) < 0.01 ? '✓ 成立' : '✗', unit: '' },
       ],
       formulas: [
+        { name: '速度时间公式', latex: 'v = v_0 + at', level: 'core', condition: '仅适用于匀变速直线运动' },
+        { name: '位移时间公式', latex: 'x = v_0 t + \\frac{1}{2}at^2', level: 'core', condition: '仅适用于匀变速直线运动' },
         { name: '速度位移关系', latex: `v^2 - v_0^2 = 2ax`, level: 'important', condition: '仅适用于匀变速直线运动' },
       ],
       gaokaoPoints: [
-        { text: 'v-t 图象面积代表位移，图象斜率代表加速度大小', importance: 'core' as const },
+        { text: 'v-t 图像斜率表示加速度（含方向），图线与时间轴所围面积表示位移（轴上为正、轴下为负）', importance: 'core' as const },
         { text: '刹车问题中 v=0 后物体停止，不能盲目代公式——这是审题陷阱', importance: 'gaokao' as const },
         { text: '熟记 1:3:5:7 比例，仅适用于 v₀=0 的匀加速直线运动', importance: 'hard' as const },
       ],
@@ -60,10 +62,10 @@ export function handleUniformAcceleration(
     const deltaX = a * T * T
     const vAtHalfS = Math.sqrt((v0 * v0 + v * v) / 2)
     const vAtHalfT = (v0 + v) / 2
-    const isAccelerating = v0 * a >= 0 && a !== 0
+    const isUniformConstSpeed = Math.abs(a) < 1e-6
 
     const s1 = v0 * T + 0.5 * a * T * T
-    const s3 = v0 * 3 * T + 0.5 * a * 9 * T * T
+    const s3 = v0 * T + 2.5 * a * T * T
     const skipDiffA = (s3 - s1) / (2 * T * T)
 
     return {
@@ -72,7 +74,7 @@ export function handleUniformAcceleration(
         { label: 'Δx = aT²', value: deltaX, unit: 'm', highlight: 'positive' as const },
         { label: 'v(s/2)', value: isFinite(vAtHalfS) ? vAtHalfS : 0, unit: 'm/s' },
         { label: 'v(t/2)', value: vAtHalfT, unit: 'm/s' },
-        { label: 'v(s/2) vs v(t/2)', value: isAccelerating ? 'v(s/2) > v(t/2)' : 'v(s/2) < v(t/2)', unit: '' },
+        { label: 'v(s/2) vs v(t/2)', value: isUniformConstSpeed ? 'v(s/2) = v(t/2)' : 'v(s/2) > v(t/2)', unit: '' },
         { label: '隔项逐差 a', value: skipDiffA, unit: 'm/s²' },
       ],
       formulas: [

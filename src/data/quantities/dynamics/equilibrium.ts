@@ -86,12 +86,12 @@ export function handleEquilibrium(
       { name: '单摆阻尼方程', latex: '\\theta\'\' + \\gamma \\theta\' + \\frac{g}{L}\\sin\\theta = 0', level: 'supplementary' }
     ]
     gaokaoPoints = [
-      { text: '轻绳的最大耐受拉力即为高考受力分析中的临界平衡条件。', importance: 'hard' as const },
-      { text: '一绳断裂后，重物做单摆阻尼运动，最终平衡点移至挂点正下方。', importance: 'core' as const }
+      { text: '轻绳的最大耐受拉力决定了受力平衡的临界条件。', importance: 'hard' as const },
+      { text: '一绳断裂后，重物做单摆阻尼运动，最终平衡点移至挂点正下方。', importance: 'extend' as const }
     ]
   } else if (mode === 1) {
     formulas = [
-      { name: '力的平行四边形定则', latex: 'F_{\\text{合}} = \\sqrt{T_1^2 + T_2^2 + 2T_1T_2\\cos(\\theta_1+\\theta_2)}', level: 'core' }
+      { name: '两绳拉力合成', latex: 'F_{12} = \\sqrt{T_1^2 + T_2^2 - 2T_1T_2\\cos(\\theta_1+\\theta_2)}', level: 'core', condition: 'θ₁、θ₂ 为两绳与水平方向夹角（两拉力夹角为 180° − θ₁ − θ₂）' }
     ]
     gaokaoPoints = [
       { text: '平行四边形定则是矢量运算规律，合力随两力夹角增大而减小。', importance: 'gaokao' as const },
@@ -112,7 +112,7 @@ export function handleEquilibrium(
     ]
     gaokaoPoints = [
       { text: '三力平衡首尾相接必构成封闭三角形，常用于力的定性分析。', importance: 'hard' as const },
-      { text: '高考动态平衡压轴题中，力的封闭三角形图解法是突破核心。', importance: 'gaokao' as const }
+      { text: '动态平衡问题中，力的封闭三角形图解法是定性分析力变化趋势的常用方法。', importance: 'gaokao' as const }
     ]
   }
 

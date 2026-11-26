@@ -62,12 +62,13 @@ export function handleVectorAddition(
     ]
   } else {
     formulas = [
-      { name: '合力大小', latex: 'F = \\sqrt{F_1^2 + F_2^2 + 2F_1F_2\\cos\\theta}', level: 'core' },
-      { name: '偏角正切', latex: '\\tan\\alpha = \\frac{F_2\\sin\\theta}{F_1 + F_2\\cos\\theta}', level: 'derived' }
+      { name: '合力大小', latex: 'F = \\sqrt{F_1^2 + F_2^2 + 2F_1F_2\\cos\\theta}', level: 'core', condition: '两共点分力 F₁、F₂ 夹角为 θ ∈ [0°, 180°]' },
+      { name: '合力范围', latex: '|F_1 - F_2| \\le F_{\\text{合}} \\le F_1 + F_2', level: 'core', condition: '两共点分力大小不变，夹角 θ ∈ [0°, 180°]（同向最大，反向最小）' },
+      { name: '偏角正切', latex: '\\tan\\alpha = \\frac{F_2\\sin\\theta}{F_1 + F_2\\cos\\theta}', level: 'derived', condition: 'α 为合力 F 与分力 F₁ 的夹角' }
     ]
     gaokaoPoints = [
       { text: '力的合成遵循平行四边形与三角形定则。', importance: 'core' as const },
-      { text: '合力随两力夹角增大而单调减小。', importance: 'gaokao' as const }
+      { text: '两分力大小不变时，在夹角 θ ∈ [0°, 180°] 范围内，合力随夹角 θ 增大而单调减小。', importance: 'gaokao' as const }
     ]
   }
 

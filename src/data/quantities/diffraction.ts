@@ -33,16 +33,16 @@ export function buildDiffractionQuantities(
 
     formulas = [
       {
-        name: '单缝衍射暗纹条件',
+        name: '单缝衍射暗纹条件（拓展）',
         latex: 'a \\sin\\theta = k\\lambda \\quad (k=\\pm 1, \\pm 2, \\dots)',
-        condition: '当缝宽 a 越接近波长 λ 时，衍射现象越明显',
-        level: 'core',
+        condition: '拓展定量式，高中只需定性了解缝宽 a 越接近或小于波长 λ 时，衍射现象越显著',
+        level: 'supplementary',
       },
       {
-        name: '中央明条纹物理宽度',
+        name: '中央明条纹物理宽度（拓展）',
         latex: 'W = \\frac{2L}{a}\\lambda',
-        condition: '中央亮纹的宽度是两侧亮纹宽度的 2 倍',
-        level: 'core',
+        condition: '近轴近似下拓展定量式（中央亮纹宽度约为两侧亮纹宽度的 2 倍）',
+        level: 'supplementary',
       },
     ]
 
@@ -64,10 +64,10 @@ export function buildDiffractionQuantities(
 
     formulas = [
       {
-        name: '圆孔衍射第一暗环条件',
+        name: '圆孔衍射第一暗环条件（拓展）',
         latex: 'd \\sin\\theta = 1.22 \\lambda',
-        condition: '中央最亮区域称为艾里斑，包含约 84% 的透射光能量',
-        level: 'core',
+        condition: '拓展定量式：中央最亮圆斑称为艾里斑（高中只需定性了解孔径越小中央亮斑越大）',
+        level: 'supplementary',
       },
     ]
 
@@ -98,7 +98,7 @@ export function buildDiffractionQuantities(
     ]
 
     gaokaoPoints = [
-      { text: '泊松亮斑图样：在较大几何阴影的正中心有一个极小极亮的亮点，外围有微弱同心圆环', importance: 'gaokao' },
+      { text: '泊松亮斑图样：在较小不透光圆盘（或小球）几何阴影的正中心有一个极小极亮的亮点，外围有微弱同心圆环', importance: 'gaokao' },
       { text: '菲涅耳与泊松的历史争论：泊松曾用波动说推导出圆板中心必然有亮斑，企图推翻波动说，结果阿拉戈实验验证了亮斑的真实存在，反而确立了波动说的地位', importance: 'extend' },
       { text: '泊松亮斑是光的波动性（特别是波动衍射与相长干涉）的有力实验证据', importance: 'gaokao' },
     ]

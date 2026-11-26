@@ -106,12 +106,12 @@ export function handleInduction(
             name: '匀变磁场电动势式',
             latex: 'E = n S \\frac{\\Delta B}{\\Delta t}',
             level: 'core',
-            condition: '适用于回路面积恒定且磁场匀速变化的场景',
+            condition: '匀强磁场垂直穿过恒定有效面积 S（B ⊥ S）且磁感应强度均匀变化',
           },
         ],
         gaokaoPoints: [
           {
-            text: '【法拉第定律定量计算】感应电动势的大小由磁通量变化率 dΦ/dt 和线圈匝数 n 共同决定。高考常与闭合电路欧姆定律联立考查通过电荷量 q = n·ΔΦ / R_总。',
+            text: '【法拉第定律定量计算】感应电动势的大小由磁通量变化率 |ΔΦ/Δt| 和线圈匝数 n 共同决定，常与闭合电路欧姆定律联立求解通过电路的电荷量 q = n·ΔΦ / R_总。',
             importance: 'gaokao',
           },
           {
@@ -125,7 +125,7 @@ export function handleInduction(
         ],
         warnings: [
           {
-            text: '方向易错防坑：感应电动势的方向并不是由磁通量的正负值决定，而是由磁通量随时间的导数（即变化率）的符号与楞次定律决定的！',
+            text: '方向易错防坑：感应电动势的方向并不是由磁通量的正负值决定，而是由磁通量随时间的变化率（ΔΦ/Δt）正负与楞次定律共同决定的！',
             level: 'warning',
           },
         ],
@@ -157,7 +157,7 @@ export function handleInduction(
           { label: '感应磁场方向', value: inducedFieldDirection === 'down' ? '向下' : '向上', unit: '' },
           { label: '等效磁极', value: equivalentPole ? `上端 ${equivalentPole}极` : '无', unit: '' },
           {
-            label: '洛伦兹力表现',
+            label: '安培力表现',
             value: forceType === 'repulsion' ? '排斥(阻碍靠近)' : forceType === 'attraction' ? '吸引(阻碍远离)' : '无',
             unit: '',
           },
@@ -184,7 +184,7 @@ export function handleInduction(
             importance: 'gaokao',
           },
           {
-            text: '使用右手定则/安培定则判定感应电流的绕行方向',
+            text: '使用安培定则（右手螺旋定则）判定感应电流的绕行方向',
             importance: 'gaokao',
           },
           {
@@ -264,9 +264,9 @@ export function handleInduction(
       return {
         quantities,
         formulas: [
-          { name: '法拉第电磁感应', latex: 'E = BLv', level: 'core' },
-          { name: '瞬时安培力', latex: 'F_{安} = \\frac{B^2 L^2 v}{R}', level: 'core' },
-          { name: '单棒动力学加速度', latex: 'a = \\frac{F_{外} - F_{安}}{m}', level: 'core', condition: '自由释放模式下' },
+          { name: '法拉第电磁感应', latex: 'E = BLv', level: 'core', condition: '平直导体棒以速度 v 垂直切割磁感线（B、L、v 两两相互垂直）' },
+          { name: '瞬时安培力', latex: 'F_{安} = \\frac{B^2 L^2 v}{R}', level: 'core', condition: '闭合单棒切割回路总电阻恒为 R 且导轨无电阻' },
+          { name: '单棒动力学加速度', latex: 'a = \\frac{F_{外} - F_{安}}{m}', level: 'core', condition: '光滑水平导轨上受恒定拉力 F_外 与阻尼安培力 F_安 反向作用时' },
         ],
         gaokaoPoints: [
           { text: '电磁感应中的单棒动力学平衡与能量转化：随着速度增加，电动势与安培力增大，合力和加速度逐渐减小。', importance: 'gaokao' },
@@ -380,8 +380,8 @@ export function handleInduction(
             { label: '电流计指针偏转', value: currentDirectionText, unit: '', color: PHYSICS_COLORS.kineticEnergy, highlight: Math.abs(theta) > 0.05 ? 'extreme' : 'zero' },
           ],
           formulas: [
-            { name: '互感磁通量关系', latex: '\\Phi = M I_1', level: 'core', condition: 'M为互感系数' },
-            { name: '法拉第电磁感应定律', latex: 'E = -N \\frac{d\\Phi}{dt}', level: 'core', condition: '负号表示感应电动势的方向总是阻碍原磁通量的变化（楞次定律）' },
+            { name: '互感磁链关系（拓展）', latex: 'N_2 \\Phi = M I_1', level: 'supplementary', condition: 'M 为互感系数（高中定性了解互感现象即可）' },
+            { name: '法拉第电磁感应定律', latex: 'E = n \\frac{\\Delta \\Phi}{\\Delta t}', level: 'core', condition: '求平均感应电动势；方向由楞次定律判断，总是阻碍原磁通量的变化' },
           ],
           gaokaoPoints: [
             { text: '双线圈互感：原回路中电阻变化或位置移动导致原线圈磁场变化，从而在副线圈中产生感应电流。', importance: 'gaokao' },
@@ -416,19 +416,19 @@ export function handleInduction(
             : []),
         ],
         formulas: [
-          { name: '动生电动势', latex: 'E = BLv', level: 'core' },
-          { name: '感应电流', latex: 'I = \\frac{E}{R}', level: 'core' },
-          { name: '安培力阻尼', latex: 'F_A = BIL = \\frac{B^2L^2v}{R}', level: 'core' },
+          { name: '动生电动势', latex: 'E = BLv', level: 'core', condition: '直导体棒垂直切割匀强磁感线（B、L、v 两两垂直）' },
+          { name: '感应电流', latex: 'I = \\frac{E}{R}', level: 'core', condition: '纯电阻闭合回路总电阻为 R' },
+          { name: '安培力阻尼', latex: 'F_A = BIL = \\frac{B^2L^2v}{R}', level: 'core', condition: '导体棒与磁场垂直，回路闭合且导轨电阻不计' },
           ...(mode === 'constantForce'
             ? [
-                { name: '单杆动力学', latex: 'F - \\frac{B^2L^2v}{R} = ma', level: 'core' as const },
-                { name: '收尾速度', latex: 'v_m = \\frac{FR}{B^2L^2}', level: 'important' as const },
+                { name: '单杆动力学', latex: 'F - \\frac{B^2L^2v}{R} = ma', level: 'core' as const, condition: '光滑水平导轨上受恒定驱动外力 F 时' },
+                { name: '收尾速度', latex: 'v_m = \\frac{FR}{B^2L^2}', level: 'important' as const, condition: '恒外力驱动，加速度减为零（F = F_A）时达到最大稳定速度' },
               ]
             : [
-                { name: '电磁阻尼释放', latex: '-\\frac{B^2L^2v}{R} = ma', level: 'core' as const },
-                { name: '速度衰减', latex: 'v(t)=v_0 e^{-kt/m},\\quad k=\\frac{B^2L^2}{R}', level: 'important' as const },
+                { name: '电磁阻尼释放', latex: '-\\frac{B^2L^2v}{R} = ma', level: 'core' as const, condition: '初速度释放，光滑水平导轨且无其他外力' },
+                { name: '速度衰减', latex: 'v(t)=v_0 e^{-kt/m},\\quad k=\\frac{B^2L^2}{R}', level: 'supplementary' as const, condition: '拓展解析式，高中仅需定性理解加速度减小的减速过程并结合动量定理求解' },
               ]),
-          { name: '电荷量秒杀式', latex: 'q = \\frac{m\\Delta v}{BL}', level: 'important', condition: '由 -BLq = \\Delta p 得出' },
+          { name: '电荷量动量式', latex: 'q = \\frac{m\\Delta v}{BL}', level: 'important', condition: '仅适用于光滑导轨且无其他外力、导体棒只受安培力时（由 -BLq = Δp 得出）' },
         ],
         gaokaoPoints: [
           { text: '动态链条：v 变化 ⇒ E=BLv 变化 ⇒ I=E/R 变化 ⇒ F_A=BIL 变化。', importance: 'gaokao' },
@@ -469,9 +469,9 @@ export function handleInduction(
         return {
           quantities,
           formulas: [
-            { name: '差分反电动势', latex: 'E_{\\text{合}} = BL(v_a - v_b)', level: 'core' },
-            { name: '回路感应电流', latex: 'I = \\frac{BL(v_a - v_b)}{R_a + R_b}', level: 'core' },
-            { name: '系统动量守恒铁律', latex: 'm_a v_0 = (m_a + m_b) v_{\\text{共}}', level: 'core', condition: '外力之和为零' },
+            { name: '差分反电动势', latex: 'E_{\\text{合}} = BL(v_a - v_b)', level: 'core', condition: '等宽光滑平行导轨（两棒有效切割长度均为 L）' },
+            { name: '回路感应电流', latex: 'I = \\frac{BL(v_a - v_b)}{R_a + R_b}', level: 'core', condition: '等宽平行导轨，回路总电阻为 R_a + R_b' },
+            { name: '系统动量守恒铁律', latex: 'm_a v_0 = (m_a + m_b) v_{\\text{共}}', level: 'core', condition: '等宽光滑导轨且外力之和为零（仅存在等大反向的内力安培力）' },
           ],
           gaokaoPoints: [
             { text: '自由双杆动量守恒：两棒所受的安培力等大反向，系统合外力为零，无论两棒质量或电阻大小，系统动量恒定。', importance: 'gaokao' },
@@ -491,9 +491,9 @@ export function handleInduction(
             { label: '稳定质心加速度', symbol: 'a_共', value: state.aCommon.toFixed(2), unit: 'm/s²', color: PHYSICS_COLORS.acceleration },
           ],
           formulas: [
-            { name: '动力学耦合关系', latex: 'm_a a_a = F - F_{\\text{安}}, \\quad m_b a_b = F_{\\text{安}}', level: 'core' },
-            { name: '稳定收尾等加速度', latex: 'a_a = a_b = a_{\\text{共}} = \\frac{F}{m_a + m_b}', level: 'core' },
-            { name: '恒定死锁速度差', latex: '\\Delta v_\\infty = \\frac{F(R_a+R_b)m_b}{B^2 L^2 (m_a+m_b)}', level: 'derived' },
+            { name: '动力学耦合关系', latex: 'm_a a_a = F - F_{\\text{安}}, \\quad m_b a_b = F_{\\text{安}}', level: 'core', condition: '等宽光滑平行导轨，仅对 a 棒施加水平恒定外力 F' },
+            { name: '稳定收尾等加速度', latex: 'a_a = a_b = a_{\\text{共}} = \\frac{F}{m_a + m_b}', level: 'core', condition: '等宽光滑导轨，达到稳定速度差后两棒加速度相同' },
+            { name: '恒定死锁速度差', latex: '\\Delta v_\\infty = \\frac{F(R_a+R_b)m_b}{B^2 L^2 (m_a+m_b)}', level: 'derived', condition: '等宽导轨恒力驱动稳态阶段（a_a = a_b）' },
           ],
           gaokaoPoints: [
             { text: '等加恒差死锁警告：当外恒力作用在 a 棒时，两棒最终不会共速！而是收尾于加速度完全相等、维持恒定速度差的加速状态。', importance: 'gaokao' },
@@ -574,18 +574,21 @@ export function handleInduction(
               ? '\\Phi(x) = \\begin{cases} BLx & (0 \\le x < d) \\\\ BLd & (d \\le x < D) \\\\ BL(D+d-x) & (D \\le x \\le D+d) \\end{cases}'
               : '\\Phi(x) = \\begin{cases} BLx & (0 \\le x < D) \\\\ BLD & (D \\le x < d) \\\\ BL(D+d-x) & (d \\le x \\le D+d) \\end{cases}',
             level: 'core',
+            condition: isNarrow ? '矩形线框宽 d ≤ 匀强磁场区域宽度 D，垂直磁场匀速穿过' : '矩形线框宽 d > 匀强磁场区域宽度 D，垂直磁场匀速穿过',
             note: res.state !== 'BEFORE' && res.state !== 'AFTER' ? `当前激活区间: ${activeNote}` : undefined
           },
           {
             name: '切割电动势与欧姆定律',
             latex: 'E = BLv, \\quad I = \\frac{E}{R} = \\frac{BLv}{R}',
             level: 'core',
+            condition: '仅单侧竖边切割磁感线（进入或穿出阶段，线框总电阻恒为 R）',
             note: (res.state === 'ENTERING' || res.state === 'LEAVING') ? '【当前生效】单竖边切割磁感线，产生感应电流' : '【当前抵消/无切割】回路总电动势为零'
           },
           {
             name: '安培力公式',
             latex: 'F_A = BIL = \\frac{B^2L^2v}{R}',
             level: 'important',
+            condition: '仅进入或穿出磁场阶段存在感应电流（安培力始终阻碍相对运动）',
             note: (res.state === 'ENTERING' || res.state === 'LEAVING') ? '【当前生效】安培力方向水平向左，阻碍线框相对运动' : '【当前无电流】不受安培力'
           },
           {
@@ -593,22 +596,24 @@ export function handleInduction(
             latex: isNarrow
               ? 'x_1 = 0, \\ x_2 = d, \\ x_3 = D, \\ x_4 = D+d'
               : 'x_1 = 0, \\ x_2 = D, \\ x_3 = d, \\ x_4 = D+d',
-            level: 'derived'
+            level: 'derived',
+            condition: isNarrow ? '窄线框 d ≤ D 时磁通量分段转折坐标' : '宽线框 d > D 时磁通量分段转折坐标',
           },
           {
-            name: '单阶段通过电量 (高考高频)',
+            name: '单阶段通过电量',
             latex: `q = \\frac{\\Delta \\Phi}{R} = ${isNarrow ? '\\frac{BLd}{R}' : '\\frac{BLD}{R}'} = ${qMax.toFixed(4)}\\text{ C}`,
             level: 'derived',
-            note: isNarrow ? '窄线框单次进/出电量仅由线框宽 d 决定' : '宽线框单次进/出电量仅由磁场宽 D 决定（易错点！）'
+            condition: '进入或离开磁场单一阶段总磁通量变化 ΔΦ 引起的电荷量',
+            note: isNarrow ? '窄线框单次进/出电荷量仅由线框宽 d 决定' : '宽线框单次进/出电荷量仅由磁场宽 D 决定'
           }
         ],
         gaokaoPoints: [
-          { text: '一法拉第二欧姆三牛顿：高考大题万能解题步法！先求 E = BLv，再算 I = E/R，最后由受力分析（安培力 F_A = BIL）和能量守恒定律（W_外 = Q_焦耳热）解题！', importance: 'gaokao' },
-          { text: '四点过线时空状态机：线框波形图折转必定对应 x₁=0, x₂=d, x₃=D, x₄=D+d 四个临界坐标点！波形选择题只需代入这四个边界点即可秒杀！', importance: 'gaokao' },
+          { text: '电磁感应综合分析步骤：先求 E = BLv，再算 I = E/R，最后由受力分析（安培力 F_A = BIL）和能量守恒定律（匀速时 W_外 = Q_焦耳热）求解。', importance: 'gaokao' },
+          { text: '四点过线时空状态机：线框波形图折转对应进场与出场的四个临界坐标点，代入边界条件即可确定各段电流方向与大小。', importance: 'gaokao' },
           { text: '零电流平台成因：窄线框完全处于磁场内部 (d ≤ x < D) 或宽线框完全包围磁场 (D ≤ x < d) 时，回路没有磁通量变化，或两侧竖边切割电动势相互抵消，无感应电流和安培力！', importance: 'core' },
         ],
         warnings: [
-          { text: '避坑提示：拉力做功只在进场阶段 (0 ≤ x < d) 和出场阶段 (D ≤ x < D+d) 才等于焦耳热，因为只有在这两阶段才有安培阻力做负功！全在场内时无安培力，拉力不做功（或做功为零）。', level: 'danger' },
+          { text: isNarrow ? '避坑提示：在光滑水平面上匀速穿场时，拉力做功只在进场阶段 (0 ≤ x < d) 和出场阶段 (D ≤ x < D+d) 才等于焦耳热；全在场内时无安培力，拉力为零。' : '避坑提示：宽线框在光滑水平面上匀速穿场时，拉力做功只在进场阶段 (0 ≤ x < D) 和出场阶段 (d ≤ x < D+d) 才等于焦耳热；完全包围磁场阶段无安培力，拉力为零。', level: 'danger' },
           { text: '电量易错点：计算通过截面电荷量 q = ΔΦ/R 时，切不可直接代入线框总面积！窄线框进场 ΔΦ = BLd，宽线框进场 ΔΦ = BLD，注意区分公式中的特征长度！', level: 'warning' }
         ],
         mnemonic: '进出磁场受阻力，电流反向产焦热；完全进入无电动势，匀速穿场零阻力。',

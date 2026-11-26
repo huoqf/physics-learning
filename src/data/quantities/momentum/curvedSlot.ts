@@ -47,14 +47,15 @@ export function handleCurvedSlot(
 
   const N_bottom = isFixed ? m * GRAVITY * 3 : m * GRAVITY * (3 + (2 * m) / M)
 
-  const s_m = isFixed ? R : (M * R) / (M + m)
-  const s_M = isFixed ? 0 : (m * R) / (M + m)
+  const spanScale = slotShape === 1 ? 2 : 1
+  const s_m = isFixed ? spanScale * R : (M * spanScale * R) / (M + m)
+  const s_M = isFixed ? 0 : (m * spanScale * R) / (M + m)
 
   return {
     quantities: [
       { label: '滑块水平速度 vx', value: st.v_x.toFixed(2), unit: 'm/s', highlight: st.v_x < 0 ? 'negative' as const : undefined },
       { label: '弧形槽速度 Vx', value: st.v_X.toFixed(2), unit: 'm/s', highlight: st.v_X > 0 ? 'positive' as const : undefined },
-      { label: '最低点滑块速度 v_min', value: v_block_bottom.toFixed(2), unit: 'm/s', highlight: 'negative' as const },
+      { label: '最低点滑块速度 v_底', value: v_block_bottom.toFixed(2), unit: 'm/s', highlight: 'negative' as const },
       { label: '最低点槽速度 V_max', value: v_slot_bottom.toFixed(2), unit: 'm/s', highlight: isFixed ? undefined : ('positive' as const) },
       { label: '滑块最大位移 sm', value: s_m.toFixed(2), unit: 'm', highlight: 'extreme' as const },
       { label: '圆弧槽最大位移 sM', value: s_M.toFixed(2), unit: 'm', highlight: isFixed ? undefined : ('extreme' as const) },
@@ -62,15 +63,15 @@ export function handleCurvedSlot(
       { label: '最低点理论弹力 N_max', value: N_bottom.toFixed(1), unit: 'N', highlight: 'extreme' as const },
     ],
     formulas: [
-      { name: '水平动量关系', latex: isFixed ? 'F_{外x} \\neq 0 (不守恒)' : 'm v_x + M V_x = 0', level: 'core' as const },
-      { name: '系统机械能守恒', latex: 'mgR = \\frac{1}{2}m v_x^2 + \\frac{1}{2}M V_x^2', level: 'core' as const, condition: isFixed ? '槽面光滑，仅重力做功（支持力与速度垂直不做功）' : '槽面与水平面均光滑，弹力对系统做功代数和为零，仅重力势能与动能转化' },
-      { name: '位移守恒 (人船)', latex: isFixed ? 's_m = R' : 'm s_m = M s_M', level: 'important' as const },
-      { name: '最低点弹力公式', latex: isFixed ? 'N = 3mg' : 'N = mg(3 + \\frac{2m}{M})', level: 'important' as const },
+      { name: '水平动量关系', latex: isFixed ? '\\text{水平方向 } F_{\\text{外}x} \\neq 0\\text{（不守恒）}' : 'm v_x + M V_x = 0', level: 'core' as const, condition: isFixed ? '槽固定时墙壁水平外力不为零' : '水平面光滑，系统水平方向合外力为零且初始静止' },
+      { name: '系统机械能守恒', latex: 'mgR = \\frac{1}{2}m v_x^2 + \\frac{1}{2}M V_x^2', level: 'core' as const, condition: isFixed ? '滑块从圆弧顶端由静止滑至最低点时（最低点 v_y = 0，槽面光滑）' : '滑块从圆弧顶端由静止滑至最低点时（最低点 v_y = 0，槽面与水平面均光滑）' },
+      { name: '水平位移关系（平均动量守恒）', latex: isFixed ? (slotShape === 1 ? 's_m = 2R' : 's_m = R') : 'm s_m = M s_M', level: 'important' as const, condition: isFixed ? '固定圆弧槽中滑块的水平行程大小' : '系统初始静止且水平方向合外力为零，s_m、s_M 为对地水平位移大小' },
+      { name: '最低点弹力公式', latex: isFixed ? 'N = 3mg' : 'N = mg(3 + \\frac{2m}{M})', level: 'derived' as const, condition: '滑块从圆弧顶端由静止滑至最低点时' },
     ],
     gaokaoPoints: [
       { text: isFixed ? '固定轨道：水平外力不为零，动量不守恒，仅系统机械能守恒。' : '自由轨道：水平无外力，系统水平动量守恒，机械能守恒。', importance: 'core' as const },
       { text: '能量转换：滑块减少的重力势能，转化为滑块与槽的动能之和。', importance: 'gaokao' as const },
-      { text: isFixed ? '最低点压力：滑块在此处速度最大，对轨道压力达最大值 3mg。' : '非惯性系压力：最低点加速度最大，支持力极值 N=mg(3+2m/M)。', importance: 'hard' as const },
+      { text: isFixed ? '最低点压力：滑块在此处速度最大，对轨道压力达最大值 3mg。' : '自由槽最低点：槽此刻水平加速度为零，滑块相对槽速率 v_相 = |v_m| + |V_M|，由 N − mg = m·v_相²/R 得 N = mg(3 + 2m/M)。', importance: 'hard' as const },
     ],
   }
 }

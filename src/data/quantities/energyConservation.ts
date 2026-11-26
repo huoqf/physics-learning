@@ -305,6 +305,10 @@ export function buildEnergyConservationQuantities(
         text: '能量守恒定律的普适性：从机械运动到电磁、热、化学、核反应，无一例外。',
         importance: 'core',
       },
+      {
+        text: '能量耗散与方向性：自然界中宏观能量转化具有方向性，分散到环境中的内能难以自发重新集中利用（能源可利用品质降低）。',
+        importance: 'core',
+      },
     ],
     warnings: [
       {

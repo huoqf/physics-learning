@@ -30,21 +30,23 @@ export function handleVerticalThrow(
   const advancedMode = p.advancedMode ?? 0
   const targetHeight = p.targetHeight ?? 0
   const totalTime = (2 * v0) / g
-  const { v } = calculateFreeFall(v0, -g, time)
+  const effectiveTime = totalTime > 0 ? Math.min(Math.max(time, 0), totalTime) : Math.max(time, 0)
+  const { v } = calculateFreeFall(v0, -g, effectiveTime)
   const isLanded = time >= totalTime && totalTime > 0
-  const isAtPeak = !isLanded && Math.abs(v) < 0.3 && time > 0.05
+  const isAtPeak = !isLanded && Math.abs(v) < 0.3 && effectiveTime > 0.05
   const phase = isLanded ? '落地' : isAtPeak ? '最高点' : v > 0 ? '上升' : v < 0 ? '下落' : '起抛'
 
   const baseFormulas: import('../types').Formula[] = [
-    { name: '速度公式', latex: `v = v_0 - gt = ${v.toFixed(2)}\\;\\text{m/s}`, level: 'core', condition: '取向上为正方向' },
-    { name: '速度-位移关系', latex: `v^2 - v_0^2 = -2gy`, level: 'important', condition: '取向上为正方向' },
+    { name: '速度公式', latex: `v = v_0 - gt = ${v.toFixed(2)}\\;\\text{m/s}`, level: 'core', condition: '忽略空气阻力，取竖直向上为正方向' },
+    { name: '位移方程', latex: `y = v_0 t - \\frac{1}{2}gt^2`, level: 'core', condition: '忽略空气阻力，取竖直向上为正方向' },
+    { name: '速度-位移关系', latex: `v^2 - v_0^2 = -2gy`, level: 'important', condition: '忽略空气阻力，取竖直向上为正方向' },
+    { name: '最大上升高度', latex: `H = \\frac{v_0^2}{2g}`, level: 'important', condition: '忽略空气阻力，最高点速度 v = 0' },
   ]
 
   const advancedFormulas: import('../types').Formula[] = advancedMode ? [
     ...baseFormulas,
-    { name: '位移方程', latex: `y = v_0 t - \\frac{1}{2}gt^2`, level: 'core', condition: '取向上为正方向' },
-    { name: '求根公式', latex: `t = \\frac{v_0 \\pm \\sqrt{v_0^2 - 2gy}}{g}`, level: 'derived', note: '双解对应上升和下落两次经过同一高度' },
-    { name: '相邻等时差', latex: `\\Delta y = gT^2`, level: 'important', condition: '匀变速直线运动' },
+    { name: '求根公式', latex: `t = \\frac{v_0 \\pm \\sqrt{v_0^2 - 2gy}}{g}`, level: 'derived', condition: '忽略空气阻力，取向上为正且 0 ≤ y ≤ v₀²/(2g)', note: '双解对应上升和下落两次经过同一高度' },
+    { name: '连续相等时间位移差', latex: `|\\Delta y| = gT^2`, level: 'important', condition: '忽略空气阻力、连续相等时间间隔 T 内（取向上为正时 Δy = -gT²）' },
   ] : baseFormulas
 
   const targetGaokaoPoints: import('../types').GaokaoPoint[] = []
@@ -67,7 +69,7 @@ export function handleVerticalThrow(
 
   if (isLanded) {
     targetGaokaoPoints.push({
-      text: '对称性：上升时间 = 下落时间，落地速度 = 初速度（方向相反）',
+      text: '对称性（落回起抛高度时）：上升时间等于下落时间，落地速度与初速度大小相等、方向相反（v_落 = -v₀）',
       importance: 'core' as const,
     })
   }

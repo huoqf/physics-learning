@@ -29,7 +29,7 @@ export function buildSolidsLiquidsQuantities(
         importance: 'gaokao',
       },
       {
-        text: '各向异性成因：单晶体在不同方向上微粒排列周期与间距不同，导致力学、导热、导电及光学性质呈现各向异性；多晶体由大量细小晶粒杂乱排列构成，表现为各向同性。',
+        text: '各向异性成因：单晶体在不同方向上微粒排列周期与间距不同，在某些物理性质（如导热、导电、光学性质等）上呈现各向异性；多晶体由大量细小晶粒杂乱排列构成，表现为各向同性。',
         importance: 'gaokao',
       },
       {
@@ -51,11 +51,13 @@ export function buildSolidsLiquidsQuantities(
         name: '双面液膜表面张力',
         latex: 'F = 2\\gamma L',
         level: 'core',
+        condition: '双面薄膜分界线长度为 L（单边界总长度为 2L）',
       },
       {
-        name: '表面张力定义',
+        name: '表面张力定义（双面液膜）',
         latex: '\\gamma = \\frac{F}{2L} = \\frac{\\Delta E_p}{\\Delta S}',
-        level: 'important',
+        level: 'supplementary',
+        condition: '双面液膜（液面总表面积增量为 ΔS = 2L·Δx，单面线界则系数为 L）',
       },
     )
 
@@ -82,7 +84,7 @@ export function buildSolidsLiquidsQuantities(
     )
 
     quantities.push(
-      { label: '毛细管内径半径', symbol: 'r', value: capillaryRadius, unit: 'mm' },
+      { label: '毛细管内半径', symbol: 'r', value: capillaryRadius, unit: 'mm' },
       { label: '液体表面张力系数', symbol: 'γ', value: liquidGamma, unit: 'N/m' },
       { label: '毛细液面高度差', symbol: 'h', value: +(rise.h * 1000).toFixed(1), unit: 'mm' },
       { label: '弯月液面形态', value: rise.meniscusType === 'concave' ? '凹液面' : '凸液面', unit: '' },
@@ -92,7 +94,8 @@ export function buildSolidsLiquidsQuantities(
       {
         name: '毛细上升高度公式',
         latex: 'h = \\frac{2\\gamma \\cos\\theta}{\\rho g r}',
-        level: 'core',
+        level: 'supplementary',
+        condition: '细圆管毛细现象定性分析参考（θ 为液体与管壁接触角，θ < 90° 浸润上升，θ > 90° 不浸润下降）',
       },
     )
 
@@ -108,9 +111,21 @@ export function buildSolidsLiquidsQuantities(
     )
   }
 
+  const warnings: PhysicsPanelData['warnings'] = [
+    {
+      text: '区分晶体与非晶体的根本依据是“有无固定熔点”，单晶体仅在某些物理性质上呈现各向异性，多晶体则表现为各向同性。',
+      level: 'warning',
+    },
+    {
+      text: '液体表面张力沿液面切线方向，使液面具有收缩到同体积下最小表面积的趋势（如双面液膜收缩力 F = 2γL）。',
+      level: 'info',
+    },
+  ]
+
   return {
     quantities,
     formulas,
     gaokaoPoints,
+    warnings,
   }
 }

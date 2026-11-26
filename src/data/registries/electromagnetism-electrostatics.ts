@@ -178,7 +178,7 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
         showIfValue: 1,
         variant: 'warning',
         title: '💡 拖拽电荷改变位置，观察合力变化',
-        content: '三个点电荷平衡条件：两大夹小、两同夹异、远小近大。',
+        content: '三个点电荷平衡条件：两大夹小、两同夹异、近小远大。',
       },
     ],
   },

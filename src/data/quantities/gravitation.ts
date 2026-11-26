@@ -127,8 +127,8 @@ export function buildGravitationQuantities(
         )
       } else if (mode === 1) {
         formulas.push(
-          { name: '第二定律面积微分', latex: '\\Delta S = \\frac{1}{2} \\int r^2 d\\theta = \\text{常数}', level: 'important', condition: '同一轨道同一天体' },
-          { name: '近日点远日点守恒', latex: 'r_{\\text{近日}} \\cdot v_{\\text{近日}} = r_{\\text{远日}} \\cdot v_{\\text{远日}} \\quad (\\text{角动量守恒})', level: 'core', condition: '仅在近、远日点 v ⊥ r' }
+          { name: '开普勒第二定律（面积定律）', latex: '\\frac{\\Delta S}{\\Delta t} = \\text{常数}', level: 'core', condition: '同一行星绕同一中心天体，相等时间内扫过的面积相等' },
+          { name: '近远日点乘积守恒', latex: 'r_{\\text{近日}} \\cdot v_{\\text{近日}} = r_{\\text{远日}} \\cdot v_{\\text{远日}}', level: 'important', condition: '仅在近、远日点速度方向与矢径垂直（由开普勒第二定律单位时间扇形面积相等推导）' }
         )
         gaokaoPoints.push(
           { text: '近日点（距恒星最近）速度最大，远日点（距恒星最远）速度最小。', importance: 'gaokao' as const },
@@ -138,7 +138,7 @@ export function buildGravitationQuantities(
       } else {
         formulas.push(
           { name: '第三定律周期比值', latex: '\\frac{a_1^3}{T_1^2} = \\frac{a_2^3}{T_2^2} = k', level: 'core', condition: '同一中心天体' },
-          { name: '常数决定式', latex: 'k = \\frac{G M_{\\text{中心天体}}}{4\\pi^2}', level: 'derived', note: '拖动 M 改变中心天体时 k 才变；只改 a 时 k 不变' }
+          { name: '常数决定式', latex: 'k = \\frac{G M_{\\text{中心天体}}}{4\\pi^2}', level: 'derived', condition: '中心天体质量 M 确定时 k 为定值', note: '拖动 M 改变中心天体时 k 才变；只改 a 时 k 不变' }
         )
         gaokaoPoints.push(
           { text: '比值常数 k 的大小仅与中心天体的质量有关，与环绕的行星质量无关。', importance: 'gaokao' as const },
@@ -173,21 +173,22 @@ export function buildGravitationQuantities(
         const THours = T / 3600
 
         quantities.push(
-          { label: '轨道半径 r', value: rMeters.toExponential(2), unit: 'm' },
+          { label: '轨道半径 r', value: formatScientific(rMeters, 2), unit: 'm' },
           { label: '线速度 v', value: (v / 1000).toFixed(2), unit: 'km/s', highlight: 'positive' as const },
           { label: '运行周期 T', value: THours.toFixed(2), unit: 'h' },
           { label: '向心加速度 a_n', value: a_c.toFixed(2), unit: 'm/s²' }
         )
 
         formulas.push(
-          { name: '线速度公式', latex: 'v = \\sqrt{\\frac{GM}{r}}', level: 'core', condition: '圆形轨道' },
-          { name: '周期公式', latex: 'T = 2\\pi \\sqrt{\\frac{r^3}{GM}}', level: 'core', condition: '圆形轨道' },
+          { name: '万有引力提供向心力主方程', latex: 'G\\frac{Mm}{r^2} = m\\frac{v^2}{r} = m\\omega^2 r = m\\frac{4\\pi^2}{T^2}r', level: 'core', condition: '天体绕中心天体做匀速圆周运动（r 为圆轨道半径）' },
+          { name: '线速度公式', latex: 'v = \\sqrt{\\frac{GM}{r}}', level: 'core', condition: '圆形轨道，万有引力完全提供向心力' },
+          { name: '周期公式', latex: 'T = 2\\pi \\sqrt{\\frac{r^3}{GM}}', level: 'core', condition: '圆形轨道，万有引力完全提供向心力' },
           { name: '向心加速度', latex: 'a_n = \\frac{GM}{r^2}', level: 'important', condition: '万有引力提供向心力' }
         )
 
         gaokaoPoints.push(
           { text: '高轨低速：轨道半径越大，线速度和向心加速度越小，周期越长。', importance: 'core' as const },
-          { text: '同步轨道：轨道半径固定约 4.24万公里，周期固定为24小时。', importance: 'gaokao' as const },
+          { text: '同步卫星：必须位于赤道平面正上方，轨道高度与半径固定（r ≈ 4.24 × 10⁷ m），周期固定为 24 小时。', importance: 'gaokao' as const },
           { text: '第一宇宙速度 7.9km/s 是近地圆轨道的最大环绕速度。', importance: 'hard' as const }
         )
       } else {
@@ -273,13 +274,13 @@ export function buildGravitationQuantities(
         )
 
         formulas.push(
-          { name: '二体轨道方程', latex: 'r(\\theta) = \\frac{p}{1 + e \\cos \\theta}', level: 'important', condition: '二体问题' },
-          { name: '总机械能守恒', latex: 'E = \\frac{1}{2}m v^2 - G\\frac{Mm}{r} = \\text{常数}', level: 'core', condition: '仅受万有引力' }
+          { name: '二体轨道方程', latex: 'r(\\theta) = \\frac{p}{1 + e \\cos \\theta}', level: 'supplementary', condition: '极坐标拓展式（仅受中心引力时圆锥曲线轨道）' },
+          { name: '总机械能守恒', latex: 'E = \\frac{1}{2}m v^2 - G\\frac{Mm}{r} = \\text{常数}', level: 'supplementary', condition: '取无穷远处引力势能为零（仅受万有引力作用）' }
         )
 
         gaokaoPoints.push(
-          { text: '第一宇宙速度 7.9km/s 是地球卫星的最小发射速度。', importance: 'core' as const },
-          { text: '第二宇宙速度 11.2km/s 是卫星脱离地球引力束缚的最小速度。', importance: 'gaokao' as const },
+          { text: '第一宇宙速度 7.9 km/s 是在地球表面发射近地环绕卫星的最小发射速度（也是最大环绕速度，忽略空气阻力与地球自转）。', importance: 'core' as const },
+          { text: '第二宇宙速度 11.2 km/s 是在地面附近使卫星脱离地球引力束缚的最小发射速度（忽略其他天体影响）。', importance: 'gaokao' as const },
           { text: '发射速度小于第一宇宙速度时，卫星必将落回地表坠毁。', importance: 'hard' as const }
         )
       }
@@ -503,7 +504,7 @@ export function buildGravitationQuantities(
             importance: 'gaokao',
           },
           {
-            text: '【离心与向心】v↑ 使 mv²/r 大于万有引力时做离心运动（轨道抬升趋势）；v↓ 则向心。圆轨上二者相等（η=1）。',
+            text: '【离心与近心】v↑ 使 mv²/r 大于万有引力时做离心运动（轨道抬升趋势）；v↓ 则做近心运动。圆轨上二者相等（η=1）。',
             importance: 'hard',
           },
           {

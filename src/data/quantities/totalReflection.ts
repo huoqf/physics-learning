@@ -42,7 +42,7 @@ export function buildTotalReflectionQuantities(
     {
       name: '临界角公式',
       latex: '\\sin C = \\frac{1}{n}',
-      condition: '光从光密介质（水）射向光疏介质（空气）',
+      condition: '光从折射率为 n 的光密介质射向真空或空气（两一般介质为 sinC = n₂/n₁，n₁ > n₂）',
       level: 'core',
     },
     {
@@ -54,13 +54,13 @@ export function buildTotalReflectionQuantities(
     {
       name: '透光圆面积',
       latex: 'S = \\frac{\\pi h^2}{n^2 - 1}',
-      condition: 'S = πR²，与外围环境无关',
+      condition: '光由液体射向空气时，仅与光源深度 h 和液体折射率 n 有关，与光源亮度无关',
       level: 'important',
     },
   ]
 
   const gaokaoPoints: PhysicsPanelData['gaokaoPoints'] = [
-    { text: '全反射条件：光从光密介质射向光疏介质，且入射角 i ≥ 临界角 C（★★★★★五星考点）', importance: 'gaokao' },
+    { text: '全反射条件：光从光密介质射向光疏介质，且入射角 i ≥ 临界角 C', importance: 'gaokao' },
     { text: '水面透光圆面积 S = πh²/(n²-1)，与光源亮度、水面大小无关', importance: 'core' },
   ]
 

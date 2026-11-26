@@ -69,7 +69,7 @@ export function handleBulletBlock(
     { label: '子弹初动能', value: initial.EkBullet.toFixed(1), unit: 'J' },
   ]
 
-  let formulas: Array<{ name: string; latex: string; level: 'core' | 'important'; note?: string }> = []
+  let formulas: Array<{ name: string; latex: string; level: 'core' | 'important'; condition?: string; note?: string }> = []
 
   if (isPenetrate) {
     quantities.push(
@@ -83,11 +83,13 @@ export function handleBulletBlock(
         name: '动量守恒',
         latex: 'm v_0 = m v_1 + M v_2',
         level: 'core',
+        condition: '光滑水平面（子弹与木块系统水平方向不受外力）',
       },
       {
         name: '能量转化 (摩擦生热)',
         latex: 'Q = f \\cdot L = \\frac{1}{2}m v_0^2 - \\left(\\frac{1}{2}m v_1^2 + \\frac{1}{2}M v_2^2\\right)',
         level: 'important',
+        condition: '子弹完全穿出木块（L 为木块长度，系统无其他能量输入）',
       },
     ]
   } else {
@@ -102,11 +104,13 @@ export function handleBulletBlock(
         name: '动量守恒',
         latex: 'm v_0 = (m + M) v_{\\text{共}}',
         level: 'core',
+        condition: '光滑水平面（子弹与木块系统水平方向不受外力）',
       },
       {
         name: '摩擦生热 (内能)',
         latex: 'Q = f \\cdot \\Delta x_{\\text{相对}} = \\frac{1}{2}m v_0^2 - \\frac{1}{2}(m + M) v_{\\text{共}}^2',
         level: 'important',
+        condition: '子弹留存木块内部并达到共同速度（Δx_相对 < L）',
       },
     ]
   }
@@ -124,7 +128,7 @@ export function handleBulletBlock(
         importance: 'gaokao',
       },
       {
-        text: '阻力对子弹做功 -f·s₁ 改变子弹动能；阻力对木块做功 f·s₂ 改变木块动能；两功之和即为损耗的机械能（内能）',
+        text: '阻力对子弹做功 -f·s₁ 改变子弹动能；阻力对木块做功 f·s₂ 改变木块动能；两功代数和为 -f·Δx_相对（等于系统机械能变化量），其绝对值即为转化为内能的机械能 Q',
         importance: 'gaokao',
       },
     ],

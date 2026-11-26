@@ -27,7 +27,7 @@ const OHM_FORMULAS: Formula[] = [
     name: '欧姆表回路欧姆定律',
     latex: 'I = \\frac{E}{R_{\\text{内}} + R_x} = \\frac{E}{R_{\\Omega} + R_x}',
     level: 'core',
-    condition: '闭合回路电流与待测电阻呈非线性反比关系',
+    condition: '闭合回路电流 I 随待测电阻 Rx 增大而非线性减小（与 R内 + Rx 成反比）',
   },
   {
     name: '欧姆调零满偏电流',
@@ -49,7 +49,7 @@ const DCV_FORMULAS: Formula[] = [
     name: '串联分压电阻',
     latex: 'R_V = \\frac{U}{I_g} - R_g = (n - 1)R_g',
     level: 'core',
-    condition: '电压挡 = 表头串联一个大电阻，量程越大串联电阻越大',
+    condition: '直流电压挡改装：表头与分压电阻 R_V 串联，量程 U 越大串联电阻越大（测电压时选挡应使指针偏转在满偏 1/3~2/3 以上以减小相对误差）',
   },
   {
     name: '电压表总内阻',

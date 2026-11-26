@@ -133,32 +133,32 @@ export function buildThinFilmInterferenceQuantities(
   // 2. 核心公式
   const formulas: PhysicsPanelData['formulas'] = [
     {
-      name: '增透膜理想厚度公式',
-      latex: 'd = \\frac{\\lambda}{4n}',
-      condition: '垂直入射且满足 n_{空气} < n_{膜} < n_{玻璃}（两界面均有半波损失，光程差 2nd = λ/2）',
-      level: 'core',
+      name: '增透膜最小理想厚度',
+      latex: 'd = \\frac{\\lambda}{4n} = \\frac{\\lambda_{\\text{膜}}}{4}',
+      condition: '垂直入射、满足 n_空气 < n_膜 < n_玻璃且最小厚度等于膜内波长的四分之一（拓展了解：两反射面均有半波损失或均无时，往返光程差 2nd = λ/2）',
+      level: 'important',
       note: '人眼最敏感的黄绿光 (λ≈550nm) 增透后，剩余反射光呈淡紫色（相机镜头紫蓝色镀膜原理）',
     },
     {
       name: '劈尖等厚干涉条纹间距',
       latex: '\\Delta x = \\frac{\\lambda}{2n\\theta} \\approx \\frac{L}{2nh} \\lambda',
-      condition: '小角度空气劈尖 (n=1)，θ 为劈尖夹角，L 为板长，h 为垫片厚度',
-      level: 'important',
+      condition: '小角度空气劈尖（n = 1），θ 为劈尖夹角（拓展定量式，高中掌握等厚线弯曲判据即可）',
+      level: 'supplementary',
       note: '条纹向尖端弯曲对应此处凹陷，向厚端弯曲对应此处凸起（等厚线判据）',
     },
     {
-      name: '牛顿环暗环半径公式',
+      name: '牛顿环暗环半径公式（拓展）',
       latex: 'r_m = \\sqrt{m R \\lambda} \\quad (m = 0, 1, 2, \\dots)',
-      condition: '平凸透镜与平板玻璃接触，垂直入射反射光干涉',
-      level: 'derived',
-      note: 'm=0 对应中心暗斑；r_m 随 m 开平方增加，由中心向边缘条纹由疏变密',
+      condition: '空气薄膜且满足 r ≪ R，平凸透镜与平板玻璃接触垂直入射反射干涉（底部下表面反射存在半波损失，m = 0 为中心暗斑）',
+      level: 'supplementary',
+      note: 'r_m 随 m 平方根增大，由中心向边缘条纹由疏变密',
     },
   ]
 
   // 3. 高考要点
   const gaokaoPoints: PhysicsPanelData['gaokaoPoints'] = [
     {
-      text: '高考高频：增透膜原理为薄膜前后两表面反射光的干涉相消，反射率极小时透射率最大',
+      text: '增透膜原理：薄膜前后两表面反射光干涉相消，使反射光减弱、透射光增强',
       importance: 'gaokao',
     },
     {

@@ -58,7 +58,6 @@ export function handleImpulse(
       const m = p.m ?? 2
       const h = p.h ?? 2
       const k = p.k ?? 5
-      const cushionMaxCompression = 30
 
       const fallV = calculateFallVelocity(h, g)
       const collisionDt = calculateCollisionTime(m, k)
@@ -66,27 +65,6 @@ export function handleImpulse(
       const fallTime = Math.sqrt((2 * h) / g)
       const totalTime = fallTime + collisionDt * 2
       const currentT = _time % (totalTime + 1)
-
-      let phase: 'falling' | 'compressing' | 'recovering' | 'done'
-      let cushionCompression = 0
-
-      if (currentT < fallTime) {
-        phase = 'falling'
-      } else if (currentT < fallTime + collisionDt) {
-        phase = 'compressing'
-        const dt = currentT - fallTime
-        const ratio = dt / collisionDt
-        cushionCompression = ratio * cushionMaxCompression
-        cushionCompression = ratio * cushionMaxCompression
-      } else if (currentT < fallTime + collisionDt * 2) {
-        phase = 'recovering'
-        const dt = currentT - fallTime - collisionDt
-        const ratio = 1 - dt / collisionDt
-        cushionCompression = ratio * cushionMaxCompression
-      } else {
-        phase = 'done'
-        cushionCompression = 0
-      }
 
       const F_max = F_avg * 2
       const currentImpulse = (() => {
@@ -105,34 +83,24 @@ export function handleImpulse(
       })()
 
       const p1 = -(m * fallV)
-      const p2 = (() => {
-        if (phase === 'falling') {
-          return -(m * fallV * (currentT / fallTime))
-        }
-        if (phase === 'compressing') {
-          return -(m * fallV * (1 - cushionCompression / cushionMaxCompression))
-        }
-        if (phase === 'recovering') {
-          return m * fallV * (1 - cushionCompression / cushionMaxCompression)
-        }
-        return 0
-      })()
+      const totalCollisionDt = 2 * collisionDt
+      const p2 = m * fallV
 
       return {
         quantities: [
           ...base,
           { label: '碰前动量 p₁', value: p1.toFixed(2), unit: 'kg·m/s', highlight: 'negative' as const },
-          { label: '碰后动量 p₂', value: p2.toFixed(2), unit: 'kg·m/s', highlight: p2 >= 0 ? 'positive' as const : 'negative' as const },
-          { label: '支持力冲量 I_N', value: currentImpulse.toFixed(2), unit: 'N·s', highlight: 'extreme' as const },
-          { label: '合外力冲量 I_net', value: (2 * m * fallV).toFixed(2), unit: 'N·s', highlight: 'positive' as const },
-          { label: '碰撞时间 Δt', value: collisionDt.toFixed(2), unit: 's' },
+          { label: '碰后末动量 p₂', value: p2.toFixed(2), unit: 'kg·m/s', highlight: 'positive' as const },
+          { label: '当前支持力冲量 I_N', value: currentImpulse.toFixed(2), unit: 'N·s', highlight: 'extreme' as const },
+          { label: '合外力总冲量 I_net', value: (2 * m * fallV).toFixed(2), unit: 'N·s', highlight: 'positive' as const },
+          { label: '碰撞总时间 Δt', value: totalCollisionDt.toFixed(2), unit: 's' },
           { label: '平均支持力 F_avg', value: F_avg.toFixed(1), unit: 'N' },
         ],
         formulas: [
-          { name: '动量变化量 (Δp)', latex: `\\Delta p = ${(2 * m * fallV).toFixed(2)}\\text{ kg·m/s}`, level: 'important' as const },
-          { name: '支持力总冲量 (I_N)', latex: `I_N = ${(2 * m * fallV + 2 * m * g * collisionDt).toFixed(2)}\\text{ N·s}`, level: 'important' as const },
-          { name: '重力总冲量 (I_g)', latex: `I_g = ${(2 * m * g * collisionDt).toFixed(2)}\\text{ N·s}`, level: 'important' as const },
-          { name: '动量定理公式', latex: 'I_N - I_g = \\Delta p', level: 'core' as const, note: '重力冲量不可忽略，支持力冲量减去重力冲量等于动量变化量' },
+          { name: '动量变化量 (Δp)', latex: `\\Delta p = p_2 - p_1 = ${(2 * m * fallV).toFixed(2)}\\;\\text{kg·m/s}`, level: 'important' as const, condition: '取竖直向上为正方向，完全弹性反弹' },
+          { name: '支持力总冲量 (I_N)', latex: `I_N = \\bar{F}_N\\Delta t = ${(2 * m * fallV + m * g * totalCollisionDt).toFixed(2)}\\;\\text{N·s}`, level: 'important' as const, condition: '取竖直向上为正方向，总接触时间 Δt = 2·Δt₁' },
+          { name: '重力总冲量 (I_g)', latex: `I_g = mg\\Delta t = ${(m * g * totalCollisionDt).toFixed(2)}\\;\\text{N·s}`, level: 'important' as const, condition: '取大小，方向竖直向下' },
+          { name: '动量定理公式', latex: 'I_N - I_g = \\Delta p', level: 'core' as const, condition: '取竖直向上为正方向，I_N 与 I_g 为各自大小', note: '重力冲量不可忽略，支持力冲量减去重力冲量等于动量变化量' },
         ],
         gaokaoPoints: [
           { text: '动量定理公式为 F_合Δt = Δp，必须使用合外力', importance: 'core' as const },
@@ -189,7 +157,7 @@ export function handleImpulse(
         { label: '冲量大小', value: I.toFixed(1), unit: 'N·s', highlight: 'positive' as const },
       ],
       formulas: [
-        { name: '冲量定义', latex: 'I = Ft', level: 'core' as const },
+        { name: '冲量定义', latex: 'I = Ft', level: 'core' as const, condition: '仅适用于恒力作用过程（矢量，方向与恒力 F 一致）' },
       ],
       gaokaoPoints: [
         { text: '冲量是过程量，描述力在时间上的累积效应', importance: 'core' as const },
@@ -213,12 +181,12 @@ export function handleImpulse(
         { label: '总积分冲量', value: totalI.toFixed(1), unit: 'N·s', highlight: 'extreme' as const },
       ],
       formulas: [
-        { name: '微元法', latex: '\\Delta I = F\\Delta t', level: 'important' as const },
-        { name: '积分冲量', latex: 'I = \\int F\\,dt', level: 'core' as const },
+        { name: '微元面积法', latex: 'I = \\sum F\\Delta t', level: 'core' as const, condition: '一般变力作用过程，可用 F-t 图像与时间轴所围面积求冲量' },
+        { name: '积分表示（拓展）', latex: 'I = \\int F\\,dt', level: 'supplementary' as const, condition: '数学积分拓展记法，高中阶段通过 F-t 图像面积或动量定理求解' },
       ],
       gaokaoPoints: [
         { text: 'F-t 图像与时间轴所围面积等于该力在这段时间内的冲量', importance: 'gaokao' as const },
-        { text: '变力冲量无法直接用 Ft 计算，高考常通过微元面积或动量定理求解', importance: 'gaokao' as const },
+        { text: '变力冲量无法直接用 Ft 计算，常通过 F-t 图像微元面积或动量定理求解', importance: 'gaokao' as const },
       ],
     }
   }

@@ -59,30 +59,39 @@ export function handleSystemIsolated(
     const acceleration = isMoving ? (F - totalFrictionMax) / totalMass : 0
     const tension = isMoving ? (m1 * F) / totalMass : (m1 / totalMass) * F // 静态或动态展示值
 
-    const currentA = time > 0 ? acceleration : 0
-    const currentT = time > 0 ? tension : tension
+    const currentA = isMoving && time > 0 ? acceleration : 0
+    const overallFrictionText = isMoving ? (f1Max + f2Max).toFixed(1) : F === 0 ? '0.0' : `${F.toFixed(1)} (静摩擦)`
+    const tMin = Math.max(0, F - f2Max)
+    const tMax = Math.min(f1Max, F)
+    const tensionText = isMoving
+      ? tension.toFixed(1)
+      : F === 0
+        ? '0.0'
+        : `${tMin.toFixed(1)}~${tMax.toFixed(1)} (静不定)`
+    const f1Text = isMoving ? f1Max.toFixed(1) : F === 0 ? '0.0' : `静摩擦 (≤${f1Max.toFixed(1)})`
+    const f2Text = isMoving ? f2Max.toFixed(1) : F === 0 ? '0.0' : `静摩擦 (≤${f2Max.toFixed(1)})`
 
     if (analysisView === 0) {
       quantities.push(
         { label: '系统加速度 a', value: currentA.toFixed(2), unit: 'm/s²', highlight: currentA > 0 ? 'positive' : undefined },
-        { label: '整体合摩擦力 f_合', value: (f1Max + f2Max).toFixed(1), unit: 'N' }
+        { label: '整体合摩擦力 f_合', value: overallFrictionText, unit: 'N' }
       )
-      formulas.push({ name: '① 整体牛二定律', latex: 'F - (f_1 + f_2) = (m_1 + m_2)a', level: 'core' })
+      formulas.push({ name: '① 整体牛顿第二定律', latex: 'F - (f_1 + f_2) = (m_1 + m_2)a', level: 'core', condition: '两物体保持相对静止（共同加速度 a），沿外力 F 方向列式' })
     } else {
       if (activeObject === 0) {
         quantities.push(
           { label: '系统加速度 a', value: currentA.toFixed(2), unit: 'm/s²', highlight: currentA > 0 ? 'positive' : undefined },
-          { label: 'm₁ 受到拉力 T', value: currentT.toFixed(1), unit: 'N', highlight: 'positive' },
-          { label: 'm₁ 摩擦力 f₁', value: f1Max.toFixed(1), unit: 'N' }
+          { label: 'm₁ 受到拉力 T', value: tensionText, unit: 'N', highlight: isMoving ? 'positive' : undefined },
+          { label: 'm₁ 摩擦力 f₁', value: f1Text, unit: 'N' }
         )
-        formulas.push({ name: '① 隔离 m₁ 方程', latex: 'T - f_1 = m_1 a', level: 'core' })
+        formulas.push({ name: '① 隔离 m₁ 方程', latex: 'T - f_1 = m_1 a', level: 'core', condition: '以 m₁ 为研究对象，沿拉力方向为正' })
       } else {
         quantities.push(
           { label: '系统加速度 a', value: currentA.toFixed(2), unit: 'm/s²', highlight: currentA > 0 ? 'positive' : undefined },
-          { label: 'm₂ 受到绳拉力 T', value: currentT.toFixed(1), unit: 'N', highlight: 'positive' },
-          { label: 'm₂ 摩擦力 f₂', value: f2Max.toFixed(1), unit: 'N' }
+          { label: 'm₂ 受到绳拉力 T', value: tensionText, unit: 'N', highlight: isMoving ? 'positive' : undefined },
+          { label: 'm₂ 摩擦力 f₂', value: f2Text, unit: 'N' }
         )
-        formulas.push({ name: '① 隔离 m₂ 方程', latex: 'F - T - f_2 = m_2 a', level: 'core' })
+        formulas.push({ name: '① 隔离 m₂ 方程', latex: 'F - T - f_2 = m_2 a', level: 'core', condition: '以 m₂ 为研究对象，沿拉力方向为正' })
       }
       formulas.push({
         name: '内力分担定理',
@@ -95,7 +104,7 @@ export function handleSystemIsolated(
 
     gaokaoPoints.push(
       { text: '整体法与隔离法：求解系统加速度优先用整体法，求解内力必须隔离。', importance: 'core' },
-      { text: '分担定理结论：在同材质面上共同滑动时，绳/弹簧拉力 T = m₁F/(m₁+m₂)，与摩擦系数 μ 无关。', importance: 'gaokao' },
+      { text: '分担定理结论：在同材质面上共同滑动时，绳/弹簧拉力 T = m₁F/(m₁+m₂)，与动摩擦因数 μ 无关。', importance: 'gaokao' },
       { text: '起动临界：外拉力 F 必须大于最大静摩擦力之和 μ(m₁+m₂)g 才能使系统起动。', importance: 'hard' }
     )
   }
@@ -176,8 +185,8 @@ export function handleSystemIsolated(
         { label: '系统整体状态', value: currentAy > 0 ? '失重状态' : '静平衡', unit: '' }
       )
       formulas.push(
-        { name: '① 水平系统牛二', latex: 'f_{\\text{地}} = m a_x = m a \\cos\\theta', level: 'core' },
-        { name: '② 竖直系统牛二', latex: '(M + m)g - N_{\\text{地}} = m a_y \\implies N_{\\text{地}} = (M+m)g - m a \\sin\\theta', level: 'core' }
+        { name: '① 水平方向质点系牛顿第二定律', latex: 'f_{\\text{地}} = m a_x = m a \\cos\\theta', level: 'core', condition: '斜面体保持静止、滑块沿倾角为 θ 的斜面加速下滑时' },
+        { name: '② 竖直方向质点系牛顿第二定律', latex: '(M + m)g - N_{\\text{地}} = m a_y \\implies N_{\\text{地}} = (M+m)g - m a \\sin\\theta', level: 'core', condition: '斜面体保持静止、滑块沿倾角为 θ 的斜面加速下滑时（取竖直向下为正）' }
       )
     } else {
       if (activeObject === 0) {
@@ -187,8 +196,8 @@ export function handleSystemIsolated(
           { label: '斜面给摩擦力 f', value: f_slope.toFixed(1), unit: 'N' }
         )
         formulas.push(
-          { name: '① 沿斜面方向牛二', latex: 'mg \\sin\\theta - f = m a', level: 'core' },
-          { name: '② 垂直斜面方向平衡', latex: 'N = mg \\cos\\theta', level: 'core' }
+          { name: '① 沿斜面方向牛顿第二定律', latex: 'mg \\sin\\theta - f = m a', level: 'core', condition: '斜面体静止，取沿斜面向下为正方向' },
+          { name: '② 垂直斜面方向平衡', latex: 'N = mg \\cos\\theta', level: 'core', condition: '滑块紧贴静止斜面运动，垂直斜面加速度为零' }
         )
       } else {
         quantities.push(
@@ -207,7 +216,7 @@ export function handleSystemIsolated(
     gaokaoPoints.push(
       { text: '系统牛顿第二定律：当系统内部各物体加速度不同时，也可使用整体受力分析。系统合外力等于各物体质量与其加速度乘积的矢量和。', importance: 'core' },
       { text: '超重与失重整体性：若系统内部分物体存在竖直向下的加速度分量 ay ↓，则整体失重，地面支持力小于总重力：FN = (M+m)g - m*ay。', importance: 'gaokao' },
-      { text: '秒杀高考多选：求解下滑斜面体的地面摩擦力时，系统牛二定律水平方向 f_地 = m*a*cosθ 可实现 10 秒解题。', importance: 'hard' }
+      { text: '快捷解法：求解沿粗糙或光滑斜面加速下滑物块对斜面体的地面摩擦力时，应用质点系牛顿第二定律，水平方向 f_地 = m·a·cosθ 可直接求得。', importance: 'hard' }
     )
   }
 

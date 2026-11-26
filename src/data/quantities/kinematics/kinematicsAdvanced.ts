@@ -42,7 +42,7 @@ export function handleKinematicsAdvanced(
   const quantities = [
     { label: '速度平方 v²', value: v2, unit: 'm²/s²', color: PHYSICS_COLORS.velocity },
     { label: '比值 x/t', value: xOverT, unit: 'm/s', color: PHYSICS_COLORS.averageVelocity },
-    { label: '图象实时斜率 k', value: k, unit: 'm/s²', color: PHYSICS_COLORS.acceleration }
+    { label: '图像实时斜率 k', value: k, unit: 'm/s²', color: PHYSICS_COLORS.acceleration }
   ]
 
   const formulas = chartMode === 0 ? [
@@ -74,7 +74,7 @@ export function handleKinematicsAdvanced(
   const warnings = []
   if (isBraking) {
     warnings.push({
-      text: `刹车情境：在 t = ${tBrake.toFixed(2)}s 时滑块静止，此后图象发生无物理意义断点。`,
+      text: `刹车情境：在 t = ${tBrake.toFixed(2)}s 时滑块静止，此后图像发生无物理意义断点。`,
       level: isStopped ? ('danger' as const) : ('warning' as const)
     })
   }
@@ -84,9 +84,9 @@ export function handleKinematicsAdvanced(
     formulas,
     warnings,
     gaokaoPoints: [
-      { text: '⭐⭐⭐⭐ 图像信息逆推', importance: 'gaokao' as const },
+      { text: '图像信息逆推', importance: 'gaokao' as const },
       {
-        text: '新高考核心方法：写出含有横纵轴物理量的原始公式 → 分离出因变量与自变量 → 对比一次函数 y=kx+b 求解。',
+        text: '图像解析通用方法：写出含有横纵轴物理量的原始公式 → 分离出因变量与自变量 → 对比一次函数 y=kx+b 求解。',
         importance: 'core' as const
       },
       ...(isStopped ? [{ text: '刹车死公式陷阱：速度减为零后不再反向运动，公式在 t > t_brake 后不再适用。', importance: 'hard' as const }] : [])

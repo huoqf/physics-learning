@@ -53,7 +53,7 @@ export function handleMomentumConservation(
     const e_coefficient = p.e_coefficient ?? 0.5
 
     let e = 1.0
-    let typeName = '完全弹性碰撞'
+    let typeName = '弹性碰撞'
     if (collisionType === 1) {
       e = 0.0
       typeName = '完全非弹性碰撞'
@@ -86,7 +86,7 @@ export function handleMomentumConservation(
       ],
       formulas: [
         { name: '动量守恒', latex: 'm_1v_1 + m_2v_2 = m_1v_1\' + m_2v_2\'', level: 'core' as const, condition: '碰撞瞬间系统所受合外力为零（水平方向无外力）' },
-        { name: '恢复系数', latex: 'e = -\\frac{v_1\' - v_2\'}{v_1 - v_2}', level: 'important' as const },
+        { name: '恢复系数', latex: 'e = -\\frac{v_1\' - v_2\'}{v_1 - v_2}', level: 'supplementary' as const, condition: '一维对心碰撞，碰后分离相对速度与碰前接近相对速度之比（0 ≤ e ≤ 1）' },
       ],
       gaokaoPoints: [
         { text: '系统所受合外力为零，总动量在碰撞前后严格守恒', importance: 'core' as const },
@@ -134,12 +134,12 @@ export function handleMomentumConservation(
           { label: '摩擦生热 Q', value: Q.toFixed(1), unit: 'J', highlight: 'extreme' as const },
         ],
         formulas: [
-          { name: '滑落临界', latex: '\\Delta x_{\\text{相对}} = L', level: 'core' as const },
-          { name: '摩擦生热', latex: 'Q = \\mu mgL', level: 'important' as const },
+          { name: '滑落临界', latex: '\\Delta x_{\\text{相对}} = L', level: 'core' as const, condition: '滑块到达木板右端（恰好未脱离）时相对位移等于板长 L' },
+          { name: '摩擦生热', latex: 'Q = \\mu mgL', level: 'important' as const, condition: '滑块从长为 L 的水平木板上完全滑落（摩擦力始终为 μmg）' },
         ],
         gaokaoPoints: [
           { text: '当木板长度 L 小于达到共速所需的相对位移时，滑块会从木板上滑落', importance: 'gaokao' as const },
-          { text: '滑落后，由于不受摩擦力，滑块与木板均做匀速直线运动，系统总动量守恒', importance: 'gaokao' as const },
+          { text: '在光滑水平面上，滑块滑落前系统水平方向动量守恒；滑落后木板做匀速直线运动（若忽略木板高度，滑块在光滑水平面上亦做匀速直线运动，水平方向动量仍守恒）', importance: 'gaokao' as const },
           { text: '滑落临界分析需结合相对位移与板长 L 关系及运动过程分段求解', importance: 'gaokao' as const },
         ],
       }
@@ -159,12 +159,12 @@ export function handleMomentumConservation(
           { label: '摩擦生热 Q', value: Q.toFixed(1), unit: 'J', highlight: 'extreme' as const },
         ],
         formulas: [
-          { name: '共同速度', latex: 'v_{\\text{共}} = \\frac{mv_0}{m+M}', level: 'core' as const },
-          { name: '摩擦生热', latex: 'Q = \\mu mg \\Delta x_{\\text{相对}}', level: 'important' as const },
+          { name: '共同速度', latex: 'v_{\\text{共}} = \\frac{mv_0}{m+M}', level: 'core' as const, condition: '光滑水平面上滑块未滑落并与木板达到共速（水平方向动量守恒）' },
+          { name: '摩擦生热', latex: 'Q = \\mu mg \\Delta x_{\\text{相对}}', level: 'important' as const, condition: '滑块与木板发生相对滑动阶段，Δx_相对 ≤ L' },
         ],
         gaokaoPoints: [
-          { text: '滑块木板模型中，摩擦力为内力，系统总动量守恒', importance: 'gaokao' as const },
-          { text: '达到共同速度是相对运动结束、内能损失最大的临界点', importance: 'gaokao' as const },
+          { text: '在光滑水平面上（系统水平方向合外力为零），滑块与木板间的摩擦力为内力，系统水平方向动量守恒', importance: 'gaokao' as const },
+          { text: '达到共同速度是相对运动结束、机械能损失最大（产生内能最多）的临界点', importance: 'gaokao' as const },
           { text: '系统内摩擦生热公式为 Q = f·Δx_相对', importance: 'gaokao' as const },
         ],
       }

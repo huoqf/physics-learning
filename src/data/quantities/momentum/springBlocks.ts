@@ -52,15 +52,15 @@ export function handleSpringBlocks(
     ],
     formulas: isConnected
       ? [
-          { name: '动量守恒', latex: 'm_A v_A + m_B v_B = m_A v_0', level: 'core' as const },
-          { name: '能量守恒', latex: '\\frac{1}{2}m_A v_A^2 + \\frac{1}{2}m_B v_B^2 + \\frac{1}{2}k \\delta^2 = \\frac{1}{2}m_A v_0^2', level: 'core' as const },
-          { name: '共速（压缩/拉伸极值）', latex: 'v_{\\text{共}} = \\frac{m_A v_0}{m_A + m_B}', level: 'important' as const },
-          { name: '简谐振动周期', latex: 'T = 2\\pi \\sqrt{\\frac{\\mu}{k}}', level: 'important' as const, note: '折合质量 μ = mA*mB / (mA+mB)' },
+          { name: '动量守恒', latex: 'm_A v_A + m_B v_B = m_A v_0', level: 'core' as const, condition: '光滑水平面，A、B 与弹簧组成的系统水平方向合外力为零' },
+          { name: '能量守恒', latex: '\\frac{1}{2}m_A v_A^2 + \\frac{1}{2}m_B v_B^2 + \\frac{1}{2}k \\delta^2 = \\frac{1}{2}m_A v_0^2', level: 'core' as const, condition: '光滑水平面且仅弹簧弹力做功，系统机械能守恒' },
+          { name: '共速（压缩/拉伸极值）', latex: 'v_{\\text{共}} = \\frac{m_A v_0}{m_A + m_B}', level: 'important' as const, condition: '弹簧压缩量或伸长量达到最大瞬间（两物块速度相等）' },
+          { name: '两体简谐振动周期', latex: 'T = 2\\pi \\sqrt{\\frac{\\mu}{k}}', level: 'supplementary' as const, condition: '拓展二体折合质量式（质心系下 μ = m_A m_B/(m_A+m_B)）', note: '折合质量 μ = mA*mB / (mA+mB)' },
         ]
       : [
-          { name: '动量守恒', latex: 'm_A v_A + m_B v_B = m_A v_0', level: 'core' as const },
-          { name: '能量守恒', latex: '\\frac{1}{2}m_A v_A^2 + \\frac{1}{2}m_B v_B^2 + \\frac{1}{2}k \\delta^2 = \\frac{1}{2}m_A v_0^2', level: 'core' as const },
-          { name: '共速（压缩最短）速度', latex: 'v_{\\text{共}} = \\frac{m_A v_0}{m_A + m_B}', level: 'important' as const },
+          { name: '动量守恒', latex: 'm_A v_A + m_B v_B = m_A v_0', level: 'core' as const, condition: '光滑水平面，A、B 与弹簧组成的系统水平方向合外力为零' },
+          { name: '能量守恒', latex: '\\frac{1}{2}m_A v_A^2 + \\frac{1}{2}m_B v_B^2 + \\frac{1}{2}k \\delta^2 = \\frac{1}{2}m_A v_0^2', level: 'core' as const, condition: '光滑水平面且仅弹簧弹力做功，系统机械能守恒' },
+          { name: '共速（压缩最短）速度', latex: 'v_{\\text{共}} = \\frac{m_A v_0}{m_A + m_B}', level: 'important' as const, condition: '弹簧压缩至最短瞬间（两滑块共速，弹性势能最大）' },
         ],
     gaokaoPoints: isConnected
       ? [

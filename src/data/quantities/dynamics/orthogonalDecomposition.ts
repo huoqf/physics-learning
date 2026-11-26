@@ -149,10 +149,10 @@ export function handleOrthogonalDecomposition(
       )
 
       formulas = [
-        { name: '重力沿斜面分量', latex: 'G_{x\'} = G \\sin\\theta', level: 'core' },
-        { name: '重力垂直斜面分量', latex: 'G_{y\'} = G \\cos\\theta', level: 'core' },
-        { name: '沿斜面平衡方程 (x\' 轴)', latex: 'f = G_{x\'} = G \\sin\\theta', level: 'important' },
-        { name: '垂直斜面平衡方程 (y\' 轴)', latex: 'F_N = G_{y\'} = G \\cos\\theta', level: 'important' }
+        { name: '重力沿斜面分量', latex: 'G_{x\'} = G \\sin\\theta', level: 'core', condition: '倾角为 θ 的斜面上，沿斜面方向建 x\' 轴' },
+        { name: '重力垂直斜面分量', latex: 'G_{y\'} = G \\cos\\theta', level: 'core', condition: '倾角为 θ 的斜面上，垂直斜面方向建 y\' 轴' },
+        { name: '沿斜面平衡方程 (x\' 轴)', latex: 'f = G_{x\'} = G \\sin\\theta', level: 'important', condition: '静止在倾角为 θ 的斜面上（仅有重力、支持力、静摩擦力）' },
+        { name: '垂直斜面平衡方程 (y\' 轴)', latex: 'F_N = G_{y\'} = G \\cos\\theta', level: 'important', condition: '静止在倾角为 θ 的斜面上，垂直斜面方向合力为零' }
       ]
     } else {
       // 方案B
@@ -179,9 +179,9 @@ export function handleOrthogonalDecomposition(
     }
 
     gaokaoPoints = [
-      { text: '方案 A（沿斜面建系）仅需分解重力一个力，平衡方程即解，是高考斜面力学题的极力推荐解法。', importance: 'gaokao' },
-      { text: '方案 B（水平/竖直建系）重力无需分解，但FN与f都偏离坐标轴导致必须同时分解两个力，需要列二元方程组联立，计算极其冗余，高考中应避免。', importance: 'hard' },
-      { text: '高考建系原则：建立直角坐标系应当以“被分解的力最少、且最不容易出错”为首要考量。', importance: 'core' }
+      { text: '方案 A（沿斜面建系）仅需分解重力一个力，平衡方程简洁明了，是斜面力学问题的常用推荐解法。', importance: 'gaokao' },
+      { text: '方案 B（水平/竖直建系）重力无需分解，但 FN 与 f 都偏离坐标轴导致必须同时分解两个力，需要列二元方程组联立，计算较繁琐，一般应避免。', importance: 'hard' },
+      { text: '正交分解建系原则：建立直角坐标系应当以“被分解的力最少、方程最简洁”为首要考量。', importance: 'core' }
     ]
   }
 

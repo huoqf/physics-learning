@@ -80,17 +80,17 @@ export function handleObliqueThrow(
     { name: '水平方向阻力运动', latex: 'a_x = -\\frac{k}{m} v v_x', level: 'supplementary', condition: '二次阻力模型' },
     { name: '竖直方向阻力运动', latex: 'a_y = -g - \\frac{k}{m} v v_y', level: 'supplementary', condition: '二次阻力模型' },
   ] : [
-    { name: '速度偏角与位移偏角关系', latex: '\\tan\\theta = 2\\tan\\alpha - \\tan\\theta_0', level: 'core', condition: '斜抛通用；平抛（θ₀ = 0）时退化为 tanθ = 2tanα' },
-    { name: '最大水平射程公式', latex: 'X = \\frac{v_0^2 \\sin 2\\theta}{g}', level: 'core', condition: 'θ = 45° 时最大' },
-    { name: '最大射高公式', latex: 'H = \\frac{(v_0 \\sin\\theta)^2}{2g}', level: 'core' },
-    { name: '飞行总时间', latex: 'T = \\frac{2v_0 \\sin\\theta}{g}', level: 'important' },
-    { name: '水平与竖直分运动', latex: 'x = v_0 \\cos\\theta \\cdot t, \\quad y = v_0 \\sin\\theta \\cdot t - \\frac{1}{2}gt^2', level: 'core' },
+    { name: '速度偏角与位移偏角关系', latex: '\\tan\\theta = 2\\tan\\alpha - \\tan\\theta_0', level: 'derived', condition: '无空气阻力斜抛通用；平抛（θ₀ = 0）时退化为 tanθ = 2tanα' },
+    { name: '水平射程公式', latex: 'X = \\frac{v_0^2 \\sin 2\\theta_0}{g}', level: 'core', condition: '无空气阻力、起抛点与落地点等高（θ₀ = 45° 时取最大值 v₀²/g）' },
+    { name: '最大射高公式', latex: 'H = \\frac{(v_0 \\sin\\theta_0)^2}{2g}', level: 'core', condition: '无空气阻力（仅受重力）' },
+    { name: '飞行总时间', latex: 'T = \\frac{2v_0 \\sin\\theta_0}{g}', level: 'important', condition: '无空气阻力、起抛点与落地点等高' },
+    { name: '水平与竖直分运动', latex: 'x = v_0 \\cos\\theta_0 \\cdot t, \\quad y = v_0 \\sin\\theta_0 \\cdot t - \\frac{1}{2}gt^2', level: 'core', condition: '无空气阻力（以起抛点为原点、竖直向上为正）' },
   ]
 
   const gaokaoPoints: GaokaoPoint[] = [
-    { text: '【偏角关系】无阻力斜抛中，速度偏角 θ、位移偏角 α 与抛射角 θ₀ 满足 tanθ = 2tanα − tanθ₀。只有平抛（θ₀ = 0）才退化为 tanθ = 2tanα、"速度反向延长线过水平位移中点"——把平抛结论直接搬到斜抛是常见失分点。', importance: 'core' },
-    { text: '【射程与互余角】初速度一定时，抛射角 θ = 45° 水平射程最大 (X_max = v₀²/g)；互为余角的抛射角（如 30° 与 60°）水平射程完全相等。', importance: 'gaokao' },
-    { text: '【最高点特征】最高点竖直分速度 v_y = 0，但合速度不为零，等于水平分速度 (v_top = v₀ cosθ)。', importance: 'core' },
+    { text: '【偏角关系】无阻力斜抛中，速度偏角 θ、位移偏角 α 与抛射角 θ₀ 满足 tanθ = 2tanα − tanθ₀。只有平抛（θ₀ = 0）才退化为 tanθ = 2tanα、"速度反向延长线过水平位移中点"——把平抛结论直接搬到斜抛是常见易错点。', importance: 'core' },
+    { text: '【射程与互余角】初速度一定、等高落地时，抛射角 θ₀ = 45° 水平射程最大 (X_max = v₀²/g)；互为余角的抛射角（如 30° 与 60°）水平射程相等。', importance: 'gaokao' },
+    { text: '【最高点特征】最高点竖直分速度 v_y = 0，但合速度不为零，等于水平分速度 (v_顶 = v₀ cosθ₀)。', importance: 'core' },
     { text: '【运动对称性与等时性】轨迹关于过最高点的竖直线对称；上升阶段与下降阶段经过同一高度时速度大小相等，方向关于竖直方向对称。', importance: 'hard' },
   ]
 

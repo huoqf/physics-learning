@@ -41,7 +41,7 @@ export function buildSelfInductionQuantities(
 
     formulas.push(
       { name: '法拉第自感电动势', latex: 'E_L = -L \\frac{\\Delta I}{\\Delta t}', level: 'core' },
-      { name: 'RL 电路暂态方程', latex: 'I(t) = \\frac{E}{R}\\left(1 - e^{-t/\\tau}\\right)', level: 'important' },
+      { name: 'RL 电路暂态方程', latex: 'I(t) = \\frac{E}{R}\\left(1 - e^{-t/\\tau}\\right)', level: 'supplementary', condition: '拓展演示式，高中以定性掌握通电自感延时现象为主' },
     )
 
     gaokaoPoints.push(
@@ -67,15 +67,15 @@ export function buildSelfInductionQuantities(
     )
 
     formulas.push(
-      { name: '断电自感放电方程', latex: 'I(t) = \\frac{E}{R_L} e^{-\\frac{R_L+R_A}{L} t}', level: 'core' },
+      { name: '断电自感放电方程', latex: 'I(t) = \\frac{E}{R_L} e^{-\\frac{R_L+R_A}{L} t}', level: 'supplementary', condition: '拓展演示式，高中重点掌握断电闪亮判据 I₀ > I_A0' },
       { name: '闪亮判据', latex: 'I_0 > I_{A0} \\iff R_L < R_A', level: 'core' },
     )
 
     gaokaoPoints.push(
       {
         text: willFlash
-          ? `高考核心考点：当前 RL(${RL}Ω) < RA(${RA}Ω)，断开瞬间流过灯泡的初电流为 ${+(E / RL).toFixed(1)}A，超过原发光电流，灯泡必【闪亮一下后熄灭】！`
-          : `高考核心考点：当前 RL(${RL}Ω) ≥ RA(${RA}Ω)，断开瞬间电流未超原值，灯泡【逐渐变暗熄灭，绝不闪亮】。`,
+          ? `断电自感闪亮判据：当前 RL(${RL}Ω) < RA(${RA}Ω)，断开瞬间流过灯泡的初电流为 ${+(E / RL).toFixed(1)}A，超过原发光电流，灯泡会【闪亮一下后熄灭】。`
+          : `断电自感闪亮判据：当前 RL(${RL}Ω) ≥ RA(${RA}Ω)，断开瞬间电流未超原值，灯泡【逐渐变暗熄灭，不会闪亮】。`,
         importance: 'gaokao',
       },
       {
@@ -93,8 +93,8 @@ export function buildSelfInductionQuantities(
     )
 
     formulas.push(
-      { name: '阻尼安培力', latex: 'F_A = \\frac{B^2 L^2 v}{R_{\\text{eddy}}}', level: 'core' },
-      { name: '能量守恒与焦耳热', latex: 'Q = \\Delta E_{\\text{mech}} = E_0 - E(t)', level: 'core' },
+      { name: '阻尼安培力', latex: 'F_A = \\frac{B^2 L^2 v}{R_{\\text{eddy}}}', level: 'supplementary', condition: '闭合涡流导体在磁场中运动（等效电阻 R_eddy 越高阻尼越弱；定性理解安培力阻碍相对运动）' },
+      { name: '能量守恒与焦耳热', latex: 'Q = \\Delta E_{\\text{mech}} = E_0 - E(t)', level: 'core', condition: '忽略空气阻力与轴摩擦，机械能减少量全部转化为涡流内能（焦耳热）' },
     )
 
     gaokaoPoints.push(

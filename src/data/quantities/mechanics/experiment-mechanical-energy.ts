@@ -120,20 +120,28 @@ export function buildExperimentMechanicalEnergyQuantities(
         note: '本实验取连续打点，T = T₀ = 0.02 s，与「第 1、2 点间距≈2 mm = ½gT₀²」选带判据同源',
       },
       {
+        name: '机械能守恒验证方程',
+        latex: 'mgh_n = \\frac{1}{2}mv_n^2',
+        level: 'core',
+        condition: '重物由静止释放且忽略空气阻力与纸带摩擦（实验验证约去质量 m，只需比较 gh_n 与 ½v_n²）',
+      },
+      {
         name: '重力势能减少量',
         latex: '\\Delta E_p = mgh_n',
         level: 'core',
+        condition: '从静止打下的首点 O 量取下落高度 hₙ',
         note: 'hₙ 以纸带首点为零势能参考点，由纸带实测间距累加测量',
       },
       {
         name: '动能增加量',
         latex: '\\Delta E_k = \\frac{1}{2}mv_n^2',
         level: 'core',
+        condition: '重物初速度为零（纸带第 1、2 点间距约 2 mm）',
       },
     ],
     gaokaoPoints: [
       {
-        text: '因纸带与限位孔摩擦及空气阻力，实测 a < g，故 ΔEₖ 恒略小于 ΔEₚ；差额即阻力做的功',
+        text: '真实实验中因纸带与限位孔摩擦及空气阻力，实测 a < g，故 ΔEₖ 略小于 ΔEₚ，差额等于克服阻力做的功（|W_f|）',
         importance: 'gaokao',
       },
       {

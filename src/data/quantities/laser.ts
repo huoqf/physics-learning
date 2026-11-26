@@ -7,6 +7,7 @@ import {
   halfAngleFromMrad,
   intensityRatioPercent,
 } from '@/physics/laser'
+import { formatScientific } from '@/utils/formatNumber'
 
 interface LaserParams {
   mode: number
@@ -77,14 +78,14 @@ export function buildLaserQuantities(
       {
         name: '光强衰减面积反比律',
         latex: '\\frac{I}{I_0} = \\left(\\frac{R_0}{R}\\right)^2',
-        condition: '假设总光通量守恒，光强（能量密度）与光束横截面积成反比。',
-        level: 'core',
+        condition: '理想无吸收介质中总光功率守恒时，光强（单位面积功率，即功率密度）与光束横截面积成反比。',
+        level: 'supplementary',
       },
     ]
 
     gaokaoPoints = [
       { text: '激光的方向性极好：发散角极小，几乎是平行光束。这使得激光能够在很长距离内保持光能高度集中。', importance: 'gaokao' },
-      { text: '普通光源（如白炽灯、手电筒）的光在空间中迅速发散，光强（能量密度）随传播距离呈平方反比衰减。', importance: 'core' },
+      { text: '普通光源（如白炽灯、手电筒）的光在空间中迅速发散，光强（功率密度）随传播距离增大而迅速衰减。', importance: 'core' },
       { text: '激光高平行度的应用：激光测距（通过发射接收的时间差计算距离，d = c·t/2）、激光雷达准确定位、光盘读取。', importance: 'gaokao' },
     ]
   } else if (modeVal === 1) {
@@ -174,30 +175,30 @@ export function buildLaserQuantities(
     const energyDensity = p.laserPower / area // W/m2
 
     quantities.push({ label: '激光功率 P', value: p.laserPower, unit: 'W' })
-    quantities.push({ label: '焦点面积 S', value: area.toExponential(3), unit: 'm²' })
-    quantities.push({ label: '焦点能量密度 E_d', value: energyDensity.toExponential(3), unit: 'W/m²', highlight: 'extreme' })
+    quantities.push({ label: '焦点面积 S', value: formatScientific(area, 3), unit: 'm²' })
+    quantities.push({ label: '焦点功率密度 I', value: formatScientific(energyDensity, 3), unit: 'W/m²', highlight: 'extreme' })
     quantities.push({ label: '靶材焦点温度 T', value: simT.toFixed(1), unit: '°C', highlight: simT >= mat.T_b ? 'extreme' : undefined })
     quantities.push({ label: '切割/穿透深度 h', value: simDepth.toFixed(3), unit: 'mm', highlight: simDepth > 0 ? 'positive' : undefined })
 
     formulas = [
       {
-        name: '能量密度/辐射照度公式',
-        latex: 'E_d = \\frac{P}{S} = \\frac{P}{\\pi (D/2)^2}',
-        condition: 'P 为激光功率，D 为焦斑直径。当 D 在微米级时，能量密度可达到 10⁹~10¹² W/m² 的极端量级。',
-        level: 'core',
+        name: '功率密度/光强公式',
+        latex: 'I = \\frac{P}{S} = \\frac{P}{\\pi (D/2)^2}',
+        condition: 'P 为激光功率，D 为焦斑直径。当 D 在微米级时，功率密度可达 10⁹~10¹² W/m² 的极高量级。',
+        level: 'supplementary',
       },
       {
         name: '热相变能量转化方程',
-        latex: 'Q = c \\cdot m \\cdot \\Delta T + L_f + L_v',
-        condition: '材料升温并汽化所需的能量。汽化潜热 Lv 极大，唯有激光的高能量密度能够快速提供并使其瞬间汽化。',
-        level: 'important',
+        latex: 'Q = c m \\Delta T + m L_f + m L_v',
+        condition: '质量为 m 的材料升温并熔化、汽化所需的热量（L_f、L_v 分别为比熔化热与比汽化热）。激光极高的功率密度可在极短时间内提供相变所需能量。',
+        level: 'supplementary',
       },
     ]
 
     gaokaoPoints = [
-      { text: '激光亮度/能量密度极高：激光能在极小的空间与极短的时间内集中极大的能量。将激光通过透镜聚焦到微米级尺寸，可在焦点处获得极高的能量密度。', importance: 'gaokao' },
+      { text: '激光亮度/功率密度极高：激光能在极小的空间与极短的时间内集中极大的能量。将激光通过透镜聚焦到微米级尺寸，可在焦点处获得极高的功率密度。', importance: 'gaokao' },
       { text: '高能量激光切割原理：照射区域的材料吸收激光能量后瞬间加热，金属材料迅速达到熔点与沸点剧烈汽化；木板与纸张等有机材料则迅速达到热分解点并剧烈汽化碳化，从而实现无接触式精密切割。', importance: 'gaokao' },
-      { text: '激光高亮度/高能量的应用：工业切割、激光焊接、受控热核反应（利用激光均匀加热氘氚燃料球触发核聚变）、激光武器、医疗手术（如视网膜剥离光凝焊接）。', importance: 'gaokao' },
+      { text: '激光高亮度/高能量的应用：工业切割、激光焊接、受控热核反应（利用激光均匀加热氘氚燃料球触发核聚变）、激光测距、医疗手术（如视网膜光凝焊接）。', importance: 'gaokao' },
     ]
   }
 

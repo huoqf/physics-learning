@@ -53,14 +53,15 @@ export function handleFriction(
         { label: '加速度 a', value: a.toFixed(2), unit: 'm/s²', highlight: a > 0.05 ? 'positive' as const : 'zero' as const },
       ],
       formulas: [
-        { name: '最大静摩擦力', latex: 'f_{\\text{max}} = \\mu_s F_N = \\mu mg', level: 'core', note: '高考通常按最大静摩擦力等于滑动摩擦力处理' },
-        { name: '滑动摩擦力', latex: 'f_{\\text{slip}} = \\mu F_N = \\mu mg', level: 'core', condition: '水平面上' },
-        { name: '滑动状态', latex: 'f = f_{\\text{slip}},\\quad a = \\frac{F - f_{\\text{slip}}}{m}', level: 'core' }
+        { name: '静摩擦力取值范围', latex: '0 < f_{\\text{静}} \\le f_{\\text{max}}', level: 'core', condition: '物体有相对运动趋势但保持相对静止（按二力平衡或动力学方程求解，非 μF_N）' },
+        { name: '最大静摩擦力', latex: 'f_{\\text{max}} = \\mu_s F_N', level: 'core', condition: '常规近似取 μ_s = μ；仅水平面且竖直无其他外力时 F_N = mg', note: '一般不直接把 F_N 等同于 mg' },
+        { name: '滑动摩擦力', latex: 'F_f = \\mu F_N', level: 'core', condition: '物体与接触面相对滑动时；水平面且竖直无其他外力时 F_N = mg' },
+        { name: '滑动加速方程', latex: 'F_f = \\mu F_N,\\quad a = \\frac{F - F_f}{m}', level: 'core', condition: '水平面上拉力 F 大于最大静摩擦力且产生向右滑动时' }
       ],
       gaokaoPoints: [
         { text: '静摩擦力是被动力，范围为 0 至最大静摩擦力。', importance: 'core' as const },
         { text: '滑动摩擦力仅取决于正压力和动摩擦因数，与速度、接触面积均无关。', importance: 'core' as const },
-        { text: '最大静摩擦力通常略大于滑动摩擦力，但在无特别说明的高考题中，通常按二者相等计算。', importance: 'core' as const },
+        { text: '最大静摩擦力通常略大于滑动摩擦力，但在无特别说明的常规习题中，通常近似按二者相等计算。', importance: 'core' as const },
         { text: '解答摩擦力问题必须先判定：静摩擦还是滑动摩擦。', importance: 'gaokao' as const }
       ]
     }
@@ -94,13 +95,13 @@ export function handleFriction(
         { label: '临界下滑角 θ_c', value: res.criticalAngle.toFixed(1), unit: '°', highlight: 'extreme' as const },
       ],
       formulas: [
-        { name: '几何关联', latex: '\\tan\\theta = \\frac{a_{1y}}{a_{1x} + a_M}', level: 'core' },
-        { name: '竖直分解', latex: 'mg - F_{N1}\\cos\\theta - f_1\\sin\\theta = ma_{1y}', level: 'core', condition: '滑块沿y轴' },
-        { name: '水平分解', latex: 'F_{N1}\\sin\\theta - f_1\\cos\\theta = ma_{1x}', level: 'important', condition: '滑块沿x轴' },
-        { name: '斜面动力学', latex: 'F_{N1}\\sin\\theta - f_1\\cos\\theta - f_2 = Ma_M', level: 'important', condition: '斜面沿x轴' }
+        { name: '可动斜面运动学关联', latex: '\\tan\\theta = \\frac{a_{1y}}{a_{1x} + a_M}', level: 'supplementary', condition: '滑块紧贴可动光滑/粗糙斜面体滑动时（拓展模型）' },
+        { name: '滑块竖直方向牛顿第二定律', latex: 'mg - F_{N1}\\cos\\theta - f_1\\sin\\theta = ma_{1y}', level: 'supplementary', condition: '斜面体可滑动时在地面惯性系下对滑块列式' },
+        { name: '滑块水平方向牛顿第二定律', latex: 'F_{N1}\\sin\\theta - f_1\\cos\\theta = ma_{1x}', level: 'supplementary', condition: '斜面体可滑动时在地面惯性系下对滑块列式' },
+        { name: '斜面体水平动力学', latex: 'F_{N1}\\sin\\theta - f_1\\cos\\theta - f_2 = Ma_M', level: 'supplementary', condition: '斜面体可在地面滑动时在地面惯性系下对斜面体列式' }
       ],
       gaokaoPoints: [
-        { text: '临界条件 tan θ_c = μ₁，超过后滑块在斜面上滑动并突跳减小。', importance: 'gaokao' as const },
+        { text: '当近似取最大静摩擦因数等于动摩擦因数 μ₁ 时，临界角满足 tan θ_c = μ₁；θ > θ_c 时滑块开始下滑，摩擦力转为滑动摩擦力 f₁ = μ₁ F_N1。', importance: 'gaokao' as const },
         { text: '当滑块给斜面的水平推力大于地面最大静摩擦力时，斜面体同步向左加速运动（反冲运动）。', importance: 'hard' as const },
         { text: '解答摩擦力多体系统必须建立地面系惯性参考坐标系进行正交分解。', importance: 'core' as const }
       ]

@@ -459,7 +459,7 @@ export const modernPhysicsAnimations = defineAnimations({
       // 模式1参数
       {
         key: 'bField',
-        label: '磁场强度 B',
+        label: '磁感应强度 B',
         min: -3.0,
         max: 3.0,
         step: 0.1,
@@ -527,7 +527,7 @@ export const modernPhysicsAnimations = defineAnimations({
     paramMeta: [
       {
         key: 'bField',
-        label: '磁场强度 B',
+        label: '磁感应强度 B',
         min: 0.5,
         max: 3.0,
         step: 0.1,

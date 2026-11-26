@@ -46,33 +46,38 @@ export function buildForcedResonanceQuantities(
     {
       name: '系统固有频率与周期',
       latex: 'f_0 = \\frac{1}{2\\pi}\\sqrt{\\frac{k}{m}},\\quad T_0 = 2\\pi\\sqrt{\\frac{m}{k}}',
+      condition: '弹簧振子系统（仅由质量 m 与劲度系数 k 决定，与驱动力及振幅无关）',
       level: 'core',
     },
     {
       name: '受迫振动频率决定铁律',
       latex: 'f_{\\text{受迫}} = f_{\\text{驱}},\\quad T_{\\text{受迫}} = T_{\\text{驱}}',
+      condition: '系统在周期性驱动力作用下达到稳定振动状态后',
       level: 'core',
     },
     {
       name: '共振发生条件与判据',
       latex: 'f_{\\text{驱}} = f_0 \\implies A = A_{\\text{max}}',
+      condition: '驱动力频率接近或等于系统固有频率 f₀ 时，振幅达到极大值（阻尼较小时）',
       level: 'core',
     },
     {
       name: '受迫振幅理论公式 (选学拓展)',
       latex: 'A = \\frac{F_0}{\\sqrt{m^2(\\omega_0^2 - \\omega^2)^2 + \\gamma^2\\omega^2}}',
-      level: 'important',
+      condition: '线性阻尼受迫振动稳态解析解（选学拓展，高中仅需定性理解阻尼与共振曲线形状关系）',
+      level: 'supplementary',
     },
     {
       name: '位移与驱动力相位差 (选学拓展)',
       latex: '\\tan\\varphi = \\frac{\\gamma\\omega}{m(\\omega_0^2 - \\omega^2)}\\quad (\\text{共振时 } \\varphi = 90^\\circ)',
-      level: 'important',
+      condition: '线性阻尼稳态受迫振动相位关系（拓展演示式）',
+      level: 'supplementary',
     },
   ]
 
   const gaokaoPoints: GaokaoPoint[] = [
     {
-      text: '受迫振动的频率特征（高考第一铁律）：物体做受迫振动达到稳定后，其振动频率与周期恒等于驱动力的频率与周期，与物体自身的固有频率完全无关！',
+      text: '受迫振动的频率特征：物体做受迫振动达到稳定后，其振动频率与周期恒等于驱动力的频率与周期，与物体自身的固有频率无关。',
       importance: 'gaokao',
     },
     {
@@ -88,7 +93,7 @@ export function buildForcedResonanceQuantities(
       importance: 'core',
     },
     {
-      text: '生活与工程中的利用与防止：共振筛、微波炉利用共振；军队过桥便步走、机器减震机座（使工作频率远离固有频率）防止共振破坏。',
+      text: '生活与工程中的利用与防止：共振筛、乐器共鸣箱、转速计利用共振；军队过桥便步走、机器减震机座（使工作频率远离固有频率）防止共振破坏。',
       importance: 'gaokao',
     },
   ]

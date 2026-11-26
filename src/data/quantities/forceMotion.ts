@@ -39,7 +39,7 @@ const MODE_FORMULAS: Record<ForceMotionMode, Formula[]> = {
     { name: '轨迹中点定理', latex: 'x_{\\text{交}}=\\frac{L}{2}', level: 'important', condition: '出射速度的反向延长线必过水平位移中点' },
   ],
   'uniform-circular': [
-    { name: '向心力', latex: 'F_n=m\\frac{v^2}{R}', level: 'core', condition: '仅适用于匀速圆周运动', note: '向心力不做功，动能不变' },
+    { name: '向心力', latex: 'F_n=m\\frac{v^2}{R}', level: 'core', condition: '适用于任意圆周运动（v 为该瞬时线速度）', note: '向心力始终垂直速度故不做功；匀速圆周运动无切向力，动能不变' },
     { name: '角速度', latex: '\\omega=\\frac{v}{R}', level: 'core', condition: '圆周运动' },
     { name: '周期', latex: 'T=\\frac{2\\pi R}{v}', level: 'important', condition: '匀速圆周运动' },
   ],
@@ -49,7 +49,7 @@ const MODE_FORMULAS: Record<ForceMotionMode, Formula[]> = {
     { name: '杆模型最高点临界', latex: 'v_{\\min}=0', level: 'important', condition: '杆可提供支持力，到达最高点速度可为0' },
   ],
   'simple-harmonic': [
-    { name: '回复力', latex: 'F=-kx', level: 'core', condition: '仅适用于弹簧振子模型', note: '负号表示回复力方向与位移方向相反' },
+    { name: '回复力', latex: 'F=-kx', level: 'core', condition: '适用于一切简谐运动（弹簧振子中 k 为劲度系数）', note: '负号表示回复力方向与位移方向相反' },
     { name: '加速度', latex: 'a=-\\omega^2x', level: 'core', condition: '简谐运动' },
     { name: '周期', latex: 'T=2\\pi\\sqrt{\\frac{m}{k}}', level: 'important', condition: '弹簧振子，周期与振幅无关' },
   ],
@@ -209,7 +209,7 @@ export function buildForceMotionQuantities(
   }
 
   const formulas: Formula[] = [
-    { name: '牛顿第二定律', latex: 'F_{\\text{合}}=ma', level: 'core' },
+    { name: '牛顿第二定律', latex: 'F_{\\text{合}}=ma', level: 'core', condition: '惯性参考系、宏观低速物体（加速度与合外力瞬时同向）' },
     ...MODE_FORMULAS[state.mode],
   ]
 
