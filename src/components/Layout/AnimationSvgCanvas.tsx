@@ -44,6 +44,12 @@ interface AnimationSvgCanvasProps {
    */
   className?: string
 
+  /** 可选：SVG 无障碍标题，传入时自动渲染 <title> 并设置 role="img" */
+  title?: string
+
+  /** 可选：SVG 无障碍描述，传入时自动渲染 <desc> */
+  desc?: string
+
   // ── 指针事件（挂载到 <svg> 元素）───────────────────────────────────────────
   onMouseMove?: React.MouseEventHandler<SVGSVGElement>
   onMouseUp?: React.MouseEventHandler<SVGSVGElement>
@@ -186,6 +192,8 @@ export const AnimationSvgCanvas = React.memo<AnimationSvgCanvasProps>(
     svgRef,
     canvasRef,
     className = '',
+    title,
+    desc,
     onMouseMove,
     onMouseUp,
     onMouseLeave,
@@ -222,6 +230,8 @@ export const AnimationSvgCanvas = React.memo<AnimationSvgCanvasProps>(
         )}
         <svg
           ref={svgRef}
+          role={title && !isOverlay ? 'img' : undefined}
+          aria-label={title && !isOverlay ? title : undefined}
           className={`block select-none w-full h-full${hasCanvas || isOverlay ? ' pointer-events-none' : ''}${hasCanvas ? ' absolute inset-0' : ''}`}
           onMouseMove={isOverlay ? undefined : onMouseMove}
           onMouseUp={isOverlay ? undefined : onMouseUp}
@@ -234,6 +244,8 @@ export const AnimationSvgCanvas = React.memo<AnimationSvgCanvasProps>(
           onPointerMove={isOverlay ? undefined : onPointerMove}
           onPointerUp={isOverlay ? undefined : onPointerUp}
         >
+          {!isOverlay && title && <title>{title}</title>}
+          {!isOverlay && desc && <desc>{desc}</desc>}
           <g transform={transform}>
             {isOverlay ? (
               <g

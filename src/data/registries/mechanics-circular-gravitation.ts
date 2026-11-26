@@ -9,7 +9,11 @@ import {
 import { getBinaryStarsCriticalTimes } from '@/physics/multiStar'
 import { getCircularModelsCriticalTimes } from '@/physics/circularModels'
 import { getCentripetalCriticalTimes, getCircularMotionCriticalTimes } from '@/physics/kinematics/formulas'
-import { getRelativityCriticalTimes } from '@/physics/relativity'
+import {
+  getRelativityCriticalTimes,
+  getRelativityMaxTime,
+  getRelativityTimeStages,
+} from '@/physics/relativity'
 import { getVerticalCircularCriticalTimes } from '@/physics/dynamics/dynamics-advanced'
 import { getOrbitTransferCriticalTimes } from '@/physics/orbitTransfer'
 import { defineAnimations } from '../defineAnimations'
@@ -427,72 +431,109 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     title: '相对论时空观与牛顿力学的局限性',
     knowledgeId: 'mechanics-6-6',
     Component: lazy(() => import('@/features/modern/relativity/RelativityAnimation')),
-    controlsMode: 'loop',
-    criticalTimes: (p) => getRelativityCriticalTimes(p, 30),
+    controlsMode: 'timed',
+    maxTime: (p) => getRelativityMaxTime(p),
+    criticalTimes: (p) => getRelativityCriticalTimes(p, getRelativityMaxTime(p)),
+    timeStages: (p) => getRelativityTimeStages(p),
     defaultParams: {
       beta: 0.6,
       m0: 1.0,
       mode: 0,
-      showGeometry: 1,
+      showGeometry: 0,
     } as const,
     paramMeta: [
       {
         key: 'beta',
         label: '航速比 β = v/c',
-        min: 0.1,
+        min: 0,
         max: 0.95,
         step: 0.05,
         unit: '',
-        description: '飞船相对于地面的运动速度与光速的比值',
+        description: '飞船相对地面的速度与光速的比值（含 β=0 低速极限）',
+        marks: [
+          { value: 0, label: '0', variant: 'zero' },
+          { value: 0.6, label: '0.6c', variant: 'recommended' },
+          { value: 0.87, label: 'γ≈2', variant: 'critical' },
+        ],
       },
       {
         key: 'm0',
-        label: '静止质量 m₀',
+        label: '不变质量 m₀',
         min: 0.5,
         max: 5.0,
         step: 0.5,
         unit: 'kg',
-        description: '物体的固有静止质量',
+        showIf: 'mode',
+        showIfValue: 3,
+        description: '物体的固有静止质量（现代物理一般取不变质量）',
       },
     ],
     controlMeta: [
       {
         type: 'segmented',
         key: 'mode',
-        label: '相对论效应',
+        label: '探究专题',
         group: '观测效应',
-        resetOnChange: false,
+        resetOnChange: true,
         options: [
           { value: 0, label: '动钟变慢' },
           { value: 1, label: '动尺收缩' },
-          { value: 2, label: '质能关系' },
+          { value: 2, label: '牛顿局限' },
+          { value: 3, label: '质能拓展' },
         ],
       },
       {
         type: 'toggle',
         key: 'showGeometry',
-        label: '显示勾股定理直角三角形',
+        label: '显示勾股推导图解',
         group: '推导辅助',
         showIf: 'mode',
         showIfValue: 0,
       },
       {
         type: 'preset',
-        label: '📏 尺缩对比（β=0.866）',
+        label: '🕰 动钟推导（β=0.80）',
         group: '典型工况',
+        restartOnApply: true,
+        params: { beta: 0.8, m0: 1.0, mode: 0, showGeometry: 1 },
+      },
+      {
+        type: 'preset',
+        label: '📏 尺缩半长（β=0.866）',
+        group: '典型工况',
+        restartOnApply: true,
         params: { beta: 0.866, m0: 1.0, mode: 1, showGeometry: 0 },
       },
       {
         type: 'preset',
-        label: '⚡ 质能关系（β=0.80）',
+        label: '🧭 经典极限（β=0.01）',
         group: '典型工况',
-        params: { beta: 0.8, m0: 1.0, mode: 2, showGeometry: 0 },
+        restartOnApply: true,
+        params: { beta: 0.01, m0: 1.0, mode: 2, showGeometry: 0 },
+      },
+      {
+        type: 'preset',
+        label: '⚡ 高能拓展（β=0.80, 2kg）',
+        group: '典型工况',
+        restartOnApply: true,
+        params: { beta: 0.8, m0: 2.0, mode: 3, showGeometry: 0 },
       },
       {
         type: 'tip',
-        group: '教学提示',
-        content:
-          '固有时间最短（两事件同地发生的参考系测得时间最小）；尺缩仅发生在运动速度平行方向，垂直方向几何尺寸完全不变。',
+        group: '观察引导',
+        content: (p) => {
+          const m = p.mode ?? 0
+          if (m === 0) {
+            return '点击播放，同时盯紧光脉冲与两块表盘数字，看光子到顶镜与返回底镜时的读数差；打开勾股推导可对照斜光路。'
+          }
+          if (m === 1) {
+            return '点击播放，先在上方对比沿运动方向尺长与高度变化，再盯住下方车厢闪光如何先到后壁、后到前壁。'
+          }
+          if (m === 2) {
+            return '点击播放，观察恒力加速初期两条速度曲线如何贴近重合、高速后牛顿预测越过光速而相对论渐近逼近光速。'
+          }
+          return '点击播放，观察恒力做功过程中静能与相对论动能的占比变化，对比低速重合与高速分叉。'
+        },
       },
     ],
   },

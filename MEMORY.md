@@ -6,7 +6,7 @@
 
 ## 动画映射表
 
-> **生成时间**：2026-11-18
+> **生成时间**：2026-11-26
 > **生成命令**：`node scripts/gen-annotations.mjs`
 > **数据来源**：`src/ANNOTATIONS.md`（自动生成，请勿手动编辑）
 > **更新方式**：修改 `src/data/registries/*.ts` 后运行 `node scripts/gen-annotations.mjs` 重新生成
@@ -184,4 +184,4 @@ node scripts/gen-annotations.mjs
 
 ---
 
-*最后更新：2026-11-18 | 生成命令：`node scripts/gen-annotations.mjs`*
+*最后更新：2026-11-26 | 生成命令：`node scripts/gen-annotations.mjs`*

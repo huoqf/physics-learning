@@ -5,6 +5,7 @@ import { energyProblems } from './mechanics/energy-sample'
 import { momentumProblems } from './mechanics/momentum-sample'
 import { projectileProblems } from './mechanics/projectile-sample'
 import { celestialProblems } from './mechanics/celestial-sample'
+import { relativityProblems } from './mechanics/relativity-sample'
 import { probBlockBoardModel } from './mechanics/prob-block-board-model'
 import { masterModelProblems } from './masterProblems'
 import { opticsGaokaoProblems } from './optics'
@@ -32,7 +33,8 @@ export const allProblems: Problem[] = [
   ...energyProblems,
   ...momentumProblems,
   ...projectileProblems,
-  ...celestialProblems
+  ...celestialProblems,
+  ...relativityProblems
 ]
 
 export const problemIndex: Record<string, Problem> = {}
