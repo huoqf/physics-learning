@@ -67,8 +67,10 @@ fontSize={11}           → fontSize={font(11)}
 | 位置 | 违规 | 正确归属 |
 |------|------|---------|
 | 主屏 SVG | 大段教学文字 / 公式推导 | 右屏 FormulaSection |
-| 主屏 SVG | 高考考点总结 | 右屏 ExamPointSection |
-| 左屏 | 手写 input/button 控件，或堆砌真题题解/长文本 | `paramMeta` / `controlMeta`（预设遵循 08_THREE_PANEL_RULES.md §2.6） |
+| 主屏 SVG | 知识要点与易错解析 | 右屏 PhysicsPanel（严禁在基础动画页出现「高考/真题/压轴/母题/秒杀」等应试词） |
+| 主屏 SVG（多模式） | `showIf` 辅助图层未校验 `mode === X` 导致切模式叠图 | Scene 辅助开关图层必须叠加当前 `mode` 条件 |
+| 右屏看板（多模式） | `quantities/formulas/warnings/gaokaoPoints/mnemonic` 未随模式切换，或 `condition`/`note` 含原始 `\cmd` | 5 区块全模式同步；`condition`/`note` 用 Unicode 纯文本（`≤ ≥ θ ° √`） |
+| 左屏 & 播控 | 手写控件/堆砌题解；`'param'` 配了 `criticalTimes` 或 `'loop'` 配 `autoPause: true` | `paramMeta`/`controlMeta` 声明式；优先为过程模式提供 `'timed'` 真实演化 |
 
 ### G. 物理保真度与教学规范（按需查阅资源库）
 
@@ -175,9 +177,11 @@ useSceneScale({ vp, preset, anchor: 'custom',
 - [ ] 图表区 `flex-1 min-h-0`，不写死高度
 - [ ] 矢量/图表/球/地面均使用对应组件，无手写等效实现；既有组件覆盖不到时优先抽共享基座
 - [ ] 公共组件在 barrel `index.ts` 导出并在 `COMPONENT_REGISTRY.md` 登记
-- [ ] 物理计算遵循单一可信源（SSOT），数值与单位符合高考课标（已核对对应 references）
+- [ ] 物理计算遵循单一可信源（SSOT），数值与单位符合高中物理课标；完成「教材三问」（[GAOKAO_STANDARDS.md](file:///d:/code/physic/physics-learning/.agents/skills/refactor-animation-page/references/GAOKAO_STANDARDS.md) §3-§4），无高数/大物术语，含积分/微商/指数暂态公式不标 `core`/`important`（`npm run check:curriculum` 为绿）
 - [ ] 字号 `font(N)`，颜色 PHYSICS/SCENE/CANVAS_COLORS 按语义
 - [ ] 涉及电路时遵循 `CIRCUIT_RULES.md`：组件复用 `variant="symbolic"`、端子直角接合、红进黑出、零文本/元件撞车
+- [ ] 多模式隔离与同步：Scene 的 `showIf` 辅助图层已叠加 `mode === X` 条件；右屏 5 区块（`quantities`/`formulas`/`warnings`/`gaokaoPoints`/`mnemonic`）随模式 100% 同步；`condition`/`note` 无原始 `\cmd` 或 `$...$`
+- [ ] 播控一致性：过程模式优先 `'timed'`；`'param'` 模式无 `criticalTimes`，`'loop'` 模式无 `autoPause: true`
 - [ ] 左屏控制纯净：无长篇题解/考点/公式搬运；预设标签「名称 ≤12 字 + 参数标注 ≤14 字，合计 ≤22，禁卷别与「高考/真题/压轴」」不锁滑块；`preset` 声明在「模型选择」之后；观察指引归于底部 Tip（遵循 08_THREE_PANEL_RULES.md §2.6，`npm run check:control-meta` 为绿）
-- [ ] `tsc --noEmit` 通过，动画播放/暂停/重置正常
+- [ ] 全量验收通过：`npx tsc --noEmit`、`npx tsc -p tsconfig.test.json --noEmit`、`npm run lint`、`npm run check:architecture`、`npm test -- --run`、`npm run build`、`node scripts/check-runtime-ui.mjs --page <anim-id> --deep`
 - [ ] 未改动本次任务无关文件

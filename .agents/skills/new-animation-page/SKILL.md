@@ -219,12 +219,13 @@ export function <Topic>Scene({ physics, canvasSize, sceneScale, vp }: <Topic>Sce
 }
 ```
 
-### `hooks/use<Topic>Physics.ts` — 纯物理 Hook
+### `hooks/use<Topic>Physics.ts` — 纯物理 Hook（与看板共享 `src/physics/<topic>.ts`）
+
+> ⚠️ **单一可信源（SSOT）铁律**：物理公式必须下沉到 `src/physics/<topic>.ts` 纯函数（零 React/DOM/window/Store 依赖），Hook 与 `quantities/<domain>/<topic>.ts` 共同调用它，严禁两边各写一份公式（受 `check:single-source` 守卫）。
 
 ```ts
-import { useMemo } from 'react'
-
-export interface <Topic>PhysicsResult {
+// src/physics/<topic>.ts（先建纯函数）
+export interface <Topic>State {
   x: number   // m，物理坐标（y↑正）
   y: number   // m
   vx: number  // m/s
@@ -232,14 +233,34 @@ export interface <Topic>PhysicsResult {
   v: number   // m/s
 }
 
-export function use<Topic>Physics({ v0, a, time }: { v0: number; a: number; time: number }) {
-  return useMemo(() => {
-    const x = v0 * time + 0.5 * a * time * time
-    const vx = v0 + a * time
-    return { x, y: 0, vx, vy: 0, v: Math.abs(vx) }
-  }, [v0, a, time])
+export function calc<Topic>State(v0: number, a: number, time: number): <Topic>State {
+  const x = v0 * time + 0.5 * a * time * time
+  const vx = v0 + a * time
+  return { x, y: 0, vx, vy: 0, v: Math.abs(vx) }
 }
 ```
+
+```ts
+// src/features/<domain>/<topic>/hooks/use<Topic>Physics.ts
+import { useMemo } from 'react'
+import { calc<Topic>State, type <Topic>State } from '@/physics/<topic>'
+
+export type <Topic>PhysicsResult = <Topic>State
+
+export function use<Topic>Physics({ v0, a, time }: { v0: number; a: number; time: number }) {
+  return useMemo(() => calc<Topic>State(v0, a, time), [v0, a, time])
+}
+```
+
+---
+
+## Step 2.5：多模式页面 4 条硬契约（有 `mode` 分段切换器时必读）
+
+1. **SVG 图层模式隔离**：任何受 `showIf` 控制的辅助开关（推导图、矢量叠加、参考线等）在 `<Topic>Scene.tsx` 渲染时**必须叠加当前模式条件**（如 `mode === 0 && showAux`），防止切换模式后前一个模式的辅助图层继续叠在当前画布上。
+2. **右屏 5 区块全模式同步**：在 `quantities/<domain>/<topic>.ts` 中，`quantities`、`formulas`、`warnings`、`gaokaoPoints`、`mnemonic` **五个区块都必须随 `mode` 同步切换**，严禁切到新模式后仍残留其他模式的无关物理量、公式、易错点或口诀。
+   - **纯文本符号铁律**：`condition` 与 `note` 由 `PhysicsPanel` 用普通 `<span>` 渲染（不经过 KaTeX），**严禁写入原始 LaTeX（如 `\le`、`\ge`、`\theta`、`$...$`）**，必须使用 Unicode 符号（`≤`、`≥`、`θ`、`°`、`√`、`Δ`），受 `check:formula-condition` 守卫。
+3. **过程动画优先与 `controlsMode` 一致性**：多模式页面每个模式优先提供真实物理演化的 `'timed'` 过程动画（避免切过去变成没有播放条的静态图）；仅当某模式本质为稳态图样时才返回 `'param'`。严禁在 `'param'` 模式下配置非空 `criticalTimes`，严禁在 `'loop'` 模式下配置 `autoPause: true`。
+4. **无障碍与减少动效**：主画面 `<AnimationSvgCanvas>` 传 `title` 与 `desc`；连续动画响应 `prefers-reduced-motion` 媒体查询或提供关键帧静态可读性。
 
 ---
 
@@ -274,6 +295,7 @@ export const <domain>Animations = defineAnimations({
 ### `src/data/quantities/<domain>/<topic>.ts`
 
 ```ts
+import { calc<Topic>State } from '@/physics/<topic>'
 import type { PhysicsPanelData } from '../types'
 import { normalizeParams, type ParamDefs } from '../types'
 
@@ -285,14 +307,21 @@ export function build<Topic>Quantities(
   _animId: string, params: Record<string, number>, time: number,
 ): PhysicsPanelData | null {
   const p = normalizeParams(params, DEFAULTS)
+  const state = calc<Topic>State(p.v0, p.a, time)
   return {
     quantities: [
-      { label: '速度', symbol: 'v', value: +(p.v0 + p.a * time).toFixed(2), unit: 'm/s' },
+      { label: '实时速度', symbol: 'v', value: +state.v.toFixed(2), unit: 'm/s' },
     ],
     formulas: [
-      { name: '速度公式', latex: 'v = v_0 + at', level: 'core' },
+      { name: '速度公式', latex: 'v = v_0 + at', level: 'core', condition: 'a 恒定（Unicode 纯文本，禁写 \\cmd）' },
     ],
-    examPoints: [],
+    warnings: [
+      { text: '易错提醒：减速到零后若无反向力不会倒退。', level: 'warning' },
+    ],
+    gaokaoPoints: [
+      { text: '核心概念：匀变速直线运动中速度随时间线性变化。', importance: 'core' },
+    ],
+    mnemonic: '定方向，写初速，判零停。',
   }
 }
 ```
@@ -365,15 +394,32 @@ font(N)            // SVG 字号，禁止裸 fontSize={N}
 
 ---
 
+## Step 5：单测必备 4 类用例模板
+
+在 `src/physics/__tests__/<topic>.test.ts` 与 `src/features/<domain>/<topic>/__tests__/<Topic>.test.ts` 补齐：
+
+1. **物理不变量与极限边界**：零值（如 `v=0`、`β=0`）、极限退化（如低速回归牛顿力学）、同源同步（例如同一对象不同指示器共享同一计时基准，无相位脱节）。
+2. **多模式 SVG 图层隔离**：渲染 `<Topic>Scene`，验证切换 `mode` 后旧模式专属元素（及依赖 `showIf` 的辅助开关图层）完全不出现在 DOM 中，无叠图。
+3. **关键时刻动态非遮挡/不越界**：对 `criticalTimes` 各时刻及周期端点验证关键图元坐标落在可视安全区、无交叉遮挡。
+4. **右屏 5 区块随模式同步**：对每个 `mode` 调用 `build<Topic>Quantities`，验证 `quantities`、`formulas`、`warnings`、`gaokaoPoints`、`mnemonic` 随模式正确切换且无跨模式残留、无原始 LaTeX 泄漏到 `condition`/`note`。
+
+---
+
 ## Checklist（提交前确认）
 
-- [ ] Viewport：`useAnimationViewport({ preset })` 无 presetCompensation
+- [ ] Viewport：`useAnimationViewport({ preset })` 无 presetCompensation，`AnimationSvgCanvas` 含 `title`/`desc`
 - [ ] SceneScale：`physicsWidth/Height` 是真实物理视野（米）；`customScaleX === customScaleY`；`worldToDesign(x, y, sceneScale)` → `{ px, py }`
 - [ ] 地面/网格线：`x={vp.designLeft} width={vp.designVisibleW}`，无魔法数字
 - [ ] splitV 图表区：`flex-1 min-h-0`，不写死高度
-- [ ] 组件：Ball / Block / PhysicsGround / PhysicsVectorArrow / 图表组件均已复用
+- [ ] 组件：Ball / Block / PhysicsGround / PhysicsVectorArrow / 图表组件均已复用；单一可信源落在 `src/physics/<topic>.ts`
+- [ ] 多模式契约：SVG 辅助图层已加 `mode === X` 隔离；右屏 5 区块全模式同步；`condition`/`note` 无原始 `\cmd` 或 `$...$`
+- [ ] 课标与公式分级（教材三问）：遵循 [GAOKAO_STANDARDS.md](file:///d:/code/physic/physics-learning/.agents/skills/refactor-animation-page/references/GAOKAO_STANDARDS.md) §3-§4，定量/定性定位符合现行人教版教材，无高数/大物黑话（`泰勒`/`微积分`/`偏导`/`相对论质量`等），含积分/微商/指数暂态公式禁止标 `core`/`important`（`npm run check:curriculum` 为绿）
 - [ ] 颜色：PHYSICS_COLORS / SCENE_COLORS / CANVAS_COLORS 按语义使用；font(N) 包裹字号
-- [ ] Registry：5 个文件全部完成；`defaultParams as const`；controlsMode 正确
-- [ ] 预设与提示：若有预设，标签仅「名称 ≤12 字 + 参数标注 ≤14 字」（合计 ≤22，禁卷别与「高考/真题/压轴」）、不锁滑块、设 `restartOnApply: true`；观察指引与条件归于底部 Tip，且符合 §2.6.5 三档边界（左屏只答"看哪里/怎么调"，不答"结果是多少"）；`preset` 必须声明在「模型选择」之后；跑 `npm run check:control-meta` 必须为绿
+- [ ] Registry：5 个文件全部完成；`defaultParams as const`；`controlsMode` 与 `criticalTimes` 一致（`'param'` 无临界点、`'loop'` 无 `autoPause: true`）
+- [ ] 预设与提示：若有预设，标签仅「名称 ≤12 字 + 参数标注 ≤14 字」（合计 ≤22，禁卷别与「高考/真题/压轴」）、不锁滑块、设 `restartOnApply: true`；观察指引归于底部 Tip；`preset` 必须声明在「模型选择」之后
 - [ ] 公式与看板：PhysicsPanel / KatexFormula 统一从 `@/components/Formula` 导入
-- [ ] `tsc --noEmit` 通过
+- [ ] 全量验收通过：
+  - `npx tsc --noEmit` & `npx tsc -p tsconfig.test.json --noEmit`
+  - `npm run lint` & `npm run check:architecture`
+  - `npm test -- --run` & `npm run build`
+  - `node scripts/check-runtime-ui.mjs --page anim-<topic> --deep`（1440px & 1280px 逐模式 0 折行/0 溢出/0 压字/0 裁切）
