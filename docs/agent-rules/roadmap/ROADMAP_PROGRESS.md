@@ -1,17 +1,15 @@
 # ROADMAP — 高中物理交互动画学习软件
 
-> 最后更新：2026-11-18
+> 最后更新：2026-11-27
 
 ---
 
-## ⚡ AI Agent 执行规则（每次任务必读）
+## 📦 历史规划归档声明（只读）
 
-1. **先读本文件**，确认当前里程碑状态与活跃任务
-2. **再读对应子文件**，获取该里程碑的完整知识点列表与组件任务
-3. **严格按子文件的任务清单执行**，完成后更新对应子文件中的 `[x]` 状态
-4. **禁止跨里程碑超前实现**（除非本文件明确标注 can-start）
-5. **任务结束后**同步更新本文件里程碑状态表 + `process/PROCESS_LOG.md`
-6. **里程碑命名唯一来源**：本文件，格式 `[M0]`–`[M4]`，禁止自然语言替代
+> `[M0]`–`[M4]` 建站期里程碑规划已基本完成，**`docs/agent-rules/roadmap/` 目录现保留为只读历史记录**。
+> - 日常待办、缺口核销与遗留技术债统一维护于 [`process/TODO_deferred.md`](../process/TODO_deferred.md)
+> - 近期改动与验证记录以 `git log` 为准（历史流水账已归档于 [`process/PROCESS_LOG.md`](../process/PROCESS_LOG.md)）
+> - AI Agent **不再需要**每次任务读取或回写本文件。
 
 ---
 
@@ -23,7 +21,7 @@
 | [M1] | 力学模块（全8章） | ✅ 已完成 | [M0] | `roadmap/ROADMAP_M1_MECHANICS.md` |
 | [M2] | 力学完善 + 导航系统 | ✅ 已完成 | [M1] | `roadmap/ROADMAP_M2_POLISH.md` |
 | [M3] | 真题训练系统 | ✅ 已完成 | [M1] | `roadmap/ROADMAP_M3_EXAM.md` |
-| [M4] | 电磁/热/光/原子模块 | 🚧 进行中 | [M2] | `roadmap/ROADMAP_M4_PHYSICS.md` |
+| [M4] | 电磁/热/光/原子模块 | ✅ 主体完成（零星补缺已收拢至 `TODO_deferred.md`） | [M2] | `roadmap/ROADMAP_M4_PHYSICS.md` |
 
 **状态标记**：⏳ 待开始 / 🚧 进行中 / ✅ 已完成 / ⛔ 阻塞
 
@@ -31,19 +29,11 @@
 
 ## 🎯 当前活跃任务
 
-> 只保留当前焦点，已完成任务详见 `process/PROCESS_LOG.md`
+> 只保留当前基线快照，日常待办与技术债请直接查看 `process/TODO_deferred.md`。
 
-- **当前里程碑**：[M4] 电磁/热/光/原子模块 🚧 进行中
-- **当前焦点**：[M4-1] 电磁学 ✅ 已收官 · [M4-1.x] CuttingEMF 增强 ✅ · [M4-2] 热学纯函数库 ✅ · [M4-3] 光学纯函数库 ✅
-- **架构完善**：AnimationPage 规范合规重构（773→275行，registry 驱动）✅ · 项目规范整合至 .trae/rules/project_rules.md ✅ · 矢量箭头统一架构（VectorArrow + refMagnitude 归一化 + SceneConfig refMagnitudes + 项目规范同步）✅
-- **力学增强**：竖直上抛运动三屏联动重构 + 进阶模式 ✅ · 速度动画进阶版重构（基础版+进阶版双模式，含变加速/简谐振动/往返多阶段3种模型）✅ · 力的合成与分解手势拖拽重构与三模式教学改进 ✅ · 共点力平衡双绳悬挂手势拖拽重构与封闭三角形演示 ✅
-- **图表迁移**：KineticEnergyAnimation（995→157行）✅ · PowerAnimation（841→192行）✅
-- **章节扩展（2026-09-24）**：**电磁振荡与电磁波** `electricity-6-1/6-2/6-3` ✅ · **批次 1** `electricity-5-5`（感抗与容抗）与 `vibration-2-3`（多普勒效应）✅ · 组件复用守门脚本 `check-component-reuse` ✅（架构门禁 5 → 6 条）· 组件登记表 14 行 props 校正 + `Spring` 组件归位 ✅
-- **下一步**：按 [`process/TODO_deferred.md`](../process/TODO_deferred.md) 施工 ——
-  ① **横向基座先行**：`CharacteristicCurve` / `EnergyFlowBars` / `ChainCircuitBuilder`（§9.2）；
-  ② 批次 2：`electricity-4-8/4-9` 自感互感与涡流阻尼、`electricity-7-1/7-2` 传感器专题（§9.1）；
-  ③ 实验专题：`experiment-3-1` 测量金属丝电阻率（`Micrometer` 组件现成闲置，性价比最高，§9.3）。
-  遗留技术债见同文件**第十章**（E/B 相位差、双实现抽取、阈值统一、门禁粒度升级）。
+- **当前阶段**：建站期主里程碑已收口，进入持续修缮、题库补录与局部模型增强阶段（历史交付记录见 `git log` 与已归档的 [`process/PROCESS_LOG.md`](../process/PROCESS_LOG.md)）。
+- **当前现状**：全仓已注册 **134 个动画**（覆盖力学/电磁/热学/光学/振动/近代物理），实验专题 **12/12 全闭环**，横向基座（`CharacteristicCurve` / `EnergyFlowBars` / `ChainCircuitBuilder`）已全部落地，且架构门禁已升级为 11 项（`npm run check:architecture`）。
+- **后续焦点与挂账**：统一以 [`process/TODO_deferred.md`](../process/TODO_deferred.md) 为准（含 2025 真题其余题目补录、少量专题细化与低优先级技术债）。
 
 ---
 
@@ -57,7 +47,7 @@
 打包：浏览器优先，后期 Electron；base: './'，禁止运行时 CDN
 ```
 
-&gt; 完整架构约束见 `core/ARCHITECTURE_RULES.md`，UI规范见 `ui/02_UI_RULES.md`
+> 完整架构约束见 `core/ARCHITECTURE_RULES.md`，UI规范见 `ui/02_UI_RULES.md`
 
 ---
 
@@ -70,7 +60,7 @@
 | 坐标 | 新页面统一走 `useAnimationViewport` + `useSceneScale` + `worldToDesign`（`src/utils/coordinate.ts` 仅用于存量维护） |
 | 动画 | 所有动画必须通过 `src/utils/animation.ts` |
 | 纯函数 | `src/physics/` `src/math/` 不得依赖 DOM/React/window |
-| 依赖 | 新增 npm 包必须先在 `process/PROCESS_LOG.md` 申报 |
+| 依赖 | 新增 npm 包须同步更新 `core/ARCHITECTURE_RULES.md §11.1` 依赖清单 |
 | 数据 | 知识数据存 `src/data/knowledge/`，题目存 `src/data/problems/` |
 
 ---
@@ -79,12 +69,12 @@
 
 | 文件 | 用途 |
 |------|------|
-| `core/ARCHITECTURE_RULES.md` | 技术架构细则（含铁律权威定义） |
+| `core/ARCHITECTURE_RULES.md` | 技术架构细则（唯一铁律源为 `.trae/rules/project_rules.md`） |
 | `ui/02_UI_RULES.md` | 视觉与交互规范 |
-| `roadmap/ROADMAP_PROGRESS.md` | **本文件**：进度入口 |
+| `roadmap/ROADMAP_PROGRESS.md` | **本文件**：历史规划归档（只读） |
 | `roadmap/ROADMAP_M0_FOUNDATION.md` | [M0] 技术基础详细任务 |
 | `roadmap/ROADMAP_M1_MECHANICS.md` | [M1] 力学全知识点 + 组件清单 |
 | `roadmap/ROADMAP_M2_POLISH.md` | [M2] 力学完善 + 导航系统任务 |
 | `roadmap/ROADMAP_M3_EXAM.md` | [M3] 真题系统全任务 |
 | `roadmap/ROADMAP_M4_PHYSICS.md` | [M4] 电磁/热/光/原子全知识点 |
-| `process/PROCESS_LOG.md` | 变更记录与依赖申报 |
+| `process/PROCESS_LOG.md` | 历史工程日志（只读归档） |

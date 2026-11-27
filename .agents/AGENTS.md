@@ -39,8 +39,8 @@
 | 左屏控件、右屏看板、`CenterExtra`、防压字口径 | `docs/agent-rules/ui/08_THREE_PANEL_RULES.md` |
 | 公共组件 API 与最小调用 | `docs/agent-rules/ui/COMPONENT_REGISTRY.md` |
 | 查询动画入口→场景→物理映射 | `MEMORY.md`（由 `scripts/gen-annotations.mjs` 生成） |
-| 提交前验收（10 项静态守卫 + 真机巡检） | `docs/agent-rules/process/CHECKLIST.md` |
+| 提交前验收（11 项静态守卫 + 真机巡检） | `docs/agent-rules/process/CHECKLIST.md` |
 
 ---
 
-*最后更新：2026-11-18（去重瘦身，统一指向唯一铁律源 `.trae/rules/project_rules.md`）*
+*最后更新：2026-11-27（统一 11 项静态守卫口径）*

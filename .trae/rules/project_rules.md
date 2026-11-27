@@ -24,7 +24,7 @@
 
 > **Trae IDE 默认加载的项目规范文件。**
 > 详细规范见下方「快速索引」部分。
-> 最后更新：2026-11-18（修正 worldToDesign 3参数签名、铁律6 SidebarExtra 清零状态、presetCompensation 过渡口径与 10 项守卫数量）
+> 最后更新：2026-11-27（统一 11 项架构守卫数量口径；此前 11-18 修正 worldToDesign 3参数签名、铁律6 SidebarExtra 清零状态与 presetCompensation 过渡口径）
 
 ---
 
@@ -47,7 +47,7 @@
 | CSS 框架 | TailwindCSS 4 |
 | 状态管理 | Zustand |
 | 路由 | react-router-dom（**HashRouter only**） |
-| 动画渲染 | SVG（教学图解优先）/ Canvas（高频动画）。**未引入 PixiJS**，确需时先按 §4.1 申报 |
+| 动画渲染 | SVG（教学图解优先）/ Canvas（高频动画）。**未引入 PixiJS**，确需时先更新 `ARCHITECTURE_RULES.md §11.1` 依赖清单后再引入 |
 | 数学公式 | KaTeX（完全离线） |
 | 图标 | lucide-react |
 | 数据验证 | 未引入运行时库：由 TypeScript 类型 + 构建器侧 `normalizeParams()` 在边界归一化（**不要**为校验再装 Zod） |
@@ -154,8 +154,8 @@
 
 | 序号 | 规范 |
 |------|------|
-| 1 | 新增 npm 包先在 PROCESS_LOG.md 申报再安装 |
-| 2 | 提交前在 PROCESS_LOG.md 添加记录 |
+| 1 | 新增 npm 包须同步更新 `ARCHITECTURE_RULES.md §11.1` 依赖清单 |
+| 2 | 变更说明与验证结果直接写清在 `git commit` message 中（`PROCESS_LOG.md` 已归档只读，不再强制更新） |
 
 ---
 
@@ -185,16 +185,16 @@
 | 错题本规范 | `docs/agent-rules/ui/05_WRONGBOOK_RULES.md` |
 | 导航与状态保持 | `docs/agent-rules/ui/06_NAVIGATION_RULES.md` |
 | 三屏职责与侧屏组件规范 | `docs/agent-rules/ui/08_THREE_PANEL_RULES.md` |
-| 里程碑进度 | `docs/agent-rules/roadmap/ROADMAP_PROGRESS.md` |
-| 工程日志与提交流程 | `docs/agent-rules/process/PROCESS_LOG.md` |
+| 延后待办与技术债 | `docs/agent-rules/process/TODO_deferred.md` |
+| 里程碑与历史工程日志 | `docs/agent-rules/roadmap/`、`docs/agent-rules/process/PROCESS_LOG.md`（均已归档只读） |
 | 提交 Checklist | `docs/agent-rules/process/CHECKLIST.md` |
 
 ---
 
 ## 7. 提交 Checklist
 
-- **自动项**：跑 `npm run check`（`build` → 全量单测 → 10 项架构守卫 → 联合真机实测 `check:runtime`），全绿才算过；依赖审计另跑 `npm run check:all`。
-  守卫与规范的逐条对应见 [CHECKLIST.md](../docs/agent-rules/process/CHECKLIST.md) 第一节。
+- **自动项**：跑 `npm run check`（`build` → 全量单测 → 11 项架构守卫 → 联合真机实测 `check:runtime`），全绿才算过；依赖审计另跑 `npm run check:all`。
+  守卫与规范的逐条对应见 [CHECKLIST.md](../../docs/agent-rules/process/CHECKLIST.md) 第一节。
 - **人工项**：20 条脚本判不了的内容（教学有效性、三屏分配、文案口味、视觉），见 CHECKLIST.md 第二节。
 
 铁律 1–6 违反则提交无效；**不要**用 `--no-verify` / `eslint-disable` / 往基线塞条目绕过守卫。

@@ -8,107 +8,107 @@
 | anim-ac-values | 有效值与峰值关系 | ACValues | — | rmsCalculator | — |
 | anim-transformer | 变压器原理 | Transformer | TransformerScene | physics | — |
 | anim-power-transmission | 远距离输电 | PowerTransmission | — | physics | — |
-| anim-ac-lc-impedance | 电感与电容对交变电流的作用 | ac-impedance | — | — | — |
-| anim-combined-fields | 带电粒子在复合场与组合场中的运动 | CombinedFieldsAnimation | SpectrometerScene | magnetism/forces | CombinedFieldsCenterExtra |
+| anim-ac-lc-impedance | 电感与电容对交变电流的作用 | ACImpedanceAnimation | ACImpedanceScene | electromagnetism/acImpedance | — |
+| anim-combined-fields | 带电粒子在复合场与组合场中的运动 | CombinedFieldsAnimation | SpectrometerScene, CyclotronScene, DeflectScene | fieldsCascade, magnetism/forces | CombinedFieldsCenterExtra |
 | anim-ohm-law | 部分电路欧姆定律与电表改装 | OhmLaw | — | physics | OhmLawCenterExtra |
 | anim-circuit-analysis | 串并联电路及电路动态分析 | CircuitAnalysis | — | physics | CircuitAnalysisCenterExtra |
 | anim-closed-circuit | 闭合电路欧姆定律与能量分析 | ClosedCircuit | — | physics | ClosedCircuitCenterExtra |
 | anim-multimeter-ohm | 多用电表与欧姆表原理 | Multimeter | — | physics | MultimeterCenterExtra |
 | anim-experiment-er | 实验：测定电源电动势与内阻 | ExperimentEr | ExperimentErScene | physics | ExperimentErCenterExtra |
 | anim-motor-circuit | 非纯电阻电路与电动机 | NonPureCircuit | — | physics | NonPureCircuitCenterExtra |
-| anim-charge-elementary | 电荷、起电方式与元电荷 | charge-elementary | — | — | — |
-| anim-coulomb-law | 库仑定律 | CoulombLaw | — | — | — |
-| anim-electric-field | 电场强度与比值定义法 | ElectricField | ElectricFieldBasicScene | constants | — |
-| anim-charge-in-efield | 带电粒子在匀强电场中运动 | ChargeInEField | — | electromagnetism | — |
-| anim-capacitor | 平行板电容器 | Capacitor | — | physics | — |
+| anim-charge-elementary | 电荷、起电方式与元电荷 | ChargeElementaryAnimation | ChargeElementaryScene | physics | — |
+| anim-coulomb-law | 库仑定律 | CoulombLaw | — | physics | — |
+| anim-electric-field | 电场强度与比值定义法 | ElectricField | ElectricFieldBasicScene, ElectricFieldAdvancedScene | physics | — |
+| anim-charge-in-efield | 带电粒子在匀强电场中运动 | ChargeInEField | — | magnetism/forces, electromagnetism | — |
+| anim-capacitor | 平行板电容器 | Capacitor | — | electromagnetism/rcTransient | — |
 | anim-field-lines | 电场线与等势面关系 | FieldLines | — | physics | — |
-| anim-electric-potential | 电势与电势差 | ElectricPotential | ElectricPotentialChartScene | physics | — |
-| anim-electrostatic-shielding | 静电平衡与静电屏蔽 | electrostatic-shielding | — | — | — |
-| anim-equal-charge-field | 等量电荷场线模型 | equal-charge-field | — | — | — |
+| anim-electric-potential | 电势与电势差 | ElectricPotential | ElectricPotentialChartScene, ElectricPotentialAnimScene | physics | — |
+| anim-electrostatic-shielding | 静电平衡与静电屏蔽 | ElectrostaticShieldingAnimation | ElectrostaticShieldingScene | electromagnetism/electrostaticShielding | — |
+| anim-equal-charge-field | 等量电荷场线模型 | EqualChargeFieldAnimation | EqualChargeFieldScene | physics | — |
 | anim-lc-oscillation | 电磁振荡（LC 振荡电路） | EMOscillationAnimation | LCOscillationScene | physics | — |
 | anim-em-wave | 麦克斯韦电磁场理论与电磁波 | EMOscillationAnimation | EMWaveScene | physics | — |
-| anim-em-spectrum | 电磁波谱与无线电波的发射与接收 | EMOscillationAnimation | EMSpectrumScene | physics | — |
+| anim-em-spectrum | 电磁波谱与无线电波的发射与接收 | EMOscillationAnimation | EMSpectrumScene, RadioTuningScene, RadioModulationScene | physics | — |
 | anim-electromagnetic-induction | 第一节：电磁感应现象 | InductionPhenomenon | — | induction | — |
 | anim-faraday-law | 法拉第电磁感应定律 | FaradayLaw | — | electromagnetism | — |
 | anim-lenzs-law | 楞次定律 | LenzsLaw | — | physics | — |
 | anim-cutting-emf | 导体切割磁感线 | CuttingEMF | CuttingEMFScene | physics | — |
-| anim-induction-single-rod | 电磁感应单杆模型 | SingleRodAnimation | — | singleRod | SingleRodCharts |
+| anim-induction-single-rod | 电磁感应单杆模型 | SingleRodAnimation | — | singleRod, magnetism/forces | SingleRodCharts |
 | anim-induction-dual-rods | 电磁感应双杆模型 | InductionDualRods | DualRodsScene | physics | — |
 | anim-induction-loop-field | 电磁感应线框模型 | InductionLoopField | LoopPassFieldScene | loopPassField | — |
 | anim-self-induction-eddy | 自感、互感与电磁阻尼 | SelfInductionAnimation | SelfInductionScene | electromagnetism/selfInduction | SelfInductionCenterExtra |
-| anim-magnetic-field-flux | 磁感应强度与磁通量 | magnetic-flux | — | — | — |
-| anim-ampere-force | 安培力 F=BIL | AmpereForce | BasicAmpereScene | — | — |
+| anim-magnetic-field-flux | 磁感应强度与磁通量 | MagneticFluxAnimation | MagneticFluxScene | physics | — |
+| anim-ampere-force | 安培力 F=BIL | AmpereForce | BasicAmpereScene, InclinedAmpereScene | physics | — |
 | anim-lorentz-force | 洛伦兹力 F=qvB | VelocitySelector | VelocitySelectorScene | physics | — |
-| anim-charge-in-bfield | 带电粒子在磁场中运动 | ChargeInBField | — | physics | — |
+| anim-charge-in-bfield | 带电粒子在磁场中运动 | ChargeInBField | — | magnetism/forces | — |
 | anim-magnetic-circular-geom | 磁场圆周几何模型 | CircularGeometryModel | — | physics | CircularGeometryModelExtra |
 | anim-sensors | 常见传感器及其工作原理与应用 | SensorAnimation | SensorScene | electromagnetism/sensors | SensorCenterExtra |
 | anim-circular-motion | 匀速圆周运动 | CircularMotionAnimation | — | physics | — |
 | anim-centripetal | 向心加速度与向心力 | CentripetalAnimation | CentripetalScene | physics | — |
-| anim-vertical-circular | 竖直圆模型 | VerticalCircularAnimation | VerticalCircularScene | physics | — |
+| anim-vertical-circular | 竖直圆模型 | VerticalCircularAnimation | VerticalCircularScene | dynamics/dynamics-advanced | — |
 | anim-circular-models | 圆盘与圆锥摆模型 | CircularModelsAnimation | — | circularModels | CircularModelsChart |
 | anim-kepler | 开普勒定律 | KeplerAnimation | — | celestial | — |
-| anim-satellite | 人造卫星宇宙速度与入轨演示 | SatelliteAnimation | — | constants | — |
+| anim-satellite | 人造卫星宇宙速度与入轨演示 | SatelliteAnimation | — | physics | — |
 | anim-binary-stars | 双星与多星系统 | BinaryStarsAnimation | — | celestial | BinaryStarsCenterExtra |
-| anim-orbit-transfer | 卫星变轨模型（霍曼转移） | OrbitTransferAnimation | — | constants | — |
-| anim-relativity | 相对论时空观与牛顿力学的局限性 | RelativityAnimation | RelativityScene | relativity | — |
-| anim-spring-force | 弹力演示 | SpringForceAnimation | SpringForceHookeLawScene | dynamics/spring-force | SpringForceCenterExtra |
+| anim-orbit-transfer | 卫星变轨模型（霍曼转移） | OrbitTransferAnimation | — | orbitTransfer | — |
+| anim-relativity | 相对论时空观与牛顿力学的局限性 | RelativityAnimation | RelativityScene, TimeDilationScene, LengthSimultaneityScene, NewtonLimitsScene, EnergyExtensionScene | relativity | — |
+| anim-spring-force | 弹力演示 | SpringForceAnimation | SpringForceHookeLawScene, ElasticNormalForceScene, ElasticTensionForceScene | dynamics/spring-force | SpringForceCenterExtra |
 | anim-light-weight-mutation | 轻质物体突变模型 | LightWeightMutationAnimation | SpringForceCutRopeScene | dynamics/spring-force | SpringForceCenterExtra |
-| anim-gravity-basic | 重力与重心 | GravityBasicAnimation | EarthGravityScene | — | — |
-| anim-friction | 摩擦力演示 | FrictionAnimation | BasicModeScene | constants | FrictionCenterExtra |
+| anim-gravity-basic | 重力与重心 | GravityBasicAnimation | EarthGravityScene, SuspendedPlateScene | — | — |
+| anim-friction | 摩擦力演示 | FrictionAnimation | BasicModeScene, InclineModeScene | physics | FrictionCenterExtra |
 | anim-inclined-plane | 斜面模型 | InclinedPlaneAnimation | — | inclined_plane | InclinedPlaneCenterExtra |
 | anim-conveyor | 传送带模型 | ConveyorAnimation | — | conveyor | ConveyorChart |
 | anim-vector-addition | 力的合成与分解 | VectorAdditionAnimation | — | physics | — |
-| anim-orthogonal-decomposition | 正交分解与建系优化 | OrthogonalDecompositionAnimation | — | — | — |
+| anim-orthogonal-decomposition | 正交分解与建系优化 | OrthogonalDecompositionAnimation | — | orthogonalDecomposition | — |
 | anim-equilibrium | 共点力平衡 | EquilibriumAnimation | — | dynamics | — |
-| anim-newton-second | 牛顿第二定律 | NewtonSecondAnimation | — | constants | NewtonSecondCenterExtra |
+| anim-newton-second | 牛顿第二定律 | NewtonSecondAnimation | — | physics | NewtonSecondCenterExtra |
 | anim-weightlessness | 超重与失重 | WeightlessnessAnimation | — | physics | WeightlessnessCenterExtra |
 | anim-connected-bodies | 连接体问题 | ConnectedBodiesAnimation | — | dynamics/connected-body | ConnectedBodiesCenterExtra |
-| anim-system-isolated | 方法论：整体法与隔离法 | SystemIsolatedMethodologyAnimation | — | constants | SystemIsolatedMethodologyCenterExtra |
+| anim-system-isolated | 方法论：整体法与隔离法 | SystemIsolatedMethodologyAnimation | — | systemIsolated | SystemIsolatedMethodologyCenterExtra |
 | anim-gravity | 万有引力定律 | GravityAnimation | — | — | — |
 | anim-block-board | 板块模型 | BlockBoardAnimation | — | blockBoard | BlockBoardChart |
 | anim-work | 恒力做功 | WorkAnimation | — | work | — |
 | anim-power | 功率 | PowerAnimation | PowerScene | power | — |
-| anim-kinetic-energy | 动能定理 | KineticEnergyAnimation | KineticEnergyScene | constants | — |
-| anim-potential-energy | 重力势能与弹性势能 | PotentialEnergyAnimation | GravityScene | potentialEnergy | — |
-| anim-energy-conservation | 机械能守恒定律 | EnergyConservationAnimation | PendulumScene | energyConservation | — |
+| anim-kinetic-energy | 动能定理 | KineticEnergyAnimation | KineticEnergyScene | kineticEnergy | — |
+| anim-potential-energy | 重力势能与弹性势能 | PotentialEnergyAnimation | GravityScene, ElasticScene | potentialEnergy | — |
+| anim-energy-conservation | 机械能守恒定律 | EnergyConservationAnimation | PendulumScene, ValleyScene | energyConservation | — |
 | anim-vertical-spring | 竖直弹簧复合模型 | SpringCompositeAnimation | — | verticalSpring | — |
 | anim-light-rod-rope | 轻杆/轻绳连接体 | LightRodRopeAnimation | LightRodRopeScene | lightRodRope | — |
 | anim-mechanics-experiment-base | 力学实验基础：纸带与光电门 | MechanicsExperimentAnimation | MechanicsExperimentScene | experimentMechanics | — |
-| anim-experiment-newton-second | 探究加速度与力、质量的关系 | ExperimentNewtonSecondAnimation | — | experimentNewtonSecond | — |
-| anim-experiment-mechanical-energy | 验证机械能守恒定律 | ExperimentMechanicalEnergyAnimation | — | constants | — |
+| anim-experiment-newton-second | 探究加速度与力、质量的关系 | ExperimentNewtonSecondAnimation | — | experimentNewtonSecond, experimentMechanics | — |
+| anim-experiment-mechanical-energy | 验证机械能守恒定律 | ExperimentMechanicalEnergyAnimation | — | experimentMechanics | — |
 | anim-experiment-resistivity | 实验：测量金属丝的电阻率 | ExperimentResistivityAnimation | ExperimentResistivityScene | experimentResistivity | ExperimentResistivityCenterExtra |
 | anim-multimeter | 实验：多用电表的使用与内部原理 | MultimeterAnimation | MultimeterScene | experimentMultimeter | — |
 | anim-experiment-bulb-va | 实验：描绘小灯泡的伏安特性曲线 | BulbVAAnimation | BulbVAScene | physics | — |
 | anim-experiment-refraction | 实验：测定玻璃的折射率（插针法） | RefractionExperimentAnimation | RefractionExperimentScene | experimentRefraction | — |
-| anim-force-motion-topic | 力与运动专题 | ForceMotionTopic | — | physics | — |
+| anim-force-motion-topic | 力与运动专题 | ForceMotionTopic | — | forceMotion | — |
 | anim-velocity | 速度演示 | VelocityAnimation | — | physics | VelocityCenterExtra |
 | anim-acceleration | 加速度演示 | AccelerationAnimation | — | physics | — |
 | anim-chase-meeting | 追及相遇模型 | AccelerationCenterExtra | — | kinematics/acceleration | — |
 | anim-uniform-acceleration | 匀变速直线运动 | UniformAccelerationAnimation | — | physics | UniformAccelerationCenterExtra |
-| anim-free-fall | 自由落体运动 | FreeFallWrapper | — | — | — |
+| anim-free-fall | 自由落体运动 | FreeFallWrapper | FreeFallScene | kinematics/trajectory | — |
 | anim-vertical-throw | 竖直上抛运动 | VerticalThrowAnimation | — | physics | — |
 | anim-projectile | 平抛运动 | ProjectileAnimation | ProjectileScene | kinematics/trajectory | — |
 | anim-oblique-throw | 斜抛运动 | ObliqueThrowAnimation | ObliqueThrowScene | physics | — |
 | anim-kinematics-advanced | 运动学图像扩展 | KinematicsAdvancedAnimation | — | — | — |
 | anim-momentum | 动量 | MomentumAnimation | MomentumScene | momentum | — |
 | anim-impulse-concept | 冲量 | ImpulseAnimation | — | impulse | — |
-| anim-impulse | 动量定理 | MomentumTheoremAnimation | MomentumBasicScene | momentumTheorem | MomentumTheoremChartsExtra |
+| anim-impulse | 动量定理 | MomentumTheoremAnimation | MomentumBasicScene, MomentumAdvancedScene | momentumTheorem | MomentumTheoremChartsExtra |
 | anim-momentum-conservation | 动量守恒定律 | MomentumConservationAnimation | — | momentumConservation | — |
-| anim-experiment-momentum | 验证动量守恒定律（气轨光电门） | ExperimentMomentumAnimation | AirTrackExperimentScene | momentumConservation | — |
-| anim-collision | 弹性碰撞与非弹性碰撞 | CollisionAnimation | CollisionBasicScene | — | — |
+| anim-experiment-momentum | 验证动量守恒定律（气轨光电门） | ExperimentMomentumAnimation | AirTrackExperimentScene | momentumConservation, experimentMomentum | — |
+| anim-collision | 弹性碰撞与非弹性碰撞 | CollisionAnimation | CollisionBasicScene, CollisionAdvancedScene | collision | — |
 | anim-curved-slot | 弧形槽与滑块模型 | CurvedSlotAnimation | — | momentumApplication/curvedSlot | — |
 | anim-spring-blocks | 弹簧-双滑块模型 | SpringBlocksAnimation | — | momentumApplication/springBlocks | — |
 | anim-bullet-block | 子弹打木块模型 | BulletBlockAnimation | BulletBlockScene | bulletBlock | — |
 | anim-man-boat | 人船模型 | ManBoatAnimation | — | momentumApplication/manBoat | — |
 | anim-alpha-scatter | α 粒子散射实验与核式结构 | AlphaScatterAnimation | — | alphaScatter | — |
 | anim-bohr-theory | 玻尔原子理论与氢光谱能级跃迁 | BohrTheoryAnimation | — | — | — |
-| anim-photoelectric | 光电效应与光的波粒二象性 | PhotoelectricAnimation | — | photoelectric | — |
+| anim-photoelectric | 光电效应与光的波粒二象性 | PhotoelectricAnimation | ComptonScatteringScene | photoelectric | — |
 | anim-nuclear-decay | 原子核的组成与天然放射 | NuclearDecayAnimation | NuclearDecayScene | nuclearDecay | — |
 | anim-decay-magnetic-orbit | 静止核衰变磁场径迹 | DecayMagneticOrbitAnimation | DecayMagneticOrbitScene | nuclearDecay | — |
 | anim-nuclear-half-life | 原子核衰变与半衰期 | NuclearHalfLifeAnimation | NuclearHalfLifeScene | nuclearDecay | — |
-| anim-nuclear-reaction | 核反应、结合能与质量亏损 | NuclearReactionAnimation | NuclearReactionScene | — | — |
+| anim-nuclear-reaction | 核反应、结合能与质量亏损 | NuclearReactionAnimation | NuclearReactionScene, BindingEnergyScene, FusionFissionScene, ChainReactionScene | chainReaction | — |
 | anim-diffraction | 光的衍射与泊松亮斑 | DiffractionAnimation | DiffractionScene | optics | — |
-| anim-dispersion | 光的色散与光谱综合 | DispersionAnimation | DispersionScene | optics | — |
+| anim-dispersion | 光的色散与光谱综合 | DispersionAnimation | DispersionScene | optics, optics/dispersion | — |
 | anim-double-slit-interference | 光的双缝干涉 | DoubleSlitInterferenceAnimation | DoubleSlitTheoryScene | optics | — |
 | anim-experiment-double-slit | 用双缝干涉测光的波长 | ExperimentDoubleSlitAnimation | DoubleSlitEyepieceScene | optics | — |
 | anim-thin-film-interference | 薄膜干涉与增透膜 | ThinFilmInterferenceAnimation | ThinFilmInterferenceScene | optics | — |
@@ -122,21 +122,21 @@
 | anim-first-law | 热力学第一定律（能量守恒） | FirstLawAnimation | FirstLawScene | firstLaw | FirstLawCenterExtra |
 | anim-gas-laws | 气体实验三定律 | GasLawsAnimation | — | gasLaws | GasLawsCenterExtra |
 | anim-clapeyron | 理想气体状态方程 | ClapeyronAnimation | — | clapeyron | ClapeyronCenterExtra |
-| anim-solids-liquids | 固体、液体与表面张力 | solids-liquids | — | — | — |
-| anim-saturated-vapor | 饱和汽与相对湿度 | saturated-vapor | — | — | SaturatedVaporCenterExtra |
+| anim-solids-liquids | 固体、液体与表面张力 | SolidsLiquidsAnimation | SolidsLiquidsScene | thermodynamics/solidsLiquids | — |
+| anim-saturated-vapor | 饱和汽与相对湿度 | SaturatedVaporAnimation | SaturatedVaporScene | thermodynamics/saturatedVapor | SaturatedVaporCenterExtra |
 | anim-brownian-motion | 分子热运动与布朗运动 | BrownianMotion | BrownianScene | brownianMotion | BrownianMotionCenterExtra |
-| anim-micro-quantities | 阿伏伽德罗常数与微观估算 | microQuantities | — | — | — |
+| anim-micro-quantities | 阿伏伽德罗常数与微观估算 | MicroQuantitiesAnimation | MicroScene | brownianMotion | — |
 | anim-intermolecular-forces | 分子间作用力与分子势能 | IntermolecularForcesAnimation | — | intermolecularForces | — |
-| anim-maxwell-distribution | 气体分子运动的统计规律 | maxwellDistribution | — | — | — |
-| anim-oil-film-experiment | 学生实验：用油膜法估测油酸分子的大小 | oilFilmExperiment | — | — | — |
+| anim-maxwell-distribution | 气体分子运动的统计规律 | MaxwellDistributionAnimation | MaxwellScene | maxwellDistribution | — |
+| anim-oil-film-experiment | 学生实验：用油膜法估测油酸分子的大小 | OilFilmExperimentAnimation | OilFilmScene | oilFilmExperiment | — |
 | anim-second-law | 热力学第二定律（方向性与熵增） | SecondLawAnimation | SecondLawScene | secondLaw | SecondLawCenterExtra |
-| anim-simple-harmonic | 简谐运动（弹簧振子） | SimpleHarmonicAnimation | HorizontalSpringScene | oscillation | — |
+| anim-simple-harmonic | 简谐运动（弹簧振子） | SimpleHarmonicAnimation | HorizontalSpringScene, VerticalSpringScene | oscillation | — |
 | anim-simple-pendulum | 单摆 | SimplePendulumAnimation | — | oscillation | SimplePendulumCenterExtra |
-| anim-experiment-pendulum | 用单摆测重力加速度 | ExperimentPendulumAnimation | — | oscillation | ExperimentPendulumCenterExtra |
+| anim-experiment-pendulum | 用单摆测重力加速度 | ExperimentPendulumAnimation | — | oscillation, experimentPendulum | ExperimentPendulumCenterExtra |
 | anim-mechanical-wave | 机械波的形成与传播 | MechanicalWaveAnimation | — | wave | MechanicalWaveCenterExtra |
 | anim-wave-diffraction | 波的衍射 | WaveDiffractionAnimation | — | wave | WaveDiffractionCenterExtra |
 | anim-wave-interference | 波的干涉 | WaveInterferenceAnimation | — | wave | WaveInterferenceCenterExtra |
-| anim-doppler-effect | 多普勒效应 | doppler | — | — | — |
-| anim-forced-resonance | 受迫振动与共振 | forced-resonance | — | — | ForcedResonanceCenterExtra |
+| anim-doppler-effect | 多普勒效应 | DopplerAnimation | DopplerWavefrontScene | vibration/doppler | — |
+| anim-forced-resonance | 受迫振动与共振 | ForcedResonanceAnimation | ForcedResonanceScene | vibration/forcedResonance | ForcedResonanceCenterExtra |
 
 共 134 个动画条目。

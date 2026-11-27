@@ -1,8 +1,8 @@
 # 延后处理待办事项
 
-> **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
+> **本文档是待完成计划，不是完成记录。** 详细完成记录以 `git commit` 历史为准（历史流水账已归档于 `PROCESS_LOG.md`）。
 >
-> 最后更新：2026-11-04（新增 §10.7：两个数据文件 CRLF 入库导致 `git diff` 显示整文件重写；11-03 新增第 17/18 项：磁通量投影面积 S⊥ = S·cosθ 与测 B 两处缺口）
+> 最后更新：2026-11-27（核销 §9.1 第 17/18 项、`EnergyFlowBars`、实验专题 12/12 及全仓动画/真题/11 项守卫口径）
 
 ---
 
@@ -161,7 +161,7 @@ export interface AnimationModule<P extends AnimationParams> {
 ```
 
 目标：将组件、参数、面板、公式、测试聚合到同一 feature 模块附近，减少跨目录跳转。
-注：`anim-vertical-circular` quantities 已补齐（复用 `precomputeVerticalCircularMotion`），当前 124/124 动画均有 quantities 注册。
+注：`anim-vertical-circular` quantities 已补齐（复用 `precomputeVerticalCircularMotion`），当前 134 个动画均已完成 quantities 注册。
 
 ### 4.2 viewModel 层 + 坐标类型（P2/P3）
 
@@ -408,8 +408,8 @@ npx playwright test
 ## 九、内容补全待办（章节扩展 / 横向基座 / 实验专题 / 题库）
 
 > **来源**：`physics-learning-内容补全建议-2026-09-22.md`（缺口基线）+ 2026-09-24 逐轮实测核对。
-> **性质**：本章是**待完成计划**，不是完成记录。每完成一项把状态改为 `[x]`，并在 `PROCESS_LOG.md` / `logs/2026-Wxx.md` 写完成记录（含验证命令）。
-> **总账（2026-10-11）**：16 个缺口考点**已完成 15 项**（批次 1、2、3 均闭环完成，批次 4 已完成薄膜干涉、相对论时空观及部分实验专题，动画数增至 124），P0 已全部完成。
+> **性质**：本章是**待完成计划**，不是完成记录。每完成一项把状态改为 `[x]`，并在 `git commit` 中说明验证结果。
+> **总账（2026-11-27）**：18 项缺口考点（原 16 项 + 新增第 17/18 项）**已全部完成**，全仓注册动画数增至 **134**，P0–P3 均已闭环。
 
 ### 9.1 缺口考点清单（16 项）
 
@@ -431,8 +431,8 @@ npx playwright test
 | 14 | P1-4 | `wave-optics-1-5` | 薄膜干涉与增透膜 | `wave-optics-1-1` 干涉骨架 | [x] 已完成 |
 | 15 | P2 | `mechanics-6-6` | 相对论时空观与牛顿力学的局限性 | 双参考系光钟与动钟尺缩几何 | [x] 已完成 |
 | 16 | P2 | `thermodynamics-3-3` | 能量守恒定律与能源 | 非计算章节 | [x] 已完成（`anim-energy-flow` 三情境） |
-| 17 | P1-2 | `electricity-3-0` 内补 | 磁通量 Φ = BS⊥ = BS·cosθ（线圈斜放取投影面积） | `anim-faraday-law` 加「线圈倾角 θ」mode：斜放线圈 + 法线 + 投影面积虚线（需新画法，不是加个参数就行） | [ ] 未开始 |
-| 18 | P3 | `electricity-3-0` 内补 | 用控制变量法测 B（改 I、改 L 看 F，作 F–I 图由斜率求 B） | `anim-ampere-force` 已有 F ∝ I、F ∝ L 的对照，可加「作 F–I 图求 B」mode | [ ] 暂不排（近 5 年考查频率低，`coverageNote` 已明示不覆盖） |
+| 17 | P1-2 | `electricity-3-0` 内补 | 磁通量 Φ = BS⊥ = BS·cosθ（线圈斜放取投影面积） | `anim-magnetic-field-flux`（`mode=1` 投影与 Φ + 法线 `n̂` + 投影面 `S⊥`） | [x] 已完成（`anim-magnetic-field-flux`） |
+| 18 | P3 | `electricity-3-0` 内补 | 用控制变量法测 B（改 I、改 L 看 F，作 F–I 图由斜率求 B） | `anim-magnetic-field-flux`（`mode=0` 比值测 B，`F–I` / `F–L` / `F–(IL)` 图像斜率） | [x] 已完成（`anim-magnetic-field-flux`） |
 | — | P2 | `modern-1-2` 内扩 mode | 康普顿效应 | 作为光电效应动画的一个 mode，**不单列节点** | [x] 已完成 |
 | — | P2 | `electricity-1-6` 内补 | 电势能 | 已在 `anim-electric-potential` 完整覆盖（含 $U_{AB}$、$\Delta E_p$、做功与路径无关） | [x] 已确认覆盖 |
 
@@ -446,7 +446,7 @@ for id in electricity-5-5 electricity-7-1 electricity-7-2 vibration-1-3 vibratio
 done
 ```
 
-**开放问题（动工前需定）**：① 固体与液体/饱和汽湿度是新起「热学 第4章」还是把现有「第2章 气体实验定律」改名；② 是否接受「一动画多节点」（`electricity-4-8/4-9` 共 mode）；③ 新增定性章节做到「现象演示级」还是「高考计算级」；④ 先补章节还是先补 2025 真题。
+**关于已归档 `ROADMAP_M4` 遗留条目**：11-03 审计已确认 `ResistivityLaw`、`ElectricPower`、`MeterConnection` 均已有现有动画覆盖（分别为 `anim-experiment-resistivity`、`anim-closed-circuit` 功率模式 + `anim-motor-circuit`、`anim-ohm-law` + `anim-multimeter`），不再单独列为缺口；仅 §9.4 保留拿到 2025 原卷第 10 题后视需要单补内外接误差专页的说明。
 
 ### 9.2 横向基座（P1，**必须先于节点铺开**）
 
@@ -455,11 +455,11 @@ done
 | # | 基座 | 服务对象 | 现状 | 状态 |
 |:-:|------|---------|------|:----:|
 | 1 | `CharacteristicCurve`（通用特性曲线屏） | 传感器 R-光照/R-T、共振曲线、伏安特性曲线、`X_L(f)`/`X_C(f)`、LC 振荡曲线 | 已在 `src/components/Chart/` 实现并登记 | [x] 已完成 |
-| 2 | `EnergyFlowBars`（能量转换柱扩展） | LC 振荡、电磁阻尼、热力学第一定律；由现有 `EnergyBars` 扩出「两库互相转换」模式 | 目前仅单组柱 `EnergyBars` | [ ] 未开工 |
+| 2 | `EnergyFlowBars`（能量转换柱扩展） | LC 振荡、电磁阻尼、热力学第一定律；能量流与多库对比柱状图 | 已在 `src/components/Physics/EnergyFlowBars.tsx` 实现导出，并由 `EnergyFlowScene` 消费 | [x] 已完成 |
 | 3 | `ChainCircuitBuilder`（电路拓扑构建） | 传感器、感抗容抗、实验电路（**小灯泡伏安特性 `experiment-3-2` 前置核心依赖**） | 已在 `src/components/Physics/` 实现并登记 | [x] 已完成 |
 
 > **落地约束**：三者需从 `src/components/Physics/index.ts`（或 `Chart/`）导出，并在 `COMPONENT_REGISTRY.md` 登记**与源码一致的完整 props 签名**（见 §10.6）。
-> **核对命令**：`grep -rl "CharacteristicCurve\|EnergyFlowBars\|ChainCircuitBuilder" src/components src/features`（实测：CharacteristicCurve 6 处、ChainCircuitBuilder 5 处已落地消费；EnergyFlowBars 未开工）
+> **核对命令**：`grep -rl "CharacteristicCurve\|EnergyFlowBars\|ChainCircuitBuilder" src/components src/features`（三项横向基座均已落地导出并消费）
 
 ### 9.3 实验专题扩展（12 个节点，P1，**12/12 全闭环**）
 
@@ -506,7 +506,7 @@ done
 
 ### 9.4 题库时效性（P1）
 
-- 现有题库带 `year:` 的真题共 **68** 题（原 64 题：2020:2 / 2021:9 / 2022:12 / 2023:26 / 2024:15；**2026-11-02 新增 2025:4**）。
+- 现有题库带 `year:` 的真题共 **51** 题（按源码实际统计：2020:3 / 2021:3 / 2022:7 / 2023:17 / 2024:17 / 2025:4）。
 - [x] **2025 真题首批录入（2026-11-02）**：`src/data/problems/gaokao2025.ts` 收录 2025 年全国卷（理综）第 14~17 题——
   动车组匀减速（`mechanics-2-1`）、天都一号椭圆轨道（`mechanics-6-1/6-2/6-3`，绑 `anim-kepler`）、
   撑杆跳高能量转化（`mechanics-7-5`）、匀强电场中正电荷轨迹辨析（`electricity-1-2/1-3`）。
@@ -526,9 +526,9 @@ done
 | 批次 1（剩余） | `electricity-5-5`、`vibration-2-3` | 考点最热 + 复用度最高 + 无既有语义冲突 | [x] 已完成 |
 | 批次 2 | `electricity-4-8/4-9`、`electricity-7-1/7-2` | 需先确认与既有 induction 动画控制项不冲突 | [x] 已完成 |
 | 批次 3 | `vibration-1-3`、`thermodynamics-2-3/2-4`、`electricity-1-8` | 需新组件，工作量中等 | [x] 已完成 |
-| 批次 4 | `wave-optics-1-5`、`mechanics-6-6`、实验专题专用页与内生闭环、2025 真题 | `wave-optics-1-5` 与 `mechanics-6-6` 已闭环；实验专题 11/12 闭环（3-3 插针法交付、3-4 双缝干涉内生实验闭环、2-4 单摆测g内生实验闭环、2-3 动量守恒内生实验闭环）；余 1 处力学实验过渡及 2025 真题录入 | [进行中] 推进实验专题深化与真题补全 |
+| 批次 4 | `wave-optics-1-5`、`mechanics-6-6`、实验专题专用页与内生闭环、2025 真题 | `wave-optics-1-5` 与 `mechanics-6-6` 已闭环；实验专题 **12/12 已全部闭环**（含 `experiment-2-2` 验证机械能守恒内生模式）；余 2025 真题继续补全 | [进行中] 推进 2025 真题补全 |
 
-**每批次收尾必跑**：`tsc -b` / `eslint . --max-warnings 0` / `vitest run` / 6 个守门脚本（`npm run check:architecture`）/ 知识树↔注册表一致性（0 悬空 0 孤儿）。
+**每批次收尾必跑**：`tsc -b` / `eslint . --max-warnings 0` / `vitest run` / 11 项架构守卫（`npm run check:architecture`）/ 知识树↔注册表一致性（0 悬空 0 孤儿）。
 **每个新动画必须带**：≥1 个带数值断言的单测（方向/符号类错误只有数值断言能拦）。
 
 ---
