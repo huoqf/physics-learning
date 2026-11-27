@@ -1,19 +1,23 @@
 import { FC } from 'react'
 import {
-  LightBulb,
-  DialMeter,
-  CoilBase,
   CapacitorPlates,
+  CoilBase,
+  DCSource,
+  DC_SOURCE_SYMBOL_OFFSET,
+  DialMeter,
+  LightBulb,
   VectorArrow,
 } from '@/components/Physics'
-import {
-  EM_COLORS,
-  SCENE_COLORS,
-  CANVAS_COLORS,
-  PHYSICS_COLORS,
-  STROKE,
-} from '@/theme/physics'
+import { AC_COIL_DC_RESISTANCE } from '@/physics/electromagnetism/acImpedance'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
+import {
+  CANVAS_COLORS,
+  EM_COLORS,
+  PHYSICS_COLORS,
+  SCENE_COLORS,
+  STROKE,
+  withAlpha,
+} from '@/theme/physics'
 import type { CanvasSize } from '@/utils'
 import type { ACImpedancePhysicsResult, BranchState } from '../hooks/useACImpedancePhysics'
 
@@ -23,37 +27,413 @@ interface ACImpedanceSceneProps {
   time: number
 }
 
+const AC_SOURCE_RADIUS = 20
+
+function ACSourceSymbol({ x, y }: { x: number; y: number }) {
+  return (
+    <g transform={`translate(${x}, ${y})`}>
+      <circle
+        cx={0}
+        cy={0}
+        r={AC_SOURCE_RADIUS}
+        fill={CANVAS_COLORS.white}
+        stroke={EM_COLORS.electricPotential}
+        strokeWidth={STROKE.objectLine}
+      />
+      <path
+        d="M -11 0 Q -5.5 -9, 0 0 T 11 0"
+        fill="none"
+        stroke={EM_COLORS.electricPotential}
+        strokeWidth={2.2}
+        strokeLinecap="round"
+      />
+    </g>
+  )
+}
+
+/**
+ * 水平导线上的微观载流子微粒：
+ * - dc-flow：持续向右流动，直观表现恒定/爬升电流；
+ * - dc-charge / oscillate：绕平衡位置往复或充电单次位移，绝不越过电容极板绝缘空隙。
+ */
+function WireChargeDots({
+  x1,
+  x2,
+  y,
+  motionMode,
+  phase,
+  amplitudeScale,
+  active,
+}: {
+  x1: number
+  x2: number
+  y: number
+  motionMode: 'oscillate' | 'dc-flow' | 'dc-charge'
+  phase: number
+  amplitudeScale: number
+  active: boolean
+}) {
+  if (!active || x2 - x1 < 24) return null
+
+  const span = x2 - x1
+  const spacing = 22
+  const positions: number[] = []
+
+  if (motionMode === 'dc-flow') {
+    const count = Math.max(1, Math.floor(span / spacing))
+    const step = span / count
+    for (let i = 0; i < count; i++) {
+      const px = x1 + ((i + phase) % count) * step
+      if (px >= x1 + 3 && px <= x2 - 3) positions.push(px)
+    }
+  } else {
+    const count = Math.max(1, Math.floor((span - 16) / spacing))
+    const step = (span - 16) / count
+    const shift =
+      motionMode === 'dc-charge'
+        ? phase * 10
+        : phase * 7 * amplitudeScale
+    for (let i = 0; i < count; i++) {
+      const anchor = x1 + 8 + (i + 0.5) * step
+      const px = Math.max(x1 + 3, Math.min(x2 - 3, anchor + shift))
+      positions.push(px)
+    }
+  }
+
+  return (
+    <g pointerEvents="none">
+      {positions.map((px, idx) => (
+        <circle
+          key={idx}
+          cx={px}
+          cy={y}
+          r={2.5}
+          fill={PHYSICS_COLORS.electricCurrent}
+          stroke={CANVAS_COLORS.white}
+          strokeWidth={0.8}
+        />
+      ))}
+    </g>
+  )
+}
+
 export const ACImpedanceScene: FC<ACImpedanceSceneProps> = ({
   physics,
   canvasSize,
   time,
 }) => {
   const { font } = canvasSize
-  const { voltage, frequency, isDC, branchA, branchB } = physics
+  const {
+    mode,
+    isDC,
+    filterType,
+    hasCore,
+    voltage,
+    frequency,
+    capacitance,
+    resistance,
+    branches,
+    totalCurrent,
+    totalInstantSign,
+    transient,
+    filterState,
+  } = physics
 
-  // 坐标几何系统（设计基准：840 × 325，标准阶梯双母线并联回路）
-  // 左侧总供电母线 x=140，右侧总汇流母线 x=740
-  // 支路1 y=85，支路2 y=175，底干路电源线 y=265
-  const busLeftX = 140
+  // ── 模式 2：扼流圈与旁路电容滤波电路 ───────────────────────────────────
+  if (mode === 2) {
+    const topY = 86
+    const bottomY = 238
+    const sourceX = 95
+    const sourceY = 162
+    const coilX = 255
+    const coilHalfW = 50
+    const srcResX = 195
+    const srcResHalfW = 24
+    const capX = 320
+    const capPlateWidth = 36
+    const capGap = 30
+    const capThickness = 5
+    const capTopOuterY = sourceY - capGap / 2 - capThickness
+    const capBottomOuterY = sourceY + capGap / 2 + capThickness
+    const loadX = 450
+    const loadHalfH = 28
+    const outX = 515
+
+    const isChoke = filterType === 0 || filterType === 1
+    const isLowFreqChoke = filterType === 0
+    const visualCoilCurrent = isLowFreqChoke ? 0.55 : 0.9 * Math.sin(time * 5)
+    const visualCapSign = Math.sin(time * 8) >= 0 ? '+' : '-'
+
+    const gainRows = [
+      { label: '直流 (0Hz)', gain: filterState.dcGain, color: EM_COLORS.electricPotential },
+      { label: '低频 (50Hz)', gain: filterState.lfGain, color: EM_COLORS.capacitor },
+      { label: '高频 (2kHz)', gain: filterState.hfGain, color: EM_COLORS.electricCurrent },
+    ]
+
+    return (
+      <g className="ac-impedance-scene select-none">
+        <g
+          fill="none"
+          stroke={SCENE_COLORS.circuit.wire}
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points={`${sourceX},${sourceY - AC_SOURCE_RADIUS} ${sourceX},${topY}`} />
+          <polyline points={`${sourceX},${sourceY + AC_SOURCE_RADIUS} ${sourceX},${bottomY}`} />
+
+          {isChoke ? (
+            <>
+              <line x1={sourceX} y1={topY} x2={coilX - coilHalfW} y2={topY} />
+              <line x1={coilX + coilHalfW} y1={topY} x2={outX} y2={topY} />
+            </>
+          ) : (
+            <>
+              <line x1={sourceX} y1={topY} x2={srcResX - srcResHalfW} y2={topY} />
+              <line x1={srcResX + srcResHalfW} y1={topY} x2={outX} y2={topY} />
+              <line x1={capX} y1={topY} x2={capX} y2={capTopOuterY} />
+              <line x1={capX} y1={capBottomOuterY} x2={capX} y2={bottomY} />
+            </>
+          )}
+
+          <line x1={sourceX} y1={bottomY} x2={outX} y2={bottomY} />
+          <line x1={loadX} y1={topY} x2={loadX} y2={sourceY - loadHalfH} />
+          <line x1={loadX} y1={sourceY + loadHalfH} x2={loadX} y2={bottomY} />
+        </g>
+
+        <circle cx={loadX} cy={topY} r={3.5} fill={SCENE_COLORS.circuit.node} />
+        <circle cx={loadX} cy={bottomY} r={3.5} fill={SCENE_COLORS.circuit.node} />
+        {!isChoke && (
+          <>
+            <circle cx={capX} cy={topY} r={3.5} fill={SCENE_COLORS.circuit.node} />
+            <circle cx={capX} cy={bottomY} r={3.5} fill={SCENE_COLORS.circuit.node} />
+          </>
+        )}
+
+        <circle cx={outX} cy={topY} r={4} fill={CANVAS_COLORS.white} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2} />
+        <circle cx={outX} cy={bottomY} r={4} fill={CANVAS_COLORS.white} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2} />
+
+        <ACSourceSymbol x={sourceX} y={sourceY} />
+        <text
+          x={sourceX}
+          y={bottomY + 22}
+          textAnchor="middle"
+          fontSize={font(10.5)}
+          fill={CANVAS_COLORS.labelText}
+          fontWeight="bold"
+        >
+          混合输入 (直+低+高)
+        </text>
+
+        {isChoke ? (
+          <g>
+            <CoilBase
+              x={coilX}
+              y={topY}
+              width={coilHalfW * 2}
+              height={isLowFreqChoke ? 28 : 24}
+              turns={isLowFreqChoke ? 7 : 4}
+              leadType="horizontal"
+              ironCorePadX={4}
+              ironCorePadY={4}
+              showIronCore={isLowFreqChoke}
+              current={visualCoilCurrent}
+              time={time}
+              animated
+              leadEndpointRadius={2.5}
+            />
+            <text
+              x={coilX}
+              y={topY - 24}
+              textAnchor="middle"
+              fontSize={font(11)}
+              fill={EM_COLORS.inductor}
+              fontWeight="bold"
+            >
+              {isLowFreqChoke ? '低频扼流圈 (大 L · 铁芯)' : '高频扼流圈 (小 L · 少匝)'}
+            </text>
+          </g>
+        ) : (
+          <g>
+            <rect
+              x={srcResX - srcResHalfW}
+              y={topY - 9}
+              width={srcResHalfW * 2}
+              height={18}
+              rx={2}
+              fill={SCENE_COLORS.circuit.resistorFill}
+              stroke={SCENE_COLORS.circuit.resistorStroke}
+              strokeWidth={STROKE.objectLine}
+            />
+            <text
+              x={srcResX}
+              y={topY - 16}
+              textAnchor="middle"
+              fontSize={font(10)}
+              fill={CANVAS_COLORS.labelText}
+              fontWeight="bold"
+            >
+              限流电阻
+            </text>
+
+            <CapacitorPlates
+              x={capX - capPlateWidth / 2}
+              y={sourceY}
+              width={capPlateWidth}
+              gap={capGap}
+              thickness={capThickness}
+              orientation="horizontal"
+              chargeSign={visualCapSign}
+              showField={true}
+              showElectricFieldLines={true}
+              chargeDensity={2}
+            />
+            <text
+              x={capX - 24}
+              y={sourceY + 4}
+              textAnchor="end"
+              fontSize={font(10.5)}
+              fill={EM_COLORS.capacitor}
+              fontWeight="bold"
+            >
+              旁路电容 C
+            </text>
+          </g>
+        )}
+
+        <rect
+          x={loadX - 11}
+          y={sourceY - loadHalfH}
+          width={22}
+          height={loadHalfH * 2}
+          rx={2}
+          fill={SCENE_COLORS.circuit.resistorFill}
+          stroke={SCENE_COLORS.circuit.resistorStroke}
+          strokeWidth={STROKE.objectLine}
+        />
+        <text
+          x={loadX - 18}
+          y={sourceY + 4}
+          textAnchor="end"
+          fontSize={font(10.5)}
+          fill={CANVAS_COLORS.labelText}
+          fontWeight="bold"
+        >
+          {`负载 R=${resistance}Ω`}
+        </text>
+        <text
+          x={outX + 10}
+          y={sourceY + 4}
+          textAnchor="start"
+          fontSize={font(10.5)}
+          fill={EM_COLORS.electricCurrent}
+          fontWeight="bold"
+        >
+          输出
+        </text>
+
+        <g transform="translate(570, 48)">
+          <rect
+            x={0}
+            y={0}
+            width={248}
+            height={220}
+            rx={8}
+            fill={CANVAS_COLORS.objectFillNeutral}
+            stroke={CANVAS_COLORS.grid}
+            strokeWidth={1.2}
+          />
+          <text
+            x={16}
+            y={26}
+            fontSize={font(11.5)}
+            fill={CANVAS_COLORS.labelText}
+            fontWeight="bold"
+          >
+            各频率成分输出通过率
+          </text>
+          <line x1={14} y1={38} x2={234} y2={38} stroke={CANVAS_COLORS.grid} strokeWidth={1} />
+
+          {gainRows.map((row, idx) => {
+            const rowY = 66 + idx * 54
+            const barW = 216
+            const fillW = Math.max(2, barW * row.gain)
+            const pct = Math.round(row.gain * 100)
+            return (
+              <g key={row.label} transform={`translate(16, ${rowY})`}>
+                <text x={0} y={0} fontSize={font(10.5)} fill={CANVAS_COLORS.labelText} fontWeight="bold">
+                  {row.label}
+                </text>
+                <text
+                  x={216}
+                  y={0}
+                  textAnchor="end"
+                  fontSize={font(10.5)}
+                  fill={row.color}
+                  fontWeight="bold"
+                >
+                  {`${pct}%`}
+                </text>
+                <rect
+                  x={0}
+                  y={10}
+                  width={barW}
+                  height={12}
+                  rx={6}
+                  fill={withAlpha(row.color, 0.14)}
+                />
+                <rect
+                  x={0}
+                  y={10}
+                  width={Math.min(barW, fillW)}
+                  height={12}
+                  rx={6}
+                  fill={row.color}
+                />
+              </g>
+            )
+          })}
+        </g>
+      </g>
+    )
+  }
+
+  // ── 模式 0（扫频三灯）& 模式 1（充放交直双灯）────────────────────────────
+  const isThreeBranch = mode === 0
+  const busLeftX = 115
   const busRightX = 740
-  const branch1Y = 85
-  const branch2Y = 175
-  const busBottomY = 265
+  const branchYs = isThreeBranch ? [54, 128, 202] : [82, 178]
+  const busBottomY = isThreeBranch ? 274 : 268
 
-  const deviceX = 300
-  const meterX = 480
-  const bulbX = 640
-  const sourceCenterX = 440
+  const deviceX = 315
+  const meterX = 485
+  const bulbX = 645
+  const sourceCenterX = 425
 
-  // 渲染支路中的特定器件 (电阻、电感或电容)
-  const renderDevice = (branch: BranchState, y: number) => {
+  const meterR = isThreeBranch ? 17 : 20
+  const bulbScale = isThreeBranch ? 0.78 : 0.85
+  const bulbHalfBase = 12 * bulbScale
+  const resHalfW = 30
+  const coilHalfW = 44
+  // 极板间距 [20, 30] 随 C 增大变窄，且留出充裕空间保证电荷符号与电场线清晰不碰撞
+  const capGap = Math.round(30 - ((capacitance - 5) / 95) * 10)
+  const capThickness = 5
+  const capHalfSpan = capGap / 2 + capThickness
+
+  const getDeviceHalfSpan = (branch: BranchState) => {
+    if (branch.deviceType === 'resistor') return resHalfW
+    if (branch.deviceType === 'inductor') return coilHalfW
+    return capHalfSpan
+  }
+
+  const renderBranchDevice = (branch: BranchState, y: number) => {
     if (branch.deviceType === 'resistor') {
-      const rw = 64
-      const rh = 24
+      const rw = resHalfW * 2
+      const rh = 18
       return (
         <g>
           <rect
-            x={deviceX - rw / 2}
+            x={deviceX - resHalfW}
             y={y - rh / 2}
             width={rw}
             height={rh}
@@ -64,13 +444,13 @@ export const ACImpedanceScene: FC<ACImpedanceSceneProps> = ({
           />
           <text
             x={deviceX}
-            y={y + 4}
+            y={y + 3.5}
             textAnchor="middle"
-            fontSize={font(10.5)}
+            fontSize={font(9.5)}
             fill={CANVAS_COLORS.labelText}
             fontWeight="bold"
           >
-            R = 15 Ω
+            {branch.seriesResistance > 0 ? `R=${AC_COIL_DC_RESISTANCE}Ω` : '直通'}
           </text>
         </g>
       )
@@ -82,296 +462,314 @@ export const ACImpedanceScene: FC<ACImpedanceSceneProps> = ({
           <CoilBase
             x={deviceX}
             y={y}
-            width={75}
-            height={36}
+            width={coilHalfW * 2}
+            height={26}
             turns={6}
-            current={branch.current * branch.instantCurrentPhase}
+            leadType="horizontal"
+            ironCorePadX={4}
+            ironCorePadY={4}
+            showIronCore={hasCore}
+            current={branch.displayCurrent * branch.instantCurrent}
             time={time}
-            showIronCore
             animated
+            leadEndpointRadius={2.5}
           />
-          <text
-            x={deviceX}
-            y={y - 25}
-            textAnchor="middle"
-            fontSize={font(10.5)}
-            fill={EM_COLORS.inductor}
-            fontWeight="bold"
-          >
-            {`X_L = ${branch.reactance.toFixed(1)} Ω`}
-          </text>
+          {!isThreeBranch && (
+            <text
+              x={deviceX}
+              y={y - 23}
+              textAnchor="middle"
+              fontSize={font(10)}
+              fill={EM_COLORS.inductor}
+              fontWeight="bold"
+            >
+              {isDC
+                ? `自感阻碍 · i₂ = ${branch.displayCurrent.toFixed(2)} A`
+                : `X_L = ${branch.reactance.toFixed(1)} Ω`}
+            </text>
+          )}
         </g>
       )
     }
 
-    // 电容器
+    // 电容器（竖直两板 + 极板电荷 + 绝缘隙电场线，绝不让粒子穿过极板）
+    const chargeSign =
+      Math.abs(branch.instantCharge) < 0.08
+        ? 'none'
+        : branch.instantCharge >= 0
+          ? '+'
+          : '-'
+    const capH = isThreeBranch ? 32 : 38
+
     return (
       <g>
         <CapacitorPlates
-          x={deviceX - 25}
-          y={y}
-          width={50}
-          gap={18}
-          thickness={6}
-          chargeSign={branch.instantCurrentPhase >= 0 ? '+' : '-'}
-          showField={false}
-        />
-        <text
           x={deviceX}
-          y={y - 25}
-          textAnchor="middle"
-          fontSize={font(10.5)}
-          fill={EM_COLORS.capacitor}
-          fontWeight="bold"
-        >
-          {Number.isFinite(branch.reactance)
-            ? `X_C = ${branch.reactance.toFixed(1)} Ω`
-            : 'X_C = ∞ (隔直)'}
-        </text>
+          y={y}
+          height={capH}
+          gap={capGap}
+          thickness={capThickness}
+          orientation="vertical"
+          chargeSign={chargeSign}
+          showField={true}
+          showElectricFieldLines={true}
+          chargeDensity={2}
+        />
+        {!isThreeBranch && (
+          <>
+            <text
+              x={deviceX}
+              y={y - 25}
+              textAnchor="middle"
+              fontSize={font(10)}
+              fill={EM_COLORS.capacitor}
+              fontWeight="bold"
+            >
+              {isDC
+                ? `极板电荷 ${Math.round(Math.abs(branch.instantCharge) * 100)}%`
+                : Number.isFinite(branch.reactance)
+                  ? `X_C = ${branch.reactance.toFixed(1)} Ω`
+                  : 'X_C = ∞ (隔直)'}
+            </text>
+            <text
+              x={deviceX}
+              y={y + 32}
+              textAnchor="middle"
+              fontSize={font(9.5)}
+              fill={CANVAS_COLORS.labelTextLight}
+            >
+              {isDC
+                ? Math.abs(branch.instantCharge) > 0.95
+                  ? '已充满 · 绝缘断路'
+                  : '电荷涌向极板充电'
+                : '极板外往复充放电'}
+            </text>
+          </>
+        )}
       </g>
     )
   }
 
-  // 瞬时总电流估算（标量合成用于箭头展示）
-  const totalCurrent = branchA.current + branchB.current
-
   return (
     <g className="ac-impedance-scene select-none">
-      {/* ── 1. 标准双母线并联导线系统（端子级精准连接，横平竖直，零穿心，零多余拐弯） ── */}
-      <g stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" fill="none">
-        {/* 左母线（供电分流线）：从底干路(140, 265) 竖直到 顶支路(140, 85) */}
-        <line x1={busLeftX} y1={busBottomY} x2={busLeftX} y2={branch1Y} />
-
-        {/* 右母线（汇流总线）：从底干路(740, 265) 竖直到 顶支路(740, 85) */}
-        <line x1={busRightX} y1={busBottomY} x2={busRightX} y2={branch1Y} />
-
-        {/* ── 支路 1 (y=85) ── */}
-        {/* 左母线节点 -> 器件A左端子 (300 - 35 = 265) */}
-        <line x1={busLeftX} y1={branch1Y} x2={deviceX - 35} y2={branch1Y} />
-        {/* 器件A右端子 (300 + 35 = 335) -> 电流表A1左端子 (480 - 24 = 456) */}
-        <line x1={deviceX + 35} y1={branch1Y} x2={meterX - 24} y2={branch1Y} />
-        {/* 电流表A1右端子 (480 + 24 = 504) -> 灯泡L1左端子 (640 - 24 = 616) */}
-        <line x1={meterX + 24} y1={branch1Y} x2={bulbX - 24} y2={branch1Y} />
-        {/* 灯泡L1右端子 (640 + 24 = 664) -> 右母线节点 (740, 85) */}
-        <line x1={bulbX + 24} y1={branch1Y} x2={busRightX} y2={branch1Y} />
-
-        {/* ── 支路 2 (y=175) ── */}
-        {/* 左母线节点 -> 器件B左端子 */}
-        <line x1={busLeftX} y1={branch2Y} x2={deviceX - 35} y2={branch2Y} />
-        {/* 器件B右端子 -> 电流表A2左端子 */}
-        <line x1={deviceX + 35} y1={branch2Y} x2={meterX - 24} y2={branch2Y} />
-        {/* 电流表A2右端子 -> 灯泡L2左端子 */}
-        <line x1={meterX + 24} y1={branch2Y} x2={bulbX - 24} y2={branch2Y} />
-        {/* 灯泡L2右端子 -> 右母线节点 */}
-        <line x1={bulbX + 24} y1={branch2Y} x2={busRightX} y2={branch2Y} />
-
-        {/* ── 底部干路供电线 (y=265) ── */}
-        {/* 左母线底端 -> 电源左端子 (440 - 55 = 385) */}
-        <line x1={busLeftX} y1={busBottomY} x2={sourceCenterX - 55} y2={busBottomY} />
-        {/* 电源右端子 (440 + 55 = 495) -> 右母线底端 */}
-        <line x1={sourceCenterX + 55} y1={busBottomY} x2={busRightX} y2={busBottomY} />
-      </g>
-
-      {/* 并联/汇流关键节点实心圆点 */}
-      <circle cx={busLeftX} cy={branch1Y} r={4.5} fill={PHYSICS_COLORS.labelText} />
-      <circle cx={busLeftX} cy={branch2Y} r={4.5} fill={PHYSICS_COLORS.labelText} />
-      <circle cx={busRightX} cy={branch1Y} r={4.5} fill={PHYSICS_COLORS.labelText} />
-      <circle cx={busRightX} cy={branch2Y} r={4.5} fill={PHYSICS_COLORS.labelText} />
-
-      {/* ── 2. 支路器件渲染 ── */}
-      {renderDevice(branchA, branch1Y)}
-      {renderDevice(branchB, branch2Y)}
-
-      {/* ── 3. 支路电流表（教科书标准原理图符号模式 variant="symbolic"） ── */}
-      <DialMeter
-        type="A"
-        variant="symbolic"
-        value={branchA.current}
-        max={4}
-        x={meterX}
-        y={branch1Y}
-        r={24}
-        font={font}
-        showLabel={false}
-      />
+      {/* 右上角实时运行语义标注 */}
       <text
-        x={meterX}
-        y={branch1Y + 36}
-        textAnchor="middle"
-        fontSize={font(10.5)}
-        fill={EM_COLORS.electricCurrent}
-        fontWeight="bold"
-      >
-        {`I₁ = ${branchA.current.toFixed(2)} A`}
-      </text>
-
-      <DialMeter
-        type="A"
-        variant="symbolic"
-        value={branchB.current}
-        max={4}
-        x={meterX}
-        y={branch2Y}
-        r={24}
-        font={font}
-        showLabel={false}
-      />
-      <text
-        x={meterX}
-        y={branch2Y + 36}
-        textAnchor="middle"
-        fontSize={font(10.5)}
-        fill={EM_COLORS.electricCurrent}
-        fontWeight="bold"
-      >
-        {`I₂ = ${branchB.current.toFixed(2)} A`}
-      </text>
-
-      {/* ── 4. 支路动态小灯泡 ── */}
-      <LightBulb
-        x={bulbX}
-        y={branch1Y}
-        power={branchA.power}
-        time={time}
-        scale={0.88}
-        label="灯泡 L₁"
-        font={font}
-      />
-      <text
-        x={bulbX}
-        y={branch1Y + 38}
-        textAnchor="middle"
+        x={826}
+        y={18}
+        textAnchor="end"
         fontSize={font(9.5)}
         fill={CANVAS_COLORS.labelTextLight}
-      >
-        {`P₁ = ${branchA.power.toFixed(1)} W`}
-      </text>
-
-      <LightBulb
-        x={bulbX}
-        y={branch2Y}
-        power={branchB.power}
-        time={time}
-        scale={0.88}
-        label="灯泡 L₂"
-        font={font}
-      />
-      <text
-        x={bulbX}
-        y={branch2Y + 38}
-        textAnchor="middle"
-        fontSize={font(9.5)}
-        fill={CANVAS_COLORS.labelTextLight}
-      >
-        {`P₂ = ${branchB.power.toFixed(1)} W`}
-      </text>
-
-      {/* 支路说明标签 */}
-      <text
-        x={busLeftX + 16}
-        y={branch1Y - 14}
-        fontSize={font(10.5)}
-        fill={CANVAS_COLORS.labelText}
         fontWeight="bold"
       >
-        {branchA.label}
-      </text>
-      <text
-        x={busLeftX + 16}
-        y={branch2Y - 14}
-        fontSize={font(10.5)}
-        fill={CANVAS_COLORS.labelText}
-        fontWeight="bold"
-      >
-        {branchB.label}
+        {isThreeBranch
+          ? `扫频 f = ${frequency.toFixed(0)} Hz`
+          : isDC
+            ? '直流接通暂态慢放'
+            : '交流慢放示波'}
       </text>
 
-      {/* ── 5. 底部电源组件（标准高中物理原理图符号） ── */}
-      <g transform={`translate(${sourceCenterX}, ${busBottomY})`}>
-        {/* 电源圆圈基座 */}
-        <circle
-          cx={0}
-          cy={0}
-          r={26}
-          fill={CANVAS_COLORS.white}
-          stroke={EM_COLORS.electricPotential}
-          strokeWidth={STROKE.objectLine}
+      {/* 1. 标准阶梯并联导线网络（端子级精准对齐） */}
+      <g
+        fill="none"
+        stroke={SCENE_COLORS.circuit.wire}
+        strokeWidth={2.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <line x1={busLeftX} y1={busBottomY} x2={busLeftX} y2={branchYs[0]} />
+        <line x1={busRightX} y1={busBottomY} x2={busRightX} y2={branchYs[0]} />
+
+        {branches.map((branch, idx) => {
+          const y = branchYs[idx]
+          const devHalf = getDeviceHalfSpan(branch)
+          return (
+            <g key={branch.id}>
+              <line x1={busLeftX} y1={y} x2={deviceX - devHalf} y2={y} />
+              <line x1={deviceX + devHalf} y1={y} x2={meterX - meterR} y2={y} />
+              <line x1={meterX + meterR} y1={y} x2={bulbX - bulbHalfBase} y2={y} />
+              <line x1={bulbX + bulbHalfBase} y1={y} x2={busRightX} y2={y} />
+            </g>
+          )
+        })}
+
+        <line
+          x1={busLeftX}
+          y1={busBottomY}
+          x2={sourceCenterX - (isDC ? DC_SOURCE_SYMBOL_OFFSET : AC_SOURCE_RADIUS)}
+          y2={busBottomY}
         />
-        {isDC ? (
-          // 直流电源符号（左长右短：左正右负）
-          <g>
-            <line x1={-8} y1={-14} x2={-8} y2={14} stroke={EM_COLORS.electricPotential} strokeWidth={2.5} strokeLinecap="round" />
-            <line x1={8} y1={-8} x2={8} y2={8} stroke={EM_COLORS.electricPotential} strokeWidth={4} strokeLinecap="round" />
-            <text x={-17} y={-4} fontSize={font(10)} fill={EM_COLORS.electricPotential} fontWeight="bold">+</text>
-            <text x={15} y={-4} fontSize={font(10)} fill={EM_COLORS.electricPotential} fontWeight="bold">-</text>
-          </g>
-        ) : (
-          // 交流电源标准正弦波符号
-          <path
-            d="M -13 0 Q -6.5 -11, 0 0 T 13 0"
-            fill="none"
-            stroke={EM_COLORS.electricPotential}
-            strokeWidth={2.5}
-            strokeLinecap="round"
-          />
-        )}
-        {/* 电源参数文本 */}
-        <text
-          x={0}
-          y={39}
-          textAnchor="middle"
-          fontSize={font(11)}
-          fill={CANVAS_COLORS.labelText}
-          fontWeight="bold"
-        >
-          {isDC ? `稳压直流源 U = ${voltage}V` : `正弦交流源 U = ${voltage}V (f = ${frequency}Hz)`}
-        </text>
+        <line
+          x1={sourceCenterX + (isDC ? DC_SOURCE_SYMBOL_OFFSET : AC_SOURCE_RADIUS)}
+          y1={busBottomY}
+          x2={busRightX}
+          y2={busBottomY}
+        />
       </g>
 
-      {/* ── 6. 高中物理规范电流方向矢量指示（摒弃模糊粒子，采用清晰规范箭头） ── */}
-      {totalCurrent > 0.02 && (
-        <g>
-          {/* 支路 1 电流箭头（向右流过器件与表头） */}
-          {branchA.current > 0.01 && (
-            <VectorArrow
-              originDesign={{ x: 200, y: branch1Y }}
-              vector={{ x: isDC ? 1 : branchA.instantCurrentPhase >= 0 ? 1 : -1, y: 0 }}
-              type="currentDirection"
-              arrowType="visual-only"
-              sceneScale={IDENTITY_SCENE_SCALE}
-              pixelLength={22}
-              label="I₁"
-              font={font}
-            />
-          )}
-
-          {/* 支路 2 电流箭头（向右流过器件与表头） */}
-          {branchB.current > 0.01 && (
-            <VectorArrow
-              originDesign={{ x: 200, y: branch2Y }}
-              vector={{ x: isDC ? 1 : branchB.instantCurrentPhase >= 0 ? 1 : -1, y: 0 }}
-              type="currentDirection"
-              arrowType="visual-only"
-              sceneScale={IDENTITY_SCENE_SCALE}
-              pixelLength={22}
-              label="I₂"
-              font={font}
-            />
-          )}
-
-          {/* 底部干路供电电流箭头（直流左出向左流入左母线；交流动态指示） */}
-          <VectorArrow
-            originDesign={{ x: 260, y: busBottomY }}
-            vector={{ x: isDC ? -1 : branchA.instantCurrentPhase >= 0 ? -1 : 1, y: 0 }}
-            type="currentDirection"
-            arrowType="visual-only"
-            sceneScale={IDENTITY_SCENE_SCALE}
-            pixelLength={26}
-            label={`I总 = ${totalCurrent.toFixed(2)}A`}
-            font={font}
-          />
+      {branchYs.map((y) => (
+        <g key={`node-${y}`}>
+          <circle cx={busLeftX} cy={y} r={3.8} fill={SCENE_COLORS.circuit.node} />
+          <circle cx={busRightX} cy={y} r={3.8} fill={SCENE_COLORS.circuit.node} />
         </g>
+      ))}
+
+      {/* 2. 各支路元件 + 导线微粒 + 电流表 + 灯泡 */}
+      {branches.map((branch, idx) => {
+        const y = branchYs[idx]
+        const devHalf = getDeviceHalfSpan(branch)
+        const currentDir = isDC ? 1 : branch.instantCurrent >= 0 ? 1 : -1
+        const showBranchArrow =
+          branch.displayCurrent > 0.02 && (isDC || Math.abs(branch.instantCurrent) > 0.08)
+        const dotsActive =
+          branch.dotMotionMode === 'dc-charge'
+            ? true
+            : branch.displayCurrent > 0.02 || (!isDC && branch.current > 0.02)
+
+        return (
+          <g key={`branch-${branch.id}`}>
+            <text
+              x={busLeftX - 10}
+              y={y + 4}
+              textAnchor="end"
+              fontSize={font(10.5)}
+              fill={CANVAS_COLORS.labelText}
+              fontWeight="bold"
+            >
+              {branch.shortLabel}
+            </text>
+
+            {/* 极板/元件左右两侧外电路导线上的微观电荷微粒（绝不穿过电容绝缘隙） */}
+            <WireChargeDots
+              x1={busLeftX + 10}
+              x2={deviceX - devHalf - 4}
+              y={y}
+              motionMode={branch.dotMotionMode}
+              phase={branch.dotPhase}
+              amplitudeScale={branch.dotAmplitudeScale}
+              active={dotsActive}
+            />
+            <WireChargeDots
+              x1={deviceX + devHalf + 4}
+              x2={meterX - meterR - 4}
+              y={y}
+              motionMode={branch.dotMotionMode}
+              phase={branch.dotPhase}
+              amplitudeScale={branch.dotAmplitudeScale}
+              active={dotsActive}
+            />
+
+            {renderBranchDevice(branch, y)}
+
+            {showBranchArrow && (
+              <VectorArrow
+                originDesign={{ x: currentDir > 0 ? 178 : 198, y }}
+                vector={{ x: currentDir, y: 0 }}
+                type="currentDirection"
+                arrowType="visual-only"
+                sceneScale={IDENTITY_SCENE_SCALE}
+                pixelLength={20}
+                font={font}
+              />
+            )}
+
+            <DialMeter
+              type="A"
+              variant="symbolic"
+              value={branch.displayCurrent}
+              max={4}
+              x={meterX}
+              y={y}
+              r={meterR}
+              font={font}
+              showLabel={false}
+            />
+            <text
+              x={meterX}
+              y={y + meterR + 13}
+              textAnchor="middle"
+              fontSize={font(10)}
+              fill={EM_COLORS.electricCurrent}
+              fontWeight="bold"
+            >
+              {`${branch.displayCurrent.toFixed(2)} A`}
+            </text>
+
+            <LightBulb
+              x={bulbX}
+              y={y - bulbHalfBase}
+              power={branch.displayPower}
+              time={time}
+              scale={bulbScale}
+              showLabel={false}
+              font={font}
+            />
+            <text
+              x={bulbX}
+              y={y + (isThreeBranch ? 22 : 24)}
+              textAnchor="middle"
+              fontSize={font(9.5)}
+              fill={CANVAS_COLORS.labelTextLight}
+              fontWeight="bold"
+            >
+              {isDC && isThreeBranch === false && transient
+                ? `${branch.bulbLabel} · ${(branch.displayCurrent * branch.displayCurrent * resistance).toFixed(1)}W`
+                : `${branch.bulbLabel} · ${branch.bulbPower.toFixed(1)}W`}
+            </text>
+          </g>
+        )
+      })}
+
+      {/* 3. 底部电源组件 */}
+      {isDC ? (
+        <DCSource
+          type="symbol"
+          orientation="horizontal"
+          polarity="left-positive"
+          x={sourceCenterX}
+          y={busBottomY}
+          label=""
+        />
+      ) : (
+        <ACSourceSymbol x={sourceCenterX} y={busBottomY} />
       )}
+      <text
+        x={sourceCenterX}
+        y={busBottomY + 34}
+        textAnchor="middle"
+        fontSize={font(10.5)}
+        fill={CANVAS_COLORS.labelText}
+        fontWeight="bold"
+      >
+        {isDC
+          ? `稳压直流源 U = ${voltage}V`
+          : `正弦交流源 U = ${voltage}V (f = ${frequency.toFixed(0)}Hz)`}
+      </text>
+
+      {/* 4. 干路总电流箭头与读数 */}
+      {totalCurrent > 0.02 && totalInstantSign !== 0 && (
+        <VectorArrow
+          originDesign={{
+            x: totalInstantSign > 0 ? 270 : 250,
+            y: busBottomY,
+          }}
+          vector={{ x: -totalInstantSign, y: 0 }}
+          type="currentDirection"
+          arrowType="visual-only"
+          sceneScale={IDENTITY_SCENE_SCALE}
+          pixelLength={22}
+          font={font}
+        />
+      )}
+      <text
+        x={260}
+        y={busBottomY - 11}
+        textAnchor="middle"
+        fontSize={font(10)}
+        fill={PHYSICS_COLORS.electricCurrent}
+        fontWeight="bold"
+      >
+        {isDC && !isThreeBranch ? `i_总 = ${totalCurrent.toFixed(2)} A` : `I_总 = ${totalCurrent.toFixed(2)} A`}
+      </text>
     </g>
   )
 }

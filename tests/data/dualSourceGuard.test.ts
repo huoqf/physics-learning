@@ -81,14 +81,18 @@ describe('A 组 · 中屏与看板共用同一套常量/函数', () => {
   })
 
   // ── #2 交流阻抗：线圈串联 15Ω 直流电阻，灯泡 30Ω，R_total = 45Ω ──────────
-  it('交流阻抗：支路2电流按 Z=√((R_灯+15)²+X_L²) 计算', () => {
-    const f = 50
-    const L = 0.5
-    const XL = 2 * Math.PI * f * L
-    const Z = Math.hypot(30 + 15, XL)
-    const expectedI = 100 / Z
-    const panel = buildPhysicsQuantities('anim-ac-lc-impedance', {}, 0)
-    expect(num(panel, '支路2有效电流')).toBeCloseTo(expectedI, 2)
+  it('交流阻抗：电感支路电流按 Z=√((R_灯+15)²+X_L²) 计算（扫频默认模式与双灯对照同源）', () => {
+    // 默认 mode=0, t=0 为扫频起点 f=10Hz, L=0.4H
+    const xl10 = 2 * Math.PI * 10 * 0.4
+    const expectedI10 = 100 / Math.hypot(30 + 15, xl10)
+    const panelDefault = buildPhysicsQuantities('anim-ac-lc-impedance', {}, 0)
+    expect(num(panelDefault, '电感支路电流')).toBeCloseTo(expectedI10, 2)
+
+    // mode=1, compareTarget=1（电阻 vs 电感）, f=50Hz, L=0.4H
+    const xl50 = 2 * Math.PI * 50 * 0.4
+    const expectedI50 = 100 / Math.hypot(30 + 15, xl50)
+    const panelCompare = buildPhysicsQuantities('anim-ac-lc-impedance', { mode: 1, compareTarget: 1, frequency: 50 }, 0)
+    expect(num(panelCompare, '支路2有效电流')).toBeCloseTo(expectedI50, 2)
   })
 
   // ── #4 卫星：入轨半径比与中屏 LAYOUT 同源 ─────────────────────────────────

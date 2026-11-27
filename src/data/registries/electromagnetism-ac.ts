@@ -7,6 +7,12 @@ import {
   getACValuesCriticalTimes,
   getEffectiveCurrent,
 } from '@/physics/rmsCalculator'
+import {
+  SWEEP_DURATION,
+  TRANSIENT_DURATION,
+  getACImpedanceCriticalTimes,
+  getACImpedanceTimeStages,
+} from '@/physics/electromagnetism/acImpedance'
 
 // ===== 电磁学 · 交变电流（[M4-1]）=====
 export const electromagnetismAcAnimations = defineAnimations({
@@ -181,42 +187,113 @@ export const electromagnetismAcAnimations = defineAnimations({
     title: '电感与电容对交变电流的作用',
     knowledgeId: 'electricity-5-5',
     Component: lazy(() => import('@/features/electromagnetism/ac-impedance')),
-    controlsMode: 'loop',
+    labTools: ['chartCompare'] as const,
+    controlsMode: (p) => (Math.round(p.mode ?? 0) === 2 ? 'loop' : 'timed'),
+    maxTime: (p) => {
+      const m = Math.round(p.mode ?? 0)
+      if (m === 0) return SWEEP_DURATION
+      if (m === 1) return TRANSIENT_DURATION
+      return 30
+    },
+    criticalTimes: (p) => getACImpedanceCriticalTimes(p),
+    timeStages: (p) => getACImpedanceTimeStages(p),
     defaultParams: {
       mode: 0,
       isDC: 0,
+      compareTarget: 0,
+      filterType: 0,
+      hasCore: 1,
+      chartType: 0,
       frequency: 50,
       voltage: 100,
-      inductance: 0.5,
-      capacitance: 100,
+      inductance: 0.4,
+      capacitance: 20,
       resistance: 30,
     } as const,
     controlMeta: [
       {
         type: 'segmented',
         key: 'mode',
-        group: '实验回路对比',
+        group: '实验模式',
         resetOnChange: true,
         options: [
-          { value: 0, label: '电阻 vs 电感' },
-          { value: 1, label: '电阻 vs 电容' },
-          { value: 2, label: '电感 vs 电容' },
+          { value: 0, label: '扫频演示' },
+          { value: 1, label: '充放交直' },
+          { value: 2, label: '扼流滤波' },
         ],
       },
       {
         type: 'segmented',
         key: 'isDC',
-        group: '电源类型',
+        group: '电源与对象',
+        showIf: 'mode',
+        showIfValue: 1,
+        resetOnChange: true,
         options: [
-          { value: 0, label: '正弦交流 (AC)' },
-          { value: 1, label: '恒定直流 (DC)' },
+          { value: 0, label: '正弦交流' },
+          { value: 1, label: '恒定直流' },
+        ],
+      },
+      {
+        type: 'segmented',
+        key: 'compareTarget',
+        group: '电源与对象',
+        showIf: 'mode',
+        showIfValue: 1,
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '电阻 vs 电容' },
+          { value: 1, label: '电阻 vs 电感' },
+        ],
+      },
+      {
+        type: 'segmented',
+        key: 'filterType',
+        group: '滤波电路',
+        showIf: 'mode',
+        showIfValue: 2,
+        options: [
+          { value: 0, label: '低频扼流' },
+          { value: 1, label: '高频扼流' },
+          { value: 2, label: '高频旁路' },
+        ],
+      },
+      {
+        type: 'toggle',
+        key: 'hasCore',
+        label: '电感插入铁芯',
+        group: '结构与图表',
+        showIf: 'mode',
+        showIfValue: [0, 1],
+      },
+      {
+        type: 'segmented',
+        key: 'chartType',
+        group: '结构与图表',
+        showIf: 'mode',
+        showIfValue: 0,
+        options: [
+          { value: 0, label: '电流 I–f' },
+          { value: 1, label: '电抗 X–f' },
         ],
       },
       {
         type: 'preset',
-        label: '💡 双灯交直流对比',
-        group: '快捷预设',
-        params: () => ({ mode: 0, isDC: 0, frequency: 50, voltage: 100, inductance: 0.5, resistance: 30 }),
+        label: '⚡ 直流接通充电 (电容)',
+        group: '典型工况',
+        showIf: 'mode',
+        showIfValue: 1,
+        restartOnApply: true,
+        params: () => ({ isDC: 1, compareTarget: 0, capacitance: 30, resistance: 30 }),
+      },
+      {
+        type: 'preset',
+        label: '🌊 高频强通交 (120Hz)',
+        group: '典型工况',
+        showIf: 'mode',
+        showIfValue: 1,
+        restartOnApply: true,
+        params: () => ({ isDC: 0, compareTarget: 0, frequency: 120, capacitance: 40 }),
       },
       {
         type: 'tip',
@@ -224,7 +301,7 @@ export const electromagnetismAcAnimations = defineAnimations({
         variant: 'info',
         showIf: 'mode',
         showIfValue: 0,
-        content: '电感线圈通直流阻交流；通低频阻高频。保持电压不变，提高频率 f，感抗 X_L 增大，支路电流减小，灯泡 L₂ 明显变暗。',
+        content: '点击播放或拖动上方曲线，让频率从低扫到高，同时观察三只灯泡明暗反转与曲线交点；切换铁芯可观察电感曲线移动。',
       },
       {
         type: 'tip',
@@ -232,15 +309,59 @@ export const electromagnetismAcAnimations = defineAnimations({
         variant: 'info',
         showIf: 'mode',
         showIfValue: 1,
-        content: '电容器通交流隔直流；通高频阻低频。切换为直流时，电容器支路断路灯泡完全熄灭；提高频率 f，容抗 X_C 减小，灯泡 L₂ 变亮。',
+        content: '切到直流并点击播放，盯住极板间的绝缘空隙、导线微粒移动与示波器充电脉冲；切回交流可看颗粒在极板外往复充放电。',
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        variant: 'info',
+        showIf: 'mode',
+        showIfValue: 2,
+        content: '切换三种滤波接法，对比输入混合波形与负载两端输出波形中直流、低频与高频成分的保留情况。',
       },
     ],
-    paramMeta: [
-      { key: 'frequency', label: '交流频率 f', min: 10, max: 150, step: 5, unit: 'Hz', showIf: 'isDC', showIfValue: 0 },
-      { key: 'voltage', label: '电源电压有效值 U', min: 20, max: 220, step: 10, unit: 'V' },
-      { key: 'inductance', label: '自感系数 L', min: 0.1, max: 2.0, step: 0.1, unit: 'H' },
-      { key: 'capacitance', label: '电容量 C', min: 10, max: 300, step: 10, unit: 'μF' },
-      { key: 'resistance', label: '灯泡内阻 R', min: 10, max: 50, step: 5, unit: 'Ω' },
-    ],
+    buildParamMeta: (params) => {
+      const mode = Math.round(params.mode ?? 0)
+      const isDC = params.isDC === 1
+      const compareTarget = Math.round(params.compareTarget ?? 0)
+      const filterType = Math.round(params.filterType ?? 0)
+
+      if (mode === 2) {
+        if (filterType === 2) {
+          return [
+            { key: 'capacitance', label: '旁路电容 C', min: 5, max: 100, step: 5, unit: 'μF' },
+            { key: 'resistance', label: '负载电阻 R', min: 10, max: 50, step: 5, unit: 'Ω' },
+          ]
+        }
+        return [
+          { key: 'inductance', label: '线圈自感 L', min: 0.1, max: 1.5, step: 0.1, unit: 'H' },
+          { key: 'resistance', label: '负载电阻 R', min: 10, max: 50, step: 5, unit: 'Ω' },
+        ]
+      }
+
+      const list: Array<{
+        key: string
+        label: string
+        min: number
+        max: number
+        step: number
+        unit: string
+      }> = []
+
+      if (mode === 1 && !isDC) {
+        list.push({ key: 'frequency', label: '交流频率 f', min: 10, max: 150, step: 5, unit: 'Hz' })
+      }
+      list.push({ key: 'voltage', label: '电源有效电压 U', min: 20, max: 200, step: 10, unit: 'V' })
+
+      if (mode === 0 || (mode === 1 && compareTarget === 1)) {
+        list.push({ key: 'inductance', label: '自感系数 L', min: 0.1, max: 1.5, step: 0.1, unit: 'H' })
+      }
+      if (mode === 0 || (mode === 1 && compareTarget === 0)) {
+        list.push({ key: 'capacitance', label: '电容量 C', min: 5, max: 100, step: 5, unit: 'μF' })
+      }
+      list.push({ key: 'resistance', label: '灯泡内阻 R', min: 10, max: 50, step: 5, unit: 'Ω' })
+
+      return list
+    },
   },
 })
