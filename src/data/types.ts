@@ -173,6 +173,8 @@ export interface AnimationActions {
   setDirection: (d: 1 | -1) => void
 }
 
+export type LabToolCapability = 'strobe' | 'ghostOverlay' | 'chartCompare'
+
 export interface AnimationConfig<P extends Record<string, number> = Record<string, number>> {
   id: string
   title: string
@@ -237,6 +239,8 @@ export interface AnimationConfig<P extends Record<string, number> = Record<strin
   timeStages?: TimeStageSegment[] | ((params: Record<string, number>) => TimeStageSegment[])
   /** 可选：是否开启逐帧/微步控制，默认开启 */
   enableFrameStep?: boolean
+  /** 声明本动画支持的底栏实验工具（按学科物理特性解耦，避免力学工具误挂电路页） */
+  labTools?: readonly LabToolCapability[]
 }
 
 /** 播放进度条物理过程阶段分段 */

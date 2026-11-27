@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Crosshair,
   Camera,
+  LineChart,
   X,
   Layers,
 } from 'lucide-react'
@@ -194,7 +195,9 @@ interface AnimationControlsProps {
   autoPauseCritical?: boolean
   /** 切换关键临界点自动暂停 */
   onToggleAutoPauseCritical?: () => void
-  /** 是否处于控制变量参照对照（Ghost）模式 */
+  /** 对照模式：'ghost'（空间虚影对照）| 'chart'（图表参考线对照） */
+  compareMode?: 'ghost' | 'chart'
+  /** 是否处于控制变量参照对照（Ghost / ChartRef）模式 */
   ghostActive?: boolean
   /** 对照组与当前实验组的参数差异摘要 */
   ghostDiffSummary?: string | null
@@ -232,6 +235,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
   onToggleRepeatLoop,
   autoPauseCritical = false,
   onToggleAutoPauseCritical,
+  compareMode = 'ghost',
   ghostActive = false,
   ghostDiffSummary = null,
   onCaptureGhost,
@@ -376,7 +380,15 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
             <button
               type="button"
               onClick={onCaptureGhost}
-              title={ghostActive ? '点击以当前参数刷新对照组快照' : '锁定当前参数为对照组，改参数后同屏虚影对比'}
+              title={
+                compareMode === 'chart'
+                  ? ghostActive
+                    ? '点击以当前曲线刷新虚线参考'
+                    : '锁定当前曲线作为虚线参考，修改参数后同图对比（不叠画电路）'
+                  : ghostActive
+                    ? '点击以当前参数刷新对照组快照'
+                    : '锁定当前参数为对照组，改参数后同屏虚影对比'
+              }
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border whitespace-nowrap shrink-0 transition-colors cursor-pointer"
               style={
                 ghostActive
@@ -392,21 +404,44 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
                     }
               }
             >
-              <Camera className="w-3 h-3" />
-              <span>{ghostActive ? '更新对照' : '锁定对照'}</span>
+              {compareMode === 'chart' ? (
+                <LineChart className="w-3 h-3" />
+              ) : (
+                <Camera className="w-3 h-3" />
+              )}
+              <span>
+                {compareMode === 'chart'
+                  ? ghostActive
+                    ? '更新参考线'
+                    : '曲线对照'
+                  : ghostActive
+                    ? '更新对照'
+                    : '锁定对照'}
+              </span>
             </button>
             {ghostActive && (
               <span
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700 border border-neutral-200 whitespace-nowrap"
-                title={ghostDiffSummary ?? '已锁定对照参数，调整左屏参数即可同屏对比'}
+                title={
+                  ghostDiffSummary ??
+                  (compareMode === 'chart'
+                    ? '已锁定参考曲线，调整参数即可同图对比'
+                    : '已锁定对照参数，调整左屏参数即可同屏对比')
+                }
               >
-                <span>{ghostDiffSummary ? `对照: ${ghostDiffSummary}` : '对照已锁定(调参对比)'}</span>
+                <span>
+                  {ghostDiffSummary
+                    ? `${compareMode === 'chart' ? '参考线' : '对照'}: ${ghostDiffSummary}`
+                    : compareMode === 'chart'
+                      ? '已锁定参考线(调参对比)'
+                      : '对照已锁定(调参对比)'}
+                </span>
                 {onClearGhost && (
                   <button
                     type="button"
                     onClick={onClearGhost}
-                    aria-label="清除对照快照"
-                    title="清除对照快照"
+                    aria-label={compareMode === 'chart' ? '清除参考线' : '清除对照快照'}
+                    title={compareMode === 'chart' ? '清除参考线' : '清除对照快照'}
                     className="text-neutral-500 hover:text-neutral-800 cursor-pointer"
                   >
                     <X className="w-3 h-3" />

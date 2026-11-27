@@ -210,4 +210,30 @@ describe('AnimationControls', () => {
     fireEvent.click(screen.getByRole('button', { name: '清除对照快照' }))
     expect(onClearGhost).toHaveBeenCalledTimes(1)
   })
+
+  it('compareMode="chart" 时渲染曲线对照按钮而不渲染力学频闪按钮', () => {
+    const onCaptureGhost = vi.fn()
+    render(
+      <AnimationControls
+        isPlaying={false}
+        speed={1}
+        time={0}
+        maxTime={10}
+        onPlayPause={vi.fn()}
+        onReset={vi.fn()}
+        onSpeedChange={vi.fn()}
+        onTimeChange={vi.fn()}
+        compareMode="chart"
+        ghostActive={false}
+        onCaptureGhost={onCaptureGhost}
+      />,
+    )
+
+    expect(screen.getByText('曲线对照')).toBeTruthy()
+    expect(screen.queryByText('频闪')).toBeNull()
+    expect(screen.queryByText('锁定对照')).toBeNull()
+
+    fireEvent.click(screen.getByText('曲线对照').closest('button')!)
+    expect(onCaptureGhost).toHaveBeenCalledTimes(1)
+  })
 })

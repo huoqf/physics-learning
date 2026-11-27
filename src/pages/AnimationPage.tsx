@@ -25,6 +25,7 @@ import { ThreePanel } from '@/components/Layout'
 import { useAnimationLifecycle } from '@/hooks/useAnimationLifecycle'
 import { resolveDeepLinkTime, resolveDeepLinkHint, shouldShowFreezeHint, resolveUrlMergedParams } from '@/utils/animationDeepLink'
 import type { DeepLinkFreezeHint } from '@/utils/animationDeepLink'
+import { resolveLabTools, hasLabTool } from '@/utils/labTools'
 import { WRONG_REASONS } from '@/data/wrongReasons'
 import { ChartTimeScrubProvider } from '@/context/ChartTimeScrubContext'
 
@@ -140,6 +141,16 @@ function AnimationCenter({
    */
   const visibleDeepLinkHint = shouldShowFreezeHint(deepLinkHint, time, isPlaying)
 
+  const labTools = useMemo(() => {
+    const node = knowledgeTree.find((n) => n.id === config.knowledgeId || n.animationIds.includes(config.id))
+    return resolveLabTools(config, node?.module)
+  }, [config])
+
+  const canStrobe = hasLabTool(labTools, 'strobe')
+  const canGhostOverlay = hasLabTool(labTools, 'ghostOverlay')
+  const canChartCompare = hasLabTool(labTools, 'chartCompare')
+  const canAnyCompare = canGhostOverlay || canChartCompare
+
   const renderSceneWithGhost = () => (
     <div className="relative w-full h-full">
       <ErrorBoundary resetKey={config.id}>
@@ -151,7 +162,7 @@ function AnimationCenter({
           </AnimationLayoutContext.Provider>
         </Suspense>
       </ErrorBoundary>
-      {ghostSnapshot && hasGhostDiff && (
+      {canGhostOverlay && ghostSnapshot && hasGhostDiff && (
         <div
           className="absolute inset-0 pointer-events-none mix-blend-multiply"
           aria-hidden
@@ -189,14 +200,15 @@ function AnimationCenter({
         onToggleRepeatLoop={toggleRepeatLoop}
         autoPauseCritical={autoPauseOnCritical}
         onToggleAutoPauseCritical={toggleAutoPauseOnCritical}
-        ghostActive={Boolean(ghostSnapshot)}
-        ghostDiffSummary={ghostDiffSummary}
-        onCaptureGhost={captureGhostSnapshot}
-        onClearGhost={clearGhostSnapshot}
-        showTimeSlices={showTimeSlices}
+        compareMode={canChartCompare ? 'chart' : 'ghost'}
+        ghostActive={canAnyCompare && Boolean(ghostSnapshot)}
+        ghostDiffSummary={canAnyCompare ? ghostDiffSummary : null}
+        onCaptureGhost={canAnyCompare ? captureGhostSnapshot : undefined}
+        onClearGhost={canAnyCompare ? clearGhostSnapshot : undefined}
+        showTimeSlices={canStrobe ? showTimeSlices : false}
         timeSliceInterval={timeSliceInterval}
-        onToggleTimeSlices={toggleTimeSlices}
-        onTimeSliceIntervalChange={setTimeSliceInterval}
+        onToggleTimeSlices={canStrobe ? toggleTimeSlices : undefined}
+        onTimeSliceIntervalChange={canStrobe ? setTimeSliceInterval : undefined}
         deepLinkHint={visibleDeepLinkHint}
       />
     </div>

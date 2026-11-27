@@ -111,6 +111,7 @@ const useRawAnimationStore = create<AnimationState>((set) => ({
   setAnimationType: (type) => set((state) => ({
     animationType: type,
     ghostSnapshot: state.animationType !== type ? null : state.ghostSnapshot,
+    showTimeSlices: state.animationType !== type ? false : state.showTimeSlices,
   })),
   setParams: (params) => set({ params }),
   patchParams: (partial) => set((state) => {
