@@ -30,7 +30,7 @@ import {
 import { colors } from '@/theme/colors'
 
 import { Button } from '@/components/UI'
-import { useSceneScale } from '@/hooks'
+import { useSceneScale } from '@/hooks'
 import { COULOMB_CONSTANT } from '@/physics/constants'
 
 /** 静电力常量 k = 9×10⁹ N·m²/C² */

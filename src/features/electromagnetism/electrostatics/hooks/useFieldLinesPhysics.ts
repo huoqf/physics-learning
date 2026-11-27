@@ -5,7 +5,7 @@
  * 组件 JSX 零物理公式。
  */
 import { useMemo } from 'react'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS } from '@/theme/physics'
 import { COULOMB_CONSTANT } from '@/physics/constants'
 
 // ── 物理与绘图常量 ──

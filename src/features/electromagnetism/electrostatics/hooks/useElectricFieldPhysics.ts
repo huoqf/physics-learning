@@ -4,7 +4,7 @@
  * 从 ElectricField.tsx 拆分：所有物理计算、图表数据、电场线路径。
  */
 import { useMemo } from 'react'
-import { calculateElectricField } from '@/physics'
+import { calculateElectricField } from '@/physics'
 import { COULOMB_CONSTANT } from '@/physics/constants'
 
 
