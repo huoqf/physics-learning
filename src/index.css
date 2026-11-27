@@ -159,3 +159,23 @@
 @utility text-body-sm {
   font-size: 13px;
 }
+
+/* ─── 侧栏精简滚动条（避免 Windows 17px 粗滚动条挤压左屏分段器） ── */
+.panel-scrollbar {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-neutral-300) transparent;
+}
+.panel-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.panel-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.panel-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--color-neutral-300);
+  border-radius: 9999px;
+}
+.panel-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-neutral-400);
+}

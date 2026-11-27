@@ -117,9 +117,9 @@ export const thermodynamicsEnergyAnimations = defineAnimations({
         group: '典型情境',
         resetOnChange: true,
         options: [
-          { label: '①光伏储能', value: 0 },
-          { label: '②抽水蓄能', value: 1 },
-          { label: '③油车电车', value: 2 },
+          { label: '光伏储能', value: 0 },
+          { label: '抽水蓄能', value: 1 },
+          { label: '油车电车', value: 2 },
         ],
       },
       {

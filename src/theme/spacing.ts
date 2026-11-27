@@ -39,7 +39,7 @@ export const BREAKPOINT = {
 // ─── 面板宽度配置（按断点分级）────────────────────────────────────────────
 export const PANEL = {
   left: {
-    standard: 280,  // ≥1440px
+    standard: 286,  // ≥1440px（含 6px scrollbar-gutter，保持有效内容宽 225px）
     compact:   240,  // 1280–1439px
     min:       200,
     max:       320,

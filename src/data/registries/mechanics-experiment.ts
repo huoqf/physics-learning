@@ -78,8 +78,8 @@ export const mechanicsExperimentAnimations = defineAnimations({
         group: '实验测量工具',
         resetOnChange: true,
         options: [
-          { label: '①纸带分析', value: 0 },
-          { label: '②光电门测速', value: 1 },
+          { label: '纸带分析', value: 0 },
+          { label: '光电门测速', value: 1 },
         ],
       },
       {

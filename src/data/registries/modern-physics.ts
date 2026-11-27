@@ -133,8 +133,8 @@ export const modernPhysicsAnimations = defineAnimations({
         key: 'mode',
         group: '学习模式',
         options: [
-          { value: 0, label: '①玻尔定态' },
-          { value: 1, label: '②跃迁激发' },
+          { value: 0, label: '玻尔定态' },
+          { value: 1, label: '跃迁激发' },
         ],
       },
       // 模式 0 控制
@@ -378,8 +378,8 @@ export const modernPhysicsAnimations = defineAnimations({
         group: '学习模式',
         resetOnChange: true,
         options: [
-          { value: 0, label: '①原子核组成' },
-          { value: 1, label: '②放射线偏转' },
+          { value: 0, label: '原子核组成' },
+          { value: 1, label: '放射线偏转' },
         ],
       },
       // 模式0专属控制
@@ -626,8 +626,8 @@ export const modernPhysicsAnimations = defineAnimations({
         group: '学习模式',
         resetOnChange: true,
         options: [
-          { value: 0, label: '①结合能·亏损' },
-          { value: 1, label: '②聚变·裂变' },
+          { value: 0, label: '结合能·亏损' },
+          { value: 1, label: '聚变·裂变' },
         ],
       },
       // 模式0控制

@@ -42,19 +42,32 @@ function columnsFor(n: number): number {
   return 2
 }
 
+/** 估算单个按钮标签的最小单行像素宽度（中文 12px，ASCII/数字 7.2px，含左右安全边距 10px） */
+function estimateOptionWidth(label: string): number {
+  let w = 10
+  for (const ch of label) {
+    w += /[\u2E80-\u9FFF\uFF00-\uFFEF]/.test(ch) ? 12 : 7.2
+  }
+  return w
+}
+
 /**
  * 按轨道实测宽度修正列数。
  *
- * 左屏宽度随视口变化：≥1440px 时 280px、1280–1439px 时仅 240px（见 `PANEL.left`）。
- * 240px 下 3 列单格只剩 60.3px —— 连 6 个汉字都放不下，实测有 30 处标签被迫折行。
- * 此时降到 2 列（单格 91.5px）只多占 1 行，远好过每个按钮折两行。
- * 10 档是纯数字/符号的步骤型短标签组，固定 5 列，不参与降列。
- *
- * 阈值 `SEGMENTED.minCell` 定义在 `theme/spacing`，是 §2.6.6 判定的唯一真源。
+ * - 上限仍锚定 `SEGMENTED.minCell`（72px），6 字长标签在 240px 窄屏仍自动降为 2 列防止折行；
+ * - 对 3~4 字短标签组（如「扫频演示」「充放交直」「扼流滤波」），按最长标签所需宽度收敛 `effectiveMinCell`（≥ 52px），
+ *   避免 3 档短按钮在窄屏或滚动条出现时在 1 行与 2 行间来回跳变。
  */
-function fitColumns(base: number, n: number, avail: number): number {
+function fitColumns(
+  base: number,
+  n: number,
+  avail: number,
+  options: SegmentedControlOption[],
+): number {
   if (n === 10 || base < 3 || avail <= 0) return base
-  const fit = Math.floor((avail + SEGMENTED.gapPx) / (SEGMENTED.minCell + SEGMENTED.gapPx))
+  const maxLabelW = options.reduce((acc, opt) => Math.max(acc, estimateOptionWidth(opt.label)), 0)
+  const effectiveMinCell = Math.min(SEGMENTED.minCell, Math.max(52, Math.ceil(maxLabelW)))
+  const fit = Math.floor((avail + SEGMENTED.gapPx) / (effectiveMinCell + SEGMENTED.gapPx))
   return Math.max(2, Math.min(base, fit))
 }
 
@@ -95,7 +108,7 @@ export const SegmentedControl: FC<SegmentedControlProps> = ({
   }, [])
 
   const baseCols = columnsFor(options.length)
-  const cols = fitColumns(baseCols, options.length, avail)
+  const cols = fitColumns(baseCols, options.length, avail, options)
   const colsClassName = colsClass[cols] ?? 'grid-cols-2'
 
   return (
