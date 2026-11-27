@@ -14,6 +14,8 @@ interface RelativityParams {
   m0: number
   mode: number
   showGeometry: number
+  observerFrame: number
+  newtonChartType: number
 }
 
 const RELATIVITY_DEFAULTS: ParamDefs<RelativityParams> = {
@@ -21,6 +23,8 @@ const RELATIVITY_DEFAULTS: ParamDefs<RelativityParams> = {
   m0: { default: 1.0 },
   mode: { default: 0 },
   showGeometry: { default: 0 },
+  observerFrame: { default: 0 },
+  newtonChartType: { default: 0 },
 }
 
 export function buildRelativityQuantities(
@@ -33,6 +37,7 @@ export function buildRelativityQuantities(
   const p = normalizeParams(params, RELATIVITY_DEFAULTS)
   const beta = clampRelativityBeta(p.beta)
   const mode = p.mode ?? 0
+  const observerFrame = p.observerFrame ?? 0
   const safeM0 = Number.isFinite(p.m0) && p.m0 > 0 ? p.m0 : 1.0
 
   const clockState = calcLightClockState(beta, time)
@@ -91,14 +96,14 @@ export function buildRelativityQuantities(
           highlight: clockState.gamma >= 2 ? 'extreme' : 'positive',
         },
         {
-          label: '地面参考钟读数',
+          label: observerFrame === 1 ? '飞船参考钟读数' : '地面参考钟读数',
           symbol: 't',
           value: clockState.groundTime.toFixed(2),
           unit: 's',
           color: PHYSICS_COLORS.velocity,
         },
         {
-          label: '飞船固有钟读数',
+          label: observerFrame === 1 ? '地面固有钟读数' : '飞船固有钟读数',
           symbol: 'τ',
           value: clockState.properTime.toFixed(2),
           unit: 's',
@@ -248,6 +253,14 @@ export function buildRelativityQuantities(
           color: PHYSICS_COLORS.acceleration,
         },
         {
+          label: '加速度衰减比',
+          symbol: 'a / a₀',
+          value: `${(accelState.accelRatio * 100).toFixed(1)}%`,
+          unit: '',
+          color: PHYSICS_COLORS.forceNet,
+          highlight: accelState.accelRatio < 0.5 ? 'extreme' : 'positive',
+        },
+        {
           label: '相对经典偏差',
           symbol: 'γ − 1',
           value: `${(accelState.currentNewtonMetrics.relativeDeviation * 100).toFixed(accelState.currentBeta < 0.1 ? 3 : 2)}%`,
@@ -345,7 +358,7 @@ export function buildRelativityQuantities(
     gaokaoPoints: [
       {
         text: '质能方程与静能：静止质量为 m₀ 的物体蕴含静能 E₀ = m₀c²；能量变化 ΔE 与质量变化遵循 ΔE = Δmc²（核反应质量亏损将在选择性必修第三册「原子核」中深入学习）。',
-        importance: 'core',
+        importance: 'extend',
       },
       {
         text: '低速动能极限：当 v ≪ c 时，利用小量近似 γ ≈ 1 + ½β²，相对论动能 E_k = (γ − 1)m₀c² 自动退化为牛顿动能 ½m₀v²。',

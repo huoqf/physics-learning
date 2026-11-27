@@ -294,6 +294,8 @@ export interface ConstantForceAccelState {
   classicalBeta: number
   /** 当前相对论洛伦兹因子 γ(t)（无量纲） */
   currentGamma: number
+  /** 当前 1D 恒力下相对论加速度与经典加速度之比 a_rel / a₀ = 1 / γ³（无量纲） */
+  accelRatio: number
   /** 当前相对论能量数据（SI 单位） */
   currentEnergy: ReturnType<typeof calcRelativisticEnergy>
   /** 当前按实际速度计算的经典动能 ½m₀v²（J） */
@@ -308,6 +310,16 @@ export interface ConstantForceAccelState {
   tCrossC: number | null
   /** 离开经典低速区（β = 0.1）的时刻（s），若未达到则为 null */
   tLeaveClassical: number | null
+}
+
+/**
+ * 计算一维恒力作用下相对论加速度与经典加速度之比 a_rel / a₀ = 1 / γ³。
+ * @param beta 速度与光速之比 v/c（无量纲）
+ * @returns 相对论加速度比（无量纲，区间 (0, 1]）
+ */
+export function calcRelativisticAccelRatio(beta: number): number {
+  const gamma = calcLorentzFactor(clampRelativityBeta(beta))
+  return 1 / (gamma * gamma * gamma)
 }
 
 /**
@@ -332,6 +344,7 @@ export function calcConstantForceAccelState(
   const currentGamma = Math.sqrt(1 + q * q)
   const currentBeta = q / currentGamma
   const classicalBeta = q
+  const accelRatio = 1 / (currentGamma * currentGamma * currentGamma)
 
   const currentEnergy = calcRelativisticEnergy(safeM0, currentBeta)
   const currentV = currentBeta * SPEED_OF_LIGHT
@@ -354,6 +367,7 @@ export function calcConstantForceAccelState(
     currentBeta,
     classicalBeta,
     currentGamma,
+    accelRatio,
     currentEnergy,
     currentClassicalEk,
     targetEnergy,
@@ -362,6 +376,89 @@ export function calcConstantForceAccelState(
     tCrossC,
     tLeaveClassical,
   }
+}
+
+export interface ChartCurvePoint {
+  x: number
+  y: number
+}
+
+/**
+ * 采样恒力加速下的牛顿预测与相对论实际 v/c - t 演化曲线。
+ * @param betaTarget 目标航速比 v/c（无量纲）
+ * @param steps 采样分段数，默认 48
+ * @returns 经典与相对论曲线点列及推荐 Y 轴上界 yMax（单位：c）
+ */
+export function sampleConstantForceCurves(
+  betaTarget: number,
+  steps = 48,
+): { classical: ChartCurvePoint[]; relativistic: ChartCurvePoint[]; yMax: number } {
+  const targetBeta = clampRelativityBeta(betaTarget)
+  const targetGamma = calcLorentzFactor(targetBeta)
+  const targetMomentum = targetGamma * targetBeta
+  const safeSteps = Math.max(2, Math.round(steps))
+  const classical: ChartCurvePoint[] = []
+  const relativistic: ChartCurvePoint[] = []
+
+  for (let i = 0; i <= safeSteps; i += 1) {
+    const t = (i / safeSteps) * ACCEL_CYCLE_DURATION
+    const q = targetMomentum * (t / ACCEL_CYCLE_DURATION)
+    const g = Math.sqrt(1 + q * q)
+    classical.push({ x: t, y: q })
+    relativistic.push({ x: t, y: q / g })
+  }
+
+  const yMax = Math.max(1.25, Math.ceil(Math.max(1.15, targetMomentum * 1.1) * 5) / 5)
+  return { classical, relativistic, yMax }
+}
+
+/**
+ * 采样洛伦兹因子 γ(β) 曲线（β ∈ [0, maxBeta]）。
+ * @param maxBeta 最大速度比（无量纲，默认 0.95）
+ * @param steps 采样分段数，默认 48
+ * @returns (β, γ) 曲线点列
+ */
+export function sampleLorentzCurve(maxBeta = 0.95, steps = 48): ChartCurvePoint[] {
+  const clampedMax = clampRelativityBeta(maxBeta)
+  const safeSteps = Math.max(2, Math.round(steps))
+  const points: ChartCurvePoint[] = []
+  for (let i = 0; i <= safeSteps; i += 1) {
+    const b = (i / safeSteps) * clampedMax
+    points.push({ x: b, y: calcLorentzFactor(b) })
+  }
+  return points
+}
+
+/**
+ * 采样经典动能 ½m₀v² 与相对论动能 (γ − 1)m₀c² 随 β 变化的对比曲线（单位：×10¹⁶ J）。
+ * @param m0 静止质量（kg）
+ * @param maxBeta 最大速度比（无量纲，默认 0.95）
+ * @param steps 采样分段数，默认 48
+ * @returns 经典与相对论动能曲线点列及 Y 轴上界 yMax（单位：×10¹⁶ J）
+ */
+export function sampleKineticEnergyCurves(
+  m0: number,
+  maxBeta = 0.95,
+  steps = 48,
+): { classical: ChartCurvePoint[]; relativistic: ChartCurvePoint[]; yMax: number } {
+  const safeM0 = Number.isFinite(m0) && m0 > 0 ? m0 : 1.0
+  const clampedMax = clampRelativityBeta(maxBeta)
+  const safeSteps = Math.max(2, Math.round(steps))
+  const classical: ChartCurvePoint[] = []
+  const relativistic: ChartCurvePoint[] = []
+
+  for (let i = 0; i <= safeSteps; i += 1) {
+    const b = (i / safeSteps) * clampedMax
+    const energy = calcRelativisticEnergy(safeM0, b)
+    const v = b * SPEED_OF_LIGHT
+    const classicalEk = 0.5 * safeM0 * v * v
+    classical.push({ x: b, y: classicalEk / 1e16 })
+    relativistic.push({ x: b, y: energy.kineticEnergy / 1e16 })
+  }
+
+  const maxRelEk16 = relativistic[relativistic.length - 1]?.y ?? 1
+  const yMax = Math.max(1, Math.ceil(maxRelEk16 * 1.08 * 2) / 2)
+  return { classical, relativistic, yMax }
 }
 
 /**

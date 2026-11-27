@@ -3,6 +3,9 @@ import { describe, it, expect } from 'vitest'
 import { render, renderHook } from '@testing-library/react'
 import { useRelativityPhysics } from '../hooks/useRelativityPhysics'
 import { RelativityScene } from '../components/RelativityScene'
+import { RelativityCharts } from '../components/RelativityCharts'
+import { getRelativitySceneProfile } from '../relativityLayout'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { buildRelativityQuantities } from '@/data/quantities/relativity'
 import type { SceneScale } from '@/scene'
 
@@ -211,5 +214,119 @@ describe('相对论 Hook、场景与右屏看板集成测试', () => {
     expect(dumpText(d3)).toContain('相对论能量与质能关系')
     expect(dumpText(d3)).not.toContain('尺缩只发生在')
     expect(dumpText(d3)).not.toContain('量子力学')
+  })
+
+  it('分模式布局 Profile（full + splitV）、对称视角切换与舷窗垂直不缩渲染验证', () => {
+    expect(getRelativitySceneProfile(0).preset).toEqual(CANVAS_PRESETS.full)
+    expect(getRelativitySceneProfile(0).hasChart).toBe(false)
+    expect(getRelativitySceneProfile(1).preset).toEqual(CANVAS_PRESETS.full)
+    expect(getRelativitySceneProfile(2).preset).toEqual(CANVAS_PRESETS.splitV)
+    expect(getRelativitySceneProfile(2).hasChart).toBe(true)
+    expect(getRelativitySceneProfile(3).preset).toEqual(CANVAS_PRESETS.splitV)
+    expect(getRelativitySceneProfile(3).hasChart).toBe(true)
+
+    const vp = { designLeft: 0, designVisibleW: 840 }
+
+    // Mode 0 对称视角：飞船看地面时钟同样变慢，且右屏文案同步切换
+    const { result: symHook } = renderHook(() =>
+      useRelativityPhysics({
+        beta: 0.6,
+        m0: 1.0,
+        time: 1.25,
+        mode: 0,
+        showGeometry: true,
+        observerFrame: 1,
+      }),
+    )
+    const { container: symContainer } = render(
+      React.createElement(
+        'svg',
+        null,
+        React.createElement(RelativityScene, {
+          physics: symHook.current,
+          vp,
+          sceneScale: makeSceneScale(symHook.current.clockState.totalHorizWorld),
+          font: (n: number) => n,
+        }),
+      ),
+    )
+    expect(symContainer.textContent).toContain('地面固有钟 τ')
+    expect(symContainer.textContent).toContain('飞船参考钟 t')
+    expect(symContainer.querySelector('.equal-path-arc')).toBeTruthy()
+    const symQuantities = buildRelativityQuantities(
+      'anim-relativity',
+      { mode: 0, beta: 0.6, observerFrame: 1 },
+      1.25,
+    )!
+    expect(symQuantities.quantities.map((q) => q.label)).toContain('飞船参考钟读数')
+    expect(symQuantities.quantities.map((q) => q.label)).toContain('地面固有钟读数')
+
+    // Mode 1 舷窗水平压缩而垂直半径不变（rx < ry）
+    const { result: m1Hook } = renderHook(() =>
+      useRelativityPhysics({ beta: 0.866, m0: 1.0, time: 0.2, mode: 1, showGeometry: false }),
+    )
+    const { container: m1Container } = render(
+      React.createElement(
+        'svg',
+        null,
+        React.createElement(RelativityScene, {
+          physics: m1Hook.current,
+          vp,
+          sceneScale: makeSceneScale(m1Hook.current.clockState.totalHorizWorld),
+          font: (n: number) => n,
+        }),
+      ),
+    )
+    const ellipses = Array.from(m1Container.querySelectorAll('ellipse'))
+    expect(ellipses.length).toBe(6)
+    const restPorthole = ellipses[0]
+    const movingPorthole = ellipses[3]
+    expect(Number(restPorthole.getAttribute('rx'))).toBeCloseTo(
+      Number(restPorthole.getAttribute('ry')),
+      4,
+    )
+    expect(Number(movingPorthole.getAttribute('rx'))).toBeLessThan(
+      Number(movingPorthole.getAttribute('ry')),
+    )
+
+    // Mode 2 / Mode 3 splitV 场景与 BasePhysicsChart 图表渲染在 840×325 设计盒内
+    for (const mode of [2, 3]) {
+      for (const newtonChartType of mode === 2 ? [0, 1] : [0]) {
+        const { result: mHook } = renderHook(() =>
+          useRelativityPhysics({
+            beta: 0.8,
+            m0: 2.0,
+            time: 2.0,
+            mode,
+            showGeometry: false,
+            newtonChartType,
+          }),
+        )
+        const { container: sceneBox } = render(
+          React.createElement(
+            'svg',
+            null,
+            React.createElement(RelativityScene, {
+              physics: mHook.current,
+              vp,
+              sceneScale: makeSceneScale(mHook.current.clockState.totalHorizWorld),
+              font: (n: number) => n,
+            }),
+          ),
+        )
+        const texts = Array.from(sceneBox.querySelectorAll('text'))
+        expect(texts.length).toBeGreaterThan(0)
+        for (const t of texts) {
+          const y = Number(t.getAttribute('y'))
+          expect(y).toBeGreaterThanOrEqual(10)
+          expect(y).toBeLessThanOrEqual(315)
+        }
+
+        const { container: chartBox } = render(
+          React.createElement(RelativityCharts, { physics: mHook.current }),
+        )
+        expect(chartBox.querySelector('svg')).toBeTruthy()
+      }
+    }
   })
 })

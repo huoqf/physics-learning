@@ -440,6 +440,8 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
       m0: 1.0,
       mode: 0,
       showGeometry: 0,
+      observerFrame: 0,
+      newtonChartType: 0,
     } as const,
     paramMeta: [
       {
@@ -453,7 +455,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
         marks: [
           { value: 0, label: '0', variant: 'zero' },
           { value: 0.6, label: '0.6c', variant: 'recommended' },
-          { value: 0.87, label: 'γ≈2', variant: 'critical' },
+          { value: 0.8, label: '0.8c', variant: 'critical' },
         ],
       },
       {
@@ -483,6 +485,18 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
         ],
       },
       {
+        type: 'segmented',
+        key: 'observerFrame',
+        label: '观察者参考系',
+        group: '参考系视角',
+        showIf: 'mode',
+        showIfValue: 0,
+        options: [
+          { value: 0, label: '地面看飞船' },
+          { value: 1, label: '飞船看地面' },
+        ],
+      },
+      {
         type: 'toggle',
         key: 'showGeometry',
         label: '显示勾股推导图解',
@@ -491,11 +505,30 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
         showIfValue: 0,
       },
       {
+        type: 'segmented',
+        key: 'newtonChartType',
+        label: '上方函数图像',
+        group: '曲线视图',
+        showIf: 'mode',
+        showIfValue: 2,
+        options: [
+          { value: 0, label: 'v-t 曲线' },
+          { value: 1, label: 'γ-β 曲线' },
+        ],
+      },
+      {
         type: 'preset',
         label: '🕰 动钟推导（β=0.80）',
         group: '典型工况',
         restartOnApply: true,
-        params: { beta: 0.8, m0: 1.0, mode: 0, showGeometry: 1 },
+        params: { beta: 0.8, m0: 1.0, mode: 0, showGeometry: 1, observerFrame: 0 },
+      },
+      {
+        type: 'preset',
+        label: "🔄 相互对称（S'视角）",
+        group: '典型工况',
+        restartOnApply: true,
+        params: { beta: 0.6, m0: 1.0, mode: 0, showGeometry: 0, observerFrame: 1 },
       },
       {
         type: 'preset',
@@ -509,11 +542,11 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
         label: '🧭 经典极限（β=0.01）',
         group: '典型工况',
         restartOnApply: true,
-        params: { beta: 0.01, m0: 1.0, mode: 2, showGeometry: 0 },
+        params: { beta: 0.01, m0: 1.0, mode: 2, showGeometry: 0, newtonChartType: 0 },
       },
       {
         type: 'preset',
-        label: '⚡ 高能拓展（β=0.80, 2kg）',
+        label: '⚡ 高能壁垒（0.8c,2kg）',
         group: '典型工况',
         restartOnApply: true,
         params: { beta: 0.8, m0: 2.0, mode: 3, showGeometry: 0 },
@@ -524,15 +557,15 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
         content: (p) => {
           const m = p.mode ?? 0
           if (m === 0) {
-            return '点击播放，同时盯紧光脉冲与两块表盘数字，看光子到顶镜与返回底镜时的读数差；打开勾股推导可对照斜光路。'
+            return '点击播放，对比上下等长光速矢量 c 与等光程圆弧，盯紧表盘读数差；切换观察者参考系可验证双方互看均变慢。'
           }
           if (m === 1) {
-            return '点击播放，先在上方对比沿运动方向尺长与高度变化，再盯住下方车厢闪光如何先到后壁、后到前壁。'
+            return '点击播放，上方注意正圆舷窗压成竖椭圆而上下边界贴紧等高线；下方盯住车厢闪光如何先到后壁、后到前壁。'
           }
           if (m === 2) {
-            return '点击播放，观察恒力加速初期两条速度曲线如何贴近重合、高速后牛顿预测越过光速而相对论渐近逼近光速。'
+            return '点击播放，对比上方曲线与下方双船加速度箭头的变化，把航速拉回低速端观察高亮点如何落入牛顿安全岛。'
           }
-          return '点击播放，观察恒力做功过程中静能与相对论动能的占比变化，对比低速重合与高速分叉。'
+          return '点击播放，对比上方经典抛物线与相对论动能的急速分叉，观察静能底座与动态增长的动能堆叠条。'
         },
       },
     ],

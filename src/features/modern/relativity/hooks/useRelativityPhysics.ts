@@ -6,6 +6,10 @@ import {
   calcNewtonianLimitMetrics,
   calcRelativisticEnergy,
   calcSimultaneityState,
+  sampleConstantForceCurves,
+  sampleKineticEnergyCurves,
+  sampleLorentzCurve,
+  type ChartCurvePoint,
   type ConstantForceAccelState,
   type LightClockState,
   type NewtonianLimitMetrics,
@@ -23,6 +27,10 @@ export interface UseRelativityPhysicsOptions {
   mode: number
   /** 是否显示几何辅助线与勾股定理推导 */
   showGeometry: boolean
+  /** 动钟观察者视角: 0-地面看飞船, 1-飞船看地面 */
+  observerFrame?: number
+  /** 牛顿局限曲线视图: 0-v-t 加速曲线, 1-γ-β 因子曲线 */
+  newtonChartType?: number
 }
 
 export interface RelativityPhysicsState {
@@ -40,6 +48,11 @@ export interface RelativityPhysicsState {
   newtonMetrics: NewtonianLimitMetrics
   mode: number
   showGeometry: boolean
+  observerFrame: 0 | 1
+  newtonChartType: 0 | 1
+  accelCurves: { classical: ChartCurvePoint[]; relativistic: ChartCurvePoint[]; yMax: number }
+  lorentzCurve: ChartCurvePoint[]
+  energyCurves: { classical: ChartCurvePoint[]; relativistic: ChartCurvePoint[]; yMax: number }
 }
 
 export function useRelativityPhysics({
@@ -48,6 +61,8 @@ export function useRelativityPhysics({
   time,
   mode,
   showGeometry,
+  observerFrame = 0,
+  newtonChartType = 0,
 }: UseRelativityPhysicsOptions): RelativityPhysicsState {
   return useMemo(() => {
     const clockState = calcLightClockState(beta, time)
@@ -67,6 +82,10 @@ export function useRelativityPhysics({
     const classicalKineticEnergy = 0.5 * safeM0 * v * v
     const newtonMetrics = calcNewtonianLimitMetrics(clampedBeta)
 
+    const accelCurves = sampleConstantForceCurves(clampedBeta)
+    const lorentzCurve = sampleLorentzCurve()
+    const energyCurves = sampleKineticEnergyCurves(safeM0)
+
     return {
       beta: clampedBeta,
       m0: safeM0,
@@ -82,6 +101,11 @@ export function useRelativityPhysics({
       newtonMetrics,
       mode,
       showGeometry,
+      observerFrame: observerFrame === 1 ? 1 : 0,
+      newtonChartType: newtonChartType === 1 ? 1 : 0,
+      accelCurves,
+      lorentzCurve,
+      energyCurves,
     }
-  }, [beta, m0, time, mode, showGeometry])
+  }, [beta, m0, time, mode, showGeometry, observerFrame, newtonChartType])
 }

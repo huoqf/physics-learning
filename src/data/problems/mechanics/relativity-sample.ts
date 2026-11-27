@@ -51,7 +51,7 @@ export const relativityProblems: Problem[] = [
         isCorrect: false,
         explanation:
           '惯性系之间的时间延缓是相互的：在飞船参考系看来，地面时钟相对自己运动，因此飞船上的观察者测得地面时钟也变慢。',
-        animParams: { beta: 0.6, mode: 0, showGeometry: 0 },
+        animParams: { beta: 0.6, mode: 0, showGeometry: 0, observerFrame: 1 },
       },
     },
     steps: [
@@ -197,7 +197,7 @@ export const relativityProblems: Problem[] = [
         isCorrect: false,
         explanation:
           '当 $v = 0.9c$ 时，$\\gamma \\approx 2.29$，相对偏差超过 $129\\%$，相对论时间延缓与能量修正十分显著，不能再用经典公式近似。',
-        animParams: { beta: 0.9, mode: 2, showGeometry: 0 },
+        animParams: { beta: 0.9, mode: 2, showGeometry: 0, newtonChartType: 1 },
       },
     },
     steps: [

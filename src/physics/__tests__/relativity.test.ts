@@ -13,6 +13,10 @@ import {
   calcSimultaneityState,
   calcConstantForceAccelState,
   calcNewtonianLimitMetrics,
+  calcRelativisticAccelRatio,
+  sampleConstantForceCurves,
+  sampleLorentzCurve,
+  sampleKineticEnergyCurves,
   getRelativityCriticalTimes,
   getRelativityTimeStages,
 } from '../relativity'
@@ -143,5 +147,30 @@ describe('相对论纯物理函数单元测试', () => {
     for (const mode of [0, 1, 2, 3]) {
       expect(getRelativityTimeStages({ beta: 0.6, mode }).length).toBeGreaterThan(0)
     }
+  })
+
+  it('恒力相对论加速度比 1/γ³ 与三类图表纯采样函数数值准确', () => {
+    expect(calcRelativisticAccelRatio(0)).toBeCloseTo(1, 6)
+    expect(calcRelativisticAccelRatio(0.6)).toBeCloseTo(1 / 1.25 ** 3, 6)
+
+    const accelEnd = calcConstantForceAccelState(0.6, 1.0, 4.0)
+    expect(accelEnd.accelRatio).toBeCloseTo(calcRelativisticAccelRatio(0.6), 6)
+
+    const vtCurves = sampleConstantForceCurves(0.8, 20)
+    expect(vtCurves.classical).toHaveLength(21)
+    expect(vtCurves.relativistic).toHaveLength(21)
+    expect(vtCurves.relativistic[20].y).toBeCloseTo(0.8, 5)
+    expect(vtCurves.classical[20].y).toBeGreaterThan(1.0)
+    expect(vtCurves.yMax).toBeGreaterThanOrEqual(1.25)
+
+    const gammaCurve = sampleLorentzCurve(0.95, 24)
+    expect(gammaCurve).toHaveLength(25)
+    expect(gammaCurve[0].y).toBeCloseTo(1.0, 6)
+    expect(gammaCurve[24].y).toBeCloseTo(calcLorentzFactor(0.95), 5)
+
+    const ekCurves = sampleKineticEnergyCurves(2.0, 0.95, 20)
+    expect(ekCurves.classical).toHaveLength(21)
+    expect(ekCurves.relativistic).toHaveLength(21)
+    expect(ekCurves.relativistic[20].y).toBeGreaterThan(ekCurves.classical[20].y)
   })
 })
