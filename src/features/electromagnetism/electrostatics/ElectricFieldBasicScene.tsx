@@ -1,14 +1,9 @@
 /**
  * ElectricFieldBasicScene.tsx — 基础模式场景（单电荷 + 试探电荷 + 图表）
- *
- * 从 ElectricField.tsx 拆分：mode=0 的中间屏渲染。
- *
- * 图表部分已迁移至 RelationChart，由 useElectricFieldPhysics 提供
- * 纯物理数据（points / eMax / fMax），本组件只负责像素布局 + foreignObject 嵌入。
  */
 import { VectorArrow } from '@/components/Physics'
 import { useMemo } from 'react'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_STYLE, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
 import { RelationChart } from '@/components/Chart'
@@ -53,14 +48,32 @@ interface Props {
     points: { r: number; E: number; F: number }[]
   } | null
   sceneScale: SceneScale
+  font: (size: number) => number
+}
+
+function vectorLabelPos(
+  originX: number,
+  originY: number,
+  v: { x: number; y: number },
+  pixelLen: number,
+  extra = 14,
+  perpOffset = 0,
+) {
+  const mag = Math.hypot(v.x, v.y) || 1
+  const ux = v.x / mag
+  const uyScreen = -v.y / mag
+  const px = -uyScreen * perpOffset
+  const py = ux * perpOffset
+  return {
+    x: originX + ux * (pixelLen + extra) + px,
+    y: originY + uyScreen * (pixelLen + extra) + py + 4,
+  }
 }
 
 export function ElectricFieldBasicScene({
   w, h, cx, cy, qSource, qTest, testX, testY, isDragging,
-  basicPhysics, basicArrows, chartProps, sceneScale,
+  basicPhysics, basicArrows, chartProps, sceneScale, font,
 }: Props) {
-
-  // 把 chartProps.points 拆成 E-r / F-r 两条曲线
   const ePoints = useMemo(
     () => chartProps?.points.map((p) => ({ x: p.r, y: p.E })) ?? [],
     [chartProps],
@@ -70,6 +83,23 @@ export function ElectricFieldBasicScene({
     [chartProps],
   )
 
+  const eLabelPos = basicArrows
+    ? vectorLabelPos(testX, testY, basicArrows.vectorE, basicArrows.pixelLenE)
+    : null
+  const fLabelPos = (() => {
+    if (!basicArrows || qTest === 0) return null
+    const sameDir = qTest > 0
+    const nearTip = Math.abs(basicArrows.pixelLenE - basicArrows.pixelLenF) < 22
+    return vectorLabelPos(
+      testX,
+      testY,
+      basicArrows.vectorF,
+      basicArrows.pixelLenF,
+      14,
+      sameDir && nearTip ? 14 : 0,
+    )
+  })()
+
   return (
     <g>
       {/* 物理场景分隔线 */}
@@ -78,13 +108,13 @@ export function ElectricFieldBasicScene({
 
       {/* 大源电荷 Q */}
       <circle cx={cx} cy={cy} r={24}
-        fill={qSource >= 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
+        fill={qSource > 0 ? PHYSICS_COLORS.positiveCharge : qSource < 0 ? PHYSICS_COLORS.negativeCharge : colors.neutral[400]}
         stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-      <text x={cx} y={cy + 7} fontSize="22" fill={colors.neutral.white}
+      <text x={cx} y={cy + 7} fontSize={font(16)} fill={CANVAS_COLORS.white}
         textAnchor="middle" fontWeight="bold">
-        {qSource >= 0 ? '+' : '−'}
+        {qSource > 0 ? '+' : qSource < 0 ? '−' : '0'}
       </text>
-      <text x={cx} y={cy - 30} fontSize={CANVAS_STYLE.font.labelSize}
+      <text x={cx} y={cy - 30} fontSize={font(12)}
         fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
         源电荷 Q = {qSource > 0 ? '+' : ''}{qSource.toFixed(1)} μC
       </text>
@@ -95,18 +125,18 @@ export function ElectricFieldBasicScene({
         stroke={isDragging ? PHYSICS_COLORS.electricForce : PHYSICS_COLORS.objectStroke}
         strokeWidth={isDragging ? 2.5 : CANVAS_STYLE.stroke.objectLine}
         style={{ cursor: isDragging ? 'grabbing' : 'grab' }} />
-      <text x={testX} y={testY + 4} fontSize="12"
-        fill={qTest === 0 ? colors.neutral[800] : colors.neutral.white}
+      <text x={testX} y={testY + 4} fontSize={font(12)}
+        fill={qTest === 0 ? colors.neutral[800] : CANVAS_COLORS.white}
         textAnchor="middle" fontWeight="bold">
         {qTest > 0 ? '+' : (qTest < 0 ? '−' : '0')}
       </text>
-      <text x={testX} y={testY - 18} fontSize={CANVAS_STYLE.font.axisSize}
+      <text x={testX} y={testY - 18} fontSize={font(11)}
         fill={PHYSICS_COLORS.labelText} textAnchor="middle">
         q = {qTest > 0 ? '+' : ''}{qTest.toFixed(1)} μC
       </text>
 
       {/* E / F 矢量箭头 */}
-      {basicArrows && (
+      {basicArrows && eLabelPos && (
         <g>
           <VectorArrow
             originDesign={{ x: testX, y: testY }}
@@ -118,9 +148,9 @@ export function ElectricFieldBasicScene({
             strokeWidth={CANVAS_STYLE.stroke.vectorMain}
           />
           <text
-            x={testX + (basicArrows.vectorE.x >= 0 ? 1 : -1) * (basicArrows.pixelLenE + 14)}
-            y={testY - (basicArrows.vectorE.y >= 0 ? 1 : -1) * 6 + 4}
-            fontSize={CANVAS_STYLE.font.labelSize}
+            x={eLabelPos.x}
+            y={eLabelPos.y}
+            fontSize={font(12)}
             fill={PHYSICS_COLORS.electricField}
             fontWeight="bold"
             textAnchor="middle"
@@ -128,7 +158,7 @@ export function ElectricFieldBasicScene({
             E
           </text>
 
-          {qTest !== 0 && (
+          {qTest !== 0 && fLabelPos && (
             <>
               <VectorArrow
                 originDesign={{ x: testX, y: testY }}
@@ -140,9 +170,9 @@ export function ElectricFieldBasicScene({
                 strokeWidth={CANVAS_STYLE.stroke.vectorMain + 0.5}
               />
               <text
-                x={testX + (basicArrows.vectorF.x >= 0 ? 1 : -1) * (basicArrows.pixelLenF + 14)}
-                y={testY - (basicArrows.vectorF.y >= 0 ? 1 : -1) * 6 + 18}
-                fontSize={CANVAS_STYLE.font.labelSize}
+                x={fLabelPos.x}
+                y={fLabelPos.y}
+                fontSize={font(12)}
                 fill={PHYSICS_COLORS.electricForce}
                 fontWeight="bold"
                 textAnchor="middle"
@@ -157,7 +187,6 @@ export function ElectricFieldBasicScene({
       {/* 对比图表：E-r / F-r 双图直接作为 SVG 元素绘制 */}
       {chartProps && (
         <g>
-          {/* E-r 图表 */}
           <g transform={`translate(${chartProps.chartLeft}, ${chartProps.topY_E})`}>
             <RelationChart
               points={ePoints}
@@ -174,7 +203,6 @@ export function ElectricFieldBasicScene({
             />
           </g>
 
-          {/* F-r 图表 */}
           <g transform={`translate(${chartProps.chartLeft}, ${chartProps.topY_F})`}>
             <RelationChart
               points={fPoints}

@@ -4,9 +4,8 @@
  * 从 ElectricField.tsx 拆分：所有物理计算、图表数据、电场线路径。
  */
 import { useMemo } from 'react'
-import { calculateElectricField } from '@/physics'
+import { calculateElectricField, calculateTwoChargeField2D, TWO_CHARGE_SEPARATION_M } from '@/physics'
 import { COULOMB_CONSTANT } from '@/physics/constants'
-
 
 interface Point {
   x: number
@@ -144,24 +143,16 @@ export interface ElectricFieldPhysicsResult {
     enetTip: { x: number; y: number }
   } | null
   fieldLinesPaths: string[]
-  /**
-   * E-r / F-r 对比图所需数据 + 像素布局。
-   * 重构后：物理数据（points / eMax / fMax）与渲染层（toX/toYE/path）解耦，
-   * 由消费方传给 RelationChart 即可完成绘制。
-   */
   chartProps: {
-    /** 图表像素布局 */
     chartW: number
     chartH: number
     chartLeft: number
     topY_E: number
     topY_F: number
-    /** 物理数据 */
     rMin: number
     rMax: number
     eMax: number
     fMax: number
-    /** 整段曲线采样点，供 RelationChart 直接消费 */
     points: { r: number; E: number; F: number }[]
   } | null
 }
@@ -198,42 +189,37 @@ export function useElectricFieldPhysics(p: ElectricFieldPhysicsParams): Electric
     return { distCm, distM, E, Ex, Ey, F, Fx, Fy }
   }, [testX, testY, cx, cy, qSource, qTest, pxPerCm])
 
-  // 进阶模式物理计算
+  // 进阶模式物理计算（复用物理层 calculateTwoChargeField2D 单一可信源）
   const advancedPhysics = useMemo(() => {
-    const dx1 = testX - cx1
-    const dy1 = cy1 - testY
-    const r1Px = Math.sqrt(dx1 * dx1 + dy1 * dy1)
-    const r1M = Math.max(0.2, r1Px / pxPerCm) * 0.01
-    const E1_val = calculateElectricField(COULOMB_CONSTANT, Math.abs(q1 * 1e-6), r1M).E
-    const angle1 = Math.atan2(dy1, dx1)
-    const dir1 = q1 >= 0 ? 1 : -1
-    const E1x = E1_val * dir1 * Math.cos(angle1)
-    const E1y = E1_val * dir1 * Math.sin(angle1)
-
-    const dx2 = testX - cx2
-    const dy2 = cy2 - testY
-    const r2Px = Math.sqrt(dx2 * dx2 + dy2 * dy2)
-    const r2M = Math.max(0.2, r2Px / pxPerCm) * 0.01
-    const E2_val = calculateElectricField(COULOMB_CONSTANT, Math.abs(q2 * 1e-6), r2M).E
-    const angle2 = Math.atan2(dy2, dx2)
-    const dir2 = q2 >= 0 ? 1 : -1
-    const E2x = E2_val * dir2 * Math.cos(angle2)
-    const E2y = E2_val * dir2 * Math.sin(angle2)
-
-    const Ex = E1x + E2x
-    const Ey = E1y + E2y
-    const E = Math.sqrt(Ex * Ex + Ey * Ey)
-
-    const qTestSI = qTest * 1e-6
-    const Fx = qTestSI * Ex
-    const Fy = qTestSI * Ey
-    const F = Math.sqrt(Fx * Fx + Fy * Fy)
-
     const midX = (cx1 + cx2) / 2
     const midY = (cy1 + cy2) / 2
-    const distCm = Math.sqrt((testX - midX) ** 2 + (testY - midY) ** 2) / pxPerCm
+    const xM = ((testX - midX) / pxPerCm) * 0.01
+    const yM = ((midY - testY) / pxPerCm) * 0.01
 
-    return { E1x, E1y, E2x, E2y, Ex, Ey, E, F, Fx, Fy, distCm }
+    const res = calculateTwoChargeField2D({
+      q1C: q1 * 1e-6,
+      q2C: q2 * 1e-6,
+      separationM: TWO_CHARGE_SEPARATION_M,
+      xM,
+      yM,
+      qTestC: qTest * 1e-6,
+    })
+
+    const distCm = Math.hypot(testX - midX, testY - midY) / pxPerCm
+
+    return {
+      E1x: res.E1x,
+      E1y: res.E1y,
+      E2x: res.E2x,
+      E2y: res.E2y,
+      Ex: res.Ex,
+      Ey: res.Ey,
+      E: res.E,
+      F: res.F,
+      Fx: res.Fx,
+      Fy: res.Fy,
+      distCm,
+    }
   }, [testX, testY, cx1, cy1, cx2, cy2, q1, q2, qTest, pxPerCm])
 
   // 基础模式箭头
@@ -298,6 +284,7 @@ export function useElectricFieldPhysics(p: ElectricFieldPhysicsParams): Electric
     if (!showFieldLines) return []
 
     if (mode === 0) {
+      if (Math.abs(qSource) < 1e-9) return []
       const paths: string[] = []
       const dirCount = 16
       const rInner = 20
@@ -351,8 +338,8 @@ export function useElectricFieldPhysics(p: ElectricFieldPhysicsParams): Electric
         const startDist = Math.max(w, h) * 0.6
         for (let i = 0; i < 12; i++) {
           const angle = (Math.PI * 2 * i) / 12
-          let sx = Math.max(10, Math.min(w - 10, negCh.x + startDist * Math.cos(angle)))
-          let sy = Math.max(10, Math.min(h - 10, negCh.y + startDist * Math.sin(angle)))
+          const sx = Math.max(10, Math.min(w - 10, negCh.x + startDist * Math.cos(angle)))
+          const sy = Math.max(10, Math.min(h - 10, negCh.y + startDist * Math.sin(angle)))
           const pts = traceSingleFieldLine(charges, sx, sy, 1, w, h)
           if (pts.length > 2) {
             paths.push(pts.map((p, idx) =>
@@ -373,23 +360,19 @@ export function useElectricFieldPhysics(p: ElectricFieldPhysicsParams): Electric
   const chartProps = useMemo(() => {
     if (mode !== 0) return null
 
-    // 像素布局：右侧图表区上下排列 E-r / F-r
     const chartW = w * 0.36
     const chartH = h * 0.45
     const chartLeft = w * 0.62
     const topY_E = h * 0.03
     const topY_F = h * 0.53
 
-    // 物理域
     const rMin = 1.0
     const rMax = 6.0
 
-    // Y 轴上界（用最小允许 r 的场强 / 力作上界，避免极小 r 的奇点把曲线压扁）
     const qSI = Math.abs(qSource * 1e-6)
     const { E: eMax } = calculateElectricField(COULOMB_CONSTANT, qSI, 1.2 * 0.01)
     const fMax = eMax * 2.0 * 1e-6
 
-    // 整段曲线采样（仅当 qSource / qTest 变化时重算）
     const points: { r: number; E: number; F: number }[] = []
     const step = 0.1
     for (let r = rMin; r <= rMax + 0.01; r += step) {

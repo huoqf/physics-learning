@@ -251,6 +251,17 @@ describe('A 组 · 中屏与看板共用同一套常量/函数', () => {
     expect((config.defaultParams as Record<string, number>).mode).toBe(0)
   })
 
+  it('电势与电势差与电场线默认配置自洽：电势差页可定时播放，电场线探针居中', () => {
+    const pot = electromagnetismElectrostaticsAnimations['anim-electric-potential']
+    expect(pot.controlsMode).toBe('timed')
+    expect(pot.maxTime).toBe(5)
+    const ct = typeof pot.criticalTimes === 'function' ? pot.criticalTimes({}) : pot.criticalTimes
+    expect(ct?.length).toBeGreaterThanOrEqual(2)
+
+    const fl = electromagnetismElectrostaticsAnimations['anim-field-lines']
+    expect((fl.defaultParams as Record<string, number>).probeX).toBe(420)
+  })
+
   // ── #12 平抛频闪：看板读数与中屏打点同一份采样 ─────────────────────────────
   it('平抛频闪：看板逐差 = gT²、间距比 1:3:5 与 computeProjectileStrobe 同源；有阻力时整层关闭', async () => {
     await preloadQuantityBuilder('anim-projectile')

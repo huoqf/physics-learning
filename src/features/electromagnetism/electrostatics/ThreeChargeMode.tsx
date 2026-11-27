@@ -10,7 +10,7 @@
  *
  * 功能特性：
  * - 拖拽 Q3 改变位置，实时显示各电荷受力矢量
- * - 单电荷平衡：自动计算 Q3 的平衡位置（二分法求解）
+ * - 单电荷平衡：自动计算 Q3 的平衡位置（解析零场公式）
  * - 自由三电荷平衡：自动配置 Q3 的电量和位置使三者同时平衡
  * - 右上角浮窗实时显示三大平衡条件的满足状态
  *
@@ -33,11 +33,8 @@ import { Button } from '@/components/UI'
 import { useSceneScale } from '@/hooks'
 import { COULOMB_CONSTANT } from '@/physics/constants'
 
-/** 静电力常量 k = 9×10⁹ N·m²/C² */
-
 /**
  * 三电荷模式布局配置常量
- * equilibriumThreshold: 合力小于此值视为平衡（单位 N）
  */
 const LAYOUT = {
   chargeRadiusRatio: 0.03,
@@ -46,17 +43,10 @@ const LAYOUT = {
   chartAreaRatio: { width: 0.35, height: 0.5 },
   chartPaddingRatio: 0.08,
   frDataRange: { rMin: 0.5, rMax: 10, rStep: 0.1 },
-  equilibriumThreshold: 1e-6,
 } as const
 
 /**
  * 进阶模式：固定 Q1、Q2，拖拽 Q3 + 自动平衡
- *
- * @param params - 动画参数对象，包含 q1、q2、q3 三个电荷的电量（μC）
- * @param showVectors - 是否显示力矢量箭头
- * @param showFormulas - 是否显示公式推导（预留接口）
- * @param canvasSize - 画布尺寸信息 { width, height }
- * @returns 三电荷平衡模式动画组件
  */
 export default function ThreeChargeMode({
   params,
@@ -71,26 +61,27 @@ export default function ThreeChargeMode({
   vp: ViewportInfo
 }) {
   const { q1 = 2, q2 = -3, q3 = 1 } = params
+  const { font } = canvasSize
   const w = canvasSize.width
   const h = canvasSize.height
   const stageHeight = h - 60
   const centerY = stageHeight * 0.5
 
-  // 动画舞台占据全部 100% 宽度
+  // 动画舞台占据全部 100% 宽度，Q₁/Q₂ 置于 35%/65% 为外侧平衡留出空间
   const stageWidth = w
-  const pos1X = stageWidth * 0.25
-  const pos2X = stageWidth * 0.75
+  const pos1X = stageWidth * 0.35
+  const pos2X = stageWidth * 0.65
 
   const [q3X, setQ3X] = useState(stageWidth * 0.5)
   const [dragging, setDragging] = useState(false)
   const [noEquilibrium, setNoEquilibrium] = useState(false)
+  const [noEquilibriumMsg, setNoEquilibriumMsg] = useState('此电量配置下无法达成自由平衡')
 
   const updateParam = useAnimationStore((s) => s.updateParam)
 
   useEffect(() => {
     setQ3X(stageWidth * 0.5)
-    setNoEquilibrium(false)
-  }, [w, h, q1, q2, q3, stageWidth])
+  }, [stageWidth])
 
   const charges = [
     { x: pos1X * 0.01, y: centerY * 0.01, q: q1 * 1e-6 },
@@ -99,8 +90,20 @@ export default function ThreeChargeMode({
   ]
 
   const forces = calculateThreeChargeForces(COULOMB_CONSTANT, charges)
-  const isBalanced = forces[2].magnitude < LAYOUT.equilibriumThreshold
-  const isAllThreeBalanced = forces.every((f) => f.magnitude < LAYOUT.equilibriumThreshold)
+  const sep12 = Math.max(0.01, (pos2X - pos1X) * 0.01)
+  const sep13 = Math.max(0.01, Math.abs(q3X - pos1X) * 0.01)
+  const pairForceScale = Math.max(
+    1e-6,
+    (COULOMB_CONSTANT * Math.abs(q1 * q2) * 1e-12) / (sep12 * sep12),
+    (COULOMB_CONSTANT * Math.abs(q1 * q3) * 1e-12) / (sep13 * sep13),
+  )
+  const eqTol = Math.max(1e-4, pairForceScale * 1e-3)
+  const isBalanced = Math.abs(q3) > 1e-9 && forces[2].magnitude < eqTol
+  const isAllThreeBalanced =
+    Math.abs(q1) > 1e-9 &&
+    Math.abs(q2) > 1e-9 &&
+    Math.abs(q3) > 1e-9 &&
+    forces.every((f) => f.magnitude < eqTol)
 
   const chargeR = Math.min(stageWidth, stageHeight) * LAYOUT.chargeRadiusRatio
   const maxForce = Math.max(...forces.map((f) => f.magnitude), 1e-10)
@@ -130,6 +133,7 @@ export default function ThreeChargeMode({
     pt.y = e.clientY
     const svgP = pt.matrixTransform(svg.getScreenCTM()!.inverse())
     setQ3X(Math.max(chargeR, Math.min(stageWidth - chargeR, svgP.x)))
+    setNoEquilibrium(false)
   }
 
   const handleMouseUp = () => setDragging(false)
@@ -145,6 +149,7 @@ export default function ThreeChargeMode({
       setQ3X(eqX * 100)
       setNoEquilibrium(false)
     } else {
+      setNoEquilibriumMsg('当前画布范围内无 Q₃ 单电荷平衡点')
       setNoEquilibrium(true)
     }
   }
@@ -153,14 +158,21 @@ export default function ThreeChargeMode({
   const handleFreeBalance = () => {
     const rPhysical = (pos2X - pos1X) * 0.01
     const { q3: q3Eq, r13, valid } = calculateFreeThreeChargeEquilibrium(q1 * 1e-6, q2 * 1e-6, rPhysical)
-    if (valid) {
-      const q3XNew = pos1X + (r13 / 0.01)
-      setQ3X(q3XNew)
-      updateParam('q3', Number((q3Eq / 1e-6).toFixed(2)))
-      setNoEquilibrium(false)
-    } else {
+    if (!valid) {
+      setNoEquilibriumMsg('等量异号或零电荷无法达成自由平衡')
       setNoEquilibrium(true)
+      return
     }
+    const q3XNew = pos1X + r13 / 0.01
+    const q3Micro = q3Eq / 1e-6
+    if (q3XNew < chargeR || q3XNew > stageWidth - chargeR || Math.abs(q3Micro) > 5) {
+      setNoEquilibriumMsg('平衡位置超出画布或量程，可切换左侧平衡预设')
+      setNoEquilibrium(true)
+      return
+    }
+    setQ3X(q3XNew)
+    updateParam('q3', Number(q3Micro.toFixed(4)))
+    setNoEquilibrium(false)
   }
 
   const chargeLabels = ['Q₁', 'Q₂', 'Q₃']
@@ -254,15 +266,15 @@ export default function ThreeChargeMode({
                   />
                   <text
                     x={pos.x + Math.cos(Math.atan2(force.fy, force.fx)) * 50}
-                    y={pos.y + Math.sin(Math.atan2(force.fy, force.fx)) * 50}
-                    fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.electricForce} textAnchor="middle" fontWeight="bold">
+                    y={pos.y + Math.sin(Math.atan2(force.fy, force.fx)) * 50 - 10}
+                    fontSize={font(11)} fill={PHYSICS_COLORS.electricForce} textAnchor="middle" fontWeight="bold">
                     F
                   </text>
                 </g>
               )}
 
               <circle cx={pos.x} cy={pos.y} r={chargeR}
-                fill={qVal >= 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
+                fill={qVal > 0 ? PHYSICS_COLORS.positiveCharge : qVal < 0 ? PHYSICS_COLORS.negativeCharge : colors.neutral[400]}
                 stroke={isQ3 && !isBalanced ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.objectStroke}
                 strokeWidth={isQ3 && !isBalanced ? CANVAS_STYLE.stroke.vectorMain : CANVAS_STYLE.stroke.objectLine}
                 style={{ cursor: isQ3 ? 'grab' : 'default' }}
@@ -276,14 +288,14 @@ export default function ThreeChargeMode({
                 </circle>
               )}
 
-              <text x={pos.x} y={pos.y + 6} fontSize={chargeR * 0.9} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">
+              <text x={pos.x} y={pos.y + 6} fontSize={font(13)} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">
                 {qVal > 0 ? '+' : qVal < 0 ? '−' : '0'}
               </text>
-              <text x={pos.x} y={pos.y - chargeR - 10} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
+              <text x={pos.x} y={pos.y - chargeR - 10} fontSize={font(11)} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
                 {chargeLabels[idx]} = {qVal.toFixed(2)} μC
               </text>
               {isQ3 && (
-                <text x={pos.x} y={pos.y + chargeR + 18} fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
+                <text x={pos.x} y={pos.y + chargeR + 18} fontSize={font(10)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
                   (拖拽移动)
                 </text>
               )}
@@ -294,8 +306,8 @@ export default function ThreeChargeMode({
         {isAllThreeBalanced && (
           <g>
             <circle cx={stageWidth / 2} cy={stageHeight * 0.82} r={14} fill={colors.success[500]} opacity={0.9} />
-            <text x={stageWidth / 2} y={stageHeight * 0.82 + 5} fontSize={CANVAS_STYLE.font.annotation} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">✓</text>
-            <text x={stageWidth / 2} y={stageHeight * 0.82 + 24} fontSize={CANVAS_STYLE.font.labelSize} fill={colors.success[600]} textAnchor="middle" fontWeight="bold">
+            <text x={stageWidth / 2} y={stageHeight * 0.82 + 5} fontSize={font(13)} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">✓</text>
+            <text x={stageWidth / 2} y={stageHeight * 0.82 + 24} fontSize={font(11)} fill={colors.success[600]} textAnchor="middle" fontWeight="bold">
               自由三电荷完美平衡！
             </text>
           </g>
@@ -303,10 +315,10 @@ export default function ThreeChargeMode({
 
         {noEquilibrium && !isBalanced && (
           <g>
-            <rect x={stageWidth / 2 - 90} y={stageHeight * 0.8 - 12} width={180} height={32} rx={6}
+            <rect x={stageWidth / 2 - 150} y={stageHeight * 0.8 - 12} width={300} height={32} rx={6}
               fill={PHYSICS_COLORS.forceArrowRed} opacity={0.9} />
-            <text x={stageWidth / 2} y={stageHeight * 0.8 + 8} fontSize={CANVAS_STYLE.font.labelSize} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">
-              此电量配置下无法达成自由平衡
+            <text x={stageWidth / 2} y={stageHeight * 0.8 + 8} fontSize={font(11)} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">
+              {noEquilibriumMsg}
             </text>
           </g>
         )}

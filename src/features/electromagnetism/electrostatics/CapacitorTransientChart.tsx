@@ -70,9 +70,23 @@ export default function CapacitorTransientChart() {
   const uStatic: MiniChartStaticLine[] = useMemo(
     () => [
       { value: emf, color: PHYSICS_COLORS.electricPotential, strokeDasharray: '4,4', name: 'E', valueDigits: 2 },
-      { value: emf * Math.exp(-1), color: PHYSICS_COLORS.electricPotential, strokeDasharray: '2,4', name: 'E·e⁻¹ (t=τ)', valueDigits: 2 },
+      phase === 'charge'
+        ? {
+            value: emf * (1 - Math.exp(-1)),
+            color: PHYSICS_COLORS.electricPotential,
+            strokeDasharray: '2,4',
+            name: '0.632E (t=τ)',
+            valueDigits: 2,
+          }
+        : {
+            value: emf * Math.exp(-1),
+            color: PHYSICS_COLORS.electricPotential,
+            strokeDasharray: '2,4',
+            name: '0.368E (t=τ)',
+            valueDigits: 2,
+          },
     ],
-    [emf],
+    [emf, phase],
   )
 
   return (

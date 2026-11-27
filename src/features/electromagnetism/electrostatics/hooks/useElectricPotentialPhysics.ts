@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { calculateNonUniformEField } from '@/physics'
-// physicsToDesignWithOrigin 已内联：物理坐标 → 设计坐标转换
+import { CANVAS_PRESETS } from '@/theme/spacing'
 
 /**
  * 电势与电势能物理计算 hook
@@ -19,6 +19,12 @@ const X_REF = 3.5 // 匀强电场零势参考面 x 坐标 (m)
 const X_GROUND = 3.5 // 接地参考 x 坐标 (m)
 const Y_GROUND = 0.0 // 接地参考 y 坐标 (m)
 
+// 物理空间域 (m) 与 splitV 设计坐标尺寸 (840×325)
+export const POTENTIAL_PHYS_W = 7.0
+export const POTENTIAL_PHYS_H = 3.5
+export const POTENTIAL_DESIGN_W = CANVAS_PRESETS.splitV.width
+export const POTENTIAL_DESIGN_H = CANVAS_PRESETS.splitV.height
+
 // 粒子滑行最大时长
 const RUN_DURATION = 5.0 // 5.0 秒滑行完
 
@@ -28,38 +34,26 @@ export interface PathPoint {
 }
 
 interface UseElectricPotentialPhysicsParams {
-  // 控制参数
   baseEField: number // V/m
   qProbe: number // μC
   zeroRef: number // 0=无穷远, 1=大地
   drawMode: number // 0=直线, 1=手绘
   hoverX: number // 0..1
-  // 路径与动画
   activePath: PathPoint[]
   runProgress: number // 0..1
   phiA: number // 从 store 同步
-  // 尺寸
-  w: number
-  hAnim: number
-  hChart: number
-  // viewport（用于输出设计坐标）
-  vp: { tx: number; ty: number; scale: number }
 }
 
 export interface ElectricPotentialPhysicsResult {
-  // 坐标转换
   posA: { cx: number; cy: number }
   posB: { cx: number; cy: number }
   posQ: { cx: number; cy: number }
 
-  // 路径距离
   pathDistances: { dists: number[]; total: number }
 
-  // 粒子物理位置与像素位置
   particlePhysicsPos: PathPoint
   particleCanvasPos: { cx: number; cy: number }
 
-  // 粒子物理量
   particlePhysics: {
     phi: number
     Ex: number
@@ -71,7 +65,6 @@ export interface ElectricPotentialPhysicsResult {
     pctEk: number
   }
 
-  // φ-x 图表数据
   chartPoints: { xPhys: number; phi: number }[]
   chartYLimit: { min: number; max: number }
   chartPathD: string
@@ -80,28 +73,20 @@ export interface ElectricPotentialPhysicsResult {
   chartHeight: number
   chartPhysToCanvas: (xp: number, phi: number) => { cx: number; cy: number }
 
-  // Hover 物理
   hoverPhysX: number
   hoverPhysics: { phi: number; Ex: number; slope: number }
   tangentLinePath: { x1: number; y1: number; x2: number; y2: number }
 
-  // 场强矢量网格
   eFieldVectors: { cx: number; cy: number; dx: number; dy: number; length: number; opacity: number }[]
 
-  // Hover 指示器
   hoverIndicator: { cx: number; cy: number; dx: number; dy: number; eMag: number; thickness: number }
 
-  // 粒子受力箭头
   particleForceArrow: { dx: number; dy: number } | null
 
-  // 手绘路径 SVG
   handPathD: string
 
-  // 物理坐标转换（scene pixel，仅内部使用）
-  toScenePixel: (xp: number, yp: number) => { cx: number; cy: number }
-  // 物理坐标 → 设计坐标（用于 <g transform={vp.transform}> 内的 SVG 元素）
   physicsToDesign: (xp: number, yp: number) => { cx: number; cy: number }
-  canvasToPhysics: (xc: number, yc: number) => { xp: number; yp: number }
+  designToPhysics: (dx: number, dy: number) => { xp: number; yp: number }
 }
 
 export function useElectricPotentialPhysics({
@@ -112,46 +97,29 @@ export function useElectricPotentialPhysics({
   activePath,
   runProgress,
   phiA,
-  w,
-  hAnim,
-  hChart,
-  vp,
 }: UseElectricPotentialPhysicsParams): ElectricPotentialPhysicsResult {
   const zeroRefStr: 'infinity' | 'ground' = zeroRef === 1 ? 'ground' : 'infinity'
 
-  // 物理坐标 → scene pixel（corner-origin，原点在动画区域左下角）
-  const toScenePixel = useMemo(() => {
-    const scaleX = w / 7.0
-    const scaleY = hAnim / 3.5
+  // 物理坐标 ↔ 设计坐标（splitV 840×325，严格互逆，原点在动画区左下角）
+  const physicsToDesign = useMemo(() => {
+    const scaleX = POTENTIAL_DESIGN_W / POTENTIAL_PHYS_W
+    const scaleY = POTENTIAL_DESIGN_H / POTENTIAL_PHYS_H
     return (xp: number, yp: number) => ({
       cx: xp * scaleX,
-      cy: hAnim - yp * scaleY,
+      cy: POTENTIAL_DESIGN_H - yp * scaleY,
     })
-  }, [w, hAnim])
+  }, [])
 
-  // 物理坐标 → 设计坐标（用于 <g transform={vp.transform}> 内的 SVG 元素）
-  const physicsToDesign = useMemo(() => {
-    const scaleX = w / 7.0
-    return (xp: number, yp: number) => {
-      const cx = xp * scaleX
-      const cy = hAnim - yp * scaleX
-      return {
-        cx: (cx - vp.tx) / vp.scale,
-        cy: (cy - vp.ty) / vp.scale,
-      }
-    }
-  }, [w, hAnim, vp])
-
-  const canvasToPhysics = useMemo(() => {
-    const scaleX = w / 7.0
-    const scaleY = hAnim / 3.5
-    return (xc: number, yc: number) => ({
-      xp: xc / scaleX,
-      yp: (hAnim - yc) / scaleY,
+  const designToPhysics = useMemo(() => {
+    const scaleX = POTENTIAL_DESIGN_W / POTENTIAL_PHYS_W
+    const scaleY = POTENTIAL_DESIGN_H / POTENTIAL_PHYS_H
+    return (dx: number, dy: number) => ({
+      xp: dx / scaleX,
+      yp: (POTENTIAL_DESIGN_H - dy) / scaleY,
     })
-  }, [w, hAnim])
+  }, [])
 
-  // A、B、Q 设计坐标（用于 <g transform={vp.transform}> 内的 SVG 元素）
+  // A、B、Q 设计坐标
   const posA = useMemo(() => physicsToDesign(X_A, Y_A), [physicsToDesign])
   const posB = useMemo(() => physicsToDesign(X_B, Y_B), [physicsToDesign])
   const posQ = useMemo(() => physicsToDesign(X_Q, Y_Q), [physicsToDesign])
@@ -197,6 +165,19 @@ export function useElectricPotentialPhysics({
     }
   }, [runProgress, activePath, pathDistances])
 
+  // 路径最低电势能基准（确保负电荷 Ep < 0 时能量柱依然正常互补变化）
+  const pathMinEp = useMemo(() => {
+    let minEp = qProbe * 1e-6 * phiA
+    for (const pt of activePath) {
+      const r = calculateNonUniformEField(
+        pt.x, pt.y, baseEField, X_Q, Y_Q, Q_SOURCE, zeroRefStr, X_REF, X_GROUND, Y_GROUND
+      )
+      const epVal = qProbe * 1e-6 * r.phi
+      if (epVal < minEp) minEp = epVal
+    }
+    return minEp
+  }, [activePath, baseEField, zeroRefStr, qProbe, phiA])
+
   // 粒子物理量
   const particlePhysics = useMemo(() => {
     const pos = particlePhysicsPos
@@ -208,14 +189,15 @@ export function useElectricPotentialPhysics({
     const EpStart = qProbe * 1e-6 * phiA
     const EkStart = 2.0e-3
     const Ek = Math.max(0, EkStart + (EpStart - Ep))
-    const totalEnergy = EkStart + EpStart
 
-    const maxVal = Math.max(Math.abs(Ek), Math.abs(Ep), totalEnergy, 1e-6)
-    const pctEp = Math.max(3, Math.min(97, (Ep / maxVal) * 100))
-    const pctEk = Math.max(3, Math.min(97, (Ek / maxVal) * 100))
+    const epShift = Math.min(0, pathMinEp, EpStart, Ep)
+    const epShifted = Math.max(0, Ep - epShift)
+    const denom = Math.max(epShifted + Ek, 1e-9)
+    const pctEp = Math.max(3, Math.min(97, (epShifted / denom) * 100))
+    const pctEk = 100 - pctEp
 
     return { phi: res.phi, Ex: res.Ex, Ey: res.Ey, E: res.E, Ep, Ek, pctEp, pctEk }
-  }, [particlePhysicsPos, baseEField, zeroRefStr, qProbe, phiA])
+  }, [particlePhysicsPos, baseEField, zeroRefStr, qProbe, phiA, pathMinEp])
 
   // φ-x 图表数据
   const xStartPhys = 1.0
@@ -244,8 +226,8 @@ export function useElectricPotentialPhysics({
   }, [chartPoints])
 
   const chartPadding = { left: 60, right: 40, top: 30, bottom: 40 }
-  const chartWidth = w - chartPadding.left - chartPadding.right
-  const chartHeight = hChart - chartPadding.top - chartPadding.bottom
+  const chartWidth = POTENTIAL_DESIGN_W - chartPadding.left - chartPadding.right
+  const chartHeight = POTENTIAL_DESIGN_H - chartPadding.top - chartPadding.bottom
 
   const chartPhysToCanvas = useMemo(() => {
     return (xp: number, phi: number) => {
@@ -299,8 +281,8 @@ export function useElectricPotentialPhysics({
     const rows = 5
     for (let c = 1; c < cols; c++) {
       for (let r = 1; r < rows; r++) {
-        const xp = (c / cols) * 7.0
-        const yp = (r / rows) * 3.5
+        const xp = (c / cols) * POTENTIAL_PHYS_W
+        const yp = (r / rows) * POTENTIAL_PHYS_H
 
         if (Math.hypot(xp - X_Q, yp - Y_Q) < 0.45) continue
 
@@ -354,13 +336,11 @@ export function useElectricPotentialPhysics({
     }
   }, [hoverPhysX, baseEField, zeroRefStr, physicsToDesign])
 
-  // 粒子设计坐标
   const particleCanvasPos = physicsToDesign(particlePhysicsPos.x, particlePhysicsPos.y)
 
-  // 粒子受力箭头
   const particleForceArrow = useMemo(() => {
     const eMag = particlePhysics.E
-    if (eMag < 1.0) return null
+    if (eMag < 1.0 || qProbe === 0) return null
 
     const directionFactor = qProbe >= 0 ? 1 : -1
     const angle = Math.atan2(particlePhysics.Ey, particlePhysics.Ex) + (directionFactor === -1 ? Math.PI : 0)
@@ -372,7 +352,6 @@ export function useElectricPotentialPhysics({
     }
   }, [particlePhysics.E, particlePhysics.Ex, particlePhysics.Ey, qProbe])
 
-  // 手绘路径 SVG (需要外部传入 handPath，这里返回空字符串，由 Scene 处理)
   const handPathD = ''
 
   return {
@@ -397,11 +376,9 @@ export function useElectricPotentialPhysics({
     hoverIndicator,
     particleForceArrow,
     handPathD,
-    toScenePixel,
     physicsToDesign,
-    canvasToPhysics,
+    designToPhysics,
   }
 }
 
-// 导出常量供外部使用
 export { Q_SOURCE, X_Q, Y_Q, X_A, Y_A, X_B, Y_B, X_REF, X_GROUND, Y_GROUND, RUN_DURATION }

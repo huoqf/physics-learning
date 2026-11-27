@@ -27,6 +27,7 @@ export interface ChargeInEFieldChartsParams {
   useGravity: number
   tSim: number
   tEnd: number
+  plateExitTime?: number
 }
 
 // ── Hook 返回值 ──
@@ -48,7 +49,7 @@ export interface ChargeInEFieldChartsResult {
 export function useChargeInEFieldCharts(
   p: ChargeInEFieldChartsParams,
 ): ChargeInEFieldChartsResult {
-  const { points, v0, U, q, freq, isAC, phi0, useGravity } = p
+  const { points, v0, U, q, freq, isAC, phi0, useGravity, plateExitTime } = p
 
   // 1. 速度图像数据
   const vtPoints = useMemo(() => {
@@ -87,10 +88,17 @@ export function useChargeInEFieldCharts(
       v: 0.5 * PARTICLE_MASS * (p.vx * p.vx + p.vy * p.vy) * 1000,
     }))
 
+    const exitY =
+      plateExitTime !== undefined
+        ? points.reduce((acc, pt) => (pt.t <= plateExitTime + 1e-9 ? pt.y : acc), 0)
+        : 0
+
     const epPoints = points.map((p) => {
+      const inField = plateExitTime === undefined || p.t <= plateExitTime + 1e-9
+      const effY = inField ? p.y : exitY
       const phase = isAC === 1 ? ((p.t + tStart) % T) / T : 0
       const fieldSign = isAC === 1 ? (phase < 0.5 ? 1 : -1) : 1
-      const Ep = -q * 1e-6 * (U / PLATE_GAP) * fieldSign * p.y * 1000
+      const Ep = -q * 1e-6 * (U / PLATE_GAP) * fieldSign * effY * 1000
       return { t: p.t, v: Ep }
     })
 
@@ -105,7 +113,7 @@ export function useChargeInEFieldCharts(
     }))
 
     return { ekPoints, epPoints, egPoints, etotPoints }
-  }, [points, U, q, freq, isAC, phi0, useGravity])
+  }, [points, U, q, freq, isAC, phi0, useGravity, plateExitTime])
 
   const energySeries = useMemo(() => {
     const seriesList: ChartDataSeries[] = [

@@ -55,6 +55,7 @@ type BuilderName =
   | 'buildSolidsLiquidsQuantities'
   | 'buildSaturatedVaporQuantities'
   | 'buildElectrostaticShieldingQuantities'
+  | 'buildEqualChargeFieldQuantities'
   | 'buildThinFilmInterferenceQuantities'
   | 'buildRelativityQuantities'
   | 'buildExperimentResistivityQuantities'
@@ -152,6 +153,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-field-lines':           { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-electric-potential':    { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-electrostatic-shielding': { loader: () => import('./quantities/electromagnetism/electrostaticShielding'), builderName: 'buildElectrostaticShieldingQuantities' },
+  'anim-equal-charge-field':    { loader: () => import('./quantities/electromagnetism/equalChargeField'), builderName: 'buildEqualChargeFieldQuantities' },
   'anim-ohm-law':               { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-circuit-analysis':      { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-closed-circuit':        { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },

@@ -5,32 +5,26 @@ import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { calculateCapacitor } from '@/physics'
+import { calculateCapacitor, VACUUM_PERMITTIVITY } from '@/physics'
 import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import CapacitorChart from './CapacitorChart'
 import CapacitorTransientChart from './CapacitorTransientChart'
 import CapacitorTransientLab from './CapacitorTransientLab'
 
-// 物理常数定义 (SI)
-const EPS0 = 8.854e-12
-
-// 粒子分布参考最大值
-const C_MAX = EPS0 * 5 * (200 * 1e-4) / (2 * 1e-3) * 1e12
+// 粒子分布与场强参考最大值
+const C_MAX = VACUUM_PERMITTIVITY * 5 * (200 * 1e-4) / (2 * 1e-3) * 1e12
 const Q_MAX = C_MAX * 12
+const E_MAX = 6000
 
-// SVG 设计坐标系常量（对应 CANVAS_PRESETS.splitV）
-// splitV 为上下分区场景预设：840×325
-// 动画区占下方 75%，使用 splitV 使 viewBox 比例与容器匹配
 const DESIGN_WIDTH = 840
 const DESIGN_HEIGHT = 325
 
-// 布局比例常量
 const LAYOUT = {
-  cxRatio: 0.35,    // 电容器中心 X 比例
-  exRatio: 0.78,    // 静电计中心 X 比例
-  gapMin: 30,       // 板距像素下限
-  gapMax: 150,      // 板距像素上限
-  gapScale: 15,     // d → px 缩放因子
+  cxRatio: 0.35,
+  exRatio: 0.78,
+  gapMin: 30,
+  gapMax: 150,
+  gapScale: 15,
   plateWMin: 90,
   plateWMax: 240,
   plateWScale: 1.1,
@@ -47,7 +41,6 @@ export default function Capacitor() {
 
   const updateParam = useAnimationStore((s) => s.updateParam)
 
-  // 容器尺寸（§2.2 标准路径：useAnimationViewport + AnimationSvgCanvas）
   const { containerRef, canvasSize, vp } = useAnimationViewport({
     preset: CANVAS_PRESETS.splitV,
   })
@@ -59,27 +52,25 @@ export default function Capacitor() {
   const hasDielectric = epsilon_r > 1.5
 
   // ---- 物理计算 ----
-  const { C } = calculateCapacitor(EPS0 * epsilon_r, S * 1e-4, d * 1e-3)
+  const { C } = calculateCapacitor(VACUUM_PERMITTIVITY * epsilon_r, S * 1e-4, d * 1e-3)
   const currentQ = C * U
 
-  // 接通电源时，实时同步断开瞬间应保持的基准电荷量 savedQ 到全局 store
   useEffect(() => {
     if (isConnected && Math.abs((savedQ ?? 0) - currentQ) > 1e-15) {
       updateParam('savedQ', currentQ)
     }
   }, [isConnected, currentQ, savedQ, updateParam])
 
-  const defaultQ = calculateCapacitor(EPS0, 100 * 1e-4, 5 * 1e-3).C * 12
-  // 断开电源时 Q 不变，以 store 中的 savedQ 为单真源（无 savedQ 首次或独立环境回退到 defaultQ）
+  const defaultQ = calculateCapacitor(VACUUM_PERMITTIVITY, 100 * 1e-4, 5 * 1e-3).C * 12
   const charge = isConnected ? currentQ : (savedQ ?? defaultQ)
   const voltage = isConnected ? U : (C > 0 ? charge / C : 0)
+  const field = voltage / (d * 1e-3)
 
-  // 转换成 pC
   const qPC = charge * 1e12
 
   // ---- 电荷回流/充电动画状态 ----
   const [isFlowing, setIsFlowing] = useState(false)
-  const [flowDirection, setFlowDirection] = useState(1) // 1: 充电, -1: 回流
+  const [flowDirection, setFlowDirection] = useState(1)
   const [flowTime, setFlowTime] = useState(0)
   const prevChargeRef = useRef(charge)
   const lastActiveTime = useRef(0)
@@ -97,13 +88,12 @@ export default function Capacitor() {
 
   useAnimationFrame((deltaMs) => {
     setFlowTime(t => t + deltaMs / 1000)
-    // 超过 800ms 无电量变化，停止粒子流动
     if (performance.now() - lastActiveTime.current > 800) {
       setIsFlowing(false)
     }
   }, { playing: isFlowing })
 
-  // ---- 模式二：RC 充放电暂态（同一页面内的实验图层，独立场景与图表）----
+  // ---- 模式二：RC 充放电暂态 ----
   if (mode === 1) {
     return (
       <div className="w-full h-full flex flex-col">
@@ -117,7 +107,7 @@ export default function Capacitor() {
     )
   }
 
-  // ---- 画布几何布局（使用设计坐标系）----
+  // ---- 画布几何布局 ----
   const cx = DESIGN_WIDTH * LAYOUT.cxRatio
   const cy = DESIGN_HEIGHT / 2
 
@@ -129,25 +119,28 @@ export default function Capacitor() {
   const plateLeft = cx - plateW / 2
   const plateRight = cx + plateW / 2
 
-  // 静电计几何中心
   const ex = DESIGN_WIDTH * LAYOUT.exRatio
   const ey = cy
 
-  // ---- 粒子分布计算 ----
+  // ---- 粒子分布（绑定电荷量 Q）与电场线疏密（绑定板间场强 E）分离 ----
   const particleRatio = Math.max(0, Math.min(1.0, qPC / Q_MAX))
   const numParticles = Math.max(2, Math.min(10, Math.round(particleRatio * 8) + 2))
-
-  const particles = Array.from({ length: numParticles }, (_, i) => {
-    const px = numParticles > 1
+  const particles = Array.from({ length: numParticles }, (_, i) =>
+    numParticles > 1
       ? plateLeft + 10 + (i * (plateW - 20)) / (numParticles - 1)
       : cx
-    return px
-  })
+  )
 
-  // ---- 静电计偏转角计算 ----
+  const fieldRatio = Math.max(0, Math.min(1.0, field / E_MAX))
+  const numFieldLines = Math.max(2, Math.min(10, Math.round(fieldRatio * 8) + 2))
+  const fieldLineXs = Array.from({ length: numFieldLines }, (_, i) =>
+    numFieldLines > 1
+      ? plateLeft + 10 + (i * (plateW - 20)) / (numFieldLines - 1)
+      : cx
+  )
+
   const pointerAngle = Math.min(65, Math.pow(voltage / 28.0, 0.7) * 65)
 
-  // ---- 导线上的流动粒子路径自适应生成 ----
   const bx = plateLeft - 60
   const drawFlowingParticles = () => {
     if (!isFlowing || !isConnected) return null
@@ -202,8 +195,8 @@ export default function Capacitor() {
       {/* 动画区：下方 flex-1 */}
       <div className="flex-1 min-h-0">
         <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
-          {/* 匀强电场线 (密度和根数直接绑定电荷粒子) */}
-          {showVectors && particles.map((px, i) => (
+          {/* 匀强电场线（疏密绑定板间场强 E） */}
+          {showVectors && fieldLineXs.map((px, i) => (
             <g key={`E-line-${i}`}>
               <line
                 x1={px}
@@ -219,7 +212,7 @@ export default function Capacitor() {
             </g>
           ))}
 
-          {/* 电介质填充滑块 (CSS Transition 滑动) */}
+          {/* 电介质填充滑块 */}
           <g>
             <rect
               x={plateLeft}
@@ -237,9 +230,6 @@ export default function Capacitor() {
                 transform: hasDielectric ? 'translateX(0)' : `translateX(-${plateW + 40}px)`,
               }}
             />
-            {/* 电介质标签。仅在插入时显示：抽出后这一行（`cy + 4`）正好是电源那两行
-                标注（`接通电源` / `U = 12 V 恒定`）的同一行，而标签随板一起左移到极板
-                左侧，两者必然咬合 27×15px。抽出的电介质本来就不参与电场，标签没必要跟着走。 */}
             <text
               x={plateLeft - (plateW + 40) / 2}
               y={cy + 4}
@@ -273,13 +263,11 @@ export default function Capacitor() {
           {/* 板上电荷粒子 */}
           {particles.map((px, i) => (
             <g key={`p-particles-${i}`}>
-              {/* 正电荷 (+) */}
               <circle cx={px} cy={topPlateY + plateThick + 6} r={4.5} fill={PHYSICS_COLORS.positiveCharge} />
-              <text x={px} y={topPlateY + plateThick + 9} fontSize={font(10)} textAnchor="middle" fill="white" fontWeight="bold">+</text>
+              <text x={px} y={topPlateY + plateThick + 9} fontSize={font(10)} textAnchor="middle" fill={CANVAS_COLORS.white} fontWeight="bold">+</text>
 
-              {/* 负电荷 (-) */}
               <circle cx={px} cy={botPlateY - 6} r={4.5} fill={PHYSICS_COLORS.negativeCharge} />
-              <text x={px} y={botPlateY - 3} fontSize={font(10)} textAnchor="middle" fill="white" fontWeight="bold">-</text>
+              <text x={px} y={botPlateY - 3} fontSize={font(10)} textAnchor="middle" fill={CANVAS_COLORS.white} fontWeight="bold">-</text>
             </g>
           ))}
 
@@ -300,18 +288,14 @@ export default function Capacitor() {
 
           {/* 电源与连线 */}
           <g>
-            {/* 上极板左侧出线 */}
             <line x1={plateLeft} y1={topPlateY + plateThick / 2} x2={bx} y2={topPlateY + plateThick / 2} stroke={PHYSICS_COLORS.labelText} strokeWidth={2} />
             <line x1={bx} y1={topPlateY + plateThick / 2} x2={bx} y2={isConnected ? cy - 18 : cy - 26} stroke={PHYSICS_COLORS.labelText} strokeWidth={2} />
 
-            {/* 下极板左侧出线 */}
             <line x1={plateLeft} y1={botPlateY + plateThick / 2} x2={bx} y2={botPlateY + plateThick / 2} stroke={PHYSICS_COLORS.labelText} strokeWidth={2} />
             <line x1={bx} y1={botPlateY + plateThick / 2} x2={bx} y2={cy + 18} stroke={PHYSICS_COLORS.labelText} strokeWidth={2} />
 
-            {/* 导线上流动的电荷粒子 */}
             {drawFlowingParticles()}
 
-            {/* 电池与开关 */}
             {isConnected ? (
               <g>
                 <line x1={bx - 12} y1={cy - 18} x2={bx + 12} y2={cy - 18} stroke={PHYSICS_COLORS.positiveCharge} strokeWidth={3.5} />
@@ -326,7 +310,7 @@ export default function Capacitor() {
                   接通电源
                 </text>
                 <text x={bx - 20} y={cy + 16} fontSize={font(11)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">
-                  U = 12 V 恒定
+                  U = {U} V 恒定
                 </text>
               </g>
             ) : (
@@ -350,22 +334,18 @@ export default function Capacitor() {
 
           {/* 静电计绘制 */}
           <g>
-            {/* 圆环外壳 */}
             <circle cx={ex} cy={ey} r={55} fill="none" stroke={CANVAS_COLORS.textMuted} strokeWidth={3.5} className="shadow-sm" />
             <circle cx={ex} cy={ey} r={52} fill={CANVAS_COLORS.objectFillNeutral} />
 
-            {/* 底座地线 */}
             <rect x={ex - 12} y={ey + 55} width={24} height={8} fill={CANVAS_COLORS.textMuted} rx={1} />
             <line x1={ex} y1={ey + 63} x2={ex} y2={ey + 82} stroke={CANVAS_COLORS.textMuted} strokeWidth={2} />
             <line x1={ex - 10} y1={ey + 82} x2={ex + 10} y2={ey + 82} stroke={CANVAS_COLORS.textMuted} strokeWidth={2} />
             <line x1={ex - 6} y1={ey + 86} x2={ex + 6} y2={ey + 86} stroke={CANVAS_COLORS.textMuted} strokeWidth={2} />
             <line x1={ex - 2} y1={ey + 90} x2={ex + 2} y2={ey + 90} stroke={CANVAS_COLORS.textMuted} strokeWidth={2} />
 
-            {/* 内部直金属杆 */}
             <line x1={ex} y1={ey - 75} x2={ex} y2={ey + 42} stroke={CANVAS_COLORS.labelTextLight} strokeWidth={3.5} strokeLinecap="round" />
             <circle cx={ex} cy={ey - 75} r={8.5} fill={CANVAS_COLORS.strokeDark} />
 
-            {/* 刻度弧 */}
             <path
               d={`M ${ex + 44 * Math.sin(0)} ${ey + 44 * Math.cos(0)} A 44 44 0 0 1 ${ex + 44 * Math.sin(65 * Math.PI / 180)} ${ey + 44 * Math.cos(65 * Math.PI / 180)}`}
               fill="none"
@@ -373,7 +353,6 @@ export default function Capacitor() {
               strokeWidth={1.5}
               strokeDasharray="2,2"
             />
-            {/* 刻度标记 */}
             {[0, 15, 30, 45, 60].map((angleVal, i) => {
               const rad = angleVal * Math.PI / 180
               const x1 = ex + 42 * Math.sin(rad)
@@ -385,7 +364,6 @@ export default function Capacitor() {
               )
             })}
 
-            {/* 旋转金属指针 (CSS Transition 阻尼旋转) */}
             <line
               x1={ex}
               y1={ey}
@@ -409,12 +387,10 @@ export default function Capacitor() {
               (测量板间电势差 U)
             </text>
 
-            {/* 电势差数值 */}
             <text x={ex} y={ey + 20} fontSize={font(13)} fill={EM_COLORS.electricPotential} fontWeight="bold" textAnchor="middle" className="font-mono">
               U = {voltage.toFixed(1)} V
             </text>
 
-            {/* 极板到静电计连线 */}
             <path
               d={`M ${plateRight} ${topPlateY + plateThick / 2} L ${ex - 40} ${topPlateY + plateThick / 2} L ${ex - 40} ${ey - 75} L ${ex - 8.5} ${ey - 75}`}
               fill="none"
@@ -431,13 +407,10 @@ export default function Capacitor() {
             />
           </g>
 
-          {/* 渐变定义 Defs */}
           <defs>
-            {/* 场线方向标注，非物理矢量（虚线场线，VectorArrow 不支持 strokeDasharray），不适用铁律 1d */}
             <marker id="arrow-cap-E" markerWidth="7" markerHeight="6" refX="5" refY="3" orient="auto">
               <polygon points="0 0, 7 3, 0 6" fill={PHYSICS_COLORS.electricField} />
             </marker>
-            {/* 几何标注（板间距刻度），非物理矢量，不适用铁律 1d */}
             <marker id="tick-cap" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
               <line x1={0} y1={3} x2={6} y2={3} stroke={PHYSICS_COLORS.axis} strokeWidth={1.5} />
             </marker>

@@ -24,4 +24,19 @@ describe('electrostaticShielding 物理纯计算测试', () => {
     expect(sharp.tipChargeDensity).toBeGreaterThan(blunt.tipChargeDensity * 10)
     expect(sharp.isAirBreakdown).toBe(true)
   })
+
+  it('空腔静电屏蔽区分外屏蔽与内屏蔽：内屏蔽接地后外部场强归零', () => {
+    const outer = calculateElectrostaticShielding({ E0: 300, mode: 2, isGrounded: 0, shieldType: 0 })
+    expect(outer.cavityField).toBe(0)
+    expect(outer.externalField).toBe(300)
+
+    const innerUngrounded = calculateElectrostaticShielding({ E0: 300, mode: 2, isGrounded: 0, shieldType: 1 })
+    expect(innerUngrounded.cavityField).toBe(300)
+    expect(innerUngrounded.externalField).toBe(300)
+
+    const innerGrounded = calculateElectrostaticShielding({ E0: 300, mode: 2, isGrounded: 1, shieldType: 1 })
+    expect(innerGrounded.cavityField).toBe(300)
+    expect(innerGrounded.externalField).toBe(0)
+    expect(innerGrounded.potential).toBe(0)
+  })
 })

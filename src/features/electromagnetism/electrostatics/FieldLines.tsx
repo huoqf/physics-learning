@@ -136,7 +136,7 @@ export default function FieldLines() {
             { key: 'Ek', label: 'Ek', value: probePhysics.pctEk, color: PHYSICS_COLORS.kineticEnergy },
             { key: 'Ep', label: 'Ep', value: probePhysics.pctEp, color: PHYSICS_COLORS.potentialEnergy },
           ]}
-          title="实时能量分配"
+          title="保守场能量占比 (仅电场力)"
           font={font}
         />
       </div>

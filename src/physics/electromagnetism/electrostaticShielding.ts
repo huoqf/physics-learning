@@ -11,6 +11,8 @@ export interface ElectrostaticShieldingConfig {
   isGrounded?: number
   /** 尖端曲率半径 R (mm, 仅模式 1 生效) */
   tipRadius?: number
+  /** 屏蔽类型 (仅模式 2 生效): 0=外屏蔽 (外部场强无法进入空腔), 1=内屏蔽 (腔内有带电体) */
+  shieldType?: number
 }
 
 export interface ElectrostaticShieldingResult {
@@ -36,8 +38,10 @@ export interface ElectrostaticShieldingResult {
   tipChargeDensity: number
   /** 是否击穿空气发生放电（基于上述相对指数的模型判据，非真实 3×10⁶ V/m 场强判据） */
   isAirBreakdown: boolean
-  /** 空腔内部场强 (模式 2) */
+  /** 空腔内部场强 (模式 2：外屏蔽恒为 0；内屏蔽腔内有 +Q 故非零) */
   cavityField: number
+  /** 空腔外部空间受腔内电荷影响产生的附加场强 (模式 2 内屏蔽接地时恒为 0) */
+  externalField: number
 }
 
 /** 电荷面密度指数的归一化系数（示意模型参数，无量纲） */
@@ -55,14 +59,14 @@ const POTENTIAL_INDEX_COEFF = 0.15
 export function calculateElectrostaticShielding(
   config: ElectrostaticShieldingConfig
 ): ElectrostaticShieldingResult {
-  const { E0, mode, isGrounded = 0, tipRadius = 1.0 } = config
+  const { E0, mode, isGrounded = 0, tipRadius = 1.0, shieldType = 0 } = config
   const safeE0 = Math.max(0, E0)
 
-  // 1. 静电平衡导体内部反向感应电场严格等于外电场
+  // 1. 静电平衡导体金属壁内部反向感应电场严格等于外电场
   const EPrime = safeE0
-  const ENet = 0 // 内部合场强恒为 0
+  const ENet = 0
 
-  // 2. 导体是等势体（接地时取零电势参考点，φ = 0；否则按示意比例随 E0 单调变化）
+  // 2. 导体是等势体（接地时取零电势参考点，φ = 0）
   const potential = isGrounded === 1 ? 0 : safeE0 * POTENTIAL_INDEX_COEFF
 
   // 3. 尖端放电: 电荷面密度 sigma ∝ 1/R（归一化为相对指数）
@@ -71,9 +75,10 @@ export function calculateElectrostaticShielding(
     (safeE0 / CHARGE_DENSITY_INDEX_E0_BASE) * (CHARGE_DENSITY_INDEX_COEFF / safeR)
   const isAirBreakdown = mode === 1 && tipChargeDensity > AIR_BREAKDOWN_INDEX_THRESHOLD
 
-  // 4. 空腔内部场强:
-  // 当外屏蔽时，外部电荷在空腔内激发的场与外壳感应电荷激发的场处处抵消，空腔内 E 严格为 0
-  const cavityField = 0
+  // 4. 空腔内外场强（外屏蔽 vs 内屏蔽）：
+  const isInnerShield = mode === 2 && shieldType === 1
+  const cavityField = isInnerShield ? safeE0 : 0
+  const externalField = isInnerShield ? (isGrounded === 1 ? 0 : safeE0) : safeE0
 
   return {
     E0: safeE0,
@@ -83,5 +88,6 @@ export function calculateElectrostaticShielding(
     tipChargeDensity: +tipChargeDensity.toFixed(1),
     isAirBreakdown,
     cavityField,
+    externalField,
   }
 }

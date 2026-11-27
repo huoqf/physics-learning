@@ -10,20 +10,43 @@ export function buildElectrostaticShieldingQuantities(
   const mode = params.mode ?? 0
   const isGrounded = params.isGrounded ?? 0
   const tipRadius = params.tipRadius ?? 1.0
+  const shieldType = params.shieldType ?? 0
 
   const res = calculateElectrostaticShielding({
     E0,
     mode,
     isGrounded,
     tipRadius,
+    shieldType,
   })
 
-  const quantities: PhysicsQuantity[] = [
-    { label: '外加电场强度', symbol: 'E_0', value: E0, unit: 'V/m' },
-    { label: '感应电荷电场', symbol: "E'", value: res.EPrime, unit: 'V/m' },
-    { label: '内部合场强', symbol: 'E_内', value: res.ENet, unit: 'V/m' },
-    { label: '导体等势电势（示意）', symbol: 'φ', value: res.potential, unit: 'V' },
-  ]
+  const isInnerShield = mode === 2 && shieldType === 1
+  const quantities: PhysicsQuantity[] = isInnerShield
+    ? [
+        { label: '空腔屏蔽方案', value: '内屏蔽（腔内 +Q）', unit: '' },
+        { label: '内部合场强', symbol: 'E_内', value: res.ENet, unit: 'V/m' },
+        { label: '导体等势电势（示意）', symbol: 'φ', value: res.potential, unit: 'V' },
+        {
+          label: '空腔内部场强',
+          symbol: 'E_腔',
+          value: '非零 (腔内 +Q 激发)',
+          unit: '',
+          highlight: 'positive',
+        },
+        {
+          label: '壳外受内荷附加场',
+          symbol: 'E_外',
+          value: res.externalField > 0 ? '非零 (未接地辐射)' : '0',
+          unit: res.externalField > 0 ? '' : 'V/m',
+          highlight: res.externalField === 0 ? 'zero' : 'extreme',
+        },
+      ]
+    : [
+        { label: '外加电场强度', symbol: 'E_0', value: E0, unit: 'V/m' },
+        { label: '感应电荷电场', symbol: "E'", value: res.EPrime, unit: 'V/m' },
+        { label: '内部合场强', symbol: 'E_内', value: res.ENet, unit: 'V/m' },
+        { label: '导体等势电势（示意）', symbol: 'φ', value: res.potential, unit: 'V' },
+      ]
 
   if (mode === 1) {
     quantities.push(
@@ -31,6 +54,28 @@ export function buildElectrostaticShieldingQuantities(
       // 相对指数（无量纲）：真实 σ 需由边界条件求解，此处仅用于比较尖端与圆钝端
       { label: '尖端电荷面密度指数', symbol: 'σ', value: res.tipChargeDensity, unit: '' },
       { label: '空气放电状态', value: res.isAirBreakdown ? '击穿放电' : '维持绝缘', unit: '' },
+    )
+  } else if (mode === 2 && !isInnerShield) {
+    quantities.push(
+      {
+        label: '空腔屏蔽方案',
+        value: '外屏蔽（挡外场）',
+        unit: '',
+      },
+      {
+        label: '空腔内部场强',
+        symbol: 'E_腔',
+        value: res.cavityField > 0 ? '非零 (腔内 +Q 激发)' : '0',
+        unit: res.cavityField > 0 ? '' : 'V/m',
+        highlight: res.cavityField === 0 ? 'zero' : 'positive',
+      },
+      {
+        label: '壳外受内荷附加场',
+        symbol: 'E_外',
+        value: res.externalField > 0 ? '非零 (未接地辐射)' : '0',
+        unit: res.externalField > 0 ? '' : 'V/m',
+        highlight: res.externalField === 0 ? 'zero' : 'extreme',
+      },
     )
   }
 

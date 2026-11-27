@@ -1,10 +1,8 @@
 /**
  * ElectricFieldAdvancedScene.tsx — 进阶模式场景（双电荷 + 试探电荷 + 矢量叠加）
- *
- * 从 ElectricField.tsx 拆分：mode=1 的中间屏渲染。
  */
 import { VectorArrow } from '@/components/Physics'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_STYLE, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
 import type { SceneScale } from '@/scene'
@@ -34,12 +32,48 @@ interface Props {
     enetTip: { x: number; y: number }
   } | null
   sceneScale: SceneScale
+  font: (size: number) => number
+}
+
+function vectorLabelPos(
+  originX: number,
+  originY: number,
+  v: { x: number; y: number },
+  pixelLen: number,
+  extra = 14,
+  perpOffset = 0,
+) {
+  const mag = Math.hypot(v.x, v.y) || 1
+  const ux = v.x / mag
+  const uyScreen = -v.y / mag
+  const px = -uyScreen * perpOffset
+  const py = ux * perpOffset
+  return {
+    x: originX + ux * (pixelLen + extra) + px,
+    y: originY + uyScreen * (pixelLen + extra) + py + 4,
+  }
 }
 
 export function ElectricFieldAdvancedScene({
   cx1, cy1, cx2, cy2, q1, q2, qTest, testX, testY, isDragging,
-  advancedArrows, sceneScale,
+  advancedArrows, sceneScale, font,
 }: Props) {
+  const enetLabelPos = advancedArrows
+    ? vectorLabelPos(testX, testY, advancedArrows.vectorEnet, advancedArrows.lenEnet, 14)
+    : null
+  const fLabelPos = (() => {
+    if (!advancedArrows || qTest === 0 || advancedArrows.lenF <= 0) return null
+    const sameDir = qTest > 0
+    const nearTip = Math.abs(advancedArrows.lenEnet - advancedArrows.lenF) < 24
+    return vectorLabelPos(
+      testX,
+      testY,
+      advancedArrows.vectorF,
+      advancedArrows.lenF,
+      14,
+      sameDir && nearTip ? 14 : 0,
+    )
+  })()
 
   return (
     <g>
@@ -47,11 +81,11 @@ export function ElectricFieldAdvancedScene({
       <circle cx={cx1} cy={cy1} r={20}
         fill={q1 >= 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
         stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-      <text x={cx1} y={cy1 + 6} fontSize="18" fill={colors.neutral.white}
+      <text x={cx1} y={cy1 + 6} fontSize={font(16)} fill={CANVAS_COLORS.white}
         textAnchor="middle" fontWeight="bold">
         {q1 >= 0 ? '+' : '−'}
       </text>
-      <text x={cx1} y={cy1 - 26} fontSize={CANVAS_STYLE.font.axisSize}
+      <text x={cx1} y={cy1 - 26} fontSize={font(11)}
         fill={PHYSICS_COLORS.labelText} textAnchor="middle">
         Q₁ = {q1 > 0 ? '+' : ''}{q1.toFixed(0)} μC
       </text>
@@ -60,11 +94,11 @@ export function ElectricFieldAdvancedScene({
       <circle cx={cx2} cy={cy2} r={20}
         fill={q2 >= 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
         stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-      <text x={cx2} y={cy2 + 6} fontSize="18" fill={colors.neutral.white}
+      <text x={cx2} y={cy2 + 6} fontSize={font(16)} fill={CANVAS_COLORS.white}
         textAnchor="middle" fontWeight="bold">
         {q2 >= 0 ? '+' : '−'}
       </text>
-      <text x={cx2} y={cy2 - 26} fontSize={CANVAS_STYLE.font.axisSize}
+      <text x={cx2} y={cy2 - 26} fontSize={font(11)}
         fill={PHYSICS_COLORS.labelText} textAnchor="middle">
         Q₂ = {q2 > 0 ? '+' : ''}{q2.toFixed(0)} μC
       </text>
@@ -75,12 +109,12 @@ export function ElectricFieldAdvancedScene({
         stroke={isDragging ? PHYSICS_COLORS.electricForce : PHYSICS_COLORS.objectStroke}
         strokeWidth={isDragging ? 2.5 : CANVAS_STYLE.stroke.objectLine}
         style={{ cursor: isDragging ? 'grabbing' : 'grab' }} />
-      <text x={testX} y={testY + 4} fontSize="12"
-        fill={qTest === 0 ? colors.neutral[800] : colors.neutral.white}
+      <text x={testX} y={testY + 4} fontSize={font(12)}
+        fill={qTest === 0 ? colors.neutral[800] : CANVAS_COLORS.white}
         textAnchor="middle" fontWeight="bold">
         {qTest > 0 ? '+' : (qTest < 0 ? '−' : '0')}
       </text>
-      <text x={testX} y={testY - 18} fontSize={CANVAS_STYLE.font.axisSize}
+      <text x={testX} y={testY - 18} fontSize={font(11)}
         fill={PHYSICS_COLORS.labelText} textAnchor="middle">
         q = {qTest > 0 ? '+' : ''}{qTest.toFixed(1)} μC
       </text>
@@ -88,7 +122,7 @@ export function ElectricFieldAdvancedScene({
       {/* 进阶矢量叠加绘制 */}
       {advancedArrows && (
         <g>
-          {/* 1. 分矢量 E1 (浅黄色虚线) */}
+          {/* 1. 分矢量 E1 */}
           <g opacity={0.7}>
             <VectorArrow
               originDesign={{ x: testX, y: testY }}
@@ -101,12 +135,12 @@ export function ElectricFieldAdvancedScene({
             />
           </g>
           <text x={advancedArrows.e1Tip.x} y={advancedArrows.e1Tip.y - 6}
-            fontSize="11" fill={PHYSICS_COLORS.electricField}
+            fontSize={font(11)} fill={PHYSICS_COLORS.electricField}
             fontWeight="bold" textAnchor="middle">
             E₁
           </text>
 
-          {/* 2. 分矢量 E2 (浅黄色虚线) */}
+          {/* 2. 分矢量 E2 */}
           <g opacity={0.7}>
             <VectorArrow
               originDesign={{ x: testX, y: testY }}
@@ -119,7 +153,7 @@ export function ElectricFieldAdvancedScene({
             />
           </g>
           <text x={advancedArrows.e2Tip.x} y={advancedArrows.e2Tip.y - 6}
-            fontSize="11" fill={PHYSICS_COLORS.electricField}
+            fontSize={font(11)} fill={PHYSICS_COLORS.electricField}
             fontWeight="bold" textAnchor="middle">
             E₂
           </text>
@@ -138,29 +172,33 @@ export function ElectricFieldAdvancedScene({
             </g>
           )}
 
-          {/* 4. 合场强 E (粗黄色实线) */}
-          <VectorArrow
-            originDesign={{ x: testX, y: testY }}
-            vector={advancedArrows.vectorEnet}
-            type="electricField"
-            arrowType="physical-schematic"
-            sceneScale={sceneScale}
-            pixelLength={advancedArrows.lenEnet}
-            strokeWidth={CANVAS_STYLE.stroke.vectorMain + 0.8}
-          />
-          <text
-            x={advancedArrows.enetTip.x + (advancedArrows.vectorEnet.x >= 0 ? 1 : -1) * 12}
-            y={advancedArrows.enetTip.y + 4}
-            fontSize="12"
-            fill={PHYSICS_COLORS.electricField}
-            fontWeight="bold"
-            textAnchor="middle"
-          >
-            E合
-          </text>
+          {/* 4. 合场强 E */}
+          {advancedArrows.lenEnet > 1e-2 && enetLabelPos && (
+            <>
+              <VectorArrow
+                originDesign={{ x: testX, y: testY }}
+                vector={advancedArrows.vectorEnet}
+                type="electricField"
+                arrowType="physical-schematic"
+                sceneScale={sceneScale}
+                pixelLength={advancedArrows.lenEnet}
+                strokeWidth={CANVAS_STYLE.stroke.vectorMain + 0.8}
+              />
+              <text
+                x={enetLabelPos.x}
+                y={enetLabelPos.y}
+                fontSize={font(12)}
+                fill={PHYSICS_COLORS.electricField}
+                fontWeight="bold"
+                textAnchor="middle"
+              >
+                E合
+              </text>
+            </>
+          )}
 
-          {/* 5. 电场力 F (粗橙色实线, 仅在 qTest !== 0 时绘制) */}
-          {qTest !== 0 && (
+          {/* 5. 电场力 F */}
+          {qTest !== 0 && advancedArrows.lenF > 1e-2 && fLabelPos && (
             <>
               <VectorArrow
                 originDesign={{ x: testX, y: testY }}
@@ -172,9 +210,9 @@ export function ElectricFieldAdvancedScene({
                 strokeWidth={CANVAS_STYLE.stroke.vectorMain + 1.2}
               />
               <text
-                x={testX + (advancedArrows.vectorF.x >= 0 ? 1 : -1) * (advancedArrows.lenF + 14)}
-                y={testY - (advancedArrows.vectorF.y >= 0 ? 1 : -1) * 6 + 18}
-                fontSize={CANVAS_STYLE.font.labelSize}
+                x={fLabelPos.x}
+                y={fLabelPos.y}
+                fontSize={font(12)}
                 fill={PHYSICS_COLORS.electricForce}
                 fontWeight="bold"
                 textAnchor="middle"

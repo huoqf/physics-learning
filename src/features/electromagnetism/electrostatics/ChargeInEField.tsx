@@ -35,10 +35,11 @@ export default function ChargeInEField() {
   const isAC = params.isAC ?? 0
   const useGravity = params.useGravity ?? 0
   const phi0 = params.phi0 ?? 0
+  const showScreen = params.showScreen ?? 0
 
   // 物理计算 & 场景几何
   const physics = useChargeInEFieldPhysics({
-    U, v0, q, freq, isAC, useGravity, phi0,
+    U, v0, q, freq, isAC, useGravity, phi0, showScreen,
     time, showVectors, showGrid, vp, setIsPlaying,
   })
 
@@ -48,11 +49,12 @@ export default function ChargeInEField() {
     v0, U, q, freq, isAC, phi0, useGravity,
     tSim: physics.tSim,
     tEnd: physics.simResult.tEnd,
+    plateExitTime: physics.simResult.plateExitTime,
   })
 
   const {
     simResult, tSim, ended, currentState,
-    midY, startX, topPlateY, bottomPlateY,
+    hasScreen, inField, midY, startX, plateEndX, screenX, screenSpotY, topPlateY, bottomPlateY,
     cx, cy, curFieldSign,
     historyPoints, predictedPoints, tailPoints,
     sceneScale,
@@ -148,7 +150,7 @@ export default function ChargeInEField() {
           <line
             x1={startX}
             y1={topPlateY}
-            x2={startX + 520}
+            x2={plateEndX}
             y2={topPlateY}
             stroke={curFieldSign > 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
             strokeWidth={CANVAS_STYLE.stroke.groundLine}
@@ -169,7 +171,7 @@ export default function ChargeInEField() {
           <line
             x1={startX}
             y1={bottomPlateY}
-            x2={startX + 520}
+            x2={plateEndX}
             y2={bottomPlateY}
             stroke={curFieldSign > 0 ? PHYSICS_COLORS.negativeCharge : PHYSICS_COLORS.positiveCharge}
             strokeWidth={CANVAS_STYLE.stroke.groundLine}
@@ -189,7 +191,7 @@ export default function ChargeInEField() {
           {/* 均匀分布的电场强度指示 */}
           {showVectors &&
             Array.from({ length: 7 }, (_, i) => {
-              const fx = startX + 25 + (i * 470) / 6
+              const fx = startX + 20 + (i * Math.max(80, plateEndX - startX - 40)) / 6
               const startY = curFieldSign > 0 ? topPlateY + 6 : bottomPlateY - 6
               const endY = curFieldSign > 0 ? bottomPlateY - 6 : topPlateY + 6
               return (
@@ -219,7 +221,7 @@ export default function ChargeInEField() {
             })}
           {showVectors && (
             <text
-              x={startX + 510}
+              x={plateEndX - 10}
               y={midY - 10}
               fontSize={font(11)}
               fill={PHYSICS_COLORS.electricField}
@@ -230,6 +232,88 @@ export default function ChargeInEField() {
             </text>
           )}
 
+          {/* 无场漂移区与荧光屏（示波管全过程视角） */}
+          {hasScreen && (
+            <g>
+              <line
+                x1={plateEndX}
+                y1={topPlateY - 18}
+                x2={plateEndX}
+                y2={bottomPlateY + 18}
+                stroke={CANVAS_COLORS.axis}
+                strokeWidth={CANVAS_STYLE.stroke.reference}
+                strokeDasharray="4,3"
+              />
+              <text
+                x={(plateEndX + screenX) / 2}
+                y={topPlateY - 8}
+                fontSize={font(10)}
+                fill={CANVAS_COLORS.textMuted}
+                textAnchor="middle"
+              >
+                无电场漂移区 (L_漂)
+              </text>
+
+              {/* 荧光屏主体 */}
+              <line
+                x1={screenX}
+                y1={topPlateY - 26}
+                x2={screenX}
+                y2={bottomPlateY + 26}
+                stroke={SCENE_COLORS.materials.structStroke}
+                strokeWidth={5}
+                strokeLinecap="round"
+              />
+              <text
+                x={screenX}
+                y={topPlateY - 34}
+                fontSize={font(11)}
+                fontWeight="bold"
+                fill={CANVAS_COLORS.labelText}
+                textAnchor="middle"
+              >
+                荧光屏
+              </text>
+
+              {/* 屏上打点亮斑与总偏转 Y 标尺 */}
+              {screenSpotY !== null && (
+                <g>
+                  <circle
+                    cx={screenX}
+                    cy={screenSpotY}
+                    r={ended ? 6 : 5}
+                    fill={ended ? PHYSICS_COLORS.work : withAlpha(PHYSICS_COLORS.work, 0.25)}
+                    stroke={PHYSICS_COLORS.work}
+                    strokeWidth={2}
+                  />
+                  {Math.abs(screenSpotY - midY) > 6 && (
+                    <g>
+                      <line
+                        x1={screenX + 18}
+                        y1={midY}
+                        x2={screenX + 18}
+                        y2={screenSpotY}
+                        stroke={PHYSICS_COLORS.work}
+                        strokeWidth={2}
+                      />
+                      <line x1={screenX + 12} y1={midY} x2={screenX + 24} y2={midY} stroke={PHYSICS_COLORS.work} strokeWidth={1.5} />
+                      <line x1={screenX + 12} y1={screenSpotY} x2={screenX + 24} y2={screenSpotY} stroke={PHYSICS_COLORS.work} strokeWidth={1.5} />
+                      <text
+                        x={screenX + 28}
+                        y={(midY + screenSpotY) / 2 + 4}
+                        fontSize={font(11)}
+                        fontWeight="bold"
+                        fill={PHYSICS_COLORS.work}
+                      >
+                        Y={Math.abs((simResult.screenY ?? 0) * 100).toFixed(1)}cm
+                      </text>
+                    </g>
+                  )}
+                </g>
+              )}
+            </g>
+          )}
+
           {/* 粒子轨迹（统一组件：预测虚线 + 历史虚线 + 拖尾 + 本体） */}
           {historyPoints.length > 0 && (
             <ParticleTrajectory
@@ -237,7 +321,7 @@ export default function ChargeInEField() {
               predictedPoints={predictedPoints}
               tailPoints={tailPoints}
               isFocus
-              chargeSign="+"
+              chargeSign={q > 0 ? '+' : q < 0 ? '-' : 'none'}
             />
           )}
           {/* 速度反向延长线与夹角可视化（平抛几何推论） */}
@@ -245,8 +329,8 @@ export default function ChargeInEField() {
             <g>
               {/* 1. 速度反向延长虚线 */}
               <line
-                x1={tangentData.pxYStart > 0 ? startX : tangentData.cInterX} // 裁剪在区域内
-                y1={tangentData.pxYStart}
+                x1={tangentData.startLineX}
+                y1={tangentData.startLineY}
                 x2={cx}
                 y2={cy}
                 stroke={PHYSICS_COLORS.tangentLine}
@@ -254,12 +338,12 @@ export default function ChargeInEField() {
                 strokeDasharray="3,3"
               />
 
-              {/* 2. 发射点到粒子的位移虚线 */}
+              {/* 2. 发射点到极板内参考点的位移虚线 */}
               <line
                 x1={startX}
                 y1={midY}
-                x2={cx}
-                y2={cy}
+                x2={tangentData.exitX}
+                y2={tangentData.exitY}
                 stroke={PHYSICS_COLORS.displacement}
                 strokeWidth={CANVAS_STYLE.stroke.reference}
                 strokeDasharray="3,3"
@@ -326,7 +410,7 @@ export default function ChargeInEField() {
           )}
 
           {/* 速度分量与速度分解虚线框 */}
-          {showVectors && !ended && (
+          {showVectors && (!ended || simResult.hitType === 'none') && (
             <g>
               {/* 矩形分解虚线框 */}
               <line
@@ -411,8 +495,8 @@ export default function ChargeInEField() {
                 v
               </text>
 
-              {/* 电场力 F_E (紫色) */}
-              {(() => {
+              {/* 电场力 F_E (仅极板内且 q≠0 时存在) */}
+              {inField && Math.abs(q) > 1e-6 && (() => {
                 const eDir = electricForceDir({ x: 0, y: -curFieldSign }, q * 1e-6)
                 const electricAccel = (q * 1e-6 * curFieldSign * U / PLATE_GAP) / PARTICLE_MASS
                 const accelMag = Math.abs(electricAccel)
@@ -442,10 +526,16 @@ export default function ChargeInEField() {
 
           {/* 终止状态指示 */}
           {ended && (
-            <g transform={`translate(${cx}, ${cy + (cy > midY ? -18 : 24)})`}>
-              <rect x={-45} y={-14} width={90} height={20} fill={withAlpha(CANVAS_COLORS.labelText, 0.85)} rx={4} />
+            <g transform={`translate(${Math.min(cx, 775)}, ${cy + (cy > midY ? -18 : 24)})`}>
+              <rect x={-48} y={-14} width={96} height={20} fill={withAlpha(CANVAS_COLORS.labelText, 0.85)} rx={4} />
               <text fontSize={font(10)} fill={CANVAS_COLORS.objectFill} textAnchor="middle" fontWeight="bold" y={0}>
-                {simResult.hitType === 'top' ? '撞击上极板' : simResult.hitType === 'bottom' ? '撞击下极板' : '已射出电场'}
+                {simResult.hitType === 'top'
+                  ? '撞击上极板'
+                  : simResult.hitType === 'bottom'
+                    ? '撞击下极板'
+                    : hasScreen
+                      ? '击中荧光屏'
+                      : '已射出电场'}
               </text>
             </g>
           )}

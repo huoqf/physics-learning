@@ -59,6 +59,9 @@ export const AVOGADRO_CONSTANT = 6.02e23
 /** 元电荷 e (C)，高中物理教材取近似值 1.60×10⁻¹⁹ C */
 export const ELEMENTARY_CHARGE = 1.6e-19
 
+/** 真空介电常数 ε₀ (F/m)，高中物理常用 8.854×10⁻¹² F/m */
+export const VACUUM_PERMITTIVITY = 8.854e-12
+
 /** 电子质量 m_e (kg)，高中物理常用 9.1×10⁻³¹ kg */
 export const ELECTRON_MASS = 9.1e-31
 

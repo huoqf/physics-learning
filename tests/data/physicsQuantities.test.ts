@@ -1,8 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { buildPhysicsQuantities, preloadQuantityBuilder } from '@/data/physicsQuantities'
-import { calculateCapacitor } from '@/physics'
-
-const EPS0 = 8.85e-12
+import { calculateCapacitor, VACUUM_PERMITTIVITY } from '@/physics'
 
 function find(qs: ReturnType<typeof buildPhysicsQuantities>, label: string) {
   return qs.quantities.find((q) => q.label.startsWith(label))?.value
@@ -14,10 +12,15 @@ const TEST_ANIM_IDS = [
   'anim-experiment-momentum',
   'anim-experiment-mechanical-energy',
   'anim-experiment-newton-second',
+  'anim-charge-elementary',
   'anim-coulomb-law',
   'anim-electric-field',
   'anim-charge-in-efield',
   'anim-capacitor',
+  'anim-field-lines',
+  'anim-electric-potential',
+  'anim-electrostatic-shielding',
+  'anim-equal-charge-field',
   'anim-ohm-law',
   'anim-circuit-analysis',
   'anim-closed-circuit',
@@ -87,15 +90,45 @@ describe('buildPhysicsQuantities', () => {
   })
 
   // ===== 电磁学 · 静电场（M4-1）=====
-  it('库仑定律：异号判定相互吸引', () => {
+  it('电荷与元电荷：接触起电守恒且密立根油滴给出平衡电压与整数倍电量', () => {
+    const ch = buildPhysicsQuantities('anim-charge-elementary', { mode: 0, method: 1, step: 2, qAInit: 6, qBInit: -2 }, 0)
+    expect(find(ch, '物体 A 当前电量')).toBe('+2.0')
+    expect(find(ch, '系统总电量')).toBe('+4.0')
+
+    const millikan = buildPhysicsQuantities('anim-charge-elementary', { mode: 1, voltageU: 490, plateGapMm: 5, chargeMultipleN: 2, dropMass1e15: 3.2 }, 0)
+    expect(find(millikan, '悬浮平衡电压')).toBe('490.0')
+    expect(find(millikan, '元电荷整数倍')).toBe('2')
+  })
+
+  it('库仑定律：异号判定相互吸引，含零电荷判定无相互作用', () => {
     const qs = buildPhysicsQuantities('anim-coulomb-law', { q1: 2, q2: -3, r: 4 }, 0)
     expect(find(qs, '作用类型')).toBe('相互吸引')
     expect(find(qs, '库仑力')).toBeDefined()
+
+    const zero = buildPhysicsQuantities('anim-coulomb-law', { q1: 0, q2: 3, r: 4 }, 0)
+    expect(find(zero, '作用类型')).toBe('无相互作用')
   })
 
-  it('点电荷电场：场强 E 大小计算正确', () => {
+  it('点电荷电场：场强 E 大小计算正确，且 mode=1 按二维坐标与中屏一致', () => {
     const qs = buildPhysicsQuantities('anim-electric-field', { q: -5, rTest: 2 }, 0)
     expect(find(qs, '场强 E')).toBeDefined()
+
+    const sym = buildPhysicsQuantities('anim-electric-field', { mode: 1, chargeConfig: 1, testXCm: 0, testYCm: 3, rTest: 3, qTest: 1 }, 0)
+    // 等量同正在中垂线上合场强不为无穷大奇点
+    expect(String(find(sym, '合场强 E'))).not.toContain('10⁹')
+  })
+
+  it('电场线与等势面 / 电势与电势差 / 静电屏蔽看板构建器完整输出', () => {
+    const fl = buildPhysicsQuantities('anim-field-lines', { topology: 2, qSource: 5, probeX: 420, probeY: 150, probeStartX: 420, probeStartY: 150 }, 0)
+    expect(find(fl, '拓扑场景')).toBe('等量异种电荷')
+    expect(Number(find(fl, '当前点电势 φ'))).toBeCloseTo(0, 2)
+
+    const ep = buildPhysicsQuantities('anim-electric-potential', { phiA: 120, phiB: -40, qProbe: -2, slopeK: 150 }, 0)
+    expect(find(ep, '两点电势差 U_AB')).toBe('160.0')
+
+    const sh = buildPhysicsQuantities('anim-electrostatic-shielding', { E0: 450, mode: 1, isGrounded: 1, tipRadius: 0.2 }, 0)
+    expect(find(sh, '内部合场强')).toBe(0)
+    expect(find(sh, '空气放电状态')).toBe('击穿放电')
   })
 
   it('带电粒子在匀强电场：加速度与末速度合理', () => {
@@ -121,7 +154,7 @@ describe('buildPhysicsQuantities', () => {
 
   it('电容器先改参数充入高电荷后断开：savedQ 精确守恒，不回退默认几何', () => {
     // 假设在接通下 S=200, d=2 充入的电荷量
-    const c0 = calculateCapacitor(EPS0, 200 * 1e-4, 2 * 1e-3).C
+    const c0 = calculateCapacitor(VACUUM_PERMITTIVITY, 200 * 1e-4, 2 * 1e-3).C
     const customQ = c0 * 12
     // 断开电源，且板间距 d 从 2 变为 4（电容减半，电压翻倍到 24V）
     const res = buildPhysicsQuantities('anim-capacitor', { S: 200, d: 4, epsilon_r: 1, U: 12, connected: 0, savedQ: customQ }, 0)
@@ -345,6 +378,58 @@ describe('buildPhysicsQuantities', () => {
     )
     expect(Number(find(qsNewton, '细绳真实拉力'))).toBeGreaterThan(0)
     expect(Number(find(qsNewton, '小车实测加速度'))).toBeCloseTo((0.05 * 9.8) / 0.45, 2)
+  })
+
+  it('静电场 Phase 2 新增与升级看板：等量电荷场线 / 库仑摆 / 带屏漂移示波管 / 内外屏蔽', () => {
+    // 1. 等量电荷场线模型
+    const qsEqual = buildPhysicsQuantities(
+      'anim-equal-charge-field',
+      { chargeType: 1, axis: 1, qMicroC: 5, halfSepCm: 3 },
+      3.0,
+    )
+    expect(Number(find(qsEqual, '中点 O 场强'))).toBeCloseTo(0, 3)
+
+    // 2. 库仑摆模式 (mode=2)
+    const qsPendulum = buildPhysicsQuantities('anim-coulomb-law', { mode: 2, q1: 2, q2: 2, mGram: 20, stringLenCm: 30 }, 0)
+    expect(find(qsPendulum, '平衡状态')).toBe('同号对称张开')
+    expect(Number(find(qsPendulum, '平衡偏角'))).toBeGreaterThan(30)
+
+    const qsPendulumOpp = buildPhysicsQuantities('anim-coulomb-law', { mode: 2, q1: 2, q2: -2, mGram: 20, stringLenCm: 30 }, 0)
+    expect(find(qsPendulumOpp, '平衡状态')).toBe('异号吸引无法张开')
+
+    // 3. 带电粒子在匀强电场中运动：负电荷 + 荧光屏总偏转 Y
+    const qsInPlate = buildPhysicsQuantities(
+      'anim-charge-in-efield',
+      { U: 150, v0: 15, q: -2, freq: 30, isAC: 0, useGravity: 0, phi0: 0, showScreen: 1 },
+      0.5,
+    )
+    expect(Number(find(qsInPlate, '加速度 ay'))).toBeLessThan(0)
+
+    const qsScreen = buildPhysicsQuantities(
+      'anim-charge-in-efield',
+      { U: 150, v0: 15, q: -2, freq: 30, isAC: 0, useGravity: 0, phi0: 0, showScreen: 1 },
+      2.5,
+    )
+    expect(Number(find(qsScreen, '加速度 ay'))).toBe(0)
+    expect(Number(find(qsScreen, '荧光屏总偏转 Y'))).toBeGreaterThan(0)
+    expect(qsScreen.formulas?.some((f) => f.name.includes('示波管荧光屏偏转'))).toBe(true)
+
+    const qsAC = buildPhysicsQuantities(
+      'anim-charge-in-efield',
+      { U: 150, v0: 15, q: 2, freq: 30, isAC: 1, useGravity: 0, phi0: 0, showScreen: 0 },
+      0.5,
+    )
+    expect(qsAC.formulas?.some((f) => f.name.includes('示波管荧光屏偏转'))).toBe(false)
+
+    // 4. 静电屏蔽内屏蔽模式 (mode=2, shieldType=1) 不再误显示外加电场 E_0
+    const qsShield = buildPhysicsQuantities(
+      'anim-electrostatic-shielding',
+      { E0: 300, mode: 2, shieldType: 1, isGrounded: 1, tipRadius: 1.0 },
+      0,
+    )
+    expect(find(qsShield, '外加电场强度')).toBeUndefined()
+    expect(find(qsShield, '空腔屏蔽方案')).toBe('内屏蔽（腔内 +Q）')
+    expect(find(qsShield, '壳外受内荷附加场')).toBe('0')
   })
 })
 

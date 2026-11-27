@@ -34,6 +34,7 @@ describe('animationRegistry · ANIMATION_COUNT 一致性守卫', () => {
       'anim-micro-quantities',
       'anim-maxwell-distribution',
       'anim-oil-film-experiment',
+      'anim-equal-charge-field',
     ]
     for (const id of ids) {
       const config = await getAnimationConfigAsync(id)

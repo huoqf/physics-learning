@@ -16,6 +16,7 @@ export default function ElectrostaticShieldingAnimation() {
   const isGrounded = params.isGrounded ?? 0
   const showFieldLines = params.showFieldLines ?? 1
   const tipRadius = params.tipRadius ?? 1.0
+  const shieldType = params.shieldType ?? 0
 
   const { containerRef, canvasSize, vp } = useAnimationViewport({
     preset: CANVAS_PRESETS.full,
@@ -27,6 +28,7 @@ export default function ElectrostaticShieldingAnimation() {
     isGrounded,
     tipRadius,
     showFieldLines,
+    shieldType,
   })
 
   const sceneScale = useSceneScale({
@@ -55,6 +57,7 @@ export default function ElectrostaticShieldingAnimation() {
         isGrounded={isGrounded}
         showFieldLines={showFieldLines}
         tipRadius={tipRadius}
+        shieldType={shieldType}
       />
     </AnimationSvgCanvas>
   )

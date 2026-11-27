@@ -7,6 +7,7 @@ export const CHARGE_EFIELD_GEOMETRY = {
   plateLength: 0.4,
   plateGap: 0.2,
   particleMass: 10 * 1e-6,
+  driftLength: 0.28,
 } as const
 
 /**
@@ -166,6 +167,114 @@ export function calculateElectricField(k: number, q: number, r: number): { E: nu
  */
 export const TWO_CHARGE_SEPARATION_M = 0.06
 
+/** 电场线与等势面演示中计算电势的最小截断距离 (m) */
+export const FIELD_LINES_MIN_POTENTIAL_DIST_M = 0.05
+
+export interface TwoChargeField2DOptions {
+  /** 电荷 1 电量 (C) */
+  q1C: number
+  /** 电荷 2 电量 (C) */
+  q2C: number
+  /** 两源电荷间距 (m)，默认 TWO_CHARGE_SEPARATION_M */
+  separationM?: number
+  /** 场点相对两电荷连线中点的水平坐标 x (m)，向右为正 */
+  xM: number
+  /** 场点相对两电荷连线中点的竖直坐标 y (m)，向上为正 */
+  yM: number
+  /** 试探电荷电量 (C) */
+  qTestC: number
+  /** 防奇点最小距离截断 (m)，默认 0.005 */
+  minDistM?: number
+}
+
+export interface TwoChargeField2DResult {
+  E1x: number
+  E1y: number
+  E2x: number
+  E2y: number
+  Ex: number
+  Ey: number
+  E: number
+  Fx: number
+  Fy: number
+  F: number
+}
+
+/**
+ * 计算平面内关于原点对称放置的两点电荷的二维合场强与试探电荷受力（标准物理坐标系：x→, y↑）。
+ * 供「电场强度」进阶叠加场景与右屏看板共同作为单一可信源（SSOT）。
+ */
+export function calculateTwoChargeField2D(options: TwoChargeField2DOptions): TwoChargeField2DResult {
+  const {
+    q1C,
+    q2C,
+    separationM = TWO_CHARGE_SEPARATION_M,
+    xM,
+    yM,
+    qTestC,
+    minDistM = 0.005,
+  } = options
+
+  const dHalf = separationM / 2
+  const dx1 = xM - (-dHalf)
+  const dy1 = yM
+  const r1 = Math.max(minDistM, Math.hypot(dx1, dy1))
+  const e1Mag = calculateElectricField(COULOMB_CONSTANT, Math.abs(q1C), r1).E
+  const dir1 = q1C >= 0 ? 1 : -1
+  const r1Raw = Math.hypot(dx1, dy1)
+  const ux1 = r1Raw > 1e-12 ? dx1 / r1Raw : 1
+  const uy1 = r1Raw > 1e-12 ? dy1 / r1Raw : 0
+  const E1x = e1Mag * dir1 * ux1
+  const E1y = e1Mag * dir1 * uy1
+
+  const dx2 = xM - dHalf
+  const dy2 = yM
+  const r2 = Math.max(minDistM, Math.hypot(dx2, dy2))
+  const e2Mag = calculateElectricField(COULOMB_CONSTANT, Math.abs(q2C), r2).E
+  const dir2 = q2C >= 0 ? 1 : -1
+  const r2Raw = Math.hypot(dx2, dy2)
+  const ux2 = r2Raw > 1e-12 ? dx2 / r2Raw : 1
+  const uy2 = r2Raw > 1e-12 ? dy2 / r2Raw : 0
+  const E2x = e2Mag * dir2 * ux2
+  const E2y = e2Mag * dir2 * uy2
+
+  const Ex = E1x + E2x
+  const Ey = E1y + E2y
+  const E = Math.hypot(Ex, Ey)
+  const Fx = qTestC * Ex
+  const Fy = qTestC * Ey
+  const F = Math.hypot(Fx, Fy)
+
+  return { E1x, E1y, E2x, E2y, Ex, Ey, E, Fx, Fy, F }
+}
+
+/**
+ * 计算孤立点电荷周围「等差等势面」的半径数组（从 rMin 到 rMax 升序）。
+ * 物理规律：φ ∝ 1/r，故相邻等势面电势差相等时 1/r 等距分布，呈现「内密外疏」。
+ *
+ * @param rMin  最内圈半径（px 或 m，> 0）
+ * @param rMax  最外圈半径（> rMin）
+ * @param count 等势面圈数（>= 2）
+ */
+export function computePointChargeEquipotentialRadii(
+  rMin: number,
+  rMax: number,
+  count: number,
+): number[] {
+  if (count <= 0 || rMin <= 0 || rMax <= rMin) return []
+  if (count === 1) return [rMin]
+  const invMax = 1 / rMin
+  const invMin = 1 / rMax
+  const radii: number[] = []
+  for (let i = 0; i < count; i++) {
+    const t = i / (count - 1)
+    // inv 从 invMin（最外圈）线性增至 invMax（最内圈），反转后得升序半径
+    const invR = invMin + (1 - t) * (invMax - invMin)
+    radii.push(1 / invR)
+  }
+  return radii.sort((a, b) => a - b)
+}
+
 
 /** 点电荷电势 V = kq/r（V） */
 export function calculateElectricPotential(k: number, q: number, r: number): { V: number; valid: boolean; singular: boolean } {
@@ -218,9 +327,13 @@ export function calculateChargeInEFieldTrajectory(options: {
   phi0?: number
   maxTime?: number
   dt?: number
+  includeDriftScreen?: boolean
+  driftLength?: number
 }): {
   points: EFieldSimulationPoint[]
   tEnd: number
+  plateExitTime: number
+  screenY: number | null
   hitType: 'none' | 'top' | 'bottom'
   hitsPlate: boolean
   xEnd: number
@@ -238,7 +351,9 @@ export function calculateChargeInEFieldTrajectory(options: {
     freq,
     phi0 = 0,
     maxTime = 1.0,
-    dt = 0.0001
+    dt = 0.0001,
+    includeDriftScreen = false,
+    driftLength = CHARGE_EFIELD_GEOMETRY.driftLength,
   } = options
 
   const points: EFieldSimulationPoint[] = []
@@ -284,7 +399,7 @@ export function calculateChargeInEFieldTrajectory(options: {
     // 辛欧拉积分
     t += dt
     vx += ax * dt
-    vy += ay * dt
+    vy += vy === undefined ? 0 : ay * dt
     x += vx * dt
     y += vy * dt
 
@@ -310,7 +425,7 @@ export function calculateChargeInEFieldTrajectory(options: {
     }
   }
 
-  // 确保最后一点有正确的加速度
+  // 确保极板末点有正确的加速度
   if (points.length > 0) {
     const lastPt = points[points.length - 1]
     let fieldSign = 1
@@ -326,11 +441,36 @@ export function calculateChargeInEFieldTrajectory(options: {
     lastPt.ay = (m > 0) ? (FE / m + g) : 0
   }
 
+  const plateExitTime = points[points.length - 1].t
+  let screenY: number | null = null
+
+  // 直流且未撞极板时，若开启无场漂移与荧光屏，则继续沿匀速直线（若开重力则含重力）飞至荧光屏
+  if (includeDriftScreen && !isAC && !hitsPlate && points[points.length - 1].x >= L && driftLength > 0) {
+    const xTarget = L + driftLength
+    const driftMaxSteps = 6000
+    for (let step = 0; step < driftMaxSteps && x < xTarget; step++) {
+      const remainTime = vx > 1e-6 ? (xTarget - x) / vx : dt
+      const stepDt = Math.min(dt, remainTime)
+      if (stepDt <= 1e-12) break
+      const ay = g
+      points[points.length - 1].ax = 0
+      points[points.length - 1].ay = ay
+      t += stepDt
+      vy += ay * stepDt
+      x += vx * stepDt
+      y += vy * stepDt
+      points.push({ t, x, y, vx, vy, ax: 0, ay })
+    }
+    screenY = points[points.length - 1].y
+  }
+
   const lastPoint = points[points.length - 1]
 
   return {
     points,
     tEnd: lastPoint.t,
+    plateExitTime,
+    screenY,
     hitType,
     hitsPlate,
     xEnd: lastPoint.x,
@@ -501,14 +641,14 @@ export function calculateFreeThreeChargeEquilibrium(
   const sameSign = q1 * q2 > 0
 
   if (sameSign) {
-    // 同号：q3 夹在中间
+    // 同号：q3 夹在中间，电性与 q1/q2 相反
     const ratio = Math.sqrt(absQ1) / (Math.sqrt(absQ1) + Math.sqrt(absQ2))
     const r13 = r * ratio
     const r23 = r - r13
-    const q3 = -(Math.abs(q1 * q2)) / Math.pow(Math.sqrt(absQ1) + Math.sqrt(absQ2), 2)
+    const q3 = -(Math.sign(q1) * Math.abs(q1 * q2)) / Math.pow(Math.sqrt(absQ1) + Math.sqrt(absQ2), 2)
     return { q3, r13, r23, valid: true }
   } else {
-    // 异号：q3 在绝对值小的一端的外侧
+    // 异号：q3 在绝对值小的一端的外侧，电性与绝对值较大者相同
     if (Math.abs(absQ1 - absQ2) < 1e-12) {
       // 绝对值相等，无解
       return { q3: 0, r13: 0, r23: 0, valid: false }
@@ -516,21 +656,21 @@ export function calculateFreeThreeChargeEquilibrium(
 
     if (absQ1 < absQ2) {
       // q3 在 q1 外侧（即偏离 q2 一侧）
-      // 设 q1 在左(0)，q2 在右(r)。q3 在 q1 左侧 (-r13)
+      // 设 q1 在左(0)，q2 在右(r)。q3 在 q1 左侧 (-d13)，电性与 q2 同号
       const ratio = Math.sqrt(absQ1) / (Math.sqrt(absQ2) - Math.sqrt(absQ1))
       const d13 = r * ratio // 实际距离
       const r13 = -d13 // x 坐标偏移
       const r23 = r + d13
-      const q3 = -(Math.abs(q1 * q2)) / Math.pow(Math.sqrt(absQ2) - Math.sqrt(absQ1), 2)
+      const q3 = (Math.sign(q2) * Math.abs(q1 * q2)) / Math.pow(Math.sqrt(absQ2) - Math.sqrt(absQ1), 2)
       return { q3, r13, r23, valid: true }
     } else {
       // q3 在 q2 外侧
-      // 设 q1 在左(0)，q2 在右(r)。q3 在 q2 右侧 (r + d23)
+      // 设 q1 在左(0)，q2 在右(r)。q3 在 q2 右侧 (r + d23)，电性与 q1 同号
       const ratio = Math.sqrt(absQ2) / (Math.sqrt(absQ1) - Math.sqrt(absQ2))
       const d23 = r * ratio
       const r13 = r + d23
       const r23 = d23
-      const q3 = -(Math.abs(q1 * q2)) / Math.pow(Math.sqrt(absQ1) - Math.sqrt(absQ2), 2)
+      const q3 = (Math.sign(q1) * Math.abs(q1 * q2)) / Math.pow(Math.sqrt(absQ1) - Math.sqrt(absQ2), 2)
       return { q3, r13, r23, valid: true }
     }
   }
@@ -542,11 +682,7 @@ export function calculateFreeThreeChargeEquilibrium(
  * 物理模型：两个固定电荷 q1、q2 分别位于 x1、x2（x 轴上），
  * 求第三个电荷 q3 的平衡位置 x3，使得 q3 所受合力为零。
  *
- * 平衡条件：F13 + F23 = 0
- *   其中 F13 = k·q1·q3 / (x3-x1)²（带符号，排斥为正、吸引为负）
- *        F23 = k·q2·q3 / (x3-x2)²
- *
- * 使用二分法在 [minX, maxX] 区间内搜索零点。
+ * 使用解析解直接求零场点（避免跨奇点二分法收敛到电荷奇点 x1/x2）。
  *
  * @param q1  电荷1电量 (μC)，含符号
  * @param x1  电荷1位置 (m)
@@ -565,46 +701,36 @@ export function findEquilibriumX3(
   q3: number,
   minX: number, maxX: number
 ): { x: number; possible: boolean } {
-  const Q1 = q1 * 1e-6
-  const Q2 = q2 * 1e-6
-  const Q3 = q3 * 1e-6
-
-  if (Q3 === 0) return { x: (x1 + x2) / 2, possible: false }
-
-  const f = (x3: number) => {
-    const r13 = x3 - x1
-    const r23 = x3 - x2
-    if (Math.abs(r13) < 1e-9 || Math.abs(r23) < 1e-9) return Infinity
-    const F13 = (Q1 * Q3) / (r13 * Math.abs(r13))
-    const F23 = (Q2 * Q3) / (r23 * Math.abs(r23))
-    return F13 + F23
+  const midFallback = (x1 + x2) / 2
+  const span = Math.abs(x2 - x1)
+  if (q1 === 0 || q2 === 0 || q3 === 0 || span < 1e-12) {
+    return { x: midFallback, possible: false }
   }
 
-  const lo = minX
-  const hi = maxX
+  const leftIs1 = x1 <= x2
+  const qa = leftIs1 ? q1 : q2
+  const xa = leftIs1 ? x1 : x2
+  const qb = leftIs1 ? q2 : q1
+  const xb = leftIs1 ? x2 : x1
+  const L = xb - xa
+  const sa = Math.sqrt(Math.abs(qa))
+  const sb = Math.sqrt(Math.abs(qb))
 
-  const fLo = f(lo)
-  const fHi = f(hi)
-
-  if (Math.abs(fLo) < 1e-12) return { x: lo, possible: true }
-  if (Math.abs(fHi) < 1e-12) return { x: hi, possible: true }
-  if (fLo * fHi > 0) return { x: (x1 + x2) / 2, possible: false }
-
-  let a = lo
-  let b = hi
-  for (let i = 0; i < 100; i++) {
-    const mid = (a + b) / 2
-    const fm = f(mid)
-    if (Math.abs(fm) < 1e-12) return { x: mid, possible: true }
-    if (f(a) * fm < 0) {
-      b = mid
-    } else {
-      a = mid
-    }
+  let xEq: number
+  if (qa * qb > 0) {
+    xEq = xa + (L * sa) / (sa + sb)
+  } else if (Math.abs(sa - sb) < 1e-12) {
+    return { x: midFallback, possible: false }
+  } else if (sa < sb) {
+    xEq = xa - (L * sa) / (sb - sa)
+  } else {
+    xEq = xb + (L * sb) / (sa - sb)
   }
-  const result = (a + b) / 2
-  if (result < minX || result > maxX) return { x: (x1 + x2) / 2, possible: false }
-  return { x: result, possible: true }
+
+  if (xEq < minX || xEq > maxX || !Number.isFinite(xEq)) {
+    return { x: midFallback, possible: false }
+  }
+  return { x: xEq, possible: true }
 }
 
 export interface ChargeInEFieldCriticalParams {
@@ -615,6 +741,7 @@ export interface ChargeInEFieldCriticalParams {
   isAC?: number
   useGravity?: number
   phi0?: number
+  showScreen?: number
 }
 
 /**
@@ -632,6 +759,7 @@ export function getChargeInEFieldCriticalTimes(
   const isAC = (params.isAC ?? 0) === 1
   const useGravity = params.useGravity ?? 0
   const phi0 = params.phi0 ?? 0
+  const showScreen = (params.showScreen ?? 0) === 1
 
   const sim = calculateChargeInEFieldTrajectory({
     U,
@@ -644,6 +772,8 @@ export function getChargeInEFieldCriticalTimes(
     isAC,
     freq,
     phi0,
+    includeDriftScreen: showScreen && !isAC,
+    driftLength: CHARGE_EFIELD_GEOMETRY.driftLength,
   })
 
   if (!(sim.tEnd > 0)) return []
@@ -667,6 +797,18 @@ export function getChargeInEFieldCriticalTimes(
     }
   }
 
+  if (showScreen && !isAC && !sim.hitsPlate && sim.plateExitTime < sim.tEnd) {
+    const tExitPlay = alignCriticalTime(sim.plateExitTime / timeScale, 'nearest')
+    if (tExitPlay > 0.02 && tExitPlay < maxTime) {
+      events.push({
+        time: tExitPlay,
+        label: '飞出偏转极板',
+        variant: 'info',
+        autoPause: false,
+      })
+    }
+  }
+
   const tEndPlay = alignCriticalTime(sim.tEnd / timeScale, 'before')
   if (tEndPlay > 0 && tEndPlay <= maxTime) {
     const label =
@@ -674,7 +816,9 @@ export function getChargeInEFieldCriticalTimes(
         ? '撞击上极板'
         : sim.hitType === 'bottom'
           ? '撞击下极板'
-          : '飞出平行板电场'
+          : showScreen && !isAC
+            ? '击中荧光屏'
+            : '飞出平行板电场'
     events.push({
       time: tEndPlay,
       label,

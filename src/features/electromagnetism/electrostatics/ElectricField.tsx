@@ -23,6 +23,7 @@ export default function ElectricField() {
     }))
   )
   const updateParam = useAnimationStore((s) => s.updateParam)
+  const patchParams = useAnimationStore((s) => s.patchParams)
 
   // 教学模式：0 = 基础单电荷，1 = 进阶双电荷
   const mode = params.mode ?? 0
@@ -30,7 +31,8 @@ export default function ElectricField() {
   const rTest = params.rTest ?? 3.0
   const showFieldLines = (params.showFieldLines ?? 1) === 1
 
-  const { containerRef, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
+  const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 
   const w = preset.width
@@ -60,10 +62,16 @@ export default function ElectricField() {
   const cy1 = centerY
   const cx2 = cx1 + TWO_CHARGE_SEPARATION_M * 100 * pxPerCm
   const cy2 = centerY
+  const midX = (cx1 + cx2) / 2
+  const midY = (cy1 + cy2) / 2
 
-  // 试探电荷的实际设计坐标
-  const [testX, setTestX] = useState(cx + rTest * pxPerCm)
-  const [testY, setTestY] = useState(cy)
+  // 试探电荷的实际设计坐标（模式 1 默认在中垂线上，不压在源电荷 Q₂ 上）
+  const [testX, setTestX] = useState(() =>
+    mode === 1 ? midX + (params.testXCm ?? 0) * pxPerCm : cx + rTest * pxPerCm
+  )
+  const [testY, setTestY] = useState(() =>
+    mode === 1 ? midY - (params.testYCm ?? rTest) * pxPerCm : cy
+  )
   const [isDragging, setIsDragging] = useState(false)
   const wasDraggingRef = useRef(false)
 
@@ -87,12 +95,29 @@ export default function ElectricField() {
       setTestX(cx + rTest * pxPerCm)
       setTestY(cy)
     } else {
-      const midX = (cx1 + cx2) / 2
-      const midY = (cy1 + cy2) / 2
-      setTestX(midX + rTest * pxPerCm)
-      setTestY(midY)
+      const storeXCm = params.testXCm
+      const storeYCm = params.testYCm
+      const storeR = storeXCm !== undefined || storeYCm !== undefined
+        ? Math.hypot(storeXCm ?? 0, storeYCm ?? 0)
+        : null
+      if (storeR !== null && Math.abs(storeR - rTest) < 0.15) {
+        setTestX(midX + (storeXCm ?? 0) * pxPerCm)
+        setTestY(midY - (storeYCm ?? 0) * pxPerCm)
+      } else {
+        const curDx = (testX - midX) / pxPerCm
+        const curDy = (midY - testY) / pxPerCm
+        const curLen = Math.hypot(curDx, curDy)
+        const ux = curLen > 1e-3 ? curDx / curLen : 0
+        const uy = curLen > 1e-3 ? curDy / curLen : 1
+        const nextXCm = ux * rTest
+        const nextYCm = uy * rTest
+        setTestX(midX + nextXCm * pxPerCm)
+        setTestY(midY - nextYCm * pxPerCm)
+        patchParams({ testXCm: nextXCm, testYCm: nextYCm })
+      }
     }
-  }, [rTest, mode, cx, cy, cx1, cx2, cy1, cy2, isDragging, pxPerCm])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- testX/testY only read for radial projection when rTest slider moves
+  }, [rTest, mode, cx, cy, midX, midY, isDragging, pxPerCm, params.testXCm, params.testYCm, patchParams])
 
   // 物理计算 (在设计空间中进行)
   const physics = useElectricFieldPhysics({
@@ -163,11 +188,11 @@ export default function ElectricField() {
         setTestX(x)
         setTestY(y)
 
-        const midX = (cx1 + cx2) / 2
-        const midY = (cy1 + cy2) / 2
-        const distCm = Math.sqrt((x - midX) ** 2 + (y - midY) ** 2) / pxPerCm
+        const xCm = (x - midX) / pxPerCm
+        const yCm = (midY - y) / pxPerCm
+        const distCm = Math.hypot(xCm, yCm)
         const clampedCm = Math.max(0.1, Math.min(8.0, distCm))
-        updateParam('rTest', clampedCm)
+        patchParams({ testXCm: xCm, testYCm: yCm, rTest: clampedCm })
       }
     }
 
@@ -187,7 +212,7 @@ export default function ElectricField() {
       svg.removeEventListener('pointerup', onPointerUp)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- clientToDesign reads svgRef.current which is stable
-  }, [isDragging, mode, testX, testY, cx, cy, cx1, cy1, cx2, cy2, w, h, pxPerCm, updateParam, vp.tx, vp.ty, vp.scale])
+  }, [isDragging, mode, testX, testY, cx, cy, cx1, cy1, cx2, cy2, midX, midY, w, h, pxPerCm, updateParam, patchParams, vp.tx, vp.ty, vp.scale])
 
   return (
     <AnimationSvgCanvas
@@ -242,6 +267,7 @@ export default function ElectricField() {
           basicArrows={physics.basicArrows}
           chartProps={physics.chartProps}
           sceneScale={sceneScale}
+          font={font}
         />
       )}
 
@@ -260,6 +286,7 @@ export default function ElectricField() {
           isDragging={isDragging}
           advancedArrows={physics.advancedArrows}
           sceneScale={sceneScale}
+          font={font}
         />
       )}
     </AnimationSvgCanvas>

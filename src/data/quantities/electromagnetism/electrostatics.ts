@@ -1,18 +1,22 @@
 import {
   calculateCoulombForce,
   calculateContactCharges,
+  calculateCoulombPendulum,
   calculateChargingProcess,
   calculateMillikanOilDrop,
   calculateElectricField,
+  calculateTwoChargeField2D,
   calculateCapacitor,
   calculateChargeInEFieldTrajectory,
   getChargeInEFieldTimeScale,
+  CHARGE_EFIELD_GEOMETRY,
   computeRCTransient,
   rcTauFromParams,
   rcWindowFromParams,
   type RCPhase,
   TWO_CHARGE_SEPARATION_M,
   COULOMB_CONSTANT,
+  VACUUM_PERMITTIVITY,
   GRAVITY,
 } from '../../../physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
@@ -20,8 +24,6 @@ import { colors } from '@/theme/colors'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { formatScientific } from '@/utils/formatNumber'
 import type { PhysicsPanelData, PhysicsQuantity } from '../types'
-
-const VACUUM_PERMITTIVITY = 8.85e-12
 
 export function handleElectrostatics(
   animId: string,
@@ -35,6 +37,7 @@ export function handleElectrostatics(
       const q2 = params.q2 ?? -3
       const r = params.r ?? 4
       const mode = params.mode ?? 0
+      const hasZero = q1 === 0 || q2 === 0
       const attractive = q1 * q2 < 0
       const k = COULOMB_CONSTANT
       const q1SI = Math.abs(q1 * 1e-6)
@@ -47,11 +50,16 @@ export function handleElectrostatics(
         return {
           quantities: [
             ...base,
-            { label: 'q₁', value: `${q1 > 0 ? '+' : ''}${q1.toFixed(1)}`, unit: 'μC', highlight: q1 > 0 ? 'positive' as const : 'negative' as const },
-            { label: 'q₂', value: `${q2 > 0 ? '+' : ''}${q2.toFixed(1)}`, unit: 'μC', highlight: q2 > 0 ? 'positive' as const : 'negative' as const },
+            { label: 'q₁', value: `${q1 > 0 ? '+' : ''}${q1.toFixed(1)}`, unit: 'μC', highlight: q1 > 0 ? 'positive' as const : q1 < 0 ? 'negative' as const : undefined },
+            { label: 'q₂', value: `${q2 > 0 ? '+' : ''}${q2.toFixed(1)}`, unit: 'μC', highlight: q2 > 0 ? 'positive' as const : q2 < 0 ? 'negative' as const : undefined },
             { label: '间距 r', value: r.toFixed(1), unit: 'cm' },
             { label: '库仑力 F', value: formatScientific(F, 2), unit: 'N', highlight: 'extreme' as const },
-            { label: '作用类型', value: attractive ? '相互吸引' : '相互排斥', unit: '', highlight: attractive ? 'negative' as const : 'positive' as const },
+            {
+              label: '作用类型',
+              value: hasZero ? '无相互作用' : attractive ? '相互吸引' : '相互排斥',
+              unit: '',
+              highlight: hasZero ? undefined : attractive ? ('negative' as const) : ('positive' as const),
+            },
             { label: '接触均分后单球电量', symbol: "q'", value: `${q1New > 0 ? '+' : ''}${q1New.toFixed(2)}`, unit: 'μC' },
           ],
           formulas: [
@@ -66,7 +74,7 @@ export function handleElectrostatics(
             { text: '同号电荷相斥，异号电荷相吸——方向由符号决定。', importance: 'basic' as const },
           ],
         }
-      } else {
+      } else if (mode === 1) {
         const q3 = params.q3 ?? 1
         return {
           quantities: [
@@ -84,6 +92,43 @@ export function handleElectrostatics(
             { text: '三个点电荷平衡条件：两大夹小、两同夹异、近小远大。', importance: 'gaokao' as const },
             { text: '中间电荷一定与两侧电荷电性相反。', importance: 'core' as const },
             { text: '中间电荷的电荷量一定小于两侧电荷。', importance: 'core' as const },
+          ],
+        }
+      } else {
+        const mGram = params.mGram ?? 20
+        const stringLenCm = params.stringLenCm ?? 30
+        const mKg = mGram * 1e-3
+        const lenM = stringLenCm * 0.01
+        const pend = calculateCoulombPendulum(
+          k,
+          q1 * 1e-6,
+          q2 * 1e-6,
+          mKg,
+          lenM,
+          GRAVITY,
+        )
+        const hasZero = q1 === 0 || q2 === 0
+        const separated = pend.hasSeparatedEquilibrium && !hasZero
+        const thetaDeg = separated ? (pend.theta * 180) / Math.PI : 0
+        return {
+          quantities: [
+            ...base,
+            { label: 'q₁', value: `${q1 > 0 ? '+' : ''}${q1.toFixed(1)}`, unit: 'μC', highlight: q1 > 0 ? 'positive' as const : q1 < 0 ? 'negative' as const : undefined },
+            { label: 'q₂', value: `${q2 > 0 ? '+' : ''}${q2.toFixed(1)}`, unit: 'μC', highlight: q2 > 0 ? 'positive' as const : q2 < 0 ? 'negative' as const : undefined },
+            { label: '平衡状态', value: separated ? '同号对称张开' : hasZero ? '无库仑力并拢' : '异号吸引无法张开', unit: '', highlight: separated ? 'positive' as const : 'negative' as const },
+            { label: '平衡偏角', symbol: 'θ', value: thetaDeg.toFixed(1), unit: '°', highlight: 'extreme' as const },
+            { label: '两球心间距', symbol: 'r', value: separated ? (pend.r * 100).toFixed(1) : '0.0', unit: 'cm' },
+            { label: '库仑斥力', symbol: 'F', value: separated ? formatScientific(pend.F, 2) : '0.00', unit: 'N' },
+            { label: '摆线拉力', symbol: 'T', value: (separated ? pend.T : mKg * GRAVITY).toFixed(3), unit: 'N' },
+          ],
+          formulas: [
+            { name: '库仑摆静力平衡', latex: '\\tan\\theta = \\frac{F_{\\text{库}}}{mg} = \\frac{k|q_1 q_2|}{4L^2 \\sin^2\\theta \\cdot mg}', level: 'core', condition: '等长细线悬于同一点，同号电荷对称张开平衡时' },
+            { name: '三力矢量三角形', latex: 'T = \\frac{mg}{\\cos\\theta} = \\sqrt{(mg)^2 + F_{\\text{库}}^2}', level: 'important', condition: '细线拉力、重力与库仑力构成闭合直角三角形' },
+            { name: '牛顿第三定律对称性', latex: 'F_{12} = F_{21} \\;\\Longrightarrow\\; \\theta_1 = \\theta_2 \\;(m_1 = m_2)', level: 'derived', condition: '即使 q₁ ≠ q₂，只要两球质量相等，偏角必相等' },
+          ],
+          gaokaoPoints: [
+            { text: '库仑摆对称核心结论：两等重摆球哪怕电荷量大小不同（如 q₁ ≠ q₂），所受库仑斥力仍是等大反向的相互作用力，因此偏离竖直方向的角度严格相等。', importance: 'gaokao' as const },
+            { text: '动态变化分析：可先假定角度 θ 不变比较 F 与 mg tanθ 大小，或用相似三角形 / 正交分解列出 r 与 θ 的耦合单调关系。', importance: 'core' as const },
           ],
         }
       }
@@ -135,19 +180,23 @@ export function handleElectrostatics(
           configName = '等量同种负电荷'
         }
 
-        // 半间距必须与中屏同源：中屏把两点电荷放在相距 6cm 处（见 ElectricField.tsx），
-        // 这里写死 5.25cm 会让合场强在中点差 3 倍、远端差近 4 倍。
-        const d_half = TWO_CHARGE_SEPARATION_M / 2
-        const xp = rTest * 0.01
+        const xpM =
+          params.testXCm !== undefined || params.testYCm !== undefined
+            ? (params.testXCm ?? 0) * 0.01
+            : rTest * 0.01
+        const ypM =
+          params.testXCm !== undefined || params.testYCm !== undefined
+            ? (params.testYCm ?? 0) * 0.01
+            : 0
 
-        const r1 = Math.abs(xp + d_half)
-        const r2 = Math.abs(xp - d_half)
-
-        const E1 = calculateElectricField(COULOMB_CONSTANT, Math.abs(q1 * 1e-6), Math.max(0.005, r1)).E * (q1 >= 0 ? 1 : -1) * (xp >= -d_half ? 1 : -1)
-        const E2 = calculateElectricField(COULOMB_CONSTANT, Math.abs(q2 * 1e-6), Math.max(0.005, r2)).E * (q2 >= 0 ? 1 : -1) * (xp >= d_half ? 1 : -1)
-
-        const Enet = Math.abs(E1 + E2)
-        const Fnet = Enet * Math.abs(qTest * 1e-6)
+        const { E: Enet, F: Fnet } = calculateTwoChargeField2D({
+          q1C: q1 * 1e-6,
+          q2C: q2 * 1e-6,
+          separationM: TWO_CHARGE_SEPARATION_M,
+          xM: xpM,
+          yM: ypM,
+          qTestC: qTest * 1e-6,
+        })
 
         return {
           quantities: [
@@ -177,10 +226,11 @@ export function handleElectrostatics(
       const isAC = params.isAC ?? 0
       const useGravity = params.useGravity ?? 0
       const phi0 = params.phi0 ?? 0
+      const showScreen = params.showScreen ?? 0
 
-      const PLATE_LENGTH = 0.4
-      const PLATE_GAP = 0.2
-      const m = 10 * 1e-6 // 10 mg
+      const PLATE_LENGTH = CHARGE_EFIELD_GEOMETRY.plateLength
+      const PLATE_GAP = CHARGE_EFIELD_GEOMETRY.plateGap
+      const m = CHARGE_EFIELD_GEOMETRY.particleMass
 
       const simResult = calculateChargeInEFieldTrajectory({
         U,
@@ -193,6 +243,8 @@ export function handleElectrostatics(
         isAC: isAC === 1,
         freq,
         phi0,
+        includeDriftScreen: showScreen === 1 && isAC === 0,
+        driftLength: CHARGE_EFIELD_GEOMETRY.driftLength,
       })
 
       const TIME_SCALE = getChargeInEFieldTimeScale(simResult.tEnd, isAC === 1)
@@ -227,20 +279,23 @@ export function handleElectrostatics(
       }
 
       const vTotal = Math.sqrt(curState.vx * curState.vx + curState.vy * curState.vy)
+      const exitRefX = Math.min(curState.x, PLATE_LENGTH)
+      const exitY = pts.reduce((acc, pt) => (pt.x <= PLATE_LENGTH + 1e-6 ? pt.y : acc), 0)
 
       const quantitiesList = [
         ...base,
         { label: '加速度 ay', value: curState.ay.toFixed(2), unit: 'm/s²', color: PHYSICS_COLORS.acceleration, highlight: 'extreme' as const },
-        { label: '偏转距离 y', value: Math.abs(curState.y * 100).toFixed(2), unit: 'cm' },
+        { label: '偏转距离 |y|', value: Math.abs(curState.y * 100).toFixed(2), unit: 'cm' },
         { label: '竖直速度 vy', value: curState.vy.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocityY },
         { label: '末速度 v', value: vTotal.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity },
       ]
 
       if (isAC === 0) {
-        // 直流类平抛模式：加入偏角比验证
+        // 直流类平抛模式：在出极板前用当前 (x,y)，进入无场漂移区后仍按出板点 (L, y_exit) 验证 tanθ/tanα = 2
+        const yForAlpha = curState.x <= PLATE_LENGTH ? curState.y : exitY
         const tanTheta = Math.abs(curState.vy) / curState.vx
-        const tanAlpha = curState.x > 0 ? Math.abs(curState.y) / curState.x : 0
-        const ratio = tanAlpha > 0 ? tanTheta / tanAlpha : 2.00
+        const tanAlpha = exitRefX > 0 ? Math.abs(yForAlpha) / exitRefX : 0
+        const ratio = tanAlpha > 1e-5 ? tanTheta / tanAlpha : 2.00
         quantitiesList.push({
           label: '偏角比 tanθ/tanα',
           value: curState.x > 0.01 && Math.abs(curState.vy) > 0.05 ? ratio.toFixed(2) : '2.00',
@@ -248,6 +303,14 @@ export function handleElectrostatics(
           color: PHYSICS_COLORS.work,
           highlight: 'extreme' as const
         })
+        if (showScreen === 1) {
+          quantitiesList.push({
+            label: '荧光屏总偏转 Y',
+            value: simResult.screenY !== null ? (Math.abs(simResult.screenY) * 100).toFixed(2) : '撞击极板',
+            unit: simResult.screenY !== null ? 'cm' : '',
+            highlight: 'extreme' as const,
+          })
+        }
       } else {
         // 交变方形波模式：加入功与动能增量验证
         const dEk = 0.5 * m * (vTotal * vTotal - v0 * v0) * 1e6 // μJ
@@ -270,22 +333,33 @@ export function handleElectrostatics(
         )
       }
 
+      const formulasList = [
+        {
+          name: '类平抛偏转位移（拓展）',
+          latex: 'y = \\frac{1}{2}at^2 = \\frac{q U L^2}{2 m d v_0^2}',
+          level: 'supplementary' as const,
+          condition: '垂直射入恒定匀强偏转电场且未打到极板（忽略重力，由运动分解与牛顿第二定律联立推导）',
+        },
+        {
+          name: '速度偏转角',
+          latex: '\\tan\\theta = \\frac{v_y}{v_0}',
+          level: 'derived' as const,
+          condition: '带电粒子垂直射入恒定匀强偏转电场（忽略重力）',
+        },
+      ]
+
+      if (isAC === 0) {
+        formulasList.push({
+          name: '示波管荧光屏偏转 Y（拓展）',
+          latex: 'Y = \\left(\\frac{L}{2} + L_{\\text{漂}}\\right)\\tan\\theta',
+          level: 'supplementary' as const,
+          condition: '忽略重力时，粒子飞出偏转板后进入无场漂移区做匀速直线运动，速度反向延长线交中轴于 x = L/2 处',
+        })
+      }
+
       return {
         quantities: quantitiesList,
-        formulas: [
-          {
-            name: '类平抛偏转位移（拓展）',
-            latex: 'y = \\frac{1}{2}at^2 = \\frac{q U l^2}{2 m d v_0^2}',
-            level: 'supplementary',
-            condition: '垂直射入恒定匀强偏转电场且未打到极板（忽略重力，由运动分解与牛顿第二定律联立推导）',
-          },
-          {
-            name: '速度偏转角',
-            latex: '\\tan\\theta = \\frac{v_y}{v_0}',
-            level: 'derived',
-            condition: '带电粒子垂直射入恒定匀强偏转电场（忽略重力）',
-          }
-        ],
+        formulas: formulasList,
         gaokaoPoints: [
           {
             text: '运动的合成与分解：平抛/类平抛运动是将复杂的曲线运动分解为水平方向的匀速直线运动和竖直方向的变速运动。',

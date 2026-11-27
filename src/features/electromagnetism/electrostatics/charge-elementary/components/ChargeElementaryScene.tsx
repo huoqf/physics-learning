@@ -793,7 +793,7 @@ export function ChargeElementaryScene({
       <g>
         {/* 测试引线（虚线连至 B 端） */}
         <path
-          d={`M ${ch.method === 0 ? 470 : ch.method === 1 ? ballBCx + 36 : condBX + condW} 310 L 575 310 L 575 235 L 654 235`}
+          d={`M ${ch.method === 0 ? (ch.step === 1 ? 410 : 470) : ch.method === 1 ? ballBCx + 36 : condBX + condW} 310 L 575 310 L 575 235 L 654 235`}
           fill="none"
           stroke={CANVAS_COLORS.axis}
           strokeWidth={1.5}

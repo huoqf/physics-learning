@@ -10,6 +10,7 @@ export interface UseElectrostaticShieldingPhysicsOptions {
   isGrounded?: number
   tipRadius?: number
   showFieldLines?: number
+  shieldType?: number
 }
 
 export interface ElectrostaticShieldingPhysicsResult {
@@ -23,6 +24,7 @@ export function useElectrostaticShieldingPhysics({
   mode,
   isGrounded,
   tipRadius,
+  shieldType,
 }: UseElectrostaticShieldingPhysicsOptions): ElectrostaticShieldingPhysicsResult {
   return useMemo(() => {
     const shielding = calculateElectrostaticShielding({
@@ -30,6 +32,7 @@ export function useElectrostaticShieldingPhysics({
       mode,
       isGrounded,
       tipRadius,
+      shieldType,
     })
 
     // 生成 7 条横穿场景的基准 Y 偏移
@@ -39,5 +42,5 @@ export function useElectrostaticShieldingPhysics({
       shielding,
       fieldLineOffsets,
     }
-  }, [E0, mode, isGrounded, tipRadius])
+  }, [E0, mode, isGrounded, tipRadius, shieldType])
 }

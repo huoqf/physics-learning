@@ -1,20 +1,19 @@
-import { VectorArrow } from '@/components/Physics'
+import { VectorArrow, EnergyBars } from '@/components/Physics'
 import { AnimationSvgCanvas } from '@/components/Layout'
+import { useAnimationViewport } from '@/hooks'
 import { useViewportPointer } from '@/utils'
 import React, { useRef, useState, useCallback } from 'react'
 import { PHYSICS_COLORS, EM_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { radius } from '@/theme/radius'
-import { shadow } from '@/theme/shadow'
-
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
 import type { ElectricPotentialPhysicsResult, PathPoint } from './hooks/useElectricPotentialPhysics'
-import { X_A, Y_A, X_Q, Y_Q, X_B, Y_B } from './hooks/useElectricPotentialPhysics'
+import {
+  X_A, Y_A, X_Q, Y_Q, X_B, Y_B,
+  POTENTIAL_DESIGN_W, POTENTIAL_DESIGN_H,
+} from './hooks/useElectricPotentialPhysics'
 
 interface Props {
-  w: number
-  hAnim: number
-  vp: { tx: number; ty: number; scale: number }
   physics: ElectricPotentialPhysicsResult
   drawMode: number
   isPlaying: boolean
@@ -23,29 +22,9 @@ interface Props {
   handPath: PathPoint[]
   handPathD: string
   onHandPathChange: (path: PathPoint[]) => void
-  font: (v: number) => number
-}
-
-/** 设计坐标 → 物理坐标（反转 toScenePixel + viewport transform） */
-function designToPhysics(
-  dx: number, dy: number,
-  w: number, hAnim: number,
-  vp: { tx: number; ty: number; scale: number }
-): { xp: number; yp: number } {
-  const sceneCx = dx * vp.scale + vp.tx
-  const sceneCy = dy * vp.scale + vp.ty
-  const scaleX = w / 7.0
-  const scaleY = hAnim / 3.5
-  return {
-    xp: sceneCx / scaleX,
-    yp: (hAnim - sceneCy) / scaleY,
-  }
 }
 
 export function ElectricPotentialAnimScene({
-  w,
-  hAnim,
-  vp,
   physics,
   drawMode,
   isPlaying,
@@ -54,7 +33,6 @@ export function ElectricPotentialAnimScene({
   handPath,
   handPathD,
   onHandPathChange,
-  font,
 }: Props) {
   const {
     posA,
@@ -65,13 +43,17 @@ export function ElectricPotentialAnimScene({
     eFieldVectors,
     hoverIndicator,
     particleForceArrow,
+    designToPhysics,
   } = physics
 
-  const containerRef = useRef<HTMLDivElement>(null)
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
+    preset: CANVAS_PRESETS.splitV,
+  })
+  const { font } = canvasSize
+
   const svgRef = useRef<SVGSVGElement>(null)
   const getSvgPoint = useViewportPointer(svgRef)
 
-  // 手绘路径交互状态
   const [localDrawing, setLocalDrawing] = useState(false)
   const [localHandPath, setLocalHandPath] = useState<PathPoint[]>([])
 
@@ -79,9 +61,11 @@ export function ElectricPotentialAnimScene({
     (clientX: number, clientY: number) => {
       const pt = getSvgPoint(clientX, clientY)
       if (!pt) return null
-      return designToPhysics(pt.x, pt.y, w, hAnim, vp)
+      const dx = (pt.x - vp.tx) / vp.scale
+      const dy = (pt.y - vp.ty) / vp.scale
+      return designToPhysics(dx, dy)
     },
-    [getSvgPoint, w, hAnim, vp]
+    [getSvgPoint, vp.tx, vp.ty, vp.scale, designToPhysics]
   )
 
   const handleMouseDown = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
@@ -127,10 +111,8 @@ export function ElectricPotentialAnimScene({
     onHandPathChange(completedPath)
   }, [localDrawing, localHandPath, onHandPathChange])
 
-  // 使用父级传入的 handPath（直线模式或已完成的手绘路径）
   const activeHandPath = localDrawing ? localHandPath : handPath
 
-  // 计算手绘路径的 SVG Path D
   const activeHandPathD = activeHandPath.length >= 2
     ? activeHandPath
         .map((p, idx) => {
@@ -140,44 +122,41 @@ export function ElectricPotentialAnimScene({
         .join(' ')
     : handPathD
 
+  const groundY = POTENTIAL_DESIGN_H - 18
+
   return (
-    <div className="w-full flex-1 relative bg-white border-t border-neutral-100">
+    <div className="w-full flex-1 min-h-0 relative bg-white border-t border-neutral-100">
       <AnimationSvgCanvas
         containerRef={containerRef}
-        transform={`translate(${vp.tx} ${vp.ty}) scale(${vp.scale})`}
+        transform={vp.transform}
         svgRef={svgRef}
         className={drawMode === 1 && !isPlaying ? 'cursor-crosshair' : 'cursor-default'}
         onMouseDown={handleMouseDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
-        {/* 定义箭头和渐变 */}
         <defs>
-          {/* 接地符号 Marker，电路符号非物理矢量，不适用铁律 1d */}
-          <marker id="ground-symbol" viewBox="0 0 10 10" refX="5" refY="0" markerWidth="10" markerHeight="10" orient="auto">
-            <line x1={5} y1={0} x2={5} y2={6} stroke={CANVAS_COLORS.trackHistory} strokeWidth={1.5} />
-            <line x1={1} y1={6} x2={9} y2={6} stroke={CANVAS_COLORS.trackHistory} strokeWidth={1.5} />
-            <line x1={2.5} y1={8} x2={7.5} y2={8} stroke={CANVAS_COLORS.trackHistory} strokeWidth={1.5} />
-            <line x1={4} y1={10} x2={6} y2={10} stroke={CANVAS_COLORS.trackHistory} strokeWidth={1.5} />
-          </marker>
-          {/* 场源正电荷光晕渐变 */}
           <radialGradient id="source-glow" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor={PHYSICS_COLORS.positiveCharge} stopOpacity="0.22" />
             <stop offset="100%" stopColor={PHYSICS_COLORS.positiveCharge} stopOpacity="0" />
           </radialGradient>
         </defs>
 
-        {/* 1. 地面 0V 刻画 (地线) — designY=0 是动画区域底部 */}
+        {/* 1. 底部大地 0V 参考线及标准接地符号 */}
         <line
           x1={0}
-          y1={0}
-          x2={w}
-          y2={0}
+          y1={groundY}
+          x2={POTENTIAL_DESIGN_W}
+          y2={groundY}
           stroke={CANVAS_COLORS.axis}
-          strokeWidth={3}
+          strokeWidth={2.5}
         />
-        {/* 接地引脚符号 */}
-        <rect x={w / 2 - 2} y={-1} width={4} height={1} fill="none" markerEnd="url(#ground-symbol)" opacity={0.65} />
+        <g opacity={0.75}>
+          <line x1={POTENTIAL_DESIGN_W / 2} y1={groundY} x2={POTENTIAL_DESIGN_W / 2} y2={groundY + 7} stroke={CANVAS_COLORS.trackHistory} strokeWidth={1.8} />
+          <line x1={POTENTIAL_DESIGN_W / 2 - 11} y1={groundY + 7} x2={POTENTIAL_DESIGN_W / 2 + 11} y2={groundY + 7} stroke={CANVAS_COLORS.trackHistory} strokeWidth={1.8} />
+          <line x1={POTENTIAL_DESIGN_W / 2 - 7} y1={groundY + 11} x2={POTENTIAL_DESIGN_W / 2 + 7} y2={groundY + 11} stroke={CANVAS_COLORS.trackHistory} strokeWidth={1.5} />
+          <line x1={POTENTIAL_DESIGN_W / 2 - 3} y1={groundY + 15} x2={POTENTIAL_DESIGN_W / 2 + 3} y2={groundY + 15} stroke={CANVAS_COLORS.trackHistory} strokeWidth={1.2} />
+        </g>
 
         {/* 2. 背景非匀强矢量电场箭头网格 */}
         <g opacity={0.85}>
@@ -227,7 +206,7 @@ export function ElectricPotentialAnimScene({
           cx={posA.cx}
           cy={posA.cy}
           r={12}
-          fill="white"
+          fill={CANVAS_COLORS.white}
           stroke={drawMode === 1 && !isPlaying ? EM_COLORS.electricPotential : colors.neutral[400]}
           strokeWidth={1.8}
           style={{ cursor: drawMode === 1 && !isPlaying ? 'crosshair' : 'default' }}
@@ -245,7 +224,7 @@ export function ElectricPotentialAnimScene({
         </text>
 
         {/* B 锚点 */}
-        <circle cx={posB.cx} cy={posB.cy} r={12} fill="white" stroke={colors.neutral[400]} strokeWidth={1.5} />
+        <circle cx={posB.cx} cy={posB.cy} r={12} fill={CANVAS_COLORS.white} stroke={colors.neutral[400]} strokeWidth={1.5} />
         <circle cx={posB.cx} cy={posB.cy} r={4} fill={colors.neutral[500]} />
         <text x={posB.cx} y={posB.cy + 24} fontSize={font(10.5)} fontWeight="black" fill={colors.neutral[600]} textAnchor="middle">
           B (终点)
@@ -253,8 +232,8 @@ export function ElectricPotentialAnimScene({
 
         {/* 4. 场源正电荷 */}
         <circle cx={posQ.cx} cy={posQ.cy} r={45} fill="url(#source-glow)" />
-        <circle cx={posQ.cx} cy={posQ.cy} r={18} fill={PHYSICS_COLORS.positiveCharge} stroke="white" strokeWidth={1.8} className="drop-shadow-md" />
-        <text x={posQ.cx} y={posQ.cy} fontSize={font(16)} fontWeight="bold" fill="white" textAnchor="middle" dominantBaseline="middle">
+        <circle cx={posQ.cx} cy={posQ.cy} r={18} fill={PHYSICS_COLORS.positiveCharge} stroke={CANVAS_COLORS.white} strokeWidth={1.8} className="drop-shadow-md" />
+        <text x={posQ.cx} y={posQ.cy} fontSize={font(16)} fontWeight="bold" fill={CANVAS_COLORS.white} textAnchor="middle" dominantBaseline="middle">
           +Q
         </text>
         <text x={posQ.cx} y={posQ.cy - 24} fontSize={font(9.5)} fontWeight="bold" fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
@@ -302,14 +281,14 @@ export function ElectricPotentialAnimScene({
           </g>
         )}
 
-        {/* 6. Hover 图像时，在动画直线上显示的高亮黄色场强矢量 */}
+        {/* 6. Hover 图像时，在动画直线上显示的高亮合场强矢量 E */}
         {!isPlaying && (
           <g>
             <line
               x1={hoverIndicator.cx}
               y1={0}
               x2={hoverIndicator.cx}
-              y2={hAnim}
+              y2={POTENTIAL_DESIGN_H}
               stroke={PHYSICS_COLORS.tangentLine}
               strokeWidth={1}
               strokeDasharray="2,4"
@@ -332,7 +311,7 @@ export function ElectricPotentialAnimScene({
               fill={PHYSICS_COLORS.electricField}
               textAnchor="middle"
             >
-              Eₓ
+              E
             </text>
             <circle cx={hoverIndicator.cx} cy={hoverIndicator.cy} r={4} fill={PHYSICS_COLORS.electricField} />
           </g>
@@ -377,13 +356,13 @@ export function ElectricPotentialAnimScene({
               opacity={0.8}
               className="animate-[spin_8s_linear_infinite]"
             />
-            <circle cx={particleCanvasPos.cx} cy={particleCanvasPos.cy} r={10} fill="white" opacity={0.85} />
+            <circle cx={particleCanvasPos.cx} cy={particleCanvasPos.cy} r={10} fill={CANVAS_COLORS.white} opacity={0.85} />
             <circle
               cx={particleCanvasPos.cx}
               cy={particleCanvasPos.cy}
               r={8.5}
-              fill={qProbe >= 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
-              stroke="white"
+              fill={qProbe > 0 ? PHYSICS_COLORS.positiveCharge : qProbe < 0 ? PHYSICS_COLORS.negativeCharge : colors.neutral[400]}
+              stroke={CANVAS_COLORS.white}
               strokeWidth={1.2}
               className="drop-shadow-md"
             />
@@ -392,11 +371,11 @@ export function ElectricPotentialAnimScene({
               y={particleCanvasPos.cy + 0.2}
               fontSize={font(12)}
               fontWeight="black"
-              fill="white"
+              fill={CANVAS_COLORS.white}
               textAnchor="middle"
               dominantBaseline="middle"
             >
-              {qProbe >= 0 ? '+' : '−'}
+              {qProbe > 0 ? '+' : qProbe < 0 ? '−' : '0'}
             </text>
             <text
               x={particleCanvasPos.cx}
@@ -406,53 +385,34 @@ export function ElectricPotentialAnimScene({
               fill={PHYSICS_COLORS.labelText}
               textAnchor="middle"
             >
-              试探电荷 ({qProbe >= 0 ? '+' : ''}{qProbe.toFixed(1)}μC)
+              试探电荷 ({qProbe > 0 ? '+' : ''}{qProbe.toFixed(1)}μC)
             </text>
           </g>
         )}
       </AnimationSvgCanvas>
 
-      {/* 玻璃拟态卡片：实时能量堆栈槽 */}
-      <div
-        className="absolute right-4 bottom-4 z-10 bg-white/80 backdrop-blur-md border border-neutral-200/50 rounded-xl p-3 flex flex-col items-center select-none"
-        style={{
-          boxShadow: shadow.md,
-          borderRadius: radius.lg,
-          width: '150px',
-        }}
-      >
-        <span className="font-bold text-neutral-500 mb-2.5" style={{ fontSize: font(10) }}>实时能量变化 (守恒)</span>
-        
-        <div className="h-28 flex justify-around items-end w-full relative px-2">
-          <div className="absolute inset-x-0 top-0 border-t border-dashed border-neutral-200 flex justify-between text-neutral-300 font-mono pointer-events-none" style={{ fontSize: font(7.5) }}>
-            <span>总能 E</span>
-          </div>
-          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t border-dashed border-neutral-200 flex justify-between text-neutral-300 font-mono pointer-events-none" style={{ fontSize: font(7.5) }}>
-            <span>50%</span>
-          </div>
-
-          <div className="flex flex-col items-center h-full justify-end w-10">
-            <div className="w-4.5 h-full bg-neutral-100/50 border border-neutral-200/30 rounded-full flex items-end overflow-hidden">
-              <div
-                className="w-full rounded-full transition-all duration-150 ease-out"
-                style={{ height: `${isPlaying || runProgress > 0 ? particlePhysics.pctEk : 50}%`, backgroundColor: PHYSICS_COLORS.kineticEnergy }}
-              />
-            </div>
-            <span className="font-bold mt-1 font-mono" style={{ fontSize: font(10), color: PHYSICS_COLORS.kineticEnergy }}>Ek</span>
-            <span className="font-medium" style={{ fontSize: font(8), color: PHYSICS_COLORS.kineticEnergy }}>动能</span>
-          </div>
-
-          <div className="flex flex-col items-center h-full justify-end w-10">
-            <div className="w-4.5 h-full bg-neutral-100/50 border border-neutral-200/30 rounded-full flex items-end overflow-hidden">
-              <div
-                className="w-full rounded-full transition-all duration-150 ease-out"
-                style={{ height: `${isPlaying || runProgress > 0 ? particlePhysics.pctEp : 50}%`, backgroundColor: PHYSICS_COLORS.potentialEnergy }}
-              />
-            </div>
-            <span className="font-bold mt-1 font-mono" style={{ fontSize: font(10), color: PHYSICS_COLORS.potentialEnergy }}>Ep</span>
-            <span className="font-medium" style={{ fontSize: font(8), color: PHYSICS_COLORS.potentialEnergy }}>电势能</span>
-          </div>
-        </div>
+      {/* 复用通用能量分配组件 */}
+      <div className="absolute right-4 bottom-4 z-10" style={{ width: '150px' }}>
+        <EnergyBars
+          items={[
+            {
+              key: 'Ek',
+              label: 'Ek\n动能',
+              value: isPlaying || runProgress > 0 ? particlePhysics.pctEk : 50,
+              color: PHYSICS_COLORS.kineticEnergy,
+            },
+            {
+              key: 'Ep',
+              label: 'Ep\n电势能',
+              value: isPlaying || runProgress > 0 ? particlePhysics.pctEp : 50,
+              color: PHYSICS_COLORS.potentialEnergy,
+            },
+          ]}
+          normalizeMax={100}
+          title="实时能量变化 (守恒)"
+          compact
+          font={font}
+        />
       </div>
 
       {/* 标题与操作提示 */}

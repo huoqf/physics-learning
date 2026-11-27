@@ -20,6 +20,7 @@ export const PLATE_LENGTH = CHARGE_EFIELD_GEOMETRY.plateLength // m
 export const PLATE_GAP = CHARGE_EFIELD_GEOMETRY.plateGap // m
 export const HALF_GAP = PLATE_GAP / 2
 export const PARTICLE_MASS = CHARGE_EFIELD_GEOMETRY.particleMass // 10 mg (10e-6 kg)
+export const DRIFT_LENGTH = CHARGE_EFIELD_GEOMETRY.driftLength // 无场漂移距离 m
 
 // ── SVG 几何常量 ──
 export const TERMINAL_CORE_RADIUS = 4   // 发射口圆半径
@@ -52,6 +53,7 @@ export interface ChargeInEFieldPhysicsParams {
   isAC: number
   useGravity: number
   phi0: number
+  showScreen: number
   time: number
   showVectors: boolean
   showGrid: boolean
@@ -65,12 +67,15 @@ export interface ChargeInEFieldPhysicsParams {
 export interface ChargeInEFieldPhysicsResult {
   simResult: {
     tEnd: number
+    plateExitTime: number
+    screenY: number | null
     points: Array<{
       t: number; x: number; y: number
       vx: number; vy: number
       ax: number; ay: number
     }>
     hitType: string
+    hitsPlate: boolean
   }
   tSim: number
   ended: boolean
@@ -80,9 +85,14 @@ export interface ChargeInEFieldPhysicsResult {
     ax: number; ay: number
   }
   // 场景几何
+  hasScreen: boolean
+  inField: boolean
   midY: number
   scale: number
   startX: number
+  plateEndX: number
+  screenX: number
+  screenSpotY: number | null
   topPlateY: number
   bottomPlateY: number
   cx: number
@@ -109,6 +119,10 @@ export interface ChargeInEFieldPhysicsResult {
     xInter: number
     cInterX: number
     pxYStart: number
+    startLineX: number
+    startLineY: number
+    exitX: number
+    exitY: number
     theta: number
     alpha: number
   } | null
@@ -127,9 +141,11 @@ export function useChargeInEFieldPhysics(
   p: ChargeInEFieldPhysicsParams,
 ): ChargeInEFieldPhysicsResult {
   const {
-    U, v0, q, freq, isAC, useGravity, phi0,
+    U, v0, q, freq, isAC, useGravity, phi0, showScreen,
     time, showVectors, showGrid, vp, setIsPlaying,
   } = p
+
+  const hasScreen = showScreen === 1 && isAC === 0
 
   // 1. 高精度仿真
   const simResult = useMemo(() => {
@@ -144,8 +160,10 @@ export function useChargeInEFieldPhysics(
       isAC: isAC === 1,
       freq,
       phi0,
+      includeDriftScreen: hasScreen,
+      driftLength: DRIFT_LENGTH,
     })
-  }, [U, v0, q, freq, isAC, useGravity, phi0])
+  }, [U, v0, q, freq, isAC, useGravity, phi0, hasScreen])
 
   const { tEnd, points } = simResult
 
@@ -188,10 +206,14 @@ export function useChargeInEFieldPhysics(
     }
   }, [tSim, points, v0])
 
-  // 3. 固定设计尺寸
+  // 3. 固定设计尺寸（开启荧光屏时适当缩窄比例以容纳无场漂移区 L_drift）
   const midY = 162.5
-  const scale = 1300 // 1m = 1300px
-  const startX = 100
+  const scale = hasScreen ? 920 : 1300
+  const startX = hasScreen ? 76 : 100
+  const plateEndX = startX + PLATE_LENGTH * scale
+  const screenX = startX + (PLATE_LENGTH + DRIFT_LENGTH) * scale
+  const screenSpotY = simResult.screenY !== null ? midY + simResult.screenY * scale : null
+  const inField = currentState.x <= PLATE_LENGTH + 1e-6
 
   const topPlateY = midY - HALF_GAP * scale
   const bottomPlateY = midY + HALF_GAP * scale
@@ -218,11 +240,11 @@ export function useChargeInEFieldPhysics(
       pts.push({ x: startX + pt.x * scale, y: midY + pt.y * scale })
     }
     return pts
-  }, [points, tSim])
+  }, [points, tSim, startX, scale])
 
   const predictedPoints = useMemo(() => {
     return points.map((pt) => ({ x: startX + pt.x * scale, y: midY + pt.y * scale }))
-  }, [points])
+  }, [points, startX, scale])
 
   const tailPoints = useMemo(() => {
     const tailLen = Math.min(8, historyPoints.length)
@@ -247,20 +269,29 @@ export function useChargeInEFieldPhysics(
     },
   })
 
-  // 7. 速度分解
+  // 7. 速度分解（与限幅后的矢量箭头尖端严格对齐）
   const refMag = Math.max(v0, 10)
   const velocityScaleFactor = sceneScale.maxVectorLength / refMag
-  const vx_px = currentState.vx * velocityScaleFactor
-  const vy_px = currentState.vy * velocityScaleFactor
 
   const vMag = Math.hypot(currentState.vx, currentState.vy)
   const totalPxLen = calculateVectorPixelLength(vMag, 'velocity', sceneScale.maxVectorLength, refMag)
   const vxPxLen = vMag > 0 ? totalPxLen * (Math.abs(currentState.vx) / vMag) : 0
   const vyPxLen = vMag > 0 ? totalPxLen * (Math.abs(currentState.vy) / vMag) : 0
+  const vx_px = vMag > 0 ? totalPxLen * (currentState.vx / vMag) : 0
+  const vy_px = vMag > 0 ? totalPxLen * (currentState.vy / vMag) : 0
 
-  // 8. 速度反向延长线、偏角计算
+  // 8. 速度反向延长线、偏角计算（进入漂移区后 α 仍取极板出口位移偏角以保持 tanθ = 2tanα）
+  const exitPoint = useMemo(() => {
+    let lastInPlate = points[0]
+    for (const pt of points) {
+      if (pt.x <= PLATE_LENGTH + 1e-6) lastInPlate = pt
+      else break
+    }
+    return lastInPlate ?? { x: currentState.x, y: currentState.y }
+  }, [points, currentState.x, currentState.y])
+
   const tangentData = useMemo(() => {
-    if (isAC === 1 || useGravity === 1 || !showVectors) return null
+    if (isAC === 1 || !showVectors) return null
 
     const vx = currentState.vx
     const vy = currentState.vy
@@ -275,50 +306,69 @@ export function useChargeInEFieldPhysics(
 
     const yStart = y - k * x
     const pxYStart = midY + yStart * scale
+    const inView = pxYStart >= 0 && pxYStart <= 325
+    const startLineX = inView ? startX : cInterX
+    const startLineY = inView ? pxYStart : midY
+
+    const refX = inField ? x : exitPoint.x
+    const refY = inField ? y : exitPoint.y
+    const exitX = startX + refX * scale
+    const exitY = midY + refY * scale
 
     const theta = Math.atan2(vy, vx)
-    const alpha = Math.atan2(y, x)
+    const alpha = Math.atan2(refY, refX)
 
     return {
       xInter,
       cInterX,
       pxYStart,
+      startLineX,
+      startLineY,
+      exitX,
+      exitY,
       theta,
       alpha,
     }
-  }, [currentState, isAC, useGravity, showVectors])
+  }, [currentState, isAC, showVectors, startX, scale, inField, exitPoint])
 
   // 9. 网格线纯数据（零 JSX）
   const gridLineSpecs = useMemo(() => {
     if (!showGrid) return []
     const lines: ChargeInEFieldPhysicsResult['gridLineSpecs'] = []
+    const stepX = (plateEndX - startX) / 8
+    const stepY = (bottomPlateY - topPlateY) / 4
     for (let i = 0; i <= 8; i++) {
-      const gx = startX + i * 65
+      const gx = startX + i * stepX
       lines.push({ key: `gx-${i}`, x1: gx, y1: topPlateY, x2: gx, y2: bottomPlateY })
     }
     for (let i = 0; i <= 4; i++) {
-      const gy = topPlateY + i * 65
-      lines.push({ key: `gy-${i}`, x1: startX, y1: gy, x2: startX + 520, y2: gy })
+      const gy = topPlateY + i * stepY
+      lines.push({ key: `gy-${i}`, x1: startX, y1: gy, x2: plateEndX, y2: gy })
     }
     lines.push({
       key: 'mid',
       x1: startX,
       y1: midY,
-      x2: 840,
+      x2: hasScreen ? screenX + 16 : 840,
       y2: midY,
       isCenterRef: true,
     })
     return lines
-  }, [showGrid, topPlateY, bottomPlateY])
+  }, [showGrid, topPlateY, bottomPlateY, plateEndX, startX, hasScreen, screenX])
 
   return {
     simResult,
     tSim,
     ended,
     currentState,
+    hasScreen,
+    inField,
     midY,
     scale,
     startX,
+    plateEndX,
+    screenX,
+    screenSpotY,
     topPlateY,
     bottomPlateY,
     cx,

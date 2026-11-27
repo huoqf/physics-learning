@@ -5,8 +5,12 @@
  * 组件 JSX 零物理公式。
  */
 import { useMemo } from 'react'
+import {
+  COULOMB_CONSTANT,
+  FIELD_LINES_MIN_POTENTIAL_DIST_M,
+  computePointChargeEquipotentialRadii,
+} from '@/physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
-import { COULOMB_CONSTANT } from '@/physics/constants'
 
 // ── 物理与绘图常量 ──
 export const CHARGE_RADIUS = 22
@@ -29,7 +33,7 @@ function electricField(charges: Charge[], px: number, py: number, mPerPx: number
     const dx = px - c.x
     const dy = py - c.y
     const rPx = Math.sqrt(dx * dx + dy * dy)
-    const rM = Math.max(0.02, rPx * mPerPx) // 防止除零，限制最小物理距离 2cm
+    const rM = Math.max(0.02, rPx * mPerPx)
     const qSI = c.q * 1e-6
     const mag = (COULOMB_CONSTANT * qSI) / (rM * rM)
     ex += mag * (dx / rPx)
@@ -45,7 +49,7 @@ function potential(charges: Charge[], px: number, py: number, mPerPx: number) {
     const dx = px - c.x
     const dy = py - c.y
     const rPx = Math.sqrt(dx * dx + dy * dy)
-    const rM = Math.max(0.04, rPx * mPerPx) // 限制最小距离 4cm
+    const rM = Math.max(FIELD_LINES_MIN_POTENTIAL_DIST_M, rPx * mPerPx)
     v += (COULOMB_CONSTANT * c.q * 1e-6) / rM
   }
   return v
@@ -60,45 +64,42 @@ function traceFieldLine(
   w: number,
   h: number,
   mPerPx: number
-): { points: [number, number][]; arrowPos: [number, number, number] | null } {
+): { points: [number, number][]; arrowPos: [number, number, number] | null; hitChargeIdx: number } {
   const points: [number, number][] = [[sx, sy]]
   let x = sx
   let y = sy
-  const stepSize = 8 // 追踪步长（像素）
+  const stepSize = 8
   const maxSteps = 150
+  let hitChargeIdx = -1
 
   for (let i = 0; i < maxSteps; i++) {
     const { ex, ey } = electricField(charges, x, y, mPerPx)
     const mag = Math.sqrt(ex * ex + ey * ey)
     if (mag < 1e-3) break
 
-    // 沿场强方向步进
     const dx = (direction * ex) / mag
     const dy = (direction * ey) / mag
     x += dx * stepSize
     y += dy * stepSize
 
-    // 越界退出
     if (x < -50 || x > w + 50 || y < -50 || y > h + 50) {
       points.push([x, y])
       break
     }
 
-    // 靠近电荷退出
-    let nearCharge = false
-    for (const c of charges) {
+    for (let idx = 0; idx < charges.length; idx++) {
+      const c = charges[idx]
       const d = Math.sqrt((x - c.x) ** 2 + (y - c.y) ** 2)
       if (d < CHARGE_RADIUS * 0.9) {
-        nearCharge = true
+        hitChargeIdx = idx
         break
       }
     }
-    if (nearCharge) break
+    if (hitChargeIdx >= 0) break
 
     points.push([x, y])
   }
 
-  // 计算中间箭头的绘制位置（大约在路径 45% 处）
   let arrowPos: [number, number, number] | null = null
   if (points.length > 5) {
     const midIdx = Math.floor(points.length * 0.45)
@@ -110,48 +111,35 @@ function traceFieldLine(
     }
   }
 
-  return { points, arrowPos }
+  return { points, arrowPos, hitChargeIdx }
 }
 
 // ── Hook 参数与返回值 ──
 
 export interface FieldLinesPhysicsParams {
-  /** 拓扑模式: 0=单正, 1=单负, 2=等量异种, 3=等量同种 */
   topology: number
-  /** 场源电荷 μC */
   qSource: number
-  /** 是否显示电场线 */
   showFieldLines: boolean
-  /** 是否显示等势线 */
   showEquipotentials: boolean
-  /** 探针设计坐标 x */
   probeX: number
-  /** 探针设计坐标 y */
   probeY: number
-  /** 画布设计宽度 */
   w: number
-  /** 画布设计高度 */
   h: number
 }
 
 export interface FieldLinesPhysicsResult {
-  /** 场源电荷配置（设计坐标） */
   charges: Charge[]
-  /** 电场线路径数据 */
   fieldLinesPaths: { d: string; arrow: [number, number, number] | null; color: string }[]
-  /** 等势线数据 */
   equipotentialPaths:
     | { type: 'circle'; data: { cx: number; cy: number; r: number; opacity: number }[] }
     | { type: 'path'; data: { d: string; opacity: number }[] }
     | { type: 'none'; data: never[] }
-  /** 探针物理计算结果 */
   probePhysics: {
     forceArrow: [number, number] | null
     phiCurrent: number
     pctEp: number
     pctEk: number
   }
-  /** 物理距离/像素转换系数 (m/px) */
   mPerPx: number
 }
 
@@ -160,8 +148,8 @@ export function useFieldLinesPhysics(p: FieldLinesPhysicsParams): FieldLinesPhys
 
   const cx = w / 2
   const cy = h / 2
-  const separation = 160 // 设计稿中固定的极板/电荷间距像素值
-  const mPerPx = 0.8 / separation // 保持物理间距 0.8m
+  const separation = 160
+  const mPerPx = 0.8 / separation
 
   // 1. 根据拓扑确定场源电荷配置 (使用设计坐标)
   const charges = useMemo<Charge[]>(() => {
@@ -188,7 +176,7 @@ export function useFieldLinesPhysics(p: FieldLinesPhysicsParams): FieldLinesPhys
 
     const paths: { d: string; arrow: [number, number, number] | null; color: string }[] = []
 
-    charges.forEach((ch) => {
+    charges.forEach((ch, chIdx) => {
       const isPos = ch.q > 0
       const emitAngleCount = 16
       const startRadius = CHARGE_RADIUS + 3
@@ -200,8 +188,13 @@ export function useFieldLinesPhysics(p: FieldLinesPhysicsParams): FieldLinesPhys
         const sy = ch.y + Math.sin(angle) * startRadius
 
         const direction = isPos ? 1 : -1
-        let { points, arrowPos } = traceFieldLine(charges, sx, sy, direction as 1 | -1, w, h, mPerPx)
+        let { points, arrowPos, hitChargeIdx } = traceFieldLine(charges, sx, sy, direction as 1 | -1, w, h, mPerPx)
         if (points.length < 2) continue
+
+        // 等量异种电荷：从 +Q 已经追踪过连到 -Q 的场线，避免从 -Q 再逆向重画一遍产生双箭头
+        if (!isPos && topology === 2 && hitChargeIdx === 0 && chIdx === 1) {
+          continue
+        }
 
         if (!isPos) {
           points = [...points].reverse()
@@ -225,21 +218,21 @@ export function useFieldLinesPhysics(p: FieldLinesPhysicsParams): FieldLinesPhys
     })
 
     return paths
-  }, [charges, showFieldLines, w, h, mPerPx])
+  }, [charges, showFieldLines, topology, w, h, mPerPx])
 
-  // 3. 计算等势线网络
+  // 3. 计算等势线网络（单电荷采用等电势差 r ∝ 1/φ 规律，呈现「内密外疏」）
   const equipotentialPaths = useMemo(() => {
     if (!showEquipotentials) return { type: 'none' as const, data: [] }
 
     if (topology === 0 || topology === 1) {
-      const paths: { cx: number; cy: number; r: number; opacity: number }[] = []
       const ch = charges[0]
-      const count = 10
-      for (let i = 1; i <= count; i++) {
-        const rPx = 30 + i * 28
-        const opacity = Math.max(0.1, Math.min(0.65, 0.7 - (i / count) * 0.55))
-        paths.push({ cx: ch.x, cy: ch.y, r: rPx, opacity })
-      }
+      const radii = computePointChargeEquipotentialRadii(36, 290, 9)
+      const paths = radii.map((rPx, idx) => ({
+        cx: ch.x,
+        cy: ch.y,
+        r: rPx,
+        opacity: Math.max(0.15, Math.min(0.68, 0.68 - (idx / Math.max(1, radii.length - 1)) * 0.5)),
+      }))
       return { type: 'circle' as const, data: paths }
     }
 
@@ -325,7 +318,7 @@ export function useFieldLinesPhysics(p: FieldLinesPhysicsParams): FieldLinesPhys
     const { ex, ey } = electricField(charges, probeX, probeY, mPerPx)
     const eMag = Math.sqrt(ex * ex + ey * ey)
 
-    const fMag = eMag * PROBE_CHARGE // 单位 N
+    const fMag = eMag * PROBE_CHARGE
     let forceArrow: [number, number] | null = null
 
     if (eMag > 1e-1) {

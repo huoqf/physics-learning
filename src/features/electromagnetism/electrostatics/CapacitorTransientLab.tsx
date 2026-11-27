@@ -17,8 +17,9 @@ const H = 325
 
 const LOOP = { left: 110, right: 545, top: 72, bottom: 238 } as const
 const BATTERY_Y = (LOOP.top + LOOP.bottom) / 2
-const SWITCH_X = 150
+const SWITCH_X = 165
 const SWITCH_LEN = 46
+const DISCHARGE_TAP_Y = LOOP.top + 38
 const RES_X1 = 300
 const RES_X2 = 405
 const CAP_GAP = 16
@@ -88,15 +89,28 @@ export default function CapacitorTransientLab() {
   return (
     <div className="w-full h-full">
       <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
-        {/* ── 主回路导线 ─────────────────────────────────────────── */}
+        {/* ── 主回路导线（单刀双掷拓扑：接1经电源充电，接2绕过电源构成C-R放电闭环） ── */}
         <g>
-          {/* 顶边 */}
-          <line x1={LOOP.left} y1={LOOP.top} x2={LOOP.right} y2={LOOP.top} stroke={wire} strokeWidth={2.5} />
-          {/* 底边 */}
-          <line x1={LOOP.left} y1={LOOP.bottom} x2={LOOP.right} y2={LOOP.bottom} stroke={wire} strokeWidth={2.5} />
-          {/* 左边（电池所在，上下两段） */}
-          <line x1={LOOP.left} y1={LOOP.top} x2={LOOP.left} y2={BATTERY_Y - 22} stroke={wire} strokeWidth={2.5} />
-          <line x1={LOOP.left} y1={BATTERY_Y + 22} x2={LOOP.left} y2={LOOP.bottom} stroke={wire} strokeWidth={2.5} />
+          {/* 充电支路（电源左侧→开关触点1 & 底边左段，放电时变暗隔离） */}
+          <g opacity={isCharge ? 1 : 0.35}>
+            <line x1={LOOP.left} y1={LOOP.top} x2={SWITCH_X} y2={LOOP.top} stroke={wire} strokeWidth={2.5} />
+            <line x1={LOOP.left} y1={LOOP.bottom} x2={SWITCH_X} y2={LOOP.bottom} stroke={wire} strokeWidth={2.5} />
+            <line x1={LOOP.left} y1={LOOP.top} x2={LOOP.left} y2={BATTERY_Y - 22} stroke={wire} strokeWidth={2.5} />
+            <line x1={LOOP.left} y1={BATTERY_Y + 22} x2={LOOP.left} y2={LOOP.bottom} stroke={wire} strokeWidth={2.5} />
+          </g>
+          {/* 放电旁路（触点2到底边，充电时变暗） */}
+          <line
+            x1={SWITCH_X}
+            y1={DISCHARGE_TAP_Y}
+            x2={SWITCH_X}
+            y2={LOOP.bottom}
+            stroke={wire}
+            strokeWidth={2.5}
+            opacity={isCharge ? 0.35 : 1}
+          />
+          {/* 右侧主干（公共端→电阻→电容→底边回流） */}
+          <line x1={SWITCH_X + SWITCH_LEN} y1={LOOP.top} x2={LOOP.right} y2={LOOP.top} stroke={wire} strokeWidth={2.5} />
+          <line x1={SWITCH_X} y1={LOOP.bottom} x2={LOOP.right} y2={LOOP.bottom} stroke={wire} strokeWidth={2.5} />
           {/* 右边（电容器所在） */}
           <line x1={capX} y1={LOOP.top} x2={capX} y2={capPlateY1} stroke={wire} strokeWidth={2.5} />
           <line x1={capX} y1={capPlateY2} x2={capX} y2={LOOP.bottom} stroke={wire} strokeWidth={2.5} />
@@ -119,21 +133,28 @@ export default function CapacitorTransientLab() {
           </text>
         </g>
 
-        {/* ── 开关（充电闭合 / 放电断开） ─────────────────────────── */}
+        {/* ── 单刀双掷开关（接1充电 / 接2放电闭环） ──────────────── */}
         <g>
           <circle cx={SWITCH_X} cy={LOOP.top} r={3.5} fill={wire} />
+          <circle cx={SWITCH_X} cy={DISCHARGE_TAP_Y} r={3.5} fill={wire} />
           <circle cx={SWITCH_X + SWITCH_LEN} cy={LOOP.top} r={3.5} fill={wire} />
           <line
-            x1={SWITCH_X}
+            x1={SWITCH_X + SWITCH_LEN}
             y1={LOOP.top}
-            x2={isCharge ? SWITCH_X + SWITCH_LEN : SWITCH_X + SWITCH_LEN * 0.82}
-            y2={isCharge ? LOOP.top : LOOP.top - 26}
+            x2={SWITCH_X}
+            y2={isCharge ? LOOP.top : DISCHARGE_TAP_Y}
             stroke={wire}
             strokeWidth={2.5}
             strokeLinecap="round"
           />
-          <text x={SWITCH_X + SWITCH_LEN / 2} y={LOOP.top - 34} fontSize={font(11)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
-            {isCharge ? 'S 闭合' : 'S 断开'}
+          <text x={SWITCH_X} y={LOOP.top - 10} fontSize={font(10)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
+            1
+          </text>
+          <text x={SWITCH_X - 10} y={DISCHARGE_TAP_Y + 4} fontSize={font(10)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">
+            2
+          </text>
+          <text x={SWITCH_X + SWITCH_LEN / 2} y={LOOP.top - 26} fontSize={font(11)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
+            {isCharge ? 'S 接 1 (充电)' : 'S 接 2 (放电)'}
           </text>
         </g>
 
@@ -230,8 +251,8 @@ export default function CapacitorTransientLab() {
 
         <text x={LOOP.left} y={H - 14} fontSize={font(11)} fill={PHYSICS_COLORS.labelTextLight}>
           {isCharge
-            ? '开关闭合瞬间 i 最大、u_C = 0；随后 i 按 e^(−t/τ) 衰减，u_C 按 1−e^(−t/τ) 上升，t = 5τ 时基本充满。'
-            : '开关断开后电容器通过 R 放电：u_C 与 i 同时按 e^(−t/τ) 衰减，电阻把 ½CU² 全部转为内能。'}
+            ? '开关 S 接 1 瞬间 i 最大、u_C = 0；随后 i 按 e^(−t/τ) 衰减，u_C 按 1−e^(−t/τ) 上升，t = 5τ 时基本充满。'
+            : '开关 S 接 2 后电容器与 R 构成闭合放电回路：u_C 与 i 同时按 e^(−t/τ) 衰减，电阻把 ½CU² 全部转为内能。'}
         </text>
       </AnimationSvgCanvas>
     </div>

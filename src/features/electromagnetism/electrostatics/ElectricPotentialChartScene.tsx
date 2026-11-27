@@ -1,4 +1,5 @@
 import React, { type RefObject } from 'react'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import type { ElectricPotentialPhysicsResult } from './hooks/useElectricPotentialPhysics'
@@ -6,8 +7,11 @@ import type { ElectricPotentialPhysicsResult } from './hooks/useElectricPotentia
 interface Props {
   w: number
   hChart: number
+  chartContainerRef: RefObject<HTMLDivElement | null>
+  chartTransform: string
   physics: ElectricPotentialPhysicsResult
   isPlaying: boolean
+  runProgress: number
   particlePhysicsPos: { x: number; y: number }
   onPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void
   chartSvgRef: RefObject<SVGSVGElement | null>
@@ -15,10 +19,11 @@ interface Props {
 }
 
 export function ElectricPotentialChartScene({
-  w,
-  hChart,
+  chartContainerRef,
+  chartTransform,
   physics,
   isPlaying,
+  runProgress,
   particlePhysicsPos,
   onPointerMove,
   chartSvgRef,
@@ -34,17 +39,18 @@ export function ElectricPotentialChartScene({
     hoverPhysX,
     hoverPhysics,
     tangentLinePath,
+    particlePhysics,
   } = physics
 
   const xStartPhys = 1.0
   const xEndPhys = 6.0
 
   return (
-    <div className="w-full flex-1 relative border-b border-neutral-200 bg-white">
-      <svg
-        ref={chartSvgRef}
-        width={w}
-        height={hChart}
+    <div className="w-full flex-1 min-h-0 relative border-b border-neutral-200 bg-white">
+      <AnimationSvgCanvas
+        containerRef={chartContainerRef}
+        transform={chartTransform}
+        svgRef={chartSvgRef}
         className="w-full h-full block cursor-ew-resize"
         onPointerMove={onPointerMove}
       >
@@ -134,9 +140,6 @@ export function ElectricPotentialChartScene({
           strokeWidth={1.5}
         />
 
-        {/* 坐标轴标签：X 轴名原来右对齐到右端、只比刻度行低 6px，
-            而末位刻度「6.0」正好落在右端同一位置 → 必然咬合。
-            改为常规做法：轴名居中排在刻度行的下一行。 */}
         <text
           x={chartPadding.left + chartWidth / 2}
           y={chartPadding.top + chartHeight + 30}
@@ -211,10 +214,10 @@ export function ElectricPotentialChartScene({
               {/* 悬浮数值卡片 */}
               <g transform={`translate(${pCut.cx + 12}, ${pCut.cy - 12})`}>
                 <rect
-                  width={110}
+                  width={118}
                   height={38}
                   rx={4}
-                  fill="white"
+                  fill={CANVAS_COLORS.white}
                   stroke={PHYSICS_COLORS.tangentLine}
                   strokeWidth={1}
                   fillOpacity={0.9}
@@ -231,27 +234,26 @@ export function ElectricPotentialChartScene({
           )
         })()}
 
-        {/* 播放过程中粒子的实时 x 位置指示线 */}
-        {isPlaying && (
-          (() => {
-            const pPart = chartPhysToCanvas(particlePhysicsPos.x, hoverPhysics.phi)
-            return (
-              <g>
-                <line
-                  x1={pPart.cx}
-                  y1={chartPadding.top}
-                  x2={pPart.cx}
-                  y2={chartPadding.top + chartHeight}
-                  stroke={PHYSICS_COLORS.kineticEnergy}
-                  strokeWidth={1.5}
-                  strokeDasharray="3,2"
-                />
-                <circle cx={pPart.cx} cy={pPart.cy} r={6} fill={PHYSICS_COLORS.kineticEnergy} stroke="white" strokeWidth={1.5} className="drop-shadow-sm animate-pulse" />
-              </g>
-            )
-          })()
-        )}
-      </svg>
+        {/* 播放或定格时粒子的实时 x 位置与电势指示 */}
+        {(isPlaying || runProgress > 0) && (() => {
+          const clampedX = Math.max(xStartPhys, Math.min(xEndPhys, particlePhysicsPos.x))
+          const pPart = chartPhysToCanvas(clampedX, particlePhysics.phi)
+          return (
+            <g>
+              <line
+                x1={pPart.cx}
+                y1={chartPadding.top}
+                x2={pPart.cx}
+                y2={chartPadding.top + chartHeight}
+                stroke={PHYSICS_COLORS.kineticEnergy}
+                strokeWidth={1.5}
+                strokeDasharray="3,2"
+              />
+              <circle cx={pPart.cx} cy={pPart.cy} r={6} fill={PHYSICS_COLORS.kineticEnergy} stroke={CANVAS_COLORS.white} strokeWidth={1.5} className="drop-shadow-sm animate-pulse" />
+            </g>
+          )
+        })()}
+      </AnimationSvgCanvas>
 
       {/* 标题与操作提示 */}
       <div className="absolute left-4 top-2 pointer-events-none bg-white/80 backdrop-blur-sm px-2 py-1 rounded text-xs flex items-center gap-2 border border-neutral-200/50 shadow-sm">

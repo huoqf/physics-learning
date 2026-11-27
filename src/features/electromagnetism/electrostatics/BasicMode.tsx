@@ -78,17 +78,19 @@ export default function BasicMode({
   // 接触起电动画状态控制（由左屏 controlMeta preset 递增 contactTrigger 触发）
   const [contactStep, setContactStep] = useState<'idle' | 'closing' | 'sharing' | 'opening'>('idle')
   const [contactProgress, setContactProgress] = useState(0)
-  const [, setElapsedTime] = useState(0)
   const duration = 600 // 每个阶段时间 (ms)
   const prevTriggerRef = useRef(contactTrigger)
+  const elapsedRef = useRef(0)
+  const contactStepRef = useRef(contactStep)
+  contactStepRef.current = contactStep
 
   useEffect(() => {
     if (contactTrigger > prevTriggerRef.current) {
       prevTriggerRef.current = contactTrigger
       if (contactStep === 'idle') {
+        elapsedRef.current = 0
         setContactStep('closing')
         setContactProgress(0)
-        setElapsedTime(0)
       }
     } else {
       prevTriggerRef.current = contactTrigger
@@ -96,30 +98,27 @@ export default function BasicMode({
   }, [contactTrigger, contactStep])
 
   useAnimationFrame((dt) => {
-    setElapsedTime((prev) => {
-      const next = prev + dt
-      const progress = Math.min(1, next / duration)
-      setContactProgress(progress)
+    const next = elapsedRef.current + dt
+    const progress = Math.min(1, next / duration)
+    setContactProgress(progress)
 
-      if (next >= duration) {
-        if (contactStep === 'closing') {
-          setContactStep('sharing')
-          // 接触瞬间：计算新电量并写入全局参数
-          const { q1New, q2New } = calculateContactCharges(q1, q2)
-          updateParam('q1', q1New)
-          updateParam('q2', q2New)
-          return 0
-        } else if (contactStep === 'sharing') {
-          setContactStep('opening')
-          return 0
-        } else if (contactStep === 'opening') {
-          setContactStep('idle')
-          setContactProgress(0)
-          return 0
-        }
+    if (next >= duration) {
+      elapsedRef.current = 0
+      const step = contactStepRef.current
+      if (step === 'closing') {
+        setContactStep('sharing')
+        const { q1New, q2New } = calculateContactCharges(q1, q2)
+        updateParam('q1', q1New)
+        updateParam('q2', q2New)
+      } else if (step === 'sharing') {
+        setContactStep('opening')
+      } else if (step === 'opening') {
+        setContactStep('idle')
+        setContactProgress(0)
       }
-      return next
-    })
+    } else {
+      elapsedRef.current = next
+    }
   }, { playing: contactStep !== 'idle' })
 
   const r = dragR
@@ -195,7 +194,8 @@ export default function BasicMode({
     pt.x = e.clientX
     pt.y = e.clientY
     const svgP = pt.matrixTransform(svg.getScreenCTM()!.inverse())
-    const newR = ((svgP.x - x1) / (stageWidth * 0.08))
+    // 两球关于 centerX 对称，右球位置 x2 = centerX + r * scale / 2，故反算需乘 2
+    const newR = (2 * (svgP.x - centerX)) / (stageWidth * 0.08)
     const clampedR = Math.max(1, Math.min(8, newR))
     setDragR(clampedR)
     updateParam('r', clampedR)
@@ -235,7 +235,7 @@ export default function BasicMode({
             </text>
           )}
 
-          {showVectors && contactStep !== 'sharing' && (
+          {showVectors && contactStep !== 'sharing' && F > 1e-12 && (
             <g>
               <PhysicsVectorArrow
                 originDesign={{ x: x1, y: centerY }}
@@ -260,7 +260,7 @@ export default function BasicMode({
 
           {/* 左球 */}
           <circle cx={x1} cy={centerY} r={chargeR}
-            fill={q1 >= 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
+            fill={q1 > 0 ? PHYSICS_COLORS.positiveCharge : q1 < 0 ? PHYSICS_COLORS.negativeCharge : colors.neutral[400]}
             stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
           <text x={x1} y={centerY + 6} fontSize={font(14)} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">
             {q1 > 0 ? '+' : q1 < 0 ? '−' : '0'}
@@ -274,7 +274,7 @@ export default function BasicMode({
 
           {/* 右球 */}
           <circle cx={x2} cy={centerY} r={chargeR}
-            fill={q2 >= 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
+            fill={q2 > 0 ? PHYSICS_COLORS.positiveCharge : q2 < 0 ? PHYSICS_COLORS.negativeCharge : colors.neutral[400]}
             stroke={dragging ? PHYSICS_COLORS.electricForce : PHYSICS_COLORS.objectStroke}
             strokeWidth={dragging ? CANVAS_STYLE.stroke.vectorMain : CANVAS_STYLE.stroke.objectLine}
             style={{ cursor: contactStep === 'idle' ? 'grab' : 'default' }}

@@ -6,7 +6,7 @@
 
 ## 动画映射表
 
-> **生成时间**：2026-11-26
+> **生成时间**：2026-11-27
 > **生成命令**：`node scripts/gen-annotations.mjs`
 > **数据来源**：`src/ANNOTATIONS.md`（自动生成，请勿手动编辑）
 > **更新方式**：修改 `src/data/registries/*.ts` 后运行 `node scripts/gen-annotations.mjs` 重新生成
@@ -31,9 +31,10 @@
 | anim-electric-field | 电场强度与比值定义法 | ElectricField | ElectricFieldBasicScene | constants | — |
 | anim-charge-in-efield | 带电粒子在匀强电场中运动 | ChargeInEField | — | electromagnetism | — |
 | anim-capacitor | 平行板电容器 | Capacitor | — | physics | — |
-| anim-field-lines | 电场线与等势面关系 | FieldLines | — | constants | — |
+| anim-field-lines | 电场线与等势面关系 | FieldLines | — | physics | — |
 | anim-electric-potential | 电势与电势差 | ElectricPotential | ElectricPotentialChartScene | physics | — |
 | anim-electrostatic-shielding | 静电平衡与静电屏蔽 | electrostatic-shielding | — | — | — |
+| anim-equal-charge-field | 等量电荷场线模型 | equal-charge-field | — | — | — |
 | anim-lc-oscillation | 电磁振荡（LC 振荡电路） | EMOscillationAnimation | LCOscillationScene | physics | — |
 | anim-em-wave | 麦克斯韦电磁场理论与电磁波 | EMOscillationAnimation | EMWaveScene | physics | — |
 | anim-em-spectrum | 电磁波谱与无线电波的发射与接收 | EMOscillationAnimation | EMSpectrumScene | physics | — |
@@ -148,7 +149,7 @@
 | anim-doppler-effect | 多普勒效应 | doppler | — | — | — |
 | anim-forced-resonance | 受迫振动与共振 | forced-resonance | — | — | ForcedResonanceCenterExtra |
 
-共 133 个动画条目。
+共 134 个动画条目。
 
 ---
 
@@ -184,4 +185,4 @@ node scripts/gen-annotations.mjs
 
 ---
 
-*最后更新：2026-11-26 | 生成命令：`node scripts/gen-annotations.mjs`*
+*最后更新：2026-11-27 | 生成命令：`node scripts/gen-annotations.mjs`*

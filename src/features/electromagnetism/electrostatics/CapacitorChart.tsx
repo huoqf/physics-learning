@@ -1,17 +1,14 @@
 import { EnergyBars, EnergyBarItem } from '@/components/Physics'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { calculateCapacitor } from '@/physics'
+import { calculateCapacitor, VACUUM_PERMITTIVITY } from '@/physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
 
-// 物理常数定义 (SI)
-const EPS0 = 8.854e-12
-
 // 联动柱状图的最大参考值（用于折算 0% - 100% 柱高）
-const C_MAX = EPS0 * 5 * (200 * 1e-4) / (2 * 1e-3) * 1e12  // 约 442.7 pF
-const Q_MAX = C_MAX * 12                                   // 约 5312.4 pC
-const U_MAX = 48.0                                         // 约 48 V
-const E_MAX = 12.0 / (2 * 1e-3)                             // 6000 V/m
+const C_MAX = VACUUM_PERMITTIVITY * 5 * (200 * 1e-4) / (2 * 1e-3) * 1e12  // 约 442.7 pF
+const Q_MAX = C_MAX * 12                                                   // 约 5312.4 pC
+const U_MAX = 48.0                                                         // 约 48 V
+const E_MAX = 12.0 / (2 * 1e-3)                                            // 6000 V/m
 
 /**
  * 平行板电容器 — 物理量相对百分比联动柱状图
@@ -26,9 +23,9 @@ export default function CapacitorChart() {
   const isConnected = connected >= 0.5
 
   // 物理计算
-  const { C } = calculateCapacitor(EPS0 * epsilon_r, S * 1e-4, d * 1e-3)
+  const { C } = calculateCapacitor(VACUUM_PERMITTIVITY * epsilon_r, S * 1e-4, d * 1e-3)
   const currentQ = C * U
-  const defaultQ = calculateCapacitor(EPS0, 100 * 1e-4, 5 * 1e-3).C * 12
+  const defaultQ = calculateCapacitor(VACUUM_PERMITTIVITY, 100 * 1e-4, 5 * 1e-3).C * 12
   const charge = isConnected ? currentQ : (savedQ ?? defaultQ)
   const voltage = isConnected ? U : (C > 0 ? charge / C : 0)
   const field = voltage / (d * 1e-3)

@@ -2,6 +2,7 @@ import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
 import { rcTauFromParams, rcWindowFromParams } from '@/physics'
 import { getChargeInEFieldCriticalTimes } from '@/physics/electrostatics'
+import { getEqualChargeCriticalTimes } from '@/physics/electromagnetism/equalChargeField'
 import { alignCriticalTime } from '@/utils/criticalTime'
 
 // ===== 电磁学 · 静电场（[M4-1]）=====
@@ -144,12 +145,14 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
     knowledgeId: 'electricity-1-1',
     Component: lazy(() => import('@/features/electromagnetism/electrostatics/CoulombLaw')),
     controlsMode: 'param' as const,
-    defaultParams: { q1: 2, q2: -3, r: 4, mode: 0, q3: 1, contactTrigger: 0 } as const,
+    defaultParams: { q1: 2, q2: -3, r: 4, mode: 0, q3: 1, contactTrigger: 0, mGram: 20, stringLenCm: 30 } as const,
     paramMeta: [
       { key: 'q1', label: '电量 Q₁', min: -5, max: 5, step: 0.5, unit: 'μC' },
       { key: 'q2', label: '电量 Q₂', min: -5, max: 5, step: 0.5, unit: 'μC' },
       { key: 'r', label: '间距 r', min: 1, max: 8, step: 0.5, unit: 'cm', showIf: 'mode', showIfValue: 0 },
       { key: 'q3', label: '电量 Q₃', min: -5, max: 5, step: 0.5, unit: 'μC', showIf: 'mode', showIfValue: 1 },
+      { key: 'mGram', label: '单球质量 m', min: 5, max: 50, step: 5, unit: 'g', showIf: 'mode', showIfValue: 2 },
+      { key: 'stringLenCm', label: '摆线长度 L', min: 20, max: 40, step: 5, unit: 'cm', showIf: 'mode', showIfValue: 2 },
     ],
     controlMeta: [
       {
@@ -157,9 +160,14 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
         key: 'mode',
         group: '模型选择',
         resetOnChange: true,
+        onChangeSideEffect: (newMode, cur) =>
+          newMode === 2 && (cur.q1 ?? 2) * (cur.q2 ?? -3) <= 0
+            ? { setParams: { q1: 2, q2: 2 } }
+            : undefined,
         options: [
           { value: 0, label: '基础' },
           { value: 1, label: '三电荷平衡' },
+          { value: 2, label: '库仑摆' },
         ],
       },
       {
@@ -172,6 +180,30 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
         params: (p) => ({ contactTrigger: (p.contactTrigger ?? 0) + 1 }),
       },
       {
+        type: 'preset',
+        label: '⚖️ 同号自由平衡（+4/+1 μC）',
+        group: '典型情境预设',
+        showIf: 'mode',
+        showIfValue: 1,
+        params: { mode: 1, q1: 4, q2: 1, q3: -0.4444 },
+      },
+      {
+        type: 'preset',
+        label: '⚖️ 异号自由平衡（+1/−4 μC）',
+        group: '典型情境预设',
+        showIf: 'mode',
+        showIfValue: 1,
+        params: { mode: 1, q1: 1, q2: -4, q3: -4 },
+      },
+      {
+        type: 'preset',
+        label: '🧲 同正对称库仑摆',
+        group: '典型情境预设',
+        showIf: 'mode',
+        showIfValue: 2,
+        params: { mode: 2, q1: 2, q2: 2, mGram: 20, stringLenCm: 30 },
+      },
+      {
         type: 'tip',
         group: '教学提示',
         showIf: 'mode',
@@ -180,6 +212,14 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
         title: '💡 拖拽电荷改变位置，观察合力变化',
         content: '三个点电荷平衡条件：两大夹小、两同夹异、近小远大。',
       },
+      {
+        type: 'tip',
+        group: '教学提示',
+        showIf: 'mode',
+        showIfValue: 2,
+        variant: 'primary',
+        content: '同号带电小球张开平衡时满足 tanθ = F库/(mg)；即便 q₁ ≠ q₂，因作用力与反作用力等大，等重两球偏角始终相等。',
+      },
     ],
   },
   'anim-electric-field': {
@@ -187,7 +227,7 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
     knowledgeId: 'electricity-1-2',
     Component: lazy(() => import('@/features/electromagnetism/electrostatics/ElectricField')),
     controlsMode: 'param' as const,
-    defaultParams: { mode: 0, q: 5, chargeConfig: 0, qTest: 1.0, rTest: 3, showFieldLines: 1 } as const,
+    defaultParams: { mode: 0, q: 5, chargeConfig: 0, qTest: 1.0, rTest: 3, testXCm: 0, testYCm: 3, showFieldLines: 1 } as const,
     paramMeta: [
       { key: 'q', label: '源电电量 Q', min: -10, max: 10, step: 0.5, unit: 'μC', showIf: 'mode', showIfValue: 0 },
       { key: 'qTest', label: '试探电量 q', min: -2, max: 2, step: 0.2, unit: 'μC' },
@@ -215,11 +255,11 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
     knowledgeId: 'electricity-1-3',
     Component: lazy(() => import('@/features/electromagnetism/electrostatics/ChargeInEField')),
     criticalTimes: (p) => getChargeInEFieldCriticalTimes(p, 30),
-    defaultParams: { U: 150, v0: 15, q: 2, freq: 30, isAC: 0, useGravity: 0, phi0: 0 } as const,
+    defaultParams: { U: 150, v0: 15, q: 2, freq: 30, isAC: 0, useGravity: 0, phi0: 0, showScreen: 0 } as const,
     paramMeta: [
       { key: 'U', label: '板间电压 U', min: 50, max: 300, step: 10, unit: 'V' },
       { key: 'v0', label: '射入初速 v₀', min: 10, max: 25, step: 1, unit: 'm/s' },
-      { key: 'q', label: '电荷量 q', min: 1, max: 5, step: 0.5, unit: 'μC' },
+      { key: 'q', label: '电荷量 q', min: -5, max: 5, step: 0.5, unit: 'μC' },
       { key: 'freq', label: '交变频率 f', min: 10, max: 60, step: 5, unit: 'Hz', showIf: 'isAC', showIfValue: 1 },
     ],
     controlMeta: [
@@ -233,6 +273,25 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
           { value: 0.5, label: 'T/2' },
           { value: 0.75, label: '3T/4' },
         ] },
+      {
+        type: 'preset',
+        label: '📺 示波器荧光屏 (带屏漂移)',
+        group: '典型情境预设',
+        showIf: 'isAC',
+        showIfValue: 0,
+        restartOnApply: true,
+        params: { isAC: 0, showScreen: 1, q: 2, U: 150, v0: 15, useGravity: 0 },
+      },
+      {
+        type: 'preset',
+        label: '⬆️ 负电荷向上偏转 (−2 μC)',
+        group: '典型情境预设',
+        showIf: 'isAC',
+        showIfValue: 0,
+        restartOnApply: true,
+        params: { isAC: 0, showScreen: 1, q: -2, U: 150, v0: 15, useGravity: 0 },
+      },
+      { type: 'toggle', key: 'showScreen', label: '显示无场漂移区与荧光屏', group: '显示辅助', showIf: 'isAC', showIfValue: 0, resetOnChange: true },
       { type: 'toggle', key: 'useGravity', label: '计入重力复合场 (mg 绿色)', group: '显示辅助', resetOnChange: true },
       { type: 'tip', group: '教学提示', showIf: 'isAC', showIfValue: 0, variant: 'primary',
         content: '在恒定直流电场模式下，粒子在板间做类平抛运动。尝试拖动初速度 v₀，观察右屏偏转位移 y 是否随速度平方反比变化。' },
@@ -334,8 +393,8 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 1,
         options: [
-          { value: 0, label: '充电 (S 闭合)' },
-          { value: 1, label: '放电 (S 断开)' },
+          { value: 0, label: '充电 (S 接1)' },
+          { value: 1, label: '放电 (S 接2)' },
         ],
       },
       {
@@ -378,9 +437,9 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
       qSource: 5,
       showFieldLines: 1,
       showEquipotentials: 1,
-      probeX: 350,
+      probeX: 420,
       probeY: 150,
-      probeStartX: 350,
+      probeStartX: 420,
       probeStartY: 150,
       isDragging: 0,
     } as const,
@@ -395,7 +454,7 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
           { value: 2, label: '等量异种' },
           { value: 3, label: '等量同种' },
         ],
-        onChangeSideEffect: { setParams: { probeX: 350, probeY: 150, probeStartX: 350, probeStartY: 150 } } },
+        onChangeSideEffect: { setParams: { probeX: 420, probeY: 150, probeStartX: 420, probeStartY: 150 } } },
       { type: 'toggle', key: 'showFieldLines', label: '黄色电场线', group: '显示辅助' },
       { type: 'toggle', key: 'showEquipotentials', label: '紫色等势面', group: '显示辅助' },
       { type: 'tip', group: '教学提示', variant: 'primary',
@@ -407,7 +466,12 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
     title: '电势与电势差',
     knowledgeId: 'electricity-1-6',
     Component: lazy(() => import('@/features/electromagnetism/electrostatics/ElectricPotential')),
-    controlsMode: 'param' as const,
+    controlsMode: 'timed' as const,
+    maxTime: 5,
+    criticalTimes: () => [
+      { time: alignCriticalTime(2.5, 'nearest'), label: '经过中点 x = 3.5 m', variant: 'info' as const },
+      { time: alignCriticalTime(5.0, 'before'), label: '到达终点 B', variant: 'critical' as const, autoPause: true },
+    ],
     defaultParams: {
       baseEField: 150,
       qProbe: 1.0,
@@ -427,8 +491,7 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
       { type: 'segmented', key: 'zeroRef', label: '零势参考', group: '模型选择',
         options: [{ value: 0, label: '无穷远为0V' }, { value: 1, label: '大地为0V' }] },
       // §4 显示辅助
-      { type: 'toggle', key: 'drawMode', label: '锁定A-B点并激活自由手绘路径', group: '显示辅助',
-        onChangeSideEffect: { setParams: { runTime: 0 } } },
+      { type: 'toggle', key: 'drawMode', label: '锁定A-B点并激活自由手绘路径', group: '显示辅助', resetOnChange: true },
       // §6 教学提示
       { type: 'tip', group: '教学提示', title: '探究任务',
         content: '1. 路径无关性验证：开启手写模式，用鼠标在下方的动画区域任意绘制出一条弯曲轨迹。2. 零势选择的相对性：切换零势参考模式，观察 A、B 点的绝对电势发生显著平移。' },
@@ -445,6 +508,7 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
       isGrounded: 0,
       showFieldLines: 1,
       tipRadius: 1.0,
+      shieldType: 0,
     } as const,
     controlMeta: [
       {
@@ -453,6 +517,7 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
         label: '探究主题',
         group: '实验模型',
         resetOnChange: true,
+        onChangeSideEffect: { resetParams: ['shieldType'] },
         options: [
           { value: 0, label: '静电平衡' },
           { value: 1, label: '尖端放电' },
@@ -460,10 +525,30 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
         ],
       },
       {
+        type: 'segmented',
+        key: 'shieldType',
+        label: '屏蔽类型',
+        group: '空腔方案',
+        showIf: 'mode',
+        showIfValue: 2,
+        options: [
+          { value: 0, label: '外屏蔽' },
+          { value: 1, label: '内屏蔽' },
+        ],
+      },
+      {
         type: 'preset',
         label: '🛡️ 验电器金属网罩屏蔽',
         group: '快捷预设',
-        params: () => ({ E0: 300, mode: 2, isGrounded: 0, showFieldLines: 1, tipRadius: 1.0 }),
+        params: () => ({ E0: 300, mode: 2, isGrounded: 0, showFieldLines: 1, tipRadius: 1.0, shieldType: 0 }),
+        showIf: 'mode',
+        showIfValue: 2,
+      },
+      {
+        type: 'preset',
+        label: '🔌 内屏蔽外壳接地除场',
+        group: '快捷预设',
+        params: () => ({ E0: 300, mode: 2, isGrounded: 1, showFieldLines: 1, tipRadius: 1.0, shieldType: 1 }),
         showIf: 'mode',
         showIfValue: 2,
       },
@@ -471,7 +556,7 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
         type: 'preset',
         label: '⚡ 避雷针尖端放电',
         group: '快捷预设',
-        params: () => ({ E0: 450, mode: 1, isGrounded: 1, showFieldLines: 1, tipRadius: 0.2 }),
+        params: () => ({ E0: 450, mode: 1, isGrounded: 1, showFieldLines: 1, tipRadius: 0.2, shieldType: 0 }),
         showIf: 'mode',
         showIfValue: 1,
       },
@@ -499,7 +584,7 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
       },
     ],
     paramMeta: [
-      { key: 'E0', label: '外加电场 E0', min: 50, max: 500, step: 25, unit: 'V/m' },
+      { key: 'E0', label: '外加电场 E0', min: 50, max: 500, step: 25, unit: 'V/m', hideIf: 'shieldType', hideIfValue: 1 },
       {
         key: 'tipRadius',
         label: '尖端曲率半径 R',
@@ -511,6 +596,96 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
         showIfValue: 1,
         marks: [{ value: 0.2, label: '极尖锐', variant: 'critical' }],
       },
+    ],
+  },
+
+  'anim-equal-charge-field': {
+    title: '等量电荷场线模型',
+    knowledgeId: 'electricity-1-7',
+    Component: lazy(() => import('@/features/electromagnetism/electrostatics/equal-charge-field')),
+    controlsMode: 'timed' as const,
+    maxTime: 6,
+    criticalTimes: (p) => getEqualChargeCriticalTimes(p),
+    defaultParams: {
+      chargeType: 0,
+      axis: 0,
+      qMicroC: 5,
+      halfSepCm: 3,
+      showFieldLines: 1,
+      showEquipotentials: 1,
+    } as const,
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'chargeType',
+        label: '电荷组合',
+        group: '模型选择',
+        options: [
+          { value: 0, label: '等量异种' },
+          { value: 1, label: '等量同正' },
+          { value: 2, label: '等量同负' },
+        ],
+      },
+      {
+        type: 'segmented',
+        key: 'axis',
+        label: '扫描轴线',
+        group: '观测路径',
+        options: [
+          { value: 0, label: '连线 (x轴)' },
+          { value: 1, label: '中垂线 (y轴)' },
+        ],
+      },
+      {
+        type: 'preset',
+        label: '⚡ 异种·连线分布',
+        group: '教学预设',
+        restartOnApply: true,
+        params: { chargeType: 0, axis: 0, qMicroC: 5, halfSepCm: 3, showFieldLines: 1, showEquipotentials: 1 },
+      },
+      {
+        type: 'preset',
+        label: '🌐 异种·零势中垂线',
+        group: '教学预设',
+        restartOnApply: true,
+        params: { chargeType: 0, axis: 1, qMicroC: 5, halfSepCm: 3, showFieldLines: 1, showEquipotentials: 1 },
+      },
+      {
+        type: 'preset',
+        label: '⚖️ 同正·中点零场强',
+        group: '教学预设',
+        restartOnApply: true,
+        params: { chargeType: 1, axis: 0, qMicroC: 5, halfSepCm: 3, showFieldLines: 1, showEquipotentials: 1 },
+      },
+      {
+        type: 'preset',
+        label: '📈 同正·中垂先增后减',
+        group: '教学预设',
+        restartOnApply: true,
+        params: { chargeType: 1, axis: 1, qMicroC: 5, halfSepCm: 3, showFieldLines: 1, showEquipotentials: 1 },
+      },
+      {
+        type: 'toggle',
+        key: 'showFieldLines',
+        label: '显示电场线',
+        group: '显示辅助',
+      },
+      {
+        type: 'toggle',
+        key: 'showEquipotentials',
+        label: '显示等势面',
+        group: '显示辅助',
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        variant: 'primary',
+        content: '对比同一位置在“连线”与“中垂线”上的场强极值与电势分布：等量异种中点连线最弱但中垂线最强；等量同种中垂线在 y = ±a/√2 处场强极大。',
+      },
+    ],
+    paramMeta: [
+      { key: 'qMicroC', label: '电荷量大小 Q', min: 1, max: 10, step: 0.5, unit: 'μC', group: '场源参数' },
+      { key: 'halfSepCm', label: '半间距 a', min: 1.5, max: 5, step: 0.5, unit: 'cm', group: '场源参数' },
     ],
   },
 })

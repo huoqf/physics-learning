@@ -20,6 +20,7 @@ import { useShallow } from 'zustand/react/shallow'
 
 const BasicMode = lazy(() => import('./BasicMode'))
 const ThreeChargeMode = lazy(() => import('./ThreeChargeMode'))
+const CoulombPendulumMode = lazy(() => import('./CoulombPendulumMode'))
 
 /**
  * 库仑定律动画主组件
@@ -37,6 +38,14 @@ export default function CoulombLaw() {
   const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
 
   const mode = params.mode ?? 0
+
+  if (mode === 2) {
+    return (
+      <Suspense fallback={null}>
+        <CoulombPendulumMode />
+      </Suspense>
+    )
+  }
 
   return (
     <div ref={containerRef} className="w-full h-full">
