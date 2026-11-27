@@ -533,6 +533,7 @@ export const vibrationOscillationAnimations = defineAnimations({
     CenterExtra: lazy(() => import('@/features/vibration/forced-resonance/ForcedResonanceCenterExtra')),
     centerLayout: 'splitH',
     controlsMode: 'timed',
+    labTools: ['chartCompare'] as const,
     maxTime: 20,
     criticalTimes: (p) => getForcedResonanceCriticalTimes(p, 20),
     defaultParams: {

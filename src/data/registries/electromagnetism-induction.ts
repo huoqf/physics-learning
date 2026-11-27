@@ -307,6 +307,7 @@ export const electromagnetismInductionAnimations = defineAnimations({
     CenterExtra: lazy(() => import('@/features/electromagnetism/induction/SingleRodCharts')),
     centerExtraHeight: 'h-1/2',
     controlsMode: 'timed' as const,
+    labTools: ['chartCompare'] as const,
     maxTime: 12,
     criticalTimes: (p) => getSingleRodCriticalTimes(p, 12),
     defaultParams: {

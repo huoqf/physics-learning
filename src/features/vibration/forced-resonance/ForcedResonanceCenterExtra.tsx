@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { CharacteristicCurve, type CharacteristicCurveSeries } from '@/components/Chart/CharacteristicCurve'
 import { MiniChart, type MiniChartLine, type MiniChartStaticLine } from '@/components/UI/MiniChart'
 import { Card } from '@/components/UI/Card'
-import { CHART_COLORS, PHYSICS_COLORS, SERIES_MAP } from '@/theme/physics'
+import { CHART_COLORS, PHYSICS_COLORS, SERIES_MAP, withAlpha } from '@/theme/physics'
 import {
   calculateSteadyStateResonance,
   generateResonanceCurvePoints,
@@ -31,8 +31,8 @@ function toCmResonancePoints(
 }
 
 export default function ForcedResonanceCenterExtra() {
-  const { params, time } = useAnimationStore(
-    useShallow((s) => ({ params: s.params, time: s.time }))
+  const { params, time, ghostSnapshot } = useAnimationStore(
+    useShallow((s) => ({ params: s.params, time: s.time, ghostSnapshot: s.ghostSnapshot }))
   )
 
   const m = params.m ?? 1.0
@@ -46,6 +46,26 @@ export default function ForcedResonanceCenterExtra() {
     return calculateSteadyStateResonance({ m, k, gamma, F0, f })
   }, [m, k, gamma, F0, f])
 
+  const refResonance = useMemo(() => {
+    if (!ghostSnapshot || (mode !== 1 && mode !== 2)) return null
+    const gp = ghostSnapshot.params
+    const refM = gp.m ?? m
+    const refK = gp.k ?? k
+    const refGamma = gp.gamma ?? gamma
+    const refF0 = gp.F0 ?? F0
+    const refSteady = calculateSteadyStateResonance({
+      m: refM,
+      k: refK,
+      gamma: refGamma,
+      F0: refF0,
+      f: gp.f ?? f,
+    })
+    return {
+      points: toCmResonancePoints(refM, refK, refGamma, refF0, 2.5, 75),
+      maxAmplitudeCm: refSteady.maxAmplitude * 100,
+    }
+  }, [ghostSnapshot, mode, m, k, gamma, F0, f])
+
   // ── 上/下图表共享的统一纵轴量程 yBound (cm) ─────────────────────────────
   // 标准基准为 120 cm（4 等分刻度：30/60/90/120 与 -120/-60/0/60/120），
   // 锁定量程使调节 γ 或 F0 时，上半部 A-f 共振峰高度与下半部 x-t 波形高度按 1:1 真实伸缩。
@@ -58,9 +78,10 @@ export default function ForcedResonanceCenterExtra() {
       mode === 2
         ? calculateSteadyStateResonance({ m, k, gamma: WEAK_GAMMA, F0, f }).maxAmplitude * 100
         : 0
-    const requiredMaxCm = Math.max(steady.maxAmplitude * 100, weakPeakCm) * 1.12
+    const refPeakCm = refResonance?.maxAmplitudeCm ?? 0
+    const requiredMaxCm = Math.max(steady.maxAmplitude * 100, weakPeakCm, refPeakCm) * 1.12
     return Math.max(120, Math.ceil(requiredMaxCm / 40) * 40)
-  }, [mode, m, k, F0, f, steady.amplitude, steady.maxAmplitude])
+  }, [mode, m, k, F0, f, steady.amplitude, steady.maxAmplitude, refResonance])
 
   // ── Mode 1 & 2 上半部：A-f 共振特性曲线数据 ─────────────────────────────
   const curvePoints = useMemo(() => {
@@ -78,11 +99,21 @@ export default function ForcedResonanceCenterExtra() {
       strokeDasharray: [4, 4],
     }
 
+    const base: CharacteristicCurveSeries[] = [f0VerticalLine]
+    if (refResonance) {
+      base.push({
+        points: refResonance.points,
+        color: withAlpha(CHART_COLORS.primary, 0.45),
+        strokeWidth: 1.6,
+        strokeDasharray: [4, 3],
+      })
+    }
+
     if (mode === 2) {
       const weakPoints = toCmResonancePoints(m, k, WEAK_GAMMA, F0, 2.5, 75)
       const strongPoints = toCmResonancePoints(m, k, STRONG_GAMMA, F0, 2.5, 75)
       return [
-        f0VerticalLine,
+        ...base,
         {
           points: weakPoints,
           series: 'success' as const,
@@ -96,8 +127,8 @@ export default function ForcedResonanceCenterExtra() {
         },
       ]
     }
-    return [f0VerticalLine]
-  }, [mode, m, k, F0, steady.f0, steady.maxAmplitude])
+    return base
+  }, [mode, m, k, F0, steady.f0, steady.maxAmplitude, refResonance])
 
   const thresholds = useMemo(() => {
     return [

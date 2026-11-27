@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { BasePhysicsChart, ChartArea, ChartCursor, ChartLine, useChartContext } from '@/components/Chart'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, SERIES_MAP } from '@/theme/physics'
+import { PHYSICS_COLORS, SERIES_MAP, withAlpha } from '@/theme/physics'
 import { getSingleRodState, type SingleRodMode } from '@/physics/singleRod'
 
 const T_MAX = 12
@@ -24,8 +25,13 @@ function Legend({ x, y, color, text }: { x: number; y: number; color: string; te
 }
 
 export default function SingleRodCharts() {
-  const time = useAnimationStore((s) => s.time)
-  const params = useAnimationStore((s) => s.params)
+  const { time, params, ghostSnapshot } = useAnimationStore(
+    useShallow((s) => ({
+      time: s.time,
+      params: s.params,
+      ghostSnapshot: s.ghostSnapshot,
+    }))
+  )
 
   const mode: SingleRodMode = (params.startMechanism ?? 0) === 0 ? 'constantForce' : 'initialVelocity'
   const modelParams = useMemo(() => ({
@@ -56,9 +62,38 @@ export default function SingleRodCharts() {
     return { v, i, work, heat, kinetic }
   }, [modelParams])
 
+  const ghostSeries = useMemo(() => {
+    if (!ghostSnapshot) return null
+    const gp = ghostSnapshot.params
+    const ghostMode: SingleRodMode = (gp.startMechanism ?? 0) === 0 ? 'constantForce' : 'initialVelocity'
+    const ghostModelParams = {
+      mode: ghostMode,
+      driveForce: gp.driveForce ?? 1.2,
+      initialVelocity: gp.initialVelocity ?? 5,
+      magneticB: gp.magneticB ?? 1.2,
+      railSpacing: gp.railSpacing ?? 0.8,
+      resistance: gp.resistance ?? 1.5,
+      rodMass: gp.rodMass ?? 0.2,
+    }
+    const v: Point[] = []
+    const i: Point[] = []
+    for (let idx = 0; idx <= SAMPLE_COUNT; idx += 1) {
+      const t = T_MAX * idx / SAMPLE_COUNT
+      const state = getSingleRodState(ghostModelParams, t)
+      v.push({ x: t, y: state.v })
+      i.push({ x: t, y: state.current })
+    }
+    const terminalV = getSingleRodState(ghostModelParams, 0).terminalVelocity
+    return { v, i, mode: ghostMode, terminalV }
+  }, [ghostSnapshot])
+
   const current = useMemo(() => getSingleRodState(modelParams, Math.min(time, T_MAX)), [modelParams, time])
-  const maxV = Math.max(0.5, ...series.v.map((p) => p.y), current.terminalVelocity) * 1.18
-  const maxI = Math.max(0.2, ...series.i.map((p) => p.y)) * 1.18
+  const ghostMaxV = ghostSeries
+    ? Math.max(...ghostSeries.v.map((p) => p.y), ghostSeries.mode === 'constantForce' ? ghostSeries.terminalV : 0)
+    : 0
+  const ghostMaxI = ghostSeries ? Math.max(...ghostSeries.i.map((p) => p.y)) : 0
+  const maxV = Math.max(0.5, ...series.v.map((p) => p.y), current.terminalVelocity, ghostMaxV) * 1.18
+  const maxI = Math.max(0.2, ...series.i.map((p) => p.y), ghostMaxI) * 1.18
   const maxEnergy = Math.max(0.5, ...series.work.map((p) => p.y), ...series.heat.map((p) => p.y), ...series.kinetic.map((p) => p.y)) * 1.18
   const cursorT = Math.min(time, T_MAX)
 
@@ -76,6 +111,14 @@ export default function SingleRodCharts() {
           formatX={(v) => v.toFixed(0)}
           formatY={(v) => v.toFixed(1)}
         >
+          {ghostSeries && (
+            <ChartLine
+              points={ghostSeries.v}
+              color={withAlpha(SERIES_MAP.primary, 0.45)}
+              strokeWidth={1.6}
+              dash={[4, 3]}
+            />
+          )}
           <ChartLine points={series.v} series="primary" />
           {mode === 'constantForce' && (
             <ChartLine
@@ -111,6 +154,14 @@ export default function SingleRodCharts() {
             variant="default"
             intensity="normal"
           />
+          {ghostSeries && (
+            <ChartLine
+              points={ghostSeries.i}
+              color={withAlpha(SERIES_MAP.warm, 0.45)}
+              strokeWidth={1.6}
+              dash={[4, 3]}
+            />
+          )}
           <ChartLine points={series.i} series="warm" />
           <ChartCursor
             x={cursorT}

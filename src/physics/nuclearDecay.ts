@@ -116,6 +116,25 @@ export function getNuclearHalfLifeCriticalTimes(
   return events.sort((a, b) => a.time - b.time)
 }
 
+/**
+ * 生成半衰期理论指数衰减曲线点 N(t) = N₀ * exp(-λt)（SSOT）
+ */
+export function generateDecayTheoryPoints(
+  initCount: number,
+  halfLife: number,
+  tMax = NUCLEAR_HALF_LIFE_TMAX,
+): { x: number; y: number }[] {
+  const lambda = Math.log(2) / Math.max(1e-6, halfLife)
+  const pts: { x: number; y: number }[] = []
+  for (let t = 0; t <= tMax; t += 0.2) {
+    pts.push({
+      x: t,
+      y: initCount * Math.exp(-lambda * t),
+    })
+  }
+  return pts
+}
+
 // ─── 天然放射线电磁偏转纯计算（anim-nuclear-decay mode === 1 SSOT） ─────────
 
 export const RADIATION_DEFLECTION_CONSTANTS = {

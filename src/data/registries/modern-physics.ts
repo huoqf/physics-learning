@@ -544,6 +544,7 @@ export const modernPhysicsAnimations = defineAnimations({
     knowledgeId: 'nuclear-1-2',
     Component: lazy(() => import('@/features/modern/nuclear-decay/NuclearHalfLifeAnimation')),
     controlsMode: 'timed' as const,
+    labTools: ['chartCompare'] as const,
     maxTime: NUCLEAR_HALF_LIFE_TMAX,
     criticalTimes: (p) => getNuclearHalfLifeCriticalTimes(p, NUCLEAR_HALF_LIFE_TMAX),
     defaultParams: {

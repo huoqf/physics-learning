@@ -1,20 +1,22 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { RelationChart } from '@/components/Chart'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { RelationChart, type RelationDataSeries } from '@/components/Chart'
+import { PHYSICS_COLORS, SERIES_MAP, withAlpha } from '@/theme/physics'
+import { generateDecayTheoryPoints } from '@/physics/nuclearDecay'
 import { useNuclearHalfLifePhysics } from './hooks/useNuclearHalfLifePhysics'
 import { NuclearHalfLifeScene } from './components/NuclearHalfLifeScene'
 
 export default function NuclearHalfLifeAnimation() {
   // ── 1. Zustand Store ──
-  const { params, time } = useAnimationStore(
+  const { params, time, ghostSnapshot } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
       time: s.time,
+      ghostSnapshot: s.ghostSnapshot,
     }))
   )
 
@@ -58,6 +60,38 @@ export default function NuclearHalfLifeAnimation() {
     physicsHeight: 6.5,
   })
 
+  // ── 5.5 锁定对照理论曲线（chartCompare） ──
+  const refInitCount = ghostSnapshot ? (ghostSnapshot.params.initCount ?? initCount) : initCount
+  const refTheoryPoints = useMemo(() => {
+    if (!ghostSnapshot) return null
+    const gp = ghostSnapshot.params
+    return generateDecayTheoryPoints(
+      gp.initCount ?? initCount,
+      gp.halfLife ?? halfLife,
+    )
+  }, [ghostSnapshot, initCount, halfLife])
+
+  const chartAdditionalSeries = useMemo<RelationDataSeries[]>(() => {
+    const series: RelationDataSeries[] = [
+      {
+        points: physics.simPoints,
+        label: `模拟实际核数 (剩余: ${physics.remainingCount}个)`,
+        color: PHYSICS_COLORS.alertRed,
+        strokeWidth: 2,
+      },
+    ]
+    if (refTheoryPoints) {
+      series.push({
+        points: refTheoryPoints,
+        label: '对照理论曲线',
+        color: withAlpha(SERIES_MAP.primary, 0.45),
+        strokeWidth: 1.6,
+        strokeDasharray: [4, 4],
+      })
+    }
+    return series
+  }, [physics.simPoints, physics.remainingCount, refTheoryPoints])
+
   // ── 6. 渲染 ──
   return (
     <div className="w-full h-full flex flex-col gap-2 p-1">
@@ -65,19 +99,12 @@ export default function NuclearHalfLifeAnimation() {
       <div className="flex-1 min-h-0 w-full overflow-hidden">
         <RelationChart
           points={physics.theoryPoints}
-          additionalSeries={[
-            {
-              points: physics.simPoints,
-              label: `模拟实际核数 (剩余: ${physics.remainingCount}个)`,
-              color: PHYSICS_COLORS.alertRed,
-              strokeWidth: 2,
-            },
-          ]}
+          additionalSeries={chartAdditionalSeries}
           xLabel="时间 t (s)"
           yLabel="未衰变核数 N"
           title="放射性元素衰变规律 (N-t 理论与实际对比)"
           xDomain={[0, 15.0]}
-          yDomain={[0, initCount]}
+          yDomain={[0, Math.max(initCount, refInitCount)]}
           cursorX={time}
           cursorLabel={(x, y) => `t = ${x.toFixed(1)}s, N_理 = ${y.toFixed(0)}`}
           mainLabel="理论衰变曲线"
