@@ -49,6 +49,8 @@ export interface RelationDataSeries {
   points: { x: number; y: number }[]
   /** 系列标签（图例显示） */
   label?: string
+  /** 是否在图例中隐藏该辅助系列（如虚线底层参考轨迹） */
+  hideLegend?: boolean
   /** 曲线颜色变体 */
   series?: ChartSeriesVariant
   /** 自定义颜色（覆盖 series 映射） */
@@ -634,8 +636,10 @@ function RCContent({
 
       {/* 图例（多系列时显示） */}
       {additionalSeries && additionalSeries.length > 0 && (() => {
+        const legendSeries = additionalSeries.filter((s) => !s.hideLegend)
+        if (legendSeries.length === 0) return null
         const primaryText = mainLabel ?? ((series ?? 'primary') === 'primary' ? '主' : '')
-        const allLabels = [primaryText, ...additionalSeries.map((s, i) => s.label ?? `${i + 2}`)]
+        const allLabels = [primaryText, ...legendSeries.map((s, i) => s.label ?? `${i + 2}`)]
         const maxWidth = allLabels.reduce((m, txt) => {
           const units = [...txt].reduce((acc, ch) => acc + (ch.charCodeAt(0) > 127 ? 1.05 : 0.65), 0)
           return Math.max(m, units * font(FONT.small))
@@ -658,7 +662,7 @@ function RCContent({
               {primaryText}
             </text>
             {/* 额外系列 */}
-            {additionalSeries.map((s, i) => {
+            {legendSeries.map((s, i) => {
               const c = s.color ?? (s.series ? SERIES_MAP[s.series] : PHYSICS_COLORS.displacement)
               const baseY = plotOrigin.y + 10 + (i + 1) * 14
               return (

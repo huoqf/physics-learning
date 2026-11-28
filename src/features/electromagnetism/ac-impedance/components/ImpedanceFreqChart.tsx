@@ -3,6 +3,7 @@ import { RelationChart, type RelationDataSeries, type RelationMarker } from '@/c
 import { Card } from '@/components/UI'
 import { useChartTimeScrub } from '@/context/ChartTimeScrubContext'
 import {
+  BRANCH_WAVE_WINDOW_SWEEP,
   SWEEP_F_MAX,
   SWEEP_F_MIN,
   TRANSIENT_DURATION,
@@ -30,12 +31,14 @@ export function ImpedanceFreqChart({ physics, time }: ImpedanceFreqChartProps) {
     f0,
     fixedCurrentYMax,
     fixedOscYMax,
+    inlineWaveYMax,
     iRCurvePoints,
     iLCurvePoints,
     iCCurvePoints,
     xlCurvePoints,
     xcCurvePoints,
     oscWave,
+    mode0Wave,
     compareCurves,
     filterWave,
   } = physics
@@ -140,18 +143,62 @@ export function ImpedanceFreqChart({ physics, time }: ImpedanceFreqChartProps) {
     return base
   }, [xcCurvePoints, compareCurves])
 
-  // ── 4. 模式 1：实时 i–t 示波器 ─────────────────────────────────────────
+  // ── 4. 模式 0：三支路瞬时电流波形叠加对比 i–t ──────────────────────────
+  const mode0WaveSeries = useMemo(
+    (): RelationDataSeries[] => [
+      {
+        points: mode0Wave.iC,
+        label: '电容支路 i_C(t)',
+        color: EM_COLORS.capacitor,
+      },
+      {
+        points: mode0Wave.iR,
+        label: '电阻支路 i_R(t)',
+        color: EM_COLORS.resistance,
+        strokeDasharray: [5, 4],
+      },
+    ],
+    [mode0Wave.iC, mode0Wave.iR],
+  )
+
+  const mode0WaveMarkers = useMemo((): RelationMarker[] => {
+    const safeMin = 0.22 * BRANCH_WAVE_WINDOW_SWEEP
+    const safeMax = 0.62 * BRANCH_WAVE_WINDOW_SWEEP
+    const safeCenter = 0.42 * BRANCH_WAVE_WINDOW_SWEEP
+    let bestIdx = -1
+    let bestDist = Number.POSITIVE_INFINITY
+    mode0Wave.peakXs.forEach((px, idx) => {
+      if (px >= safeMin && px <= safeMax) {
+        const d = Math.abs(px - safeCenter)
+        if (d < bestDist) {
+          bestDist = d
+          bestIdx = idx
+        }
+      }
+    })
+    return mode0Wave.peakXs.map((px, idx) => ({
+      axis: 'vertical',
+      x: px,
+      position: 'top',
+      label: idx === bestIdx ? 'u(t) 峰值' : undefined,
+      color: withAlpha(EM_COLORS.electricPotential, 0.7),
+    }))
+  }, [mode0Wave.peakXs])
+
+  // ── 5. 模式 1：实时 i–t 示波器 ─────────────────────────────────────────
   const oscSeries = useMemo((): RelationDataSeries[] => {
     const targetColor = compareTarget === 0 ? EM_COLORS.capacitor : EM_COLORS.inductor
     const base: RelationDataSeries[] = [
       {
         points: oscWave.i1Full,
+        hideLegend: true,
         color: EM_COLORS.resistance,
         strokeDasharray: [3, 3],
         strokeWidth: 1.2,
       },
       {
         points: oscWave.i2Full,
+        hideLegend: true,
         color: targetColor,
         strokeDasharray: [3, 3],
         strokeWidth: 1.2,
@@ -235,6 +282,27 @@ export function ImpedanceFreqChart({ physics, time }: ImpedanceFreqChartProps) {
   }
 
   // 模式 0：扫频演示（点击或拖拽曲线任意频率，反向联动动画时间与三灯亮度）
+  if (chartType === 2) {
+    return (
+      <Card className="w-full h-full min-h-0 p-2 flex flex-col">
+        <RelationChart
+          title={`三支路电流波形叠加对比（f = ${frequency.toFixed(0)} Hz）`}
+          points={mode0Wave.iL}
+          mainLabel="电感支路 i_L(t)"
+          color={EM_COLORS.inductor}
+          additionalSeries={mode0WaveSeries}
+          xLabel="示波窗时间 (s)"
+          yLabel="瞬时电流 i (A)"
+          xDomain={[0, BRANCH_WAVE_WINDOW_SWEEP]}
+          yDomain={[-inlineWaveYMax, inlineWaveYMax]}
+          markers={mode0WaveMarkers}
+          showZeroLine
+          showGrid
+        />
+      </Card>
+    )
+  }
+
   if (chartType === 0) {
     const currentCursorLabel = (x: number) => {
       const bR = physics.branches[0]?.current ?? 0

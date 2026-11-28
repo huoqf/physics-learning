@@ -100,6 +100,17 @@ export const SWEEP_DURATION = 10
 /** 充放与交直流示波演示模式的总时长 (s) */
 export const TRANSIENT_DURATION = 6
 
+/** 支路行内同步示波窗时长 (s)：扫频模式 2.0s（对应 1.0~5.2 个完整周期），示波模式 4.0s（对应 1.0~4.0 个完整周期） */
+export const BRANCH_WAVE_WINDOW_SWEEP = 2.0
+export const BRANCH_WAVE_WINDOW_OSC = 4.0
+
+export interface BranchWaveformSample {
+  /** 归一化水平坐标 u ∈ [0, 1]（左侧为过去，右侧 u=1 为当前瞬时） */
+  u: number
+  /** 对应时刻支路瞬时电流 (A) */
+  current: number
+}
+
 /** 扼流滤波教学模式的三档典型信号频率 (Hz)：直流、低频市电、高频载波 */
 export const FILTER_FREQUENCIES = {
   dc: 0,
@@ -270,6 +281,93 @@ export function calculateVisualAngularFrequency(frequencyHz: number): number {
   const clamped = Math.min(SWEEP_F_MAX, Math.max(SWEEP_F_MIN, frequencyHz))
   const visualFreq = 0.5 + ((clamped - SWEEP_F_MIN) / (SWEEP_F_MAX - SWEEP_F_MIN)) * 2.1
   return 2 * Math.PI * visualFreq
+}
+
+/**
+ * 扫频演示模式中可视化角速度 ω_vis(t) 在 [0, t] 上的解析积分相位 (rad)，
+ * 避免扫频过程中因 ω_vis(t)·t 相位公式产生"波形倒流"视觉伪影。
+ *
+ * @param time 动画播放时刻 (s)
+ * @returns 累积视觉相位 (rad)
+ */
+export function calculateSweepVisualPhase(time: number): number {
+  const t = Math.max(0, Math.min(SWEEP_DURATION, Number.isFinite(time) ? time : 0))
+  return 2 * Math.PI * (0.5 * t + (2.1 / (2 * SWEEP_DURATION)) * t * t)
+}
+
+/**
+ * 采样单支路在滑动示波窗 [0, windowDuration] 内的正弦稳态电流波形。
+ * 横坐标 u ∈ [0, 1] 从左（过去）到右（u=1 当前瞬时），因此：
+ * - 电容超前（phaseRad > 0）波峰出现在电阻左侧；
+ * - 电感滞后（phaseRad < 0）波峰出现在电阻右侧。
+ *
+ * @param params.rmsCurrent 支路电流有效值 (A)
+ * @param params.phaseRad 电流相对电源电压的相位角 (rad)
+ * @param params.omegaVis 可视化角速度 (rad/s)
+ * @param params.currentPhaseRad 右端 u=1 处电源电压当前相位 (rad)
+ * @param params.windowDuration 示波窗时间跨度 (s)
+ * @param params.samples 采样分段数，默认 72
+ * @returns 归一化横坐标与瞬时电流采样点序列
+ */
+export function sampleACBranchWaveform(params: {
+  rmsCurrent: number
+  phaseRad: number
+  omegaVis: number
+  currentPhaseRad: number
+  windowDuration: number
+  samples?: number
+}): BranchWaveformSample[] {
+  const {
+    rmsCurrent,
+    phaseRad,
+    omegaVis,
+    currentPhaseRad,
+    windowDuration,
+    samples = 72,
+  } = params
+  const count = Math.max(2, Math.round(samples))
+  const peak = Math.SQRT2 * Math.max(0, rmsCurrent)
+  const result: BranchWaveformSample[] = []
+  for (let k = 0; k <= count; k++) {
+    const u = k / count
+    const angle = currentPhaseRad - omegaVis * (1 - u) * windowDuration + phaseRad
+    result.push({
+      u,
+      current: peak * Math.sin(angle),
+    })
+  }
+  return result
+}
+
+/**
+ * 计算示波窗内电源正弦电压 u(t) 达到正向峰值的归一化水平坐标 u ∈ [0.02, 0.98]，
+ * 用于在多支路间绘制贯通竖直参考线，直观对齐各支路波形的超前与滞后。
+ *
+ * @param currentPhaseRad 右端 u=1 处电源电压当前相位 (rad)
+ * @param omegaVis 可视化角速度 (rad/s)
+ * @param windowDuration 示波窗时间跨度 (s)
+ * @returns 所有处于 [0.02, 0.98] 区间内的正峰值归一化横坐标
+ */
+export function getVoltagePeakPositions(
+  currentPhaseRad: number,
+  omegaVis: number,
+  windowDuration: number,
+): number[] {
+  if (omegaVis <= 0 || windowDuration <= 0) return []
+  const totalSpan = omegaVis * windowDuration
+  const angleMin = currentPhaseRad - totalSpan
+  const angleMax = currentPhaseRad
+  const kMin = Math.ceil((angleMin - Math.PI / 2) / (2 * Math.PI))
+  const kMax = Math.floor((angleMax - Math.PI / 2) / (2 * Math.PI))
+  const peaks: number[] = []
+  for (let k = kMin; k <= kMax; k++) {
+    const angle = Math.PI / 2 + 2 * Math.PI * k
+    const u = 1 - (currentPhaseRad - angle) / totalSpan
+    if (u >= 0.02 && u <= 0.98) {
+      peaks.push(u)
+    }
+  }
+  return peaks
 }
 
 /**
@@ -538,7 +636,7 @@ export interface ACImpedanceSnapshot {
   compareTarget: 0 | 1
   filterType: ACFilterType
   hasCore: boolean
-  chartType: 0 | 1
+  chartType: 0 | 1 | 2
   voltage: number
   frequency: number
   inductance: number
@@ -582,7 +680,7 @@ export function computeACImpedanceSnapshot(
   const compareTarget = clampIntOption(rawParams.compareTarget, [0, 1] as const, 0)
   const filterType = clampIntOption(rawParams.filterType, [0, 1, 2] as const, 0)
   const hasCore = rawParams.hasCore !== 0
-  const chartType = clampIntOption(rawParams.chartType, [0, 1] as const, 0)
+  const chartType = clampIntOption(rawParams.chartType, [0, 1, 2] as const, 0)
 
   const voltage = Math.max(10, rawParams.voltage ?? 100)
   const frequency =

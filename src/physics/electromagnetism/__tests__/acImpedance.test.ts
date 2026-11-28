@@ -15,12 +15,15 @@ import {
   calculateInductiveReactance,
   calculateParallelTotalCurrent,
   calculateResonanceFrequency,
+  calculateSweepVisualPhase,
   calculateTransientStateAtTime,
   calculateTransientTimeConstants,
   calculateVisualAngularFrequency,
   computeACImpedanceSnapshot,
   getACImpedanceCriticalTimes,
+  getVoltagePeakPositions,
   mapBulbDisplayPower,
+  sampleACBranchWaveform,
   sweepFrequencyAtTime,
   sweepTimeForFrequency,
 } from '../acImpedance'
@@ -258,5 +261,79 @@ describe('acImpedance (纯物理计算单元测试)', () => {
     const snapFilter = computeACImpedanceSnapshot({ mode: 2, filterType: 2, capacitance: 30 }, 0)
     const panelFilter = buildACImpedanceQuantities('anim-ac-lc-impedance', { mode: 2, filterType: 2, capacitance: 30 }, 0)!
     expect(panelFilter.quantities.find((q) => q.symbol === 'η_高')?.value).toBeCloseTo(snapFilter.filterState.hfGain * 100, 1)
+  })
+
+  it('支路行内波形采样与扫频积分相位满足超前滞后、峰值对齐与递增单调性', () => {
+    expect(calculateSweepVisualPhase(0)).toBe(0)
+    const p1 = calculateSweepVisualPhase(2)
+    const p2 = calculateSweepVisualPhase(5)
+    expect(p1).toBeGreaterThan(0)
+    expect(p2).toBeGreaterThan(p1)
+
+    // 数值导数应吻合 calculateVisualAngularFrequency(sweepFrequencyAtTime(t))
+    const tMid = 4
+    const dt = 1e-5
+    const numDeriv = (calculateSweepVisualPhase(tMid + dt) - calculateSweepVisualPhase(tMid - dt)) / (2 * dt)
+    const exactOmega = calculateVisualAngularFrequency(sweepFrequencyAtTime(tMid))
+    expect(numDeriv).toBeCloseTo(exactOmega, 3)
+
+    // 波形振幅等于 √2 * I_rms，且电容峰在电阻峰左侧（超前），电感峰在电阻峰右侧（滞后）
+    const omega = 2 * Math.PI * 1.0
+    const windowDuration = 2.0
+    // currentPhaseRad = 2.5π 时，电阻峰正好落在窗中心 u = 0.50
+    const currentPhaseRad = Math.PI * 2.5
+    const waveR = sampleACBranchWaveform({
+      rmsCurrent: 2,
+      phaseRad: 0,
+      omegaVis: omega,
+      currentPhaseRad,
+      windowDuration,
+      samples: 200,
+    })
+    const waveC = sampleACBranchWaveform({
+      rmsCurrent: 2,
+      phaseRad: Math.PI / 3,
+      omegaVis: omega,
+      currentPhaseRad,
+      windowDuration,
+      samples: 200,
+    })
+    const waveL = sampleACBranchWaveform({
+      rmsCurrent: 2,
+      phaseRad: -Math.PI / 3,
+      omegaVis: omega,
+      currentPhaseRad,
+      windowDuration,
+      samples: 200,
+    })
+
+    const maxR = Math.max(...waveR.map((s) => s.current))
+    expect(maxR).toBeCloseTo(2 * Math.SQRT2, 2)
+    expect(waveR[waveR.length - 1].current).toBeCloseTo(2 * Math.SQRT2 * Math.sin(currentPhaseRad), 4)
+
+    // 在 [0.25, 0.75] 窗中心区间寻找各自正峰位置
+    const findPeakU = (samples: typeof waveR) => {
+      const mid = samples.filter((s) => s.u >= 0.25 && s.u <= 0.75)
+      return mid.reduce((best, cur) => (cur.current > best.current ? cur : best), mid[0]).u
+    }
+    const uPeakR = findPeakU(waveR)
+    const uPeakC = findPeakU(waveC)
+    const uPeakL = findPeakU(waveL)
+    expect(uPeakC).toBeLessThan(uPeakR)
+    expect(uPeakL).toBeGreaterThan(uPeakR)
+
+    // 电源 u(t) 峰值坐标验证：所有返回点均满足 sin(angle) ≈ 1，且高频时峰数更多
+    const peaksLow = getVoltagePeakPositions(currentPhaseRad, 2 * Math.PI * 0.6, windowDuration)
+    const peaksHigh = getVoltagePeakPositions(currentPhaseRad, 2 * Math.PI * 2.4, windowDuration)
+    expect(peaksLow.length).toBeGreaterThan(0)
+    expect(peaksHigh.length).toBeGreaterThan(peaksLow.length)
+    for (const u of peaksHigh) {
+      const angle = currentPhaseRad - (2 * Math.PI * 2.4) * (1 - u) * windowDuration
+      expect(Math.sin(angle)).toBeCloseTo(1, 6)
+    }
+
+    // chartType === 2 在快照中合法保留
+    const snapWaveTab = computeACImpedanceSnapshot({ mode: 0, chartType: 2 }, 5)
+    expect(snapWaveTab.chartType).toBe(2)
   })
 })

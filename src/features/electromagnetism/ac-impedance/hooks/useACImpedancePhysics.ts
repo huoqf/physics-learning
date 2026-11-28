@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
 import {
   AC_COIL_DC_RESISTANCE,
+  BRANCH_WAVE_WINDOW_OSC,
+  BRANCH_WAVE_WINDOW_SWEEP,
   FILTER_FREQUENCIES,
   SWEEP_F_MAX,
   SWEEP_F_MIN,
@@ -9,13 +11,17 @@ import {
   calculateCapacitiveReactance,
   calculateInductiveReactance,
   calculateOscilloscopeFrequency,
+  calculateSweepVisualPhase,
   calculateTransientStateAtTime,
   calculateVisualAngularFrequency,
   computeACImpedanceSnapshot,
+  getVoltagePeakPositions,
+  sampleACBranchWaveform,
   type ACFilterState,
   type ACFilterType,
   type ACImpedanceNamedBranch,
   type ACTransientAtTime,
+  type BranchWaveformSample,
 } from '@/physics/electromagnetism/acImpedance'
 
 export interface ACImpedanceParams {
@@ -29,7 +35,7 @@ export interface ACImpedanceParams {
   compareTarget?: number // 0: 电阻 vs 电容, 1: 电阻 vs 电感
   filterType?: number // 0: 低频扼流, 1: 高频扼流, 2: 高频旁路
   hasCore?: number // 0: 空心, 1: 插入铁芯
-  chartType?: number // 0: I-f, 1: X-f
+  chartType?: number // 0: I-f, 1: X-f, 2: i-t
   compareParams?: Record<string, number> | null // 锁定参考曲线参数快照
   time: number // s
 }
@@ -41,12 +47,18 @@ export interface BranchState extends ACImpedanceNamedBranch {
   instantCurrent: number
   /** 电容极板瞬时电荷归一化 [-1, 1] */
   instantCharge: number
-  /** 导线载流子渲染模式 */
-  dotMotionMode: 'oscillate' | 'dc-flow' | 'dc-charge'
-  /** oscillate/dc-charge 时为相对振幅位移 [-1, 1]；dc-flow 时为连续相位 [0, 1) */
-  dotPhase: number
-  /** 往复振幅缩放系数 (0~1) */
-  dotAmplitudeScale: number
+  /** 支路行内示波窗完整采样波形 */
+  waveSamples: BranchWaveformSample[]
+  /** 直流暂态模式下已演进的采样波形 */
+  revealedSamples?: BranchWaveformSample[]
+  /** 实时瞬时点所在归一化横坐标 u ∈ [0, 1] */
+  liveU: number
+  /** liveU 处的瞬时电流 (A) */
+  liveCurrent: number
+  /** 峰值电流 (A)（交流为 √2·I_rms，直流为参考峰值） */
+  peakCurrent: number
+  /** 相位角（度），超前为正、滞后为负 */
+  phaseDeg: number
 }
 
 export interface FilterWaveData {
@@ -75,7 +87,7 @@ export interface ACImpedancePhysicsResult {
   compareTarget: 0 | 1
   filterType: ACFilterType
   hasCore: boolean
-  chartType: 0 | 1
+  chartType: 0 | 1 | 2
   frequency: number
   voltage: number
   inductance: number
@@ -87,6 +99,8 @@ export interface ACImpedancePhysicsResult {
   f0: number
   fixedCurrentYMax: number
   fixedOscYMax: number
+  inlineWaveYMax: number
+  voltagePeakUs: number[]
   branches: BranchState[]
   totalCurrent: number
   totalInstantSign: 1 | -1 | 0
@@ -98,6 +112,12 @@ export interface ACImpedancePhysicsResult {
   xlCurvePoints: { x: number; y: number }[]
   xcCurvePoints: { x: number; y: number }[]
   oscWave: OscWaveData
+  mode0Wave: {
+    iR: { x: number; y: number }[]
+    iL: { x: number; y: number }[]
+    iC: { x: number; y: number }[]
+    peakXs: number[]
+  }
   compareCurves: CompareCurvesData | null
   filterWave: FilterWaveData
 }
@@ -342,99 +362,7 @@ export function useACImpedancePhysics(params: ACImpedanceParams): ACImpedancePhy
   }, [compareParams, snapshot])
 
   return useMemo(() => {
-    const refAmpI = snapshot.branches[0]?.current || 1
     let totalInstant = 0
-
-    const branches: BranchState[] = snapshot.branches.map((b, idx) => {
-      // 模式 1：基于暂态/慢放示波物理状态驱动
-      if (snapshot.mode === 1 && snapshot.transient) {
-        const tr = snapshot.transient
-        if (snapshot.isDC) {
-          const curI = idx === 0 ? tr.i1 : tr.i2
-          if (b.deviceType === 'capacitor') {
-            totalInstant += curI
-            return {
-              ...b,
-              displayCurrent: curI,
-              instantCurrent: curI > 0.02 ? 1 : 0,
-              instantCharge: tr.capacitorChargeNorm,
-              dotMotionMode: 'dc-charge',
-              dotPhase: tr.capacitorChargeNorm,
-              dotAmplitudeScale: 1,
-            }
-          }
-          if (b.deviceType === 'inductor') {
-            const integralDrift = Math.max(
-              0,
-              time - tr.tau * (1 - Math.exp(-time / Math.max(0.05, tr.tau))),
-            )
-            totalInstant += curI
-            return {
-              ...b,
-              displayCurrent: curI,
-              instantCurrent: curI > 0.02 ? 1 : 0,
-              instantCharge: 0,
-              dotMotionMode: 'dc-flow',
-              dotPhase: (integralDrift * 0.55) % 1,
-              dotAmplitudeScale: 1,
-            }
-          }
-          totalInstant += curI
-          return {
-            ...b,
-            displayCurrent: curI,
-            instantCurrent: curI > 0.02 ? 1 : 0,
-            instantCharge: 0,
-            dotMotionMode: 'dc-flow',
-            dotPhase: (time * 0.55) % 1,
-            dotAmplitudeScale: 1,
-          }
-        }
-
-        // 模式 1 交流示波模式
-        const oscFreq = calculateOscilloscopeFrequency(snapshot.frequency)
-        const omegaVis = 2 * Math.PI * oscFreq
-        const instNorm = Math.sin(omegaVis * time + b.phaseRad)
-        const dispNorm = -Math.cos(omegaVis * time + b.phaseRad)
-        const ampScale = Math.min(1.15, Math.max(0.18, b.current / Math.max(0.4, refAmpI)))
-        totalInstant += b.current * instNorm
-        return {
-          ...b,
-          displayCurrent: b.current,
-          instantCurrent: instNorm,
-          instantCharge: b.deviceType === 'capacitor' ? tr.capacitorChargeNorm : 0,
-          dotMotionMode: 'oscillate',
-          dotPhase: dispNorm,
-          dotAmplitudeScale: b.current > 0.01 ? ampScale : 0,
-        }
-      }
-
-      // 模式 0：扫频演示模式（慢放可视化频率随当前扫频 f 平滑增快）
-      const visualOmega = calculateVisualAngularFrequency(snapshot.frequency)
-      const instNorm = Math.sin(visualOmega * time + b.phaseRad)
-      const dispNorm = -Math.cos(visualOmega * time + b.phaseRad)
-      const ampScale = Math.min(1.15, Math.max(0.18, b.current / Math.max(0.4, refAmpI)))
-      totalInstant += b.current * instNorm
-      return {
-        ...b,
-        displayCurrent: b.current,
-        instantCurrent: instNorm,
-        instantCharge: b.deviceType === 'capacitor' ? dispNorm : 0,
-        dotMotionMode: 'oscillate',
-        dotPhase: dispNorm,
-        dotAmplitudeScale: b.current > 0.01 ? ampScale : 0,
-      }
-    })
-
-    const totalInstantSign: 1 | -1 | 0 = snapshot.isDC
-      ? Math.abs((snapshot.transient?.iTotal ?? snapshot.totalCurrent)) > 0.02
-        ? 1
-        : 0
-      : Math.abs(totalInstant) < 0.01
-        ? 0
-        : totalInstant > 0
-          ? 1
-          : -1
 
     // 模式 1：实时截断至当前播放时刻 time 的示波器扫描轨迹
     const i1Revealed: { x: number; y: number }[] = []
@@ -454,6 +382,143 @@ export function useACImpedancePhysics(params: ACImpedanceParams): ACImpedancePhy
         i2Revealed.push({ x: clampedT, y: snapshot.transient.i2 })
       }
     }
+
+    const baseRefPeak = Math.max(100, snapshot.voltage) / Math.max(10, snapshot.resistance)
+    const inlineWaveYMax =
+      snapshot.mode === 1 && snapshot.isDC
+        ? baseRefPeak * 1.1
+        : Math.SQRT2 * baseRefPeak * 1.06
+
+    const visualOmega = calculateVisualAngularFrequency(snapshot.frequency)
+    const sweepPhase = calculateSweepVisualPhase(time)
+    const oscFreq = calculateOscilloscopeFrequency(snapshot.frequency)
+    const oscOmegaVis = 2 * Math.PI * oscFreq
+    const oscCurrentPhase = oscOmegaVis * time
+    const clampedOscT = Math.max(0, Math.min(TRANSIENT_DURATION, time))
+
+    let voltagePeakUs: number[] = []
+    if (snapshot.mode === 0) {
+      voltagePeakUs = getVoltagePeakPositions(sweepPhase, visualOmega, BRANCH_WAVE_WINDOW_SWEEP)
+    } else if (snapshot.mode === 1) {
+      voltagePeakUs = snapshot.isDC
+        ? [clampedOscT / TRANSIENT_DURATION]
+        : getVoltagePeakPositions(oscCurrentPhase, oscOmegaVis, BRANCH_WAVE_WINDOW_OSC)
+    }
+
+    const branches: BranchState[] = snapshot.branches.map((b, idx) => {
+      // 模式 1：基于暂态/慢放示波物理状态驱动
+      if (snapshot.mode === 1 && snapshot.transient) {
+        const tr = snapshot.transient
+        if (snapshot.isDC) {
+          const curI = idx === 0 ? tr.i1 : tr.i2
+          const fullCurve = idx === 0 ? staticCharts.i1Full : staticCharts.i2Full
+          const revCurve = idx === 0 ? i1Revealed : i2Revealed
+          const waveSamples = fullCurve.map((pt) => ({
+            u: pt.x / TRANSIENT_DURATION,
+            current: pt.y,
+          }))
+          const revealedSamples = revCurve.map((pt) => ({
+            u: pt.x / TRANSIENT_DURATION,
+            current: pt.y,
+          }))
+          const peakCurrent =
+            idx === 0
+              ? b.current
+              : b.deviceType === 'capacitor'
+                ? snapshot.voltage / Math.max(1, snapshot.resistance)
+                : b.current
+          totalInstant += curI
+          return {
+            ...b,
+            displayCurrent: curI,
+            instantCurrent: curI > 0.02 ? 1 : 0,
+            instantCharge: b.deviceType === 'capacitor' ? tr.capacitorChargeNorm : 0,
+            waveSamples,
+            revealedSamples,
+            liveU: clampedOscT / TRANSIENT_DURATION,
+            liveCurrent: curI,
+            peakCurrent,
+            phaseDeg: 0,
+          }
+        }
+
+        // 模式 1 交流示波模式
+        const instNorm = Math.sin(oscCurrentPhase + b.phaseRad)
+        const peakCurrent = Math.SQRT2 * b.current
+        const waveSamples = sampleACBranchWaveform({
+          rmsCurrent: b.current,
+          phaseRad: b.phaseRad,
+          omegaVis: oscOmegaVis,
+          currentPhaseRad: oscCurrentPhase,
+          windowDuration: BRANCH_WAVE_WINDOW_OSC,
+        })
+        totalInstant += b.current * instNorm
+        return {
+          ...b,
+          displayCurrent: b.current,
+          instantCurrent: instNorm,
+          instantCharge: b.deviceType === 'capacitor' ? tr.capacitorChargeNorm : 0,
+          waveSamples,
+          liveU: 1,
+          liveCurrent: peakCurrent * instNorm,
+          peakCurrent,
+          phaseDeg: Math.round((b.phaseRad * 180) / Math.PI),
+        }
+      }
+
+      // 模式 0：扫频演示模式（积分相位驱动，无波形倒流）
+      const instNorm = Math.sin(sweepPhase + b.phaseRad)
+      const dispNorm = -Math.cos(sweepPhase + b.phaseRad)
+      const peakCurrent = Math.SQRT2 * b.current
+      const waveSamples = sampleACBranchWaveform({
+        rmsCurrent: b.current,
+        phaseRad: b.phaseRad,
+        omegaVis: visualOmega,
+        currentPhaseRad: sweepPhase,
+        windowDuration: BRANCH_WAVE_WINDOW_SWEEP,
+      })
+      totalInstant += b.current * instNorm
+      return {
+        ...b,
+        displayCurrent: b.current,
+        instantCurrent: instNorm,
+        instantCharge: b.deviceType === 'capacitor' ? dispNorm : 0,
+        waveSamples,
+        liveU: 1,
+        liveCurrent: peakCurrent * instNorm,
+        peakCurrent,
+        phaseDeg: Math.round((b.phaseRad * 180) / Math.PI),
+      }
+    })
+
+    const totalInstantSign: 1 | -1 | 0 = snapshot.isDC
+      ? Math.abs((snapshot.transient?.iTotal ?? snapshot.totalCurrent)) > 0.02
+        ? 1
+        : 0
+      : Math.abs(totalInstant) < 0.01
+        ? 0
+        : totalInstant > 0
+          ? 1
+          : -1
+
+    const mode0Wave =
+      snapshot.mode === 0 && branches.length >= 3
+        ? {
+            iR: branches[0].waveSamples.map((s) => ({
+              x: s.u * BRANCH_WAVE_WINDOW_SWEEP,
+              y: s.current,
+            })),
+            iL: branches[1].waveSamples.map((s) => ({
+              x: s.u * BRANCH_WAVE_WINDOW_SWEEP,
+              y: s.current,
+            })),
+            iC: branches[2].waveSamples.map((s) => ({
+              x: s.u * BRANCH_WAVE_WINDOW_SWEEP,
+              y: s.current,
+            })),
+            peakXs: voltagePeakUs.map((u) => u * BRANCH_WAVE_WINDOW_SWEEP),
+          }
+        : { iR: [], iL: [], iC: [], peakXs: [] }
 
     // 模式 2：扼流滤波波形
     const inputWave: { x: number; y: number }[] = []
@@ -499,6 +564,8 @@ export function useACImpedancePhysics(params: ACImpedanceParams): ACImpedancePhy
       f0: snapshot.f0,
       fixedCurrentYMax: staticCharts.fixedCurrentYMax,
       fixedOscYMax: staticCharts.fixedOscYMax,
+      inlineWaveYMax,
+      voltagePeakUs,
       branches,
       totalCurrent:
         snapshot.mode === 1 && snapshot.isDC && snapshot.transient
@@ -518,6 +585,7 @@ export function useACImpedancePhysics(params: ACImpedanceParams): ACImpedancePhy
         i1Revealed,
         i2Revealed,
       },
+      mode0Wave,
       compareCurves,
       filterWave: { inputWave, outputWave },
     }

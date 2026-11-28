@@ -51,68 +51,191 @@ function ACSourceSymbol({ x, y }: { x: number; y: number }) {
   )
 }
 
+function formatAmp(val: number): string {
+  const abs = Math.abs(val)
+  return abs >= 10 ? val.toFixed(1) : val.toFixed(2)
+}
+
+function getBranchWaveColor(deviceType: BranchState['deviceType']): string {
+  if (deviceType === 'inductor') return EM_COLORS.inductor
+  if (deviceType === 'capacitor') return EM_COLORS.capacitor
+  return EM_COLORS.resistance
+}
+
+const WAVE_BOX_LEFT = 256
+const WAVE_BOX_RIGHT = 540
+const WAVE_BOX_WIDTH = WAVE_BOX_RIGHT - WAVE_BOX_LEFT
+const WAVE_PLOT_LEFT = 262
+const WAVE_PLOT_WIDTH = 208
+const WAVE_DIVIDER_X = 476
+const WAVE_READOUT_CENTER_X = 508
+
 /**
- * 水平导线上的微观载流子微粒：
- * - dc-flow：持续向右流动，直观表现恒定/爬升电流；
- * - dc-charge / oscillate：绕平衡位置往复或充电单次位移，绝不越过电容极板绝缘空隙。
+ * 支路行内同步电流示波器：
+ * - 所有支路纵向对齐共享同一幅值标尺 `yMax`，直观比较振幅大小；
+ * - 配合贯通竖虚线（交流对齐电源 u 峰值、直流标记当前时刻 t），直观对比超前/滞后与频率疏密。
  */
-function WireChargeDots({
-  x1,
-  x2,
+function BranchWaveformScope({
+  branch,
   y,
-  motionMode,
-  phase,
-  amplitudeScale,
-  active,
+  boxH,
+  isDC,
+  yMax,
+  font,
 }: {
-  x1: number
-  x2: number
+  branch: BranchState
   y: number
-  motionMode: 'oscillate' | 'dc-flow' | 'dc-charge'
-  phase: number
-  amplitudeScale: number
-  active: boolean
+  boxH: number
+  isDC: boolean
+  yMax: number
+  font: (base: number) => number
 }) {
-  if (!active || x2 - x1 < 24) return null
+  const branchColor = getBranchWaveColor(branch.deviceType)
+  const topY = y - boxH / 2
+  const padY = 6
+  const safeMax = Math.max(0.5, yMax)
 
-  const span = x2 - x1
-  const spacing = 22
-  const positions: number[] = []
+  const zeroY = isDC ? y + boxH / 2 - 7 : y
+  const plotTopY = topY + padY
+  const plotBottomY = isDC ? zeroY : topY + boxH - padY
+  const halfSpan = (boxH - padY * 2) / 2
+  const dcSpan = Math.max(8, plotBottomY - plotTopY)
 
-  if (motionMode === 'dc-flow') {
-    const count = Math.max(1, Math.floor(span / spacing))
-    const step = span / count
-    for (let i = 0; i < count; i++) {
-      const px = x1 + ((i + phase) % count) * step
-      if (px >= x1 + 3 && px <= x2 - 3) positions.push(px)
-    }
-  } else {
-    const count = Math.max(1, Math.floor((span - 16) / spacing))
-    const step = (span - 16) / count
-    const shift =
-      motionMode === 'dc-charge'
-        ? phase * 10
-        : phase * 7 * amplitudeScale
-    for (let i = 0; i < count; i++) {
-      const anchor = x1 + 8 + (i + 0.5) * step
-      const px = Math.max(x1 + 3, Math.min(x2 - 3, anchor + shift))
-      positions.push(px)
-    }
+  const mapX = (u: number) => WAVE_PLOT_LEFT + u * WAVE_PLOT_WIDTH
+  const mapY = (cur: number) => {
+    const clamped = isDC
+      ? Math.max(0, Math.min(safeMax, cur))
+      : Math.max(-safeMax, Math.min(safeMax, cur))
+    return isDC
+      ? zeroY - (clamped / safeMax) * dcSpan
+      : zeroY - (clamped / safeMax) * halfSpan
   }
 
+  const buildCurvePath = (samples: BranchState['waveSamples']) => {
+    if (samples.length < 2) return ''
+    return samples
+      .map((s, idx) => `${idx === 0 ? 'M' : 'L'} ${mapX(s.u).toFixed(1)} ${mapY(s.current).toFixed(1)}`)
+      .join(' ')
+  }
+
+  const buildAreaPath = (samples: BranchState['waveSamples']) => {
+    if (samples.length < 2) return ''
+    const first = samples[0]
+    const last = samples[samples.length - 1]
+    return `${buildCurvePath(samples)} L ${mapX(last.u).toFixed(1)} ${zeroY.toFixed(1)} L ${mapX(first.u).toFixed(1)} ${zeroY.toFixed(1)} Z`
+  }
+
+  const fullPath = buildCurvePath(branch.waveSamples)
+  const activeSamples = isDC ? (branch.revealedSamples ?? []) : branch.waveSamples
+  const activePath = isDC ? buildCurvePath(activeSamples) : fullPath
+  const areaPath = buildAreaPath(activeSamples)
+
+  const liveX = mapX(branch.liveU)
+  const liveY = mapY(branch.liveCurrent)
+
+  const phaseText = isDC
+    ? branch.deviceType === 'resistor'
+      ? '恒定直流'
+      : branch.deviceType === 'capacitor'
+        ? '充电衰减'
+        : '自感缓升'
+    : branch.deviceType === 'resistor'
+      ? '同相 0°'
+      : branch.deviceType === 'inductor'
+        ? `滞后 ${Math.abs(branch.phaseDeg)}°`
+        : `超前 ${Math.abs(branch.phaseDeg)}°`
+
+  const ampText = isDC
+    ? `i=${formatAmp(branch.liveCurrent)}A`
+    : `Iₘ=${formatAmp(branch.peakCurrent)}A`
+
   return (
-    <g pointerEvents="none">
-      {positions.map((px, idx) => (
-        <circle
-          key={idx}
-          cx={px}
-          cy={y}
-          r={2.5}
-          fill={PHYSICS_COLORS.electricCurrent}
-          stroke={CANVAS_COLORS.white}
-          strokeWidth={0.8}
+    <g>
+      <rect
+        x={WAVE_BOX_LEFT}
+        y={topY}
+        width={WAVE_BOX_WIDTH}
+        height={boxH}
+        rx={6}
+        fill={CANVAS_COLORS.white}
+        stroke={withAlpha(branchColor, 0.45)}
+        strokeWidth={1.3}
+      />
+      <circle cx={WAVE_BOX_LEFT} cy={y} r={2.5} fill={SCENE_COLORS.circuit.node} />
+      <circle cx={WAVE_BOX_RIGHT} cy={y} r={2.5} fill={SCENE_COLORS.circuit.node} />
+
+      <line
+        x1={WAVE_PLOT_LEFT}
+        y1={zeroY}
+        x2={WAVE_PLOT_LEFT + WAVE_PLOT_WIDTH}
+        y2={zeroY}
+        stroke={CANVAS_COLORS.axis}
+        strokeWidth={1}
+        strokeDasharray="3 3"
+      />
+      <line
+        x1={WAVE_DIVIDER_X}
+        y1={topY + 5}
+        x2={WAVE_DIVIDER_X}
+        y2={topY + boxH - 5}
+        stroke={CANVAS_COLORS.grid}
+        strokeWidth={1}
+      />
+
+      {areaPath && (
+        <path d={areaPath} fill={withAlpha(branchColor, 0.13)} stroke="none" pointerEvents="none" />
+      )}
+      {isDC && fullPath && (
+        <path
+          d={fullPath}
+          fill="none"
+          stroke={withAlpha(branchColor, 0.35)}
+          strokeWidth={1.2}
+          strokeDasharray="3 3"
+          pointerEvents="none"
         />
-      ))}
+      )}
+      {activePath && (
+        <path
+          d={activePath}
+          fill="none"
+          stroke={branchColor}
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          pointerEvents="none"
+        />
+      )}
+
+      <circle
+        cx={liveX}
+        cy={liveY}
+        r={3.2}
+        fill={branchColor}
+        stroke={CANVAS_COLORS.white}
+        strokeWidth={1.2}
+      />
+
+      <text
+        x={WAVE_READOUT_CENTER_X}
+        y={y - 6}
+        textAnchor="middle"
+        fontSize={font(8.5)}
+        fill={branchColor}
+        fontWeight="bold"
+      >
+        {phaseText}
+      </text>
+      <text
+        x={WAVE_READOUT_CENTER_X}
+        y={y + 10}
+        textAnchor="middle"
+        fontSize={font(8.5)}
+        fill={CANVAS_COLORS.labelTextLight}
+        fontWeight="bold"
+      >
+        {ampText}
+      </text>
     </g>
   )
 }
@@ -400,21 +523,22 @@ export const ACImpedanceScene: FC<ACImpedanceSceneProps> = ({
 
   // ── 模式 0（扫频三灯）& 模式 1（充放交直双灯）────────────────────────────
   const isThreeBranch = mode === 0
-  const busLeftX = 115
-  const busRightX = 740
-  const branchYs = isThreeBranch ? [54, 128, 202] : [82, 178]
-  const busBottomY = isThreeBranch ? 274 : 268
+  const busLeftX = 104
+  const busRightX = 790
+  const branchYs = isThreeBranch ? [54, 124, 194] : [84, 178]
+  const busBottomY = 266
+  const scopeBoxH = isThreeBranch ? 48 : 58
 
-  const deviceX = 315
-  const meterX = 485
-  const bulbX = 645
-  const sourceCenterX = 425
+  const deviceX = 186
+  const meterX = 602
+  const bulbX = 716
+  const sourceCenterX = 450
 
-  const meterR = isThreeBranch ? 17 : 20
-  const bulbScale = isThreeBranch ? 0.78 : 0.85
+  const meterR = isThreeBranch ? 16 : 19
+  const bulbScale = isThreeBranch ? 0.72 : 0.82
   const bulbHalfBase = 12 * bulbScale
-  const resHalfW = 30
-  const coilHalfW = 44
+  const resHalfW = 28
+  const coilHalfW = 40
   // 极板间距 [20, 30] 随 C 增大变窄，且留出充裕空间保证电荷符号与电场线清晰不碰撞
   const capGap = Math.round(30 - ((capacitance - 5) / 95) * 10)
   const capThickness = 5
@@ -484,7 +608,7 @@ export const ACImpedanceScene: FC<ACImpedanceSceneProps> = ({
               fontWeight="bold"
             >
               {isDC
-                ? `自感阻碍 · i₂ = ${branch.displayCurrent.toFixed(2)} A`
+                ? `自感阻碍 · ${branch.displayCurrent.toFixed(2)}A`
                 : `X_L = ${branch.reactance.toFixed(1)} Ω`}
             </text>
           )}
@@ -552,10 +676,22 @@ export const ACImpedanceScene: FC<ACImpedanceSceneProps> = ({
 
   return (
     <g className="ac-impedance-scene select-none">
-      {/* 右上角实时运行语义标注 */}
+      {/* 顶部波形区标题与实时运行状态标注 */}
+      <text
+        x={WAVE_BOX_LEFT}
+        y={isThreeBranch ? 14 : 16}
+        textAnchor="start"
+        fontSize={font(9.5)}
+        fill={CANVAS_COLORS.labelTextLight}
+        fontWeight="bold"
+      >
+        {isDC
+          ? '回路暂态电流波形 i(t)（同标尺 · 竖虚线为当前时刻）'
+          : '回路电流波形 i(t)（同标尺 · 竖虚线对齐电源 u 峰值）'}
+      </text>
       <text
         x={826}
-        y={18}
+        y={isThreeBranch ? 14 : 16}
         textAnchor="end"
         fontSize={font(9.5)}
         fill={CANVAS_COLORS.labelTextLight}
@@ -565,7 +701,7 @@ export const ACImpedanceScene: FC<ACImpedanceSceneProps> = ({
           ? `扫频 f = ${frequency.toFixed(0)} Hz`
           : isDC
             ? '直流接通暂态慢放'
-            : '交流慢放示波'}
+            : `交流慢放示波 · f = ${frequency.toFixed(0)} Hz`}
       </text>
 
       {/* 1. 标准阶梯并联导线网络（端子级精准对齐） */}
@@ -585,7 +721,8 @@ export const ACImpedanceScene: FC<ACImpedanceSceneProps> = ({
           return (
             <g key={branch.id}>
               <line x1={busLeftX} y1={y} x2={deviceX - devHalf} y2={y} />
-              <line x1={deviceX + devHalf} y1={y} x2={meterX - meterR} y2={y} />
+              <line x1={deviceX + devHalf} y1={y} x2={WAVE_BOX_LEFT} y2={y} />
+              <line x1={WAVE_BOX_RIGHT} y1={y} x2={meterX - meterR} y2={y} />
               <line x1={meterX + meterR} y1={y} x2={bulbX - bulbHalfBase} y2={y} />
               <line x1={bulbX + bulbHalfBase} y1={y} x2={busRightX} y2={y} />
             </g>
@@ -613,17 +750,12 @@ export const ACImpedanceScene: FC<ACImpedanceSceneProps> = ({
         </g>
       ))}
 
-      {/* 2. 各支路元件 + 导线微粒 + 电流表 + 灯泡 */}
+      {/* 2. 各支路元件 + 行内同步波形示波器 + 电流表 + 灯泡 */}
       {branches.map((branch, idx) => {
         const y = branchYs[idx]
-        const devHalf = getDeviceHalfSpan(branch)
         const currentDir = isDC ? 1 : branch.instantCurrent >= 0 ? 1 : -1
         const showBranchArrow =
           branch.displayCurrent > 0.02 && (isDC || Math.abs(branch.instantCurrent) > 0.08)
-        const dotsActive =
-          branch.dotMotionMode === 'dc-charge'
-            ? true
-            : branch.displayCurrent > 0.02 || (!isDC && branch.current > 0.02)
 
         return (
           <g key={`branch-${branch.id}`}>
@@ -638,36 +770,25 @@ export const ACImpedanceScene: FC<ACImpedanceSceneProps> = ({
               {branch.shortLabel}
             </text>
 
-            {/* 极板/元件左右两侧外电路导线上的微观电荷微粒（绝不穿过电容绝缘隙） */}
-            <WireChargeDots
-              x1={busLeftX + 10}
-              x2={deviceX - devHalf - 4}
-              y={y}
-              motionMode={branch.dotMotionMode}
-              phase={branch.dotPhase}
-              amplitudeScale={branch.dotAmplitudeScale}
-              active={dotsActive}
-            />
-            <WireChargeDots
-              x1={deviceX + devHalf + 4}
-              x2={meterX - meterR - 4}
-              y={y}
-              motionMode={branch.dotMotionMode}
-              phase={branch.dotPhase}
-              amplitudeScale={branch.dotAmplitudeScale}
-              active={dotsActive}
-            />
-
             {renderBranchDevice(branch, y)}
+
+            <BranchWaveformScope
+              branch={branch}
+              y={y}
+              boxH={scopeBoxH}
+              isDC={isDC}
+              yMax={physics.inlineWaveYMax}
+              font={font}
+            />
 
             {showBranchArrow && (
               <VectorArrow
-                originDesign={{ x: currentDir > 0 ? 178 : 198, y }}
+                originDesign={{ x: currentDir > 0 ? 117 : 133, y }}
                 vector={{ x: currentDir, y: 0 }}
                 type="currentDirection"
                 arrowType="visual-only"
                 sceneScale={IDENTITY_SCENE_SCALE}
-                pixelLength={20}
+                pixelLength={16}
                 font={font}
               />
             )}
@@ -718,6 +839,27 @@ export const ACImpedanceScene: FC<ACImpedanceSceneProps> = ({
           </g>
         )
       })}
+
+      {/* 贯通所有支路波形窗的竖直基准虚线（交流：电源电压 u 正峰值；直流：当前播放时刻） */}
+      {branches.length > 0 && (
+        <g pointerEvents="none">
+          {physics.voltagePeakUs.map((u, idx) => {
+            const lx = WAVE_PLOT_LEFT + u * WAVE_PLOT_WIDTH
+            return (
+              <line
+                key={`vpeak-${idx}`}
+                x1={lx}
+                y1={branchYs[0] - scopeBoxH / 2 + 2}
+                x2={lx}
+                y2={branchYs[branchYs.length - 1] + scopeBoxH / 2 - 2}
+                stroke={withAlpha(EM_COLORS.electricPotential, 0.55)}
+                strokeWidth={1.1}
+                strokeDasharray="3 3"
+              />
+            )
+          })}
+        </g>
+      )}
 
       {/* 3. 底部电源组件 */}
       {isDC ? (

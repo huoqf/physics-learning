@@ -275,6 +275,7 @@ export const electromagnetismAcAnimations = defineAnimations({
         options: [
           { value: 0, label: '电流 I–f' },
           { value: 1, label: '电抗 X–f' },
+          { value: 2, label: '波形 i–t' },
         ],
       },
       {
@@ -301,7 +302,7 @@ export const electromagnetismAcAnimations = defineAnimations({
         variant: 'info',
         showIf: 'mode',
         showIfValue: 0,
-        content: '点击播放或拖动上方曲线，让频率从低扫到高，同时观察三只灯泡明暗反转与曲线交点；切换铁芯可观察电感曲线移动。',
+        content: '点击播放或拖动上方曲线让频率从低扫到高，对比三支路波形的振幅、相位偏移与疏密变化，以及三只灯泡明暗反转；切换铁芯可看电感变化。',
       },
       {
         type: 'tip',
@@ -309,7 +310,7 @@ export const electromagnetismAcAnimations = defineAnimations({
         variant: 'info',
         showIf: 'mode',
         showIfValue: 1,
-        content: '切到直流并点击播放，盯住极板间的绝缘空隙、导线微粒移动与示波器充电脉冲；切回交流可看颗粒在极板外往复充放电。',
+        content: '切到直流并点击播放，观察极板绝缘空隙、支路暂态电流波形与示波器变化；切回交流可对比支路波形的振幅、相位超前滞后与频率疏密。',
       },
       {
         type: 'tip',
