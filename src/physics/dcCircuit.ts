@@ -256,73 +256,261 @@ export function calculateExperimentEr(
 }
 
 // ===== 非纯电阻电动机电路计算 =====
+
+/** 电动机电路模型单一真源默认参数与物理常数（SI 单位） */
+export const MOTOR_CIRCUIT_CONSTANTS = {
+  /** 机电比例常数 k (N/A = V·s/m)，取 g/2 使匀速提升所需电流 I = mg/k = 2m */
+  kv: GRAVITY / 2,
+  /** 默认电源电压 (V) */
+  defaultU: 12,
+  /** 默认保护电阻 (Ω) */
+  defaultRProtect: 2.0,
+  /** 默认电动机线圈内阻 (Ω) */
+  defaultRM: 1.0,
+  /** 默认重物质量 (kg) */
+  defaultMass: 0.5,
+  /** 卷扬滑轮半径 (m) */
+  pulleyRadius: 0.12,
+} as const
+
+/** 电动机停止转动的原因：'none' 正常转动，'locked' 人为卡住，'overload' 重物过重或电压不足导致无法转动 */
+export type MotorStallReason = 'none' | 'locked' | 'overload'
+
+/** 电动机电路计算输入参数（SI 单位） */
+export interface MotorCircuitInput {
+  /** 电源总电压 U (V) */
+  U: number
+  /** 保护电阻阻值 R保 (Ω) */
+  R_protect: number
+  /** 电动机线圈内阻 rM (Ω) */
+  r_M: number
+  /** 开关/控制状态：1=正常接通尝试转动，0=转轴卡住 */
+  motorState: number
+  /** 悬挂重物质量 m (kg) */
+  mass: number
+}
+
+/** 电动机电路计算结果（SI 单位） */
 export interface MotorCircuitResult {
+  /** 干路电流 I (A) */
   I: number
+  /** 电动机两端电压 U_M (V) */
   U_M: number
+  /** 保护电阻两端电压 U_R (V) */
+  U_R: number
+  /** 电源总功率 P_总 = U·I (W) */
   P_total: number
-  P_heat_M: number
+  /** 保护电阻发热功率 P_R = I²·R保 (W) */
   P_heat_R: number
+  /** 电动机输入电功率 P_入 = U_M·I (W) */
+  P_in_motor: number
+  /** 电动机线圈发热功率 P_热 = I²·rM (W) */
+  P_heat_M: number
+  /** 电动机输出机械功率 P_机 = P_入 - P_热 (W) */
   P_mech: number
+  /** 电动机自身效率 η = P_机 / P_入（0~1） */
+  efficiency: number
+  /** 全回路总效率 η_总 = P_机 / P_总（0~1） */
+  totalEfficiency: number
+  /** 重物匀速提升速度 v (m/s) */
   v_lift: number
+  /** 卷扬滑轮与转子角速度 ω (rad/s) */
+  omega: number
+  /** 若误用纯电阻欧姆定律算得的电流 U_M / rM (A) */
+  I_ohmWrong: number
+  /** 是否处于卡住不转状态 */
+  isStalled: boolean
+  /** 卡住原因 */
+  stallReason: MotorStallReason
+  /** 当前电路卡住临界电流 I_卡 = U / (R保 + rM) (A) */
+  I_stall: number
+  /** 输出机械功率最大时的电流 I_opt = I_卡 / 2 (A) */
+  I_opt: number
+  /** 当前电路最大输出机械功率 P_机max = U² / [4(R保 + rM)] (W) */
+  P_mech_max: number
+  /** 对应最大输出机械功率的重物质量 m_opt (kg) */
+  m_opt: number
+  /** 电动机能提起的最大重物质量 m_max (kg) */
+  m_max: number
+  /** 参数是否有效 */
   valid: boolean
 }
 
-export function calculateMotorCircuit(
-  U_source: number,
-  R_protect: number,
-  r_M: number,
-  state: number,
-  E_back: number,
-  m_load: number
-): MotorCircuitResult {
-  const g = GRAVITY
-  
-  if (state === 0) {
-    const totalR = R_protect + r_M
-    if (totalR <= 0) return { I: 0, U_M: 0, P_total: 0, P_heat_M: 0, P_heat_R: 0, P_mech: 0, v_lift: 0, valid: false }
-    const I = U_source / totalR
-    const U_M = I * r_M
-    const P_total = U_source * I
-    const P_heat_M = I * I * r_M
-    const P_heat_R = I * I * R_protect
+/** P-I 功率特性曲线采样点 */
+export interface MotorPowerCurvePoint {
+  /** 干路电流 I (A) */
+  I: number
+  /** 电源总功率 P_总 = U·I (W) */
+  P_total: number
+  /** 回路总热功率 P_总热 = I²(R保 + rM) (W) */
+  P_heat_total: number
+  /** 电动机输出机械功率 P_机 = P_总 - P_总热 (W) */
+  P_mech: number
+}
+
+/**
+ * 计算含电动机的非纯电阻电路稳态物理量（高中物理机电功率耦合模型）。
+ *
+ * 正常匀速提升时：拉起质量 m 所需电流 I = mg / k，端电压 U_M = U - I·R保，
+ * 电动机输入电功率 P_入 = U_M·I = I²·rM + P_机，匀速上升速度 v = P_机 / (mg)。
+ * 当转轴卡住（motorState = 0）或所需电流 I ≥ I_卡 = U / (R保 + rM) 时，
+ * 电动机退化为纯电阻电路，机械功率为 0，电能全部转化为焦耳热。
+ */
+export function calculateMotorCircuit(input: MotorCircuitInput): MotorCircuitResult {
+  const { U, R_protect, r_M, motorState, mass } = input
+  const safeRProtect = Math.max(0, R_protect)
+  const safeRM = Math.max(0, r_M)
+  const safeMass = Math.max(0, mass)
+  const totalR = safeRProtect + safeRM
+
+  if (U <= 0 || totalR <= 0 || safeRM <= 0) {
     return {
-      I,
-      U_M,
-      P_total,
-      P_heat_M,
-      P_heat_R,
+      I: 0,
+      U_M: 0,
+      U_R: 0,
+      P_total: 0,
+      P_heat_R: 0,
+      P_in_motor: 0,
+      P_heat_M: 0,
       P_mech: 0,
+      efficiency: 0,
+      totalEfficiency: 0,
       v_lift: 0,
-      valid: true
-    }
-  }
-  
-  if (state === 1) {
-    const totalR = R_protect + r_M
-    if (totalR <= 0 || U_source <= E_back) {
-      return { I: 0, U_M: 0, P_total: 0, P_heat_M: 0, P_heat_R: 0, P_mech: 0, v_lift: 0, valid: false }
-    }
-    const I = (U_source - E_back) / totalR
-    const U_M = E_back + I * r_M
-    const P_total = U_source * I
-    const P_heat_M = I * I * r_M
-    const P_heat_R = I * I * R_protect
-    const P_mech = E_back * I
-    const v_lift = m_load > 0 ? P_mech / (m_load * g) : 0
-    
-    return {
-      I,
-      U_M,
-      P_total,
-      P_heat_M,
-      P_heat_R,
-      P_mech,
-      v_lift,
-      valid: true
+      omega: 0,
+      I_ohmWrong: 0,
+      isStalled: true,
+      stallReason: 'locked',
+      I_stall: 0,
+      I_opt: 0,
+      P_mech_max: 0,
+      m_opt: 0,
+      m_max: 0,
+      valid: false,
     }
   }
 
-  return { I: 0, U_M: 0, P_total: 0, P_heat_M: 0, P_heat_R: 0, P_mech: 0, v_lift: 0, valid: false }
+  const I_stall = U / totalR
+  const I_opt = I_stall / 2
+  const P_mech_max = (U * U) / (4 * totalR)
+  const m_max = (MOTOR_CIRCUIT_CONSTANTS.kv * I_stall) / GRAVITY
+  const m_opt = m_max / 2
+  const I_required = (safeMass * GRAVITY) / MOTOR_CIRCUIT_CONSTANTS.kv
+
+  const stallReason: MotorStallReason =
+    motorState === 0 ? 'locked' : I_required >= I_stall ? 'overload' : 'none'
+  const isStalled = stallReason !== 'none'
+
+  if (isStalled) {
+    const I = I_stall
+    const U_R = I * safeRProtect
+    const U_M = I * safeRM
+    const P_total = U * I
+    const P_heat_R = I * I * safeRProtect
+    const P_in_motor = U_M * I
+    const P_heat_M = I * I * safeRM
+    return {
+      I,
+      U_M,
+      U_R,
+      P_total,
+      P_heat_R,
+      P_in_motor,
+      P_heat_M,
+      P_mech: 0,
+      efficiency: 0,
+      totalEfficiency: 0,
+      v_lift: 0,
+      omega: 0,
+      I_ohmWrong: U_M / safeRM,
+      isStalled: true,
+      stallReason,
+      I_stall,
+      I_opt,
+      P_mech_max,
+      m_opt,
+      m_max,
+      valid: true,
+    }
+  }
+
+  const I = I_required
+  const U_R = I * safeRProtect
+  const U_M = U - U_R
+  const P_total = U * I
+  const P_heat_R = I * I * safeRProtect
+  const P_in_motor = U_M * I
+  const P_heat_M = I * I * safeRM
+  const P_mech = Math.max(0, P_in_motor - P_heat_M)
+  const efficiency = P_in_motor > 0 ? P_mech / P_in_motor : 0
+  const totalEfficiency = P_total > 0 ? P_mech / P_total : 0
+  const v_lift = safeMass > 0 ? P_mech / (safeMass * GRAVITY) : 0
+  const omega = v_lift / MOTOR_CIRCUIT_CONSTANTS.pulleyRadius
+
+  return {
+    I,
+    U_M,
+    U_R,
+    P_total,
+    P_heat_R,
+    P_in_motor,
+    P_heat_M,
+    P_mech,
+    efficiency,
+    totalEfficiency,
+    v_lift,
+    omega,
+    I_ohmWrong: U_M / safeRM,
+    isStalled: false,
+    stallReason: 'none',
+    I_stall,
+    I_opt,
+    P_mech_max,
+    m_opt,
+    m_max,
+    valid: true,
+  }
+}
+
+/**
+ * 生成电动机回路 P-I 功率特性曲线数据（0 ≤ I ≤ I_卡）。
+ *
+ * 包含总功率 P_总 = UI、总热功率 P_总热 = I²(R保 + rM) 与输出机械功率 P_机 = P_总 - P_总热，
+ * 并确保包含精确极值顶点 I_opt = U / [2(R保 + rM)] 与终点 I_卡。
+ */
+export function generateMotorPowerCurve(
+  U: number,
+  R_protect: number,
+  r_M: number,
+  steps = 80,
+): MotorPowerCurvePoint[] {
+  const safeRProtect = Math.max(0, R_protect)
+  const safeRM = Math.max(0, r_M)
+  const totalR = safeRProtect + safeRM
+  if (U <= 0 || totalR <= 0) {
+    return [
+      { I: 0, P_total: 0, P_heat_total: 0, P_mech: 0 },
+      { I: 1, P_total: 0, P_heat_total: 0, P_mech: 0 },
+    ]
+  }
+
+  const I_stall = U / totalR
+  const I_opt = I_stall / 2
+  const count = Math.max(10, Math.round(steps))
+  const iValues: number[] = []
+  for (let k = 0; k <= count; k++) {
+    iValues.push((k / count) * I_stall)
+  }
+  if (!iValues.some((val) => Math.abs(val - I_opt) < 1e-9)) {
+    iValues.push(I_opt)
+    iValues.sort((a, b) => a - b)
+  }
+
+  return iValues.map((I) => {
+    const P_total = U * I
+    const P_heat_total = I * I * totalR
+    const P_mech = Math.max(0, P_total - P_heat_total)
+    return { I, P_total, P_heat_total, P_mech }
+  })
 }
 
 export type CircuitType = 'voltage-divider' | 'current-limiting'

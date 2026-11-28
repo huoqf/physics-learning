@@ -880,18 +880,30 @@ describe('electromagnetism', () => {
   })
 
   describe('MotorCircuit', () => {
-    it('卡死状态下电动机为纯电阻电路，无机械功率', () => {
-      const res = calculateMotorCircuit(10, 2, 1, 0, 5, 0.5)
+    it('卡住状态下电动机退化为纯电阻电路，无机械功率', () => {
+      const res = calculateMotorCircuit({ U: 10, R_protect: 2, r_M: 1, motorState: 0, mass: 0.5 })
+      expect(res.isStalled).toBe(true)
       expect(res.I).toBeCloseTo(10 / 3, 6)
       expect(res.P_mech).toBe(0)
       expect(res.v_lift).toBe(0)
     })
 
-    it('正常旋转下电动机有机械功率并提升重物', () => {
-      const res = calculateMotorCircuit(10, 2, 1, 1, 5, 0.5)
-      expect(res.I).toBeCloseTo(5 / 3, 6)
-      expect(res.P_mech).toBeCloseTo(25 / 3, 6)
-      expect(res.v_lift).toBeCloseTo((25 / 3) / (0.5 * 9.8), 6)
+    it('正常转动下电动机按机电耦合模型输出机械功率并提升重物', () => {
+      const res = calculateMotorCircuit({ U: 10, R_protect: 2, r_M: 1, motorState: 1, mass: 0.5 })
+      expect(res.isStalled).toBe(false)
+      expect(res.I).toBeCloseTo(1.0, 6)
+      expect(res.U_M).toBeCloseTo(8.0, 6)
+      expect(res.P_mech).toBeCloseTo(7.0, 6)
+      expect(res.v_lift).toBeCloseTo(7.0 / (0.5 * 9.8), 6)
+    })
+
+    it('电压过低或重物过重无法转动时自动进入纯电阻卡住态', () => {
+      const res = calculateMotorCircuit({ U: 2, R_protect: 2, r_M: 1, motorState: 1, mass: 0.5 })
+      expect(res.valid).toBe(true)
+      expect(res.isStalled).toBe(true)
+      expect(res.stallReason).toBe('overload')
+      expect(res.I).toBeCloseTo(2 / 3, 6)
+      expect(res.P_mech).toBe(0)
     })
   })
 })

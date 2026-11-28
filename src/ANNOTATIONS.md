@@ -15,7 +15,7 @@
 | anim-closed-circuit | 闭合电路欧姆定律与能量分析 | ClosedCircuit | — | physics | ClosedCircuitCenterExtra |
 | anim-multimeter-ohm | 多用电表与欧姆表原理 | Multimeter | — | physics | MultimeterCenterExtra |
 | anim-experiment-er | 实验：测定电源电动势与内阻 | ExperimentEr | ExperimentErScene | physics | ExperimentErCenterExtra |
-| anim-motor-circuit | 非纯电阻电路与电动机 | NonPureCircuit | — | physics | NonPureCircuitCenterExtra |
+| anim-motor-circuit | 非纯电阻电路与电动机 | NonPureCircuit | MotorCircuitScene | physics | NonPureCircuitCenterExtra |
 | anim-charge-elementary | 电荷、起电方式与元电荷 | ChargeElementaryAnimation | ChargeElementaryScene | physics | — |
 | anim-coulomb-law | 库仑定律 | CoulombLaw | — | physics | — |
 | anim-electric-field | 电场强度与比值定义法 | ElectricField | ElectricFieldBasicScene, ElectricFieldAdvancedScene | physics | — |

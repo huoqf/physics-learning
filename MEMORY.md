@@ -6,7 +6,7 @@
 
 ## 动画映射表
 
-> **生成时间**：2026-11-27
+> **生成时间**：2026-11-28
 > **生成命令**：`node scripts/gen-annotations.mjs`
 > **数据来源**：`src/data/registries/*.ts`（与 `src/ANNOTATIONS.md` 同步生成，请勿手动编辑）
 > **更新方式**：修改 `src/data/registries/*.ts` 后运行 `node scripts/gen-annotations.mjs` 重新生成
@@ -24,7 +24,7 @@
 | anim-closed-circuit | 闭合电路欧姆定律与能量分析 | ClosedCircuit | — | physics | ClosedCircuitCenterExtra |
 | anim-multimeter-ohm | 多用电表与欧姆表原理 | Multimeter | — | physics | MultimeterCenterExtra |
 | anim-experiment-er | 实验：测定电源电动势与内阻 | ExperimentEr | ExperimentErScene | physics | ExperimentErCenterExtra |
-| anim-motor-circuit | 非纯电阻电路与电动机 | NonPureCircuit | — | physics | NonPureCircuitCenterExtra |
+| anim-motor-circuit | 非纯电阻电路与电动机 | NonPureCircuit | MotorCircuitScene | physics | NonPureCircuitCenterExtra |
 | anim-charge-elementary | 电荷、起电方式与元电荷 | ChargeElementaryAnimation | ChargeElementaryScene | physics | — |
 | anim-coulomb-law | 库仑定律 | CoulombLaw | — | physics | — |
 | anim-electric-field | 电场强度与比值定义法 | ElectricField | ElectricFieldBasicScene, ElectricFieldAdvancedScene | physics | — |
@@ -184,4 +184,4 @@ node scripts/gen-annotations.mjs
 
 ---
 
-*最后更新：2026-11-27 | 生成命令：`node scripts/gen-annotations.mjs`*
+*最后更新：2026-11-28 | 生成命令：`node scripts/gen-annotations.mjs`*

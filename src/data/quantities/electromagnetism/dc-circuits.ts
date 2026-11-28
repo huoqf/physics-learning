@@ -4,10 +4,27 @@ import {
   calculateMeterExpansion,
   calculateOhmmeter,
   calculateExperimentEr,
-  calculateMotorCircuit
+  calculateMotorCircuit,
+  MOTOR_CIRCUIT_CONSTANTS,
 } from '../../../physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
-import type { PhysicsPanelData, PhysicsQuantity } from '../types'
+import { normalizeParams, type ParamDefs, type PhysicsPanelData, type PhysicsQuantity } from '../types'
+
+interface MotorCircuitParams extends Record<string, number> {
+  motorState: number
+  U: number
+  mass: number
+  r_M: number
+  R_protect: number
+}
+
+const MOTOR_CIRCUIT_DEFAULTS: ParamDefs<MotorCircuitParams> = {
+  motorState: { default: 1 },
+  U: { default: MOTOR_CIRCUIT_CONSTANTS.defaultU },
+  mass: { default: MOTOR_CIRCUIT_CONSTANTS.defaultMass },
+  r_M: { default: MOTOR_CIRCUIT_CONSTANTS.defaultRM },
+  R_protect: { default: MOTOR_CIRCUIT_CONSTANTS.defaultRProtect },
+}
 
 export function handleDcCircuits(
   animId: string,
@@ -602,66 +619,93 @@ export function handleDcCircuits(
       }
     }
     case 'anim-motor-circuit': {
-      const motorState = params.motorState ?? 1
-      const U = params.U ?? 10
-      const mass = params.mass ?? 0.5
-      const R_protect = 2.0
-      const r_M = 1.0
-      const E_back = 5.0
-
-      const res = calculateMotorCircuit(U, R_protect, r_M, motorState, E_back, mass)
-      const P_in_motor = res.U_M * res.I
-      const eff = P_in_motor > 0 ? (res.P_mech / P_in_motor) * 100 : 0
+      const p = normalizeParams(params, MOTOR_CIRCUIT_DEFAULTS)
+      const res = calculateMotorCircuit(p)
+      const isNearMaxPower = !res.isStalled && res.P_mech_max > 0 && Math.abs(res.I - res.I_opt) <= 0.12
 
       return {
         quantities: [
           ...base,
-          { label: '电源总电压', symbol: 'U', value: U.toFixed(1), unit: 'V', color: PHYSICS_COLORS.electricPotential },
-          { label: '干路总电流', symbol: 'I', value: res.I.toFixed(3), unit: 'A', color: PHYSICS_COLORS.electricCurrent, highlight: 'extreme' },
-          { label: '电动机两端电压', symbol: 'U_M', value: res.U_M.toFixed(2), unit: 'V', color: PHYSICS_COLORS.electricPotential },
-          { label: '电源总输入功率', symbol: 'P_总', value: res.P_total.toFixed(2), unit: 'W', color: PHYSICS_COLORS.power },
-          { label: '电动机输入电功率', symbol: 'P_入', value: P_in_motor.toFixed(2), unit: 'W', color: PHYSICS_COLORS.power },
-          { label: '电动机热耗功率', symbol: 'P_热', value: res.P_heat_M.toFixed(2), unit: 'W', color: PHYSICS_COLORS.internalEnergy },
-          { label: '电动机输出机械功率', symbol: 'P_机', value: res.P_mech.toFixed(2), unit: 'W', color: PHYSICS_COLORS.work, highlight: 'extreme' },
-          { label: '电动机工作效率', symbol: 'η', value: eff.toFixed(1), unit: '%', color: PHYSICS_COLORS.work },
-          ...(motorState === 1 ? [{ label: '重物匀速提升速度', symbol: 'v', value: res.v_lift.toFixed(3), unit: 'm/s', color: PHYSICS_COLORS.velocity, highlight: 'extreme' as const }] : [])
+          { label: '干路电流', symbol: 'I', value: res.I.toFixed(2), unit: 'A', color: PHYSICS_COLORS.electricCurrent, highlight: res.isStalled ? 'extreme' : undefined },
+          { label: '电动机端电压', symbol: 'U_M', value: res.U_M.toFixed(2), unit: 'V', color: PHYSICS_COLORS.electricPotential },
+          { label: '电源总功率', symbol: 'P_总', value: res.P_total.toFixed(2), unit: 'W', color: PHYSICS_COLORS.power },
+          { label: '电动机输入功率', symbol: 'P_入', value: res.P_in_motor.toFixed(2), unit: 'W', color: PHYSICS_COLORS.power },
+          { label: '线圈发热功率', symbol: 'P_热', value: res.P_heat_M.toFixed(2), unit: 'W', color: PHYSICS_COLORS.internalEnergy },
+          { label: '输出机械功率', symbol: 'P_机', value: res.P_mech.toFixed(2), unit: 'W', color: PHYSICS_COLORS.work, highlight: isNearMaxPower ? 'extreme' : res.isStalled ? 'zero' : undefined },
+          { label: '电动机效率', symbol: 'η', value: (res.efficiency * 100).toFixed(1), unit: '%', color: PHYSICS_COLORS.work },
+          { label: '重物提升速度', symbol: 'v', value: res.v_lift.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity, highlight: res.isStalled ? 'zero' : undefined },
         ],
         formulas: [
           {
-            name: '纯电阻与非纯电阻功耗拆解',
-            latex: 'P_{\\text{入}} = I U_M, \\quad P_{\\text{热}} = I^2 r_M, \\quad P_{\\text{机}} = P_{\\text{入}} - P_{\\text{热}} = E_{\\text{反}} I',
+            name: '电动机功率守恒',
+            latex: 'P_{\\text{入}} = U_M I = I^2 r_M + P_{\\text{机}}',
             level: 'core' as const,
-            condition: '适用于含电动机的非纯电阻电路',
+            condition: '适用于含电动机的非纯电阻电路（正常转动时 U_M > I·rM）',
           },
           {
-            name: '提升机械功率平衡',
-            latex: 'P_{\\text{机}} = F \\cdot v = mg \\cdot v',
+            name: '欧姆定律适用边界',
+            latex: '\\begin{gathered}\\text{正常转动：}U_M > I r_M \\\\ \\text{卡住不转：}U_M = I r_M\\end{gathered}',
             level: 'core' as const,
-            condition: '重物匀速上升时',
-          }
+            condition: '正常转动时欧姆定律对电动机整体不适用；卡住不转时退化为纯电阻',
+          },
+          {
+            name: '匀速提升功率与效率',
+            latex: '\\begin{gathered}P_{\\text{机}} = Fv = mgv \\\\ \\eta = \\frac{P_{\\text{机}}}{P_{\\text{入}}} = 1 - \\frac{I r_M}{U_M}\\end{gathered}',
+            level: 'core' as const,
+            condition: '重物匀速上升（拉力 F = mg）且忽略机械摩擦损耗',
+          },
+          {
+            name: '全回路最大机械功率',
+            latex: '\\begin{gathered}P_{\\text{机}} = UI - I^2(R_{\\text{保}} + r_M) \\\\ I = \\frac{U}{2(R_{\\text{保}} + r_M)}\\text{ 时 }P_{\\text{机}}\\text{最大}\\end{gathered}',
+            level: 'derived' as const,
+            condition: '电源电压 U、保护电阻 R保 与线圈内阻 rM 恒定，由二次函数求极值',
+          },
         ],
         gaokaoPoints: [
           {
-            text: '【纯与非纯本质区别】纯电阻电路中电能全部转化为焦耳热（W = Q）；非纯电阻电路中，电能只有小部分转化为焦耳热，大部分转化为机械能、化学能等其他形式能量（W > Q）。',
+            text: '【公式选用原则】非纯电阻电路中，计算电功率 P_入 = U_M I 与热功率 P_热 = I² rM 仍成立；但欧姆定律 I = U_M / rM 和 P = U_M² / rM 对正常转动的电动机不成立。',
             importance: 'gaokao',
           },
           {
-            text: '【电动机卡死分析】电动机卡死时，机械功率输出降为 0，反电动势消失，电动机退化为纯电阻电路。此时电流极大，发热量激增，极易烧毁绕组。',
+            text: '【两步求解思路】① 先看“卡住不转”状态：电动机退化为纯电阻，由 rM = U_M / I 求线圈内阻；② 再看“正常转动”状态：联立 U_M I = I² rM + P_机 与 P_机 = mgv 求解电流、功率或速度。',
+            importance: 'gaokao',
+          },
+          {
+            text: '【P-I 图像与极值规律】在 U、R保、rM 一定时，输出机械功率 P_机 = UI - I²(R保 + rM) 是关于电流 I 的开口向下抛物线，当 I 等于卡住电流的一半时 P_机 达到最大值。',
             importance: 'core',
-          }
+          },
+          {
+            text: '【卡住危险机理】转轴被卡住或重物过重无法转动时，输出机械功率降为 0，电流骤增至 U/(R保 + rM)，电能全部转化为线圈内阻焦耳热，极易烧坏电动机。',
+            importance: 'core',
+          },
         ],
         warnings: [
-          ...(motorState === 0 ? [
+          ...(res.stallReason === 'locked' ? [
             {
-              text: `【堵转预警】电动机被卡死，反电动势消失，退化为纯电阻电路。干路电流暴增至 ${res.I.toFixed(2)} A，发热功率飙升至 ${res.P_heat_M.toFixed(2)} W，极易烧毁绕组！`,
+              text: `【转轴卡住警示】电动机退化为纯电阻电路，干路电流增至 ${res.I.toFixed(2)} A，线圈发热功率飙升至 ${res.P_heat_M.toFixed(2)} W，极易烧毁电动机！`,
               level: 'danger' as const,
-            }
+            },
+          ] : []),
+          ...(res.stallReason === 'overload' ? [
+            {
+              text: `【无法启动警示】当前重物质量 ${p.mass.toFixed(2)} kg 已达到或超过最大提拉能力（临界质量 ${res.m_max.toFixed(2)} kg），转轴无法转动而退化为纯电阻，电流增至 ${res.I.toFixed(2)} A！`,
+              level: 'danger' as const,
+            },
+          ] : []),
+          ...(isNearMaxPower ? [
+            {
+              text: `【极值工况提示】当前电流 I = ${res.I.toFixed(2)} A 接近最佳电流 ${res.I_opt.toFixed(2)} A，输出机械功率接近峰值 ${res.P_mech_max.toFixed(2)} W。`,
+              level: 'info' as const,
+            },
           ] : []),
           {
-            text: '【物理雷区】正常转动时欧姆定律 I = U/R 不适用于电动机整体！计算电流或功率分配时，必须根据电功率守恒方程 U_M I = I² r_M + P_机 求解，切勿直接代入 I = U_M / r_M。',
-            level: 'danger',
-          }
-        ]
+            text: res.isStalled
+              ? `【纯电阻对比】当前已停转，按欧姆定律算得 U_M / rM = ${res.I_ohmWrong.toFixed(2)} A，与电流表实测 I = ${res.I.toFixed(2)} A 相等，此时可用 U_M / I 反求线圈内阻 rM。`
+              : `【常见误区警示】若误套用欧姆定律算得 U_M / rM = ${res.I_ohmWrong.toFixed(2)} A，明显大于实测电流 I = ${res.I.toFixed(2)} A！正常转动时必须用 U_M I = I² rM + P_机。`,
+            level: res.isStalled ? 'info' as const : 'warning' as const,
+          },
+        ],
+        mnemonic: '电功用 UI，生热用 I²r，差值是机械；卡住变纯阻，先求内阻 r',
       }
     }
   }
